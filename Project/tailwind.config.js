@@ -14,6 +14,7 @@ module.exports = {
         "primary-dark": "#D13C08",
         "background-light": "#f6f7f8",
         "background-dark": "#0f172a",
+        "price-green": "#10B981",
       },
       fontFamily: {
         "display": ["var(--font-plus-jakarta)", "sans-serif"]
@@ -30,6 +31,24 @@ module.exports = {
         'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.07)',
         'subtle': '0 2px 8px rgba(0,0,0,0.05)',
         'glow': '0 0 15px rgba(255, 94, 31, 0.3)',
+        'depth': '0 20px 40px -5px rgba(0, 0, 0, 0.1)',
+      },
+      animation: {
+        'fade-in-up': 'fadeInUp 0.5s ease-out forwards',
+      },
+      keyframes: {
+        fadeInUp: {
+          '0%': { opacity: '0', transform: 'translateY(20px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        slideUp: {
+          '0%': { opacity: '0', transform: 'translateY(20px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        }
       }
     },
   },

@@ -1,15 +1,11 @@
-import { Header } from "@/components/Header"
 import { Footer } from "@/components/Footer"
 import { Hero } from "@/components/Hero"
-import { CategorySlider } from "@/components/CategorySlider"
 import { DestinationCard } from "@/components/DestinationCard"
 import Link from 'next/link'
 
 export default function Home() {
   return (
     <>
-      <Header />
-      <CategorySlider />
       <main className="flex-grow">
         <Hero />
         <div className="relative z-10 max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12 -mt-10">
