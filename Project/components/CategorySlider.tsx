@@ -1,21 +1,27 @@
+'use client'
+
+
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 
 const categories = [
-    { icon: 'home', label: 'Home', active: true, color: 'text-orange-600', bg: 'bg-orange-50', darkColor: 'dark:text-orange-400', darkBg: 'dark:bg-orange-500/10' },
-    { icon: 'flight', label: 'Flights', color: 'group-hover:text-sky-600', hoverBg: 'hover:bg-sky-50', darkColor: 'dark:group-hover:text-sky-400', darkHoverBg: 'dark:hover:bg-sky-500/10' },
-    { icon: 'hotel', label: 'Hotels', color: 'group-hover:text-blue-600', hoverBg: 'hover:bg-blue-50', darkColor: 'dark:group-hover:text-blue-400', darkHoverBg: 'dark:hover:bg-blue-500/10' },
-    { icon: 'confirmation_number', label: 'Vouchers', color: 'group-hover:text-pink-600', hoverBg: 'hover:bg-pink-50', darkColor: 'dark:group-hover:text-pink-400', darkHoverBg: 'dark:hover:bg-pink-500/10' },
-    { icon: 'calendar_month', label: 'Events', color: 'group-hover:text-indigo-600', hoverBg: 'hover:bg-indigo-50', darkColor: 'dark:group-hover:text-indigo-400', darkHoverBg: 'dark:hover:bg-indigo-500/10' },
-    { icon: 'restaurant', label: 'Dining', color: 'group-hover:text-red-600', hoverBg: 'hover:bg-red-50', darkColor: 'dark:group-hover:text-red-400', darkHoverBg: 'dark:hover:bg-red-500/10' },
-    { icon: 'hiking', label: 'Activities', color: 'group-hover:text-green-600', hoverBg: 'hover:bg-green-50', darkColor: 'dark:group-hover:text-green-400', darkHoverBg: 'dark:hover:bg-green-500/10' },
-    { icon: 'spa', label: 'Wellness', color: 'group-hover:text-teal-600', hoverBg: 'hover:bg-teal-50', darkColor: 'dark:group-hover:text-teal-400', darkHoverBg: 'dark:hover:bg-teal-500/10' },
-    { icon: 'face_3', label: 'Beauty', color: 'group-hover:text-rose-600', hoverBg: 'hover:bg-rose-50', darkColor: 'dark:group-hover:text-rose-400', darkHoverBg: 'dark:hover:bg-rose-500/10' },
-    { icon: 'music_note', label: 'Entmt.', color: 'group-hover:text-purple-600', hoverBg: 'hover:bg-purple-50', darkColor: 'dark:group-hover:text-purple-400', darkHoverBg: 'dark:hover:bg-purple-500/10' },
-    { icon: 'shopping_bag', label: 'Shop', color: 'group-hover:text-amber-600', hoverBg: 'hover:bg-amber-50', darkColor: 'dark:group-hover:text-amber-400', darkHoverBg: 'dark:hover:bg-amber-500/10' },
-    { icon: 'commute', label: 'Transport', color: 'group-hover:text-cyan-600', hoverBg: 'hover:bg-cyan-50', darkColor: 'dark:group-hover:text-cyan-400', darkHoverBg: 'dark:hover:bg-cyan-500/10' },
+    { icon: 'home', label: 'Home', href: '/', color: 'text-orange-600', hoverBg: 'hover:bg-orange-50', activeBg: 'bg-orange-100 dark:bg-orange-500/20', activeTextColor: 'text-orange-700 dark:text-orange-400' },
+    { icon: 'flight', label: 'Flights', href: '#', color: 'text-sky-600', hoverBg: 'hover:bg-sky-50', activeBg: 'bg-sky-100', activeTextColor: 'text-sky-700' },
+    { icon: 'hotel', label: 'Hotels', href: '#', color: 'text-blue-600', hoverBg: 'hover:bg-blue-50', activeBg: 'bg-blue-100', activeTextColor: 'text-blue-700' },
+    { icon: 'confirmation_number', label: 'Vouchers', href: '#', color: 'text-pink-600', hoverBg: 'hover:bg-pink-50', activeBg: 'bg-pink-100', activeTextColor: 'text-pink-700' },
+    { icon: 'calendar_month', label: 'Events', href: '#', color: 'text-indigo-600', hoverBg: 'hover:bg-indigo-50', activeBg: 'bg-indigo-100', activeTextColor: 'text-indigo-700' },
+    { icon: 'restaurant', label: 'Dining', href: '#', color: 'text-red-600', hoverBg: 'hover:bg-red-50', activeBg: 'bg-red-100', activeTextColor: 'text-red-700' },
+    { icon: 'hiking', label: 'Activities', href: '/activities', color: 'text-green-600', hoverBg: 'hover:bg-green-50', activeBg: 'bg-green-100 dark:bg-green-500/20', activeTextColor: 'text-green-700 dark:text-green-400' },
+    { icon: 'spa', label: 'Wellness', href: '/wellness', color: 'text-teal-600', hoverBg: 'hover:bg-teal-50', activeBg: 'bg-teal-100', activeTextColor: 'text-teal-700' },
+    { icon: 'face_3', label: 'Beauty', href: '#', color: 'text-rose-600', hoverBg: 'hover:bg-rose-50', activeBg: 'bg-rose-100', activeTextColor: 'text-rose-700' },
+    { icon: 'music_note', label: 'Entmt.', href: '#', color: 'text-purple-600', hoverBg: 'hover:bg-purple-50', activeBg: 'bg-purple-100', activeTextColor: 'text-purple-700' },
+    { icon: 'shopping_bag', label: 'Shop', href: '#', color: 'text-amber-600', hoverBg: 'hover:bg-amber-50', activeBg: 'bg-amber-100', activeTextColor: 'text-amber-700' },
+    { icon: 'commute', label: 'Transport', href: '#', color: 'text-cyan-600', hoverBg: 'hover:bg-cyan-50', activeBg: 'bg-cyan-100', activeTextColor: 'text-cyan-700' },
 ]
 
 export function CategorySlider() {
+    const pathname = usePathname()
+
     return (
         <div className="sticky top-16 sm:top-20 z-50 w-full glass-panel transition-all duration-300 shadow-sm">
             <div className="max-w-[1440px] mx-auto relative group/slider">
@@ -28,18 +34,20 @@ export function CategorySlider() {
                 <div className="relative overflow-x-auto no-scrollbar scroll-smooth">
                     <div className="flex items-center gap-2 sm:gap-4 px-4 sm:px-6 lg:px-8 py-3 min-w-max mx-auto justify-start lg:justify-center">
                         {categories.map((cat, i) => {
-                            if (cat.active) {
+                            const isActive = pathname === cat.href
+
+                            if (isActive) {
                                 return (
-                                    <Link key={i} href="#" className={`active group flex flex-col items-center justify-center px-4 py-2 rounded-xl transition-all duration-300 ${cat.bg} ${cat.darkBg}`}>
-                                        <span className={`material-symbols-outlined mb-1 text-[26px] ${cat.color} ${cat.darkColor}`}>{cat.icon}</span>
-                                        <span className={`text-[11px] font-bold tracking-wide text-orange-700 dark:text-orange-300`}>{cat.label}</span>
+                                    <Link key={i} href={cat.href} className={`active group flex flex-col items-center justify-center w-20 h-20 rounded-full transition-all duration-300 ${cat.activeBg}`}>
+                                        <span className={`material-symbols-outlined mb-1 text-[28px] ${cat.activeTextColor} transition-colors`}>{cat.icon}</span>
+                                        <span className={`text-[12px] font-bold tracking-wide ${cat.activeTextColor} transition-colors`}>{cat.label}</span>
                                     </Link>
                                 )
                             }
                             return (
-                                <Link key={i} href="#" className={`group flex flex-col items-center justify-center min-w-[70px] px-2 py-2 rounded-xl transition-all duration-300 bg-transparent ${cat.hoverBg} ${cat.darkHoverBg}`}>
-                                    <span className={`material-symbols-outlined text-slate-500 dark:text-slate-400 mb-1 text-[26px] transition-colors ${cat.color} ${cat.darkColor}`}>{cat.icon}</span>
-                                    <span className={`text-slate-600 dark:text-slate-400 text-[11px] font-semibold tracking-wide transition-colors ${cat.color?.replace('text-', 'text-sl-').replace('group-hover:', 'group-hover:text-')} ${cat.darkColor?.replace('dark:text-', 'dark:text-sl-').replace('dark:group-hover:', 'dark:group-hover:text-')}`.replace(/text-(sky|blue|pink|indigo|red|green|teal|rose|purple|amber|cyan)-600/g, 'text-$1-700').replace(/text-(sky|blue|pink|indigo|red|green|teal|rose|purple|amber|cyan)-400/g, 'text-$1-300')}>{cat.label}</span>
+                                <Link key={i} href={cat.href} className={`group flex flex-col items-center justify-center w-20 h-20 rounded-full transition-all duration-300 bg-transparent ${cat.hoverBg}`}>
+                                    <span className={`material-symbols-outlined text-slate-500 dark:text-slate-400 mb-1 text-[28px] transition-colors group-hover:${cat.color}`}>{cat.icon}</span>
+                                    <span className={`text-slate-600 dark:text-slate-400 text-[12px] font-medium tracking-wide transition-colors group-hover:${cat.color}`}>{cat.label}</span>
                                 </Link>
                             )
                         })}
