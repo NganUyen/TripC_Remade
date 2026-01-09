@@ -1,12 +1,18 @@
+"use client"
+
+import { useState } from 'react'
 import Link from 'next/link'
+import { UserProfileMenu } from './UserProfileMenu'
 
 export function Header() {
+    const [isProfileOpen, setIsProfileOpen] = useState(false)
+
     return (
         <header className="sticky top-0 z-[60] bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
             <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-16 sm:h-20 gap-4">
                     <div className="flex items-center gap-8 flex-1">
-                        <Link href="#" className="flex items-center gap-2 group">
+                        <Link href="/" className="flex items-center gap-2 group">
                             <div className="text-primary size-8 bg-primary/10 rounded-lg flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors">
                                 <span className="material-symbols-outlined text-2xl">travel_explore</span>
                             </div>
@@ -36,12 +42,20 @@ export function Header() {
                                 <span className="material-symbols-outlined text-[20px]">notifications</span>
                                 <span className="absolute top-2.5 right-2.5 size-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-800"></span>
                             </button>
-                            <div className="size-10 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden cursor-pointer ring-2 ring-transparent hover:ring-primary transition-all">
-                                <img
-                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuB-OlVPtWVjgO5KFA8BfnLqBe7lJd20c576GWi3dxuI1vUxSbf_FG0EE-SPn2iJTy-F6lROjLsiOHq1TWH4G54W2IsXy3BIPjh0F_i51myOoda0rSTFY9ICcCtRZfRX-wypxxxQTElt_yLppmTUcgrnXaxkBkETmepvQoICOjrrM3K-cudBlCP8gZCjk_dJQ4wiWDHpnETG4ULKzPKH9tj3HdFAlSZEMVxJwCL_nivIRwruPrENCQa_6BOK7aUvkk6K899QO6IIVx0"
-                                    alt="User profile avatar showing a smiling person"
-                                    className="w-full h-full object-cover"
-                                />
+
+                            <div className="relative">
+                                <button
+                                    onClick={() => setIsProfileOpen(!isProfileOpen)}
+                                    className="size-10 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden cursor-pointer ring-2 ring-transparent hover:ring-primary transition-all focus:outline-none"
+                                >
+                                    <img
+                                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuB-OlVPtWVjgO5KFA8BfnLqBe7lJd20c576GWi3dxuI1vUxSbf_FG0EE-SPn2iJTy-F6lROjLsiOHq1TWH4G54W2IsXy3BIPjh0F_i51myOoda0rSTFY9ICcCtRZfRX-wypxxxQTElt_yLppmTUcgrnXaxkBkETmepvQoICOjrrM3K-cudBlCP8gZCjk_dJQ4wiWDHpnETG4ULKzPKH9tj3HdFAlSZEMVxJwCL_nivIRwruPrENCQa_6BOK7aUvkk6K899QO6IIVx0"
+                                        alt="User Account"
+                                        className="w-full h-full object-cover"
+                                    />
+                                </button>
+
+                                <UserProfileMenu isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
                             </div>
                         </div>
                     </div>

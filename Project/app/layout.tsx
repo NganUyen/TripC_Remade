@@ -4,6 +4,7 @@ import './globals.css'
 import { cn } from '@/lib/utils'
 import { CategorySlider } from '@/components/CategorySlider'
 import { Header } from '@/components/Header'
+import { ChatWidget } from '@/components/ChatWidget'
 
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -35,6 +36,7 @@ export default function RootLayout({
         <Header />
         <CategorySlider />
         {children}
+        <ChatWidget />
       </body>
     </html>
   )
