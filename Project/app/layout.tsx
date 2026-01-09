@@ -2,6 +2,9 @@ import type { Metadata, Viewport } from 'next'
 import { Plus_Jakarta_Sans } from 'next/font/google'
 import './globals.css'
 import { cn } from '@/lib/utils'
+import { CategorySlider } from '@/components/CategorySlider'
+import { Header } from '@/components/Header'
+import { ChatWidget } from '@/components/ChatWidget'
 
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -30,7 +33,10 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
       </head>
       <body className="bg-background-light dark:bg-background-dark font-display min-h-screen flex flex-col text-slate-900 dark:text-slate-100 antialiased overflow-x-hidden">
+        <Header />
+        <CategorySlider />
         {children}
+        <ChatWidget />
       </body>
     </html>
   )

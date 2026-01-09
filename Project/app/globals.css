@@ -5,15 +5,18 @@
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
 .material-symbols-outlined {
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
   transition: font-variation-settings 0.3s ease;
 }
-.group:hover .material-symbols-outlined, 
+
+.group:hover .material-symbols-outlined,
 .active .material-symbols-outlined {
   font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
@@ -23,8 +26,112 @@
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
 }
+
 .dark .glass-panel {
-  background: rgba(15, 23, 42, 0.7);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+}
+
+/* Glass Input */
+.glass-input {
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.dark .glass-input {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.glass-input:focus-within {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: rgba(255, 94, 31, 0.6);
+  box-shadow: 0 0 0 2px rgba(255, 94, 31, 0.2);
+}
+
+.dark .glass-input:focus-within {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Glass Pill */
+.glass-pill {
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.dark .glass-pill {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Animations */
+@keyframes subtle-gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animated-gradient-overlay {
+  background: linear-gradient(-45deg, rgba(255, 255, 255, 0.1), rgba(255, 94, 31, 0.05), rgba(255, 255, 255, 0.1), rgba(255, 94, 31, 0.05));
+  background-size: 400% 400%;
+  animation: subtle-gradient 15s ease infinite;
+}
+
+.dark .animated-gradient-overlay {
+  background: linear-gradient(-45deg, rgba(0, 0, 0, 0.3), rgba(34, 25, 16, 0.5), rgba(0, 0, 0, 0.4), rgba(255, 94, 31, 0.1));
+  background-size: 400% 400%;
+}
+
+.card-depth {
+  box-shadow: 0 20px 40px -5px rgba(0, 0, 0, 0.1);
+}
+
+.dark .card-depth {
+  box-shadow: 0 20px 40px -5px rgba(0, 0, 0, 0.3);
+}
+
+.bounce-hover:hover {
+  animation: bounce-small 0.5s ease-in-out;
+}
+
+@keyframes bounce-small {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes fade-up-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.price-animate {
+  animation: fade-up-in 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
