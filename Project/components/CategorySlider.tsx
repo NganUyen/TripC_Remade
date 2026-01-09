@@ -13,7 +13,7 @@ const categories = [
     { icon: 'restaurant', label: 'Dining', href: '#', color: 'text-red-600', hoverBg: 'hover:bg-red-50', activeBg: 'bg-red-100', activeTextColor: 'text-red-700' },
     { icon: 'hiking', label: 'Activities', href: '/activities', color: 'text-green-600', hoverBg: 'hover:bg-green-50', activeBg: 'bg-green-100 dark:bg-green-500/20', activeTextColor: 'text-green-700 dark:text-green-400' },
     { icon: 'spa', label: 'Wellness', href: '/wellness', color: 'text-teal-600', hoverBg: 'hover:bg-teal-50', activeBg: 'bg-teal-100', activeTextColor: 'text-teal-700' },
-    { icon: 'face_3', label: 'Beauty', href: '#', color: 'text-rose-600', hoverBg: 'hover:bg-rose-50', activeBg: 'bg-rose-100', activeTextColor: 'text-rose-700' },
+    { icon: 'face_3', label: 'Beauty', href: '/beauty', color: 'text-rose-600', hoverBg: 'hover:bg-rose-50', activeBg: 'bg-rose-100', activeTextColor: 'text-rose-700' },
     { icon: 'music_note', label: 'Entmt.', href: '#', color: 'text-purple-600', hoverBg: 'hover:bg-purple-50', activeBg: 'bg-purple-100', activeTextColor: 'text-purple-700' },
     { icon: 'shopping_bag', label: 'Shop', href: '#', color: 'text-amber-600', hoverBg: 'hover:bg-amber-50', activeBg: 'bg-amber-100', activeTextColor: 'text-amber-700' },
     { icon: 'commute', label: 'Transport', href: '#', color: 'text-cyan-600', hoverBg: 'hover:bg-cyan-50', activeBg: 'bg-cyan-100', activeTextColor: 'text-cyan-700' },
