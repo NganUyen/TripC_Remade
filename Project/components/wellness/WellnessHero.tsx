@@ -108,14 +108,14 @@ export function WellnessHero() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.4 }}
-                        className="flex items-center justify-center gap-3 overflow-x-auto pb-4 no-scrollbar w-full px-2"
+                        className="flex items-center justify-center gap-3 overflow-x-auto pb-4 pt-2 no-scrollbar w-full px-2 mt-6"
                     >
                         {categories.map((cat, i) => (
                             <button
                                 key={i}
-                                className="flex items-center gap-2 px-6 py-3 rounded-full bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-orange-500/50 hover:text-orange-500 transition-all whitespace-nowrap group text-slate-600 dark:text-slate-300 font-medium"
+                                className="flex items-center gap-2 whitespace-nowrap px-4 py-2 bg-white/60 dark:bg-black/40 backdrop-blur-md border border-slate-200 dark:border-white/10 rounded-full text-slate-900 dark:text-white text-sm font-bold hover:bg-white hover:scale-105 transition-all shadow-sm"
                             >
-                                <span className="text-slate-400 group-hover:text-orange-500 transition-colors">{cat.icon}</span>
+                                <span className="text-slate-900 dark:text-white">{cat.icon}</span>
                                 {cat.name}
                             </button>
                         ))}

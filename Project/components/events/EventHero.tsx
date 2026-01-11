@@ -9,15 +9,22 @@ export function EventHero() {
 
     return (
         <section className="relative min-h-[500px] w-full flex flex-col items-center justify-center p-4">
-            {/* Background Image & Overlay - MATCHING SHOP/ENTERTAINMENT STYLE */}
+            {/* Background Image & Overlay - Cinematic Contrast */}
             <div className="absolute inset-0 z-0 overflow-hidden rounded-b-[2.5rem]">
-                <img
-                    src="https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?q=80&w=2669&auto=format&fit=crop"
-                    alt="Concert Events"
-                    className="w-full h-full object-cover opacity-90"
-                />
-                {/* Lighter Gradient 40-20 to match refined ShopHero */}
-                <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-[#fcfaf8] dark:to-[#0a0a0a]"></div>
+                <motion.div
+                    initial={{ scale: 1 }}
+                    animate={{ scale: 1.1 }}
+                    transition={{ duration: 20, ease: "linear" }}
+                    className="w-full h-full"
+                >
+                    <img
+                        src="https://images.unsplash.com/photo-1459749411177-712002f28c99?q=80&w=2670&auto=format&fit=crop"
+                        alt="Concert Events"
+                        className="w-full h-full object-cover"
+                    />
+                </motion.div>
+                {/* Studio Vignette Gradient for readability */}
+                <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/20 via-50% to-[#fcfaf8] dark:to-[#0a0a0a]"></div>
             </div>
 
             {/* Hero Content */}
@@ -40,24 +47,21 @@ export function EventHero() {
                         <input
                             type="text"
                             placeholder="Search for events, artists, or venues..."
-                            className="w-full h-14 pl-14 pr-6 rounded-full bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border border-white/20 shadow-xl text-lg outline-none focus:ring-2 focus:ring-[#FF5E1F] transition-all placeholder:text-slate-400"
+                            className="w-full h-14 pl-14 pr-6 rounded-full bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border border-white/20 shadow-xl text-lg outline-none focus:ring-4 focus:ring-[#FF5E1F]/20 focus:border-[#FF5E1F]/50 transition-all placeholder:text-slate-400"
                         />
                     </div>
                 </div>
 
-                {/* Categories - Matched Layout */}
+                {/* Categories - Shop Style with Cinematic Adaptation */}
                 <div className="mt-20 w-full overflow-visible z-10 relative">
                     <div className="flex justify-center gap-3 overflow-x-auto pb-4 px-4 no-scrollbar">
                         {categories.map((cat, i) => (
-                            <motion.button
+                            <button
                                 key={i}
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ delay: 0.1 * i }}
-                                className="whitespace-nowrap px-4 py-2 bg-white/10 border border-white/20 rounded-full text-white text-sm font-bold hover:bg-white/20 backdrop-blur-sm transition-colors shadow-sm"
+                                className="whitespace-nowrap px-4 py-2 bg-white/60 dark:bg-black/40 backdrop-blur-md border border-white/20 rounded-full text-slate-900 dark:text-white text-sm font-bold hover:bg-white hover:scale-105 transition-all shadow-sm"
                             >
                                 {cat}
-                            </motion.button>
+                            </button>
                         ))}
                     </div>
                 </div>

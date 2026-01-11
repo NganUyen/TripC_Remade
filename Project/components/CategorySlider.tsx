@@ -32,7 +32,7 @@ export function CategorySlider() {
                 <div className="relative overflow-x-auto no-scrollbar scroll-smooth">
                     <div className="flex items-center gap-2 sm:gap-4 px-4 sm:px-6 lg:px-8 py-3 min-w-max mx-auto justify-start lg:justify-center">
                         {categories.map((cat, i) => {
-                            const isActive = pathname === cat.href
+                            const isActive = pathname === cat.href  
                             if (isActive) {
                                 return (
                                     <Link key={i} href={cat.href} className={`active group flex flex-col items-center justify-center px-4 py-2 rounded-xl transition-all duration-300 ${cat.bg} ${cat.darkBg}`}>
