@@ -48,7 +48,7 @@ export function UserProfileMenu({ isOpen, onClose }: { isOpen: boolean; onClose:
                             <MenuItem icon={BookOpen} label="My Bookings" />
                             <MenuItem icon={Heart} label="Wishlist" href="/wishlist" />
                             <MenuItem icon={Bell} label="Price Alerts" />
-                            <MenuItem icon={Gift} label="Rewards" />
+                            <MenuItem icon={Gift} label="Rewards" href="/rewards" />
                         </div>
 
                         {/* Section 2: Preferences */}

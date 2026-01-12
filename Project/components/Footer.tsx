@@ -43,7 +43,7 @@ export function Footer() {
                         <h3 className="font-bold text-slate-900 dark:text-white mb-4">Support</h3>
                         <ul className="space-y-3">
                             {['Help Center', 'Terms of Service', 'Privacy Policy', 'Cookie Policy'].map((item, i) => (
-                                <li key={i}><Link href="#" className="text-slate-500 dark:text-slate-400 hover:text-primary transition-colors text-sm">{item}</Link></li>
+                                <li key={i}><Link href={item === 'Help Center' ? '/help-center' : '#'} className="text-slate-500 dark:text-slate-400 hover:text-primary transition-colors text-sm">{item}</Link></li>
                             ))}
                         </ul>
                     </div>
