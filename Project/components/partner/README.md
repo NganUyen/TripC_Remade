@@ -4,47 +4,48 @@
 
 ```
 components/partner/
-├── restaurant/
+├── restaurant/                         # Restaurant Portal
 │   ├── RestaurantPortalLayout.tsx      # Layout chính với sidebar navigation
 │   ├── RestaurantDashboard.tsx          # Dashboard tổng quan
+│   ├── RestaurantPortal.tsx            # Entry point component
 │   ├── operations/                      # Vận hành Nhà hàng
-│   │   ├── MyOutlets.tsx               # Quản lý Cơ sở
-│   │   ├── MenuManagement.tsx          # Quản lý Thực đơn
-│   │   ├── TableManagement.tsx         # Sơ đồ Bàn
-│   │   └── KitchenDisplaySystem.tsx    # Hệ thống KDS
 │   ├── orders/                          # Đơn hàng & Doanh thu
-│   │   ├── Reservations.tsx            # Đặt bàn
-│   │   ├── OrderManagement.tsx          # Quản lý Đơn hàng
-│   │   ├── PricingManagement.tsx       # Kiểm soát Giá
-│   │   └── FinancialReports.tsx        # Báo cáo Tài chính
 │   ├── marketing/                       # Marketing & Gamification
-│   │   ├── LoyaltyProgram.tsx          # Chương trình Hội viên
-│   │   ├── Gamification.tsx            # Gamification
-│   │   └── Promotions.tsx              # Khuyến mãi
 │   ├── inventory/                      # Kho hàng & Nguyên liệu
-│   │   ├── StockControl.tsx            # Quản lý Nguyên liệu
-│   │   ├── RecipeManagement.tsx        # Công thức món ăn (BOM)
-│   │   └── StockAlerts.tsx             # Cảnh báo Tồn kho
 │   ├── admin/                          # Quản trị & Phân tích
-│   │   ├── Analytics.tsx               # Phân tích (Menu Engineering, Heatmap)
-│   │   ├── StaffManagement.tsx         # Quản lý Đội ngũ
-│   │   └── HardwareIntegration.tsx     # Kết nối Thiết bị
 │   └── index.ts                        # Export file
+├── hotel/                              # Hotel Portal
+│   ├── HotelPortalLayout.tsx           # Layout chính với sidebar navigation
+│   ├── HotelDashboard.tsx               # Dashboard tổng quan
+│   ├── HotelPortal.tsx                 # Entry point component
+│   ├── operations/                      # Vận hành Khách sạn (sẽ tạo)
+│   ├── reservations/                    # Đặt phòng & Quản lý Giá (sẽ tạo)
+│   ├── commerce/                       # Thương mại điện tử (sẽ tạo)
+│   ├── marketing/                      # Marketing & Gamification (sẽ tạo)
+│   ├── analytics/                      # Phân tích & Hiệu suất (sẽ tạo)
+│   ├── feedback/                      # Phản hồi & Đánh giá (sẽ tạo)
+│   └── admin/                          # Quản trị Hệ thống (sẽ tạo)
 └── README.md                           # File này
 ```
 
 ## 🚀 Cách Sử dụng
 
-### Entry Point
-File entry point chính: `app/partner/restaurant/page.tsx`
+### Entry Points
 
-Chỉ cần import và sử dụng:
-```tsx
-import { RestaurantPortal } from '@/components/partner/restaurant/RestaurantPortal'
-```
+#### Restaurant Portal
+- **File**: `app/partner/restaurant/page.tsx`
+- **Component**: `components/partner/restaurant/RestaurantPortal.tsx`
+- **URL**: `http://localhost:3000/partner/restaurant`
 
-### Truy cập trên Web
-URL: `http://localhost:3000/partner/restaurant`
+#### Hotel Portal
+- **File**: `app/partner/hotel/page.tsx`
+- **Component**: `components/partner/hotel/HotelPortal.tsx`
+- **URL**: `http://localhost:3000/partner/hotel`
+
+#### Selection Page
+- **File**: `app/partner/page.tsx`
+- **URL**: `http://localhost:3000/partner`
+- **Chức năng**: Cho phép chọn giữa Restaurant và Hotel Portal
 
 ## 📝 Các Thay đổi Cần thiết
 
@@ -74,8 +75,21 @@ URL: `http://localhost:3000/partner/restaurant`
 #### 5. Thêm Menu "Partner" vào Header
 - **File**: `components/Header.tsx` ✅
 - **Thay đổi**: Thêm link "Partner" vào navigation bar, nằm sau "Support"
-- **Link**: `/partner/restaurant`
+- **Link**: `/partner` (trang chọn giữa Restaurant và Hotel)
 - **Lưu ý**: Đây là thay đổi duy nhất trong file hiện có, rất nhỏ và an toàn
+
+#### 6. Tạo Selection Page
+- **File**: `app/partner/page.tsx` ✅
+- **Mục đích**: Trang chọn giữa Restaurant Portal và Hotel Portal
+- **Không conflict**: Route mới
+
+#### 7. Tạo Hotel Portal (Đang phát triển)
+- **Files**: 
+  - `app/partner/hotel/page.tsx` ✅
+  - `components/partner/hotel/HotelPortalLayout.tsx` ✅
+  - `components/partner/hotel/HotelDashboard.tsx` ✅
+  - `components/partner/hotel/HotelPortal.tsx` ✅
+- **Trạng thái**: Đã tạo layout và dashboard, các components khác đang được phát triển
 
 ### 📋 Cấu trúc Routing
 Restaurant Portal sử dụng client-side routing với state management để chuyển đổi giữa các section, không cần tạo nhiều routes.
@@ -89,9 +103,10 @@ Restaurant Portal sử dụng client-side routing với state management để c
    yarn dev
    ```
 
-2. **Truy cập Restaurant Portal**:
+2. **Truy cập Partner Portal**:
    - **Cách 1**: Click vào menu "Partner" trong Header (bên phải mục "Support")
-   - **Cách 2**: Truy cập trực tiếp: `http://localhost:3000/partner/restaurant`
+   - **Cách 2**: Truy cập trực tiếp: `http://localhost:3000/partner`
+   - Sau đó chọn **Restaurant Portal** hoặc **Hotel Portal**
 
 3. **Navigation**:
    - Click vào các menu item trong sidebar để chuyển đổi giữa các section
@@ -195,14 +210,14 @@ Restaurant Portal sử dụng client-side routing với state management để c
 - ✅ `components/partner/restaurant/index.ts` - Export file
 - ✅ `components/partner/README.md` - File này
 
-**Tổng cộng: 22 files mới được tạo**
+**Tổng cộng: 26+ files mới được tạo** (bao gồm cả Hotel Portal đang phát triển)
 
 ## ⚠️ Lưu ý Quan trọng
 
 ### Không Conflict với Code Hiện Tại
 - ✅ Tất cả files mới được đặt trong `components/partner/` và `app/partner/`
 - ✅ Chỉ thay đổi 1 dòng trong `components/Header.tsx` (thêm menu item)
-- ✅ Route `/partner/restaurant` là route mới, không ảnh hưởng routes khác
+- ✅ Routes `/partner`, `/partner/restaurant`, `/partner/hotel` là routes mới, không ảnh hưởng routes khác
 - ✅ Layout riêng cho partner không ảnh hưởng layout gốc
 
 ### Khi Push lên GitHub
