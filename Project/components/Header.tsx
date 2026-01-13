@@ -36,6 +36,7 @@ export function Header() {
                             <Link href="#" className="text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-primary transition-colors">My Trips</Link>
                             <Link href="#" className="text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-primary transition-colors">Rewards</Link>
                             <Link href="#" className="text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-primary transition-colors">Support</Link>
+                            <Link href="/partner/restaurant" className="text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-primary transition-colors">Partner</Link>
                         </nav>
                         <div className="flex items-center gap-3">
                             <button className="flex items-center justify-center size-10 rounded-full bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-slate-600 dark:text-slate-300 relative">
