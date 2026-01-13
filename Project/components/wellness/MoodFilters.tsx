@@ -12,7 +12,7 @@ const moods = [
 
 export function MoodFilters() {
     return (
-        <section className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-8 text-center">Browse by Mood</h2>
 
             <div className="flex flex-wrap justify-center gap-8">

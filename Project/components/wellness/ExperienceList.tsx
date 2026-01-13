@@ -53,7 +53,7 @@ const experiences = [
 
 export function ExperienceList() {
     return (
-        <section className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8 mb-20">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mb-20">
             <div className="flex items-center justify-between mb-8">
                 <div>
                     <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Featured Experiences</h2>

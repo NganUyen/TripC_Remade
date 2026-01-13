@@ -44,16 +44,16 @@ export function UserProfileMenu({ isOpen, onClose }: { isOpen: boolean; onClose:
                     >
                         {/* Section 1: Links */}
                         <div className="flex flex-col border-b border-slate-100 dark:border-slate-800 pb-2 mb-2">
-                            <MenuItem icon={User} label="My Profile" />
+                            <MenuItem icon={User} label="My Profile" href="/profile" />
                             <MenuItem icon={BookOpen} label="My Bookings" />
-                            <MenuItem icon={Heart} label="Wishlist" />
+                            <MenuItem icon={Heart} label="Wishlist" href="/wishlist" />
                             <MenuItem icon={Bell} label="Price Alerts" />
-                            <MenuItem icon={Gift} label="Rewards" />
+                            <MenuItem icon={Gift} label="Rewards" href="/rewards" />
                         </div>
 
                         {/* Section 2: Preferences */}
                         <div className="flex flex-col border-b border-slate-100 dark:border-slate-800 pb-2 mb-2">
-                            <MenuItem icon={Settings} label="Settings" />
+                            <MenuItem icon={Settings} label="Settings" href="/profile/settings" />
 
                             {/* Dark Mode Toggle */}
                             <div className="flex items-center justify-between px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer" onClick={toggleTheme}>
@@ -88,9 +88,9 @@ export function UserProfileMenu({ isOpen, onClose }: { isOpen: boolean; onClose:
     )
 }
 
-function MenuItem({ icon: Icon, label }: { icon: any, label: string }) {
+function MenuItem({ icon: Icon, label, href = "#" }: { icon: any, label: string, href?: string }) {
     return (
-        <Link href="#" className="flex items-center gap-3 px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-colors group">
+        <Link href={href} className="flex items-center gap-3 px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-colors group">
             <Icon className="w-5 h-5 text-slate-400 group-hover:text-[#FF5E1F] transition-colors" />
             <span className="text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
                 {label}

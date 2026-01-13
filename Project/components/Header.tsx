@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { UserProfileMenu } from './UserProfileMenu'
+import { BellButton } from './notifications/BellButton'
 
 export function Header() {
     const [isProfileOpen, setIsProfileOpen] = useState(false)
@@ -34,14 +35,11 @@ export function Header() {
                     <div className="flex items-center gap-6">
                         <nav className="hidden lg:flex items-center gap-6">
                             <Link href="#" className="text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-primary transition-colors">My Trips</Link>
-                            <Link href="#" className="text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-primary transition-colors">Rewards</Link>
+                            <Link href="/rewards" className="text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-primary transition-colors">Rewards</Link>
                             <Link href="#" className="text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-primary transition-colors">Support</Link>
                         </nav>
                         <div className="flex items-center gap-3">
-                            <button className="flex items-center justify-center size-10 rounded-full bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-slate-600 dark:text-slate-300 relative">
-                                <span className="material-symbols-outlined text-[20px]">notifications</span>
-                                <span className="absolute top-2.5 right-2.5 size-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-800"></span>
-                            </button>
+                            <BellButton className="flex items-center justify-center size-10 rounded-full bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" />
 
                             <div className="relative">
                                 <button
