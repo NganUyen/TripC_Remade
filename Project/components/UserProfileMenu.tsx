@@ -45,7 +45,7 @@ export function UserProfileMenu({ isOpen, onClose }: { isOpen: boolean; onClose:
                         {/* Section 1: Links */}
                         <div className="flex flex-col border-b border-slate-100 dark:border-slate-800 pb-2 mb-2">
                             <MenuItem icon={User} label="My Profile" href="/profile" />
-                            <MenuItem icon={BookOpen} label="My Bookings" />
+                            <MenuItem icon={BookOpen} label="My Bookings" href="/my-bookings" />
                             <MenuItem icon={Heart} label="Wishlist" href="/wishlist" />
                             <MenuItem icon={Bell} label="Price Alerts" />
                             <MenuItem icon={Gift} label="Rewards" href="/rewards" />
