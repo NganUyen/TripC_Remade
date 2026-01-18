@@ -12,9 +12,12 @@ module.exports = {
         "primary": "#FF5E1F",
         "primary-hover": "#E54810",
         "primary-dark": "#D13C08",
+        "accent-blue": "#4A8C8C",
         "background-light": "#f6f7f8",
         "background-dark": "#0f172a",
         "price-green": "#10B981",
+        "brand-orange": "#FF5E1F",
+        "slate-custom": "#0F172A",
       },
       fontFamily: {
         "display": ["var(--font-plus-jakarta)", "sans-serif"]
