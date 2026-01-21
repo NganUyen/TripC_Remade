@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     User, Shield, Globe, CreditCard, Lock,
@@ -11,8 +11,8 @@ import { SettingsHero } from '@/components/settings/SettingsHero'
 import { BridgeNav, SectionId } from '@/components/settings/BridgeNav'
 import { StickyRail } from '@/components/settings/StickyRail'
 import { SectionCard, InputField, GlassToggle } from '@/components/settings/InternalComponents'
+import { useUser, useClerk } from '@clerk/nextjs'
 
-// --- Animation Config ---
 // --- Animation Config ---
 const tabContentVariants = {
     hidden: { opacity: 0, y: 10, filter: 'blur(4px)' },
@@ -38,19 +38,39 @@ const tabContentVariants = {
 // --- Page Component ---
 
 export default function SettingsPage() {
+    const { user, isLoaded } = useUser();
+    const { openUserProfile } = useClerk();
     const [activeSection, setActiveSection] = useState<SectionId>('account')
 
     // Toggle States for interactive demo
     const [toggles, setToggles] = useState({
-        twoFactor: true,
+        twoFactor: false, // Sync with user.twoFactorEnabled if possible
         emailNotifs: true,
         pushNotifs: false,
         promoEmails: true,
         dataSharing: false
     })
 
+    useEffect(() => {
+        if (user) {
+            setToggles(prev => ({
+                ...prev,
+                twoFactor: user.twoFactorEnabled
+            }))
+        }
+    }, [user])
+
     const handleToggle = (key: keyof typeof toggles) => (val: boolean) => {
+        if (key === 'twoFactor') {
+            // For 2FA, we open Clerk to manage it
+            openUserProfile(); // Ideally open to security section
+            return;
+        }
         setToggles(prev => ({ ...prev, [key]: val }))
+    }
+
+    if (!isLoaded) {
+        return <div className="min-h-screen bg-[#fcfaf8] dark:bg-[#0a0a0a] flex items-center justify-center">Loading...</div>
     }
 
     return (
@@ -60,7 +80,6 @@ export default function SettingsPage() {
             <BridgeNav activeSection={activeSection} setActiveSection={setActiveSection} />
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
-                {/* Left Column: Main Settings (7 cols) */}
                 {/* Left Column: Main Settings (7 cols) */}
                 <div className="lg:col-span-8">
                     <AnimatePresence mode="wait" initial={false}>
@@ -75,15 +94,18 @@ export default function SettingsPage() {
                             >
                                 <SectionCard title="Personal Information" icon={User}>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <InputField label="First Name" defaultValue="Alex" />
-                                        <InputField label="Last Name" defaultValue="Johnson" />
+                                        <InputField label="First Name" defaultValue={user?.firstName || ''} />
+                                        <InputField label="Last Name" defaultValue={user?.lastName || ''} />
                                     </div>
-                                    <InputField label="Email Address" defaultValue="alex.j@tripc.ai" type="email" />
-                                    <InputField label="Phone Number" defaultValue="+1 (555) 000-1234" type="tel" />
+                                    <InputField label="Email Address" defaultValue={user?.primaryEmailAddress?.emailAddress || ''} type="email" disabled />
+                                    <InputField label="Username" defaultValue={user?.username || ''} type="text" disabled={!user?.username} />
 
                                     <div className="mt-6 flex justify-end">
-                                        <button className="px-8 py-3 bg-[#FF5E1F] text-white font-bold rounded-full shadow-lg shadow-orange-500/20 hover:scale-[1.02] active:scale-95 transition-all">
-                                            Save Changes
+                                        <button
+                                            onClick={() => openUserProfile()}
+                                            className="px-8 py-3 bg-[#FF5E1F] text-white font-bold rounded-full shadow-lg shadow-orange-500/20 hover:scale-[1.02] active:scale-95 transition-all"
+                                        >
+                                            Manage Account in Clerk
                                         </button>
                                     </div>
                                 </SectionCard>
@@ -102,14 +124,17 @@ export default function SettingsPage() {
                                 <SectionCard title="Login & Security" icon={Shield}>
                                     <div className="mb-8">
                                         <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4 uppercase tracking-wider">Password</h3>
-                                        <button className="w-full py-4 border border-slate-200 dark:border-white/10 rounded-xl flex items-center justify-between px-4 hover:border-slate-300 dark:hover:border-white/20 transition-colors group">
+                                        <button
+                                            onClick={() => openUserProfile()}
+                                            className="w-full py-4 border border-slate-200 dark:border-white/10 rounded-xl flex items-center justify-between px-4 hover:border-slate-300 dark:hover:border-white/20 transition-colors group"
+                                        >
                                             <div className="flex items-center gap-3">
                                                 <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-500 dark:text-slate-400 group-hover:bg-slate-200 dark:group-hover:bg-white/10 transition-colors">
                                                     <Lock className="w-5 h-5" />
                                                 </div>
                                                 <div className="text-left">
-                                                    <p className="font-bold text-slate-900 dark:text-white">Change Password</p>
-                                                    <p className="text-xs text-slate-500 dark:text-slate-400">Last changed 3 months ago</p>
+                                                    <p className="font-bold text-slate-900 dark:text-white">Change Password via Clerk</p>
+                                                    <p className="text-xs text-slate-500 dark:text-slate-400">Manage your password securely</p>
                                                 </div>
                                             </div>
                                             <ChevronRight className="w-5 h-5 text-slate-400 dark:text-slate-500 group-hover:translate-x-1 transition-transform" />
@@ -118,7 +143,7 @@ export default function SettingsPage() {
 
                                     <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-2 uppercase tracking-wider">Two-Factor Authentication</h3>
                                     <GlassToggle
-                                        label="Enable 2FA"
+                                        label={user?.twoFactorEnabled ? "2FA Enabled" : "Enable 2FA"}
                                         checked={toggles.twoFactor}
                                         onChange={handleToggle('twoFactor')}
                                     />
@@ -126,16 +151,19 @@ export default function SettingsPage() {
                                     <div className="mt-8 pt-6 border-t border-slate-50 dark:border-white/5">
                                         <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4 uppercase tracking-wider">Active Sessions</h3>
                                         <div className="space-y-3">
-                                            <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-white/5 rounded-xl">
+                                            <button
+                                                onClick={() => openUserProfile()}
+                                                className="w-full flex items-center justify-between p-3 bg-slate-50 dark:bg-white/5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
+                                            >
                                                 <div className="flex items-center gap-3">
                                                     <Smartphone className="w-5 h-5 text-slate-400" />
-                                                    <div>
-                                                        <p className="text-sm font-bold text-slate-900 dark:text-white">iPhone 14 Pro</p>
-                                                        <p className="text-xs text-slate-500 dark:text-slate-400">San Francisco, CA • Active now</p>
+                                                    <div className="text-left">
+                                                        <p className="text-sm font-bold text-slate-900 dark:text-white">Manage Active Devices</p>
+                                                        <p className="text-xs text-slate-500 dark:text-slate-400">View and manage your active sessions</p>
                                                     </div>
                                                 </div>
-                                                <div className="w-2 h-2 bg-green-500 rounded-full" />
-                                            </div>
+                                                <ChevronRight className="w-5 h-5 text-slate-400" />
+                                            </button>
                                         </div>
                                     </div>
                                 </SectionCard>
@@ -200,7 +228,7 @@ export default function SettingsPage() {
                                             <div>
                                                 <p className="font-mono text-xl tracking-widest mb-1">**** **** **** 4288</p>
                                                 <div className="flex justify-between items-end">
-                                                    <span className="font-bold">ALEX JOHNSON</span>
+                                                    <span className="font-bold">{user?.fullName?.toUpperCase() || 'USER'}</span>
                                                     <span className="font-bold text-[#FF5E1F]">$1,240.50</span>
                                                 </div>
                                             </div>

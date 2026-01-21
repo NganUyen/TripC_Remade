@@ -4,9 +4,10 @@ import { useState } from "react";
 import Link from "next/link";
 import { UserProfileMenu } from "./UserProfileMenu";
 import { BellButton } from "./notifications/BellButton";
-import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+import { SignInButton, SignedIn, SignedOut, useUser } from "@clerk/nextjs";
 
 export function Header() {
+  const { user } = useUser();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   return (
@@ -71,14 +72,19 @@ export function Header() {
 
               <SignedIn>
                 <div className="relative">
-                  <UserButton
-                    appearance={{
-                      elements: {
-                        avatarBox:
-                          "size-10 rounded-full ring-2 ring-transparent hover:ring-primary transition-all",
-                      },
-                    }}
-                    afterSignOutUrl="/"
+                  <button
+                    onClick={() => setIsProfileOpen(!isProfileOpen)}
+                    className="size-10 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700 ring-2 ring-transparent hover:ring-primary transition-all focus:outline-none"
+                  >
+                    <img
+                      src={user?.imageUrl}
+                      alt="Profile"
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                  <UserProfileMenu
+                    isOpen={isProfileOpen}
+                    onClose={() => setIsProfileOpen(false)}
                   />
                 </div>
               </SignedIn>

@@ -19,10 +19,21 @@ const isPublicRoute = createRouteMatcher([
   "/help-center(.*)",
 ]);
 
-export default clerkMiddleware((auth, request) => {
-  if (!isPublicRoute(request)) {
-    auth().protect();
+// Define protected routes that require authentication
+const isProtectedRoute = createRouteMatcher([
+  "/profile(.*)",
+  "/rewards(.*)",
+  "/my-bookings(.*)",
+  "/wishlist(.*)",
+]);
+
+export default clerkMiddleware(async (auth, request) => {
+  // Explicitly protect routes that require authentication
+  if (isProtectedRoute(request)) {
+    await auth.protect();
   }
+  // For other routes (not public, not explicitly protected), don't enforce
+  // This allows flexibility for semi-public features
 });
 
 export const config = {
