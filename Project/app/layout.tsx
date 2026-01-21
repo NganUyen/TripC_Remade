@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 import { CategorySlider } from '@/components/CategorySlider'
 import { Header } from '@/components/Header'
 import { ChatWidget } from '@/components/ChatWidget'
+import { Toaster } from "@/components/ui/sonner"
 
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -28,7 +29,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={cn("light", plusJakarta.variable)}>
+    <html lang="en" className={plusJakarta.variable}>
       <head>
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
       </head>
@@ -37,6 +38,11 @@ export default function RootLayout({
         <CategorySlider />
         {children}
         <ChatWidget />
+        <Toaster position="bottom-left" toastOptions={{
+          classNames: {
+            error: 'bg-red-500 text-white border-red-600',
+          }
+        }} />
       </body>
     </html>
   )
