@@ -2,7 +2,10 @@
 
 import { motion } from 'framer-motion'
 import { MapPin, Calendar, Users, Search } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { SelectPopup } from '../ui/SelectPopup'
+import { SimpleCalendar } from '../ui/SimpleCalendar'
+import { CounterInput } from '../ui/CounterInput'
 
 export function HotelHero() {
     return (
@@ -55,12 +58,10 @@ function SearchWidget() {
     // Guest State
     const [guests, setGuests] = useState({ adults: 2, children: 0, rooms: 1 })
 
-    // Date State (Mock default dates for now, but selectable)
-    const [dateRange, setDateRange] = useState({
-        checkIn: 12,
-        checkOut: 15,
-        month: 'May',
-        year: 2026
+    // Date State
+    const [dateRange, setDateRange] = useState<{ from: Date | undefined; to?: Date | undefined }>({
+        from: new Date(),
+        to: new Date(new Date().setDate(new Date().getDate() + 3))
     })
 
     // Click outside to close
@@ -89,18 +90,22 @@ function SearchWidget() {
         })
     }
 
-    const handleDateSelect = (day: number) => {
-        if (dateRange.checkIn && dateRange.checkOut) {
-            setDateRange(prev => ({ ...prev, checkIn: day, checkOut: 0 }))
-        } else if (dateRange.checkIn && !dateRange.checkOut) {
-            if (day > dateRange.checkIn) {
-                setDateRange(prev => ({ ...prev, checkOut: day }))
-            } else {
-                setDateRange(prev => ({ ...prev, checkIn: day, checkOut: 0 }))
-            }
-        } else {
-            setDateRange(prev => ({ ...prev, checkIn: day }))
-        }
+    const handleDateSelect = (range: { from: Date | undefined; to?: Date | undefined }) => {
+        setDateRange(range)
+    }
+
+    const formatDateRange = () => {
+        if (!dateRange.from) return 'Select Dates'
+        const fromStr = dateRange.from.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        if (!dateRange.to) return fromStr
+        const toStr = dateRange.to.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        return `${fromStr} - ${toStr}`
+    }
+
+    const getNights = () => {
+        if (!dateRange.from || !dateRange.to) return 0
+        const diff = dateRange.to.getTime() - dateRange.from.getTime()
+        return Math.ceil(diff / (1000 * 60 * 60 * 24))
     }
 
     return (
@@ -163,55 +168,25 @@ function SearchWidget() {
                 <div>
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Check-in — Check-out</p>
                     <h3 className="text-slate-900 dark:text-white font-bold text-lg">
-                        {dateRange.month} {dateRange.checkIn} - {dateRange.checkOut ? dateRange.checkOut : '...'}
+                        {formatDateRange()}
                     </h3>
                     <p className="text-xs text-slate-500 dark:text-slate-400 text-left">
-                        {dateRange.checkOut ? `${dateRange.checkOut - dateRange.checkIn} nights` : 'Select check-out'} • Weekend
+                        {dateRange.to ? `${getNights()} nights` : 'Select check-out'} • Weekend
                     </p>
                 </div>
 
-                {/* Date Picker Dropdown */}
-                {activeTab === 'dates' && (
-                    <div
-                        className="absolute top-full left-0 w-[320px] bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 mt-2 p-4 overflow-hidden animate-in fade-in zoom-in-95 duration-200 z-50 cursor-default"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <div className="flex justify-between items-center mb-4">
-                            <h4 className="font-bold text-sm">Select Dates</h4>
-                            <div className="flex gap-2">
-                                <button className="p-1 hover:bg-slate-100 rounded-md"><svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg></button>
-                                <span className="text-sm font-medium">{dateRange.month} {dateRange.year}</span>
-                                <button className="p-1 hover:bg-slate-100 rounded-md"><svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg></button>
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-7 gap-1 text-center text-xs mb-2 text-slate-400 font-medium">
-                            <div>Su</div><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div>
-                        </div>
-                        <div className="grid grid-cols-7 gap-1 text-center text-sm">
-                            {[...Array(31)].map((_, i) => {
-                                const day = i + 1;
-                                const isStart = day === dateRange.checkIn;
-                                const isEnd = day === dateRange.checkOut;
-                                const isRange = dateRange.checkOut > 0 && day > dateRange.checkIn && day < dateRange.checkOut;
-
-                                return (
-                                    <div
-                                        key={i}
-                                        onClick={() => handleDateSelect(day)}
-                                        className={`
-                                            aspect-square flex items-center justify-center rounded-full cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors
-                                            ${isRange ? 'bg-blue-50 text-blue-600 rounded-none' : ''}
-                                            ${isStart ? 'bg-blue-500 text-white hover:bg-blue-600 dark:hover:bg-blue-600 rounded-full z-10' : ''}
-                                            ${isEnd ? 'bg-blue-500 text-white hover:bg-blue-600 dark:hover:bg-blue-600 rounded-full z-10' : ''}
-                                       `}
-                                    >
-                                        {day}
-                                    </div>
-                                )
-                            })}
-                        </div>
-                    </div>
-                )}
+                <SelectPopup
+                    isOpen={activeTab === 'dates'}
+                    onClose={() => setActiveTab(null)}
+                    className="w-[340px]"
+                >
+                    <SimpleCalendar
+                        mode="range"
+                        selectedRange={dateRange}
+                        onSelectRange={handleDateSelect}
+                        minDate={new Date()}
+                    />
+                </SelectPopup>
             </div>
 
             {/* Guests */}
@@ -233,49 +208,35 @@ function SearchWidget() {
                 </div>
 
                 {/* Guests Dropdown */}
-                {activeTab === 'guests' && (
-                    <div
-                        className="absolute top-full left-0 w-[280px] bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 mt-2 p-4 overflow-hidden animate-in fade-in zoom-in-95 duration-200 z-50 cursor-default"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        {/* Adults */}
-                        <div className="flex items-center justify-between py-3 border-b border-slate-100 dark:border-slate-800">
-                            <div>
-                                <p className="font-bold text-slate-900 dark:text-white">Adults</p>
-                                <p className="text-xs text-slate-500">Ages 13+</p>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <button className="size-8 rounded-full border border-slate-200 flex items-center justify-center hover:bg-slate-50 active:scale-95 text-slate-600" onClick={() => updateGuests('adults', 'dec')}>-</button>
-                                <span className="font-bold w-4 text-center">{guests.adults}</span>
-                                <button className="size-8 rounded-full border border-slate-200 flex items-center justify-center hover:bg-slate-50 active:scale-95 text-slate-600" onClick={() => updateGuests('adults', 'inc')}>+</button>
-                            </div>
-                        </div>
-                        {/* Children */}
-                        <div className="flex items-center justify-between py-3 border-b border-slate-100 dark:border-slate-800">
-                            <div>
-                                <p className="font-bold text-slate-900 dark:text-white">Children</p>
-                                <p className="text-xs text-slate-500">Ages 2-12</p>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <button className="size-8 rounded-full border border-slate-200 flex items-center justify-center hover:bg-slate-50 active:scale-95 text-slate-600" onClick={() => updateGuests('children', 'dec')}>-</button>
-                                <span className="font-bold w-4 text-center">{guests.children}</span>
-                                <button className="size-8 rounded-full border border-slate-200 flex items-center justify-center hover:bg-slate-50 active:scale-95 text-slate-600" onClick={() => updateGuests('children', 'inc')}>+</button>
-                            </div>
-                        </div>
-                        {/* Rooms */}
-                        <div className="flex items-center justify-between py-3">
-                            <div>
-                                <p className="font-bold text-slate-900 dark:text-white">Rooms</p>
-                                <p className="text-xs text-slate-500">Max 4</p>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <button className="size-8 rounded-full border border-slate-200 flex items-center justify-center hover:bg-slate-50 active:scale-95 text-slate-600" onClick={() => updateGuests('rooms', 'dec')}>-</button>
-                                <span className="font-bold w-4 text-center">{guests.rooms}</span>
-                                <button className="size-8 rounded-full border border-slate-200 flex items-center justify-center hover:bg-slate-50 active:scale-95 text-slate-600" onClick={() => updateGuests('rooms', 'inc')}>+</button>
-                            </div>
-                        </div>
+                <SelectPopup
+                    isOpen={activeTab === 'guests'}
+                    onClose={() => setActiveTab(null)}
+                    className="w-[280px]"
+                >
+                    <div className="flex flex-col">
+                        <CounterInput
+                            label="Adults"
+                            subLabel="Ages 13+"
+                            value={guests.adults}
+                            onChange={(v) => updateGuests('adults', v > guests.adults ? 'inc' : 'dec')}
+                            min={1}
+                        />
+                        <CounterInput
+                            label="Children"
+                            subLabel="Ages 2-12"
+                            value={guests.children}
+                            onChange={(v) => updateGuests('children', v > guests.children ? 'inc' : 'dec')}
+                        />
+                        <CounterInput
+                            label="Rooms"
+                            subLabel="Max 4"
+                            value={guests.rooms}
+                            onChange={(v) => updateGuests('rooms', v > guests.rooms ? 'inc' : 'dec')}
+                            min={1}
+                            max={4}
+                        />
                     </div>
-                )}
+                </SelectPopup>
 
                 <button
                     onClick={(e) => {

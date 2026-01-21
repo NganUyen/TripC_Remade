@@ -33,22 +33,23 @@ export function CategorySlider() {
                     <div className="flex items-center gap-2 sm:gap-4 px-4 sm:px-6 lg:px-8 py-3 min-w-max mx-auto justify-start lg:justify-center">
                         {categories.map((cat, i) => {
                             const isActive = pathname === cat.href
-                            let activeBg = cat.bg
-                            let activeDarkBg = cat.darkBg
-                            if (!activeBg && cat.hoverBg) activeBg = cat.hoverBg.replace('hover:', '')
-                            if (!activeDarkBg && cat.darkHoverBg) activeDarkBg = cat.darkHoverBg.replace('dark:hover:', 'dark:')
+                            // Dynamic Active State Styles
+                            const activeBg = cat.bg || cat.hoverBg?.replace('hover:', '')
+                            const activeDarkBg = cat.darkBg || cat.darkHoverBg?.replace('dark:hover:', 'dark:')
 
-                            activeBg = (activeBg || 'bg-slate-100').replace('50', '100')
-                            activeDarkBg = (activeDarkBg || 'dark:bg-slate-800').replace('/10', '/20')
+                            // Icons: Remove 'group-hover:' to apply color directly
+                            const activeIconColor = cat.color.replace('group-hover:', '')
+                            const activeDarkIconColor = cat.darkColor.replace('dark:group-hover:', 'dark:')
 
-                            let activeColor = cat.color.replace('group-hover:', '')
-                            let activeDarkColor = cat.darkColor.replace('dark:group-hover:', 'dark:')
+                            // Labels: Shift shade for contrast (600->700 for light, 400->300 for dark)
+                            const activeLabelColor = activeIconColor.replace('600', '700')
+                            const activeDarkLabelColor = activeDarkIconColor.replace('400', '300')
 
                             if (isActive) {
                                 return (
-                                    <Link key={i} href={cat.href} className={`active group flex flex-col items-center justify-center px-4 py-2 rounded-xl transition-all duration-300 ${activeBg} ${activeDarkBg} ring-1 ring-inset ring-black/5 dark:ring-white/10`}>
-                                        <span className={`material-symbols-outlined mb-1 text-[26px] ${activeColor} ${activeDarkColor}`}>{cat.icon}</span>
-                                        <span className={`text-[11px] font-extrabold tracking-wide ${activeColor} ${activeDarkColor}`}>{cat.label}</span>
+                                    <Link key={i} href={cat.href} className={`active group flex flex-col items-center justify-center min-w-[70px] px-2 py-2 rounded-xl transition-all duration-300 bg-transparent`}>
+                                        <span className={`material-symbols-outlined mb-1 text-[26px] ${activeIconColor} ${activeDarkIconColor}`}>{cat.icon}</span>
+                                        <span className={`text-[11px] font-bold tracking-wide transition-colors ${activeLabelColor} ${activeDarkLabelColor}`}>{cat.label}</span>
                                     </Link>
                                 )
                             }

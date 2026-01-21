@@ -39,8 +39,8 @@ const BOOKINGS = [
 
 export default function MyBookingsPage() {
   return (
-    <main className="max-w-7xl mx-auto px-6 py-10 bg-[#F9FAFB] min-h-screen">
-      <div className="asymmetric-grid mb-12">
+    <main className="max-w-7xl mx-auto px-4 md:px-6 py-10 bg-[#F9FAFB] dark:bg-[#0a0a0a] min-h-screen transition-colors duration-300">
+      <div className="asymmetric-grid mb-12 gap-y-8">
         <MembershipCard />
         <WelcomeHeader />
       </div>
