@@ -212,3 +212,21 @@
   background-color: var(--primary);
   color: white;
 }
+
+/* Wellness Page specific styles */
+.glass-card {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.dark .glass-card {
+  background: rgba(30, 30, 30, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.hero-mask {
+  border-bottom-left-radius: 3rem;
+  border-bottom-right-radius: 3rem;
+}
