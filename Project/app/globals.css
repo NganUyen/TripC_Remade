@@ -136,8 +136,6 @@
   animation: fade-up-in 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
-
-
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -165,7 +163,13 @@
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
+
+    /* Custom Booking Variables */
+    --brand-orange: #FF5E1F;
+    --bg-porcelain: #F9FAFB;
+    --glass-white: rgba(255, 255, 255, 0.4);
   }
+
   .dark {
     --background: 0 0% 3.9%;
     --foreground: 0 0% 98%;
@@ -194,13 +198,83 @@
   }
 }
 
-
-
 @layer base {
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* My Booking Page specific styles */
+.metallic-card {
+  background: linear-gradient(135deg, #1a1a1a 0%, #3a3a3a 50%, #1a1a1a 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.metallic-card::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent 45%, rgba(255, 255, 255, 0.1) 50%, transparent 55%);
+  transform: rotate(30deg);
+  pointer-events: none;
+}
+
+.glass-badge {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.pill-button {
+  border-radius: 9999px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pill-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 94, 31, 0.2);
+}
+
+.asymmetric-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 1.5rem;
+}
+
+.icon-stroke {
+  font-variation-settings: 'wght' 300;
+  font-size: 22px;
+}
+
+.cancelled-card {
+  transition: all 0.4s ease;
+}
+
+.cancelled-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.05);
+}
+
+.cancelled-card:hover .card-content {
+  opacity: 1 !important;
+  filter: blur(0) !important;
+}
+
+.rebook-btn {
+  border: 2px solid var(--brand-orange);
+  color: var(--brand-orange);
+}
+
+.rebook-btn:hover {
+  background-color: var(--brand-orange);
+  color: white;
 }

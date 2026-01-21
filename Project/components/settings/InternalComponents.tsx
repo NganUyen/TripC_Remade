@@ -46,14 +46,15 @@ export function SectionCard({ title, icon: Icon, children }: { title: string, ic
     )
 }
 
-export function InputField({ label, defaultValue, type = "text" }: { label: string, defaultValue: string, type?: string }) {
+export function InputField({ label, defaultValue, type = "text", disabled = false }: { label: string, defaultValue: string, type?: string, disabled?: boolean }) {
     return (
         <div className="mb-4">
             <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 ml-1">{label}</label>
             <input
                 type={type}
                 defaultValue={defaultValue}
-                className="w-full h-11 px-4 rounded-full bg-slate-50 dark:bg-zinc-800/50 border border-slate-200 dark:border-zinc-700/50 text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-[#FF5E1F]/20 focus:border-[#FF5E1F] dark:focus:border-[#FF5E1F] transition-all placeholder:text-slate-400"
+                disabled={disabled}
+                className="w-full h-11 px-4 rounded-full bg-slate-50 dark:bg-zinc-800/50 border border-slate-200 dark:border-zinc-700/50 text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-[#FF5E1F]/20 focus:border-[#FF5E1F] dark:focus:border-[#FF5E1F] transition-all placeholder:text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed"
             />
         </div>
     )
