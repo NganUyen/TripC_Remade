@@ -334,6 +334,8 @@ export default function WellnessDetailPage() {
                     Book Now • ${experience.price}
                 </button>
             </div>
+
+            <Footer />
         </main>
     )
 }
