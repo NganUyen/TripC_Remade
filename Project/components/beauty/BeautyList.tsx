@@ -3,6 +3,7 @@
 import React from 'react'
 import { Star, Heart, Sparkles, Calendar } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { useRouter } from 'next/navigation'
 
 const SERVICES = [
     {
@@ -48,6 +49,7 @@ const SERVICES = [
 ]
 
 export function BeautyList() {
+    const router = useRouter()
     return (
         <section className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between mb-8">
@@ -69,6 +71,7 @@ export function BeautyList() {
                         viewport={{ once: true }}
                         transition={{ delay: i * 0.05 }}
                         className="group relative flex flex-col gap-4 rounded-[2rem] cursor-pointer"
+                        onClick={() => router.push(`/beauty/${item.id}`)}
                     >
                         {/* Lookbook Image - 4:5 Aspect Ratio */}
                         <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[2rem] bg-slate-200 dark:bg-zinc-800 shadow-md ring-1 ring-black/5 dark:ring-white/10">

@@ -41,8 +41,8 @@ export function FAQSection({ searchQuery }: FAQSectionProps) {
                                 onClick={() => setActiveCategory(category.id)}
                                 disabled={!!searchQuery}
                                 className={`flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all whitespace-nowrap ${activeCategory === category.id && !searchQuery
-                                        ? 'bg-[#FF5E1F] text-white shadow-lg shadow-orange-500/20'
-                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                    ? 'bg-[#FF5E1F] text-white shadow-lg shadow-orange-500/20'
+                                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
                                     } ${searchQuery ? 'opacity-50 cursor-not-allowed' : ''}`}
                             >
                                 <category.icon className={`w-5 h-5 ${activeCategory === category.id && !searchQuery ? 'text-white' : 'text-slate-400'}`} />

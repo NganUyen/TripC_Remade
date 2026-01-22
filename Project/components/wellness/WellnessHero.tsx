@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { Search, MapPin, Calendar, Leaf, Wind, Droplets, Sun } from 'lucide-react'
+import { useState, useEffect } from 'react'
 
 const categories = [
     { name: "Yoga", icon: <Leaf className="w-4 h-4" /> },
@@ -25,7 +26,7 @@ export function WellnessHero() {
             </div>
 
             {/* Hero Content */}
-            <div className="relative z-10 w-full max-w-4xl flex flex-col items-center">
+            <div className="relative z-10 w-full max-w-5xl flex flex-col items-center">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -53,52 +54,14 @@ export function WellnessHero() {
                     Rejuvenate your mind, body, and soul with curated wellness experiences.
                 </motion.p>
 
-                {/* Search Console */}
+                {/* Floating Search Console */}
                 <motion.div
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 }}
-                    className="w-full bg-white/95 dark:bg-slate-900/90 backdrop-blur-md border border-white/20 dark:border-slate-800 p-2 rounded-[2rem] shadow-xl flex flex-col md:flex-row gap-2"
+                    className="relative z-50 w-full bg-white/95 dark:bg-slate-900/90 backdrop-blur-md border border-white/20 dark:border-slate-800 p-2 rounded-[2rem] shadow-xl shadow-orange-500/5 mb-8"
                 >
-                    {/* Experience Type */}
-                    <div className="flex-1 flex items-center gap-3 px-6 py-4 bg-slate-50 dark:bg-slate-800/50 rounded-[1.5rem] border border-transparent focus-within:border-orange-500/50 focus-within:ring-2 focus-within:ring-orange-500/20 transition-all group">
-                        <Leaf className="w-5 h-5 text-slate-400 group-focus-within:text-orange-500 transition-colors" />
-                        <input
-                            type="text"
-                            placeholder="Experience (e.g., Yoga)"
-                            className="w-full bg-transparent border-none focus:outline-none text-slate-900 dark:text-white placeholder-slate-500 font-medium"
-                        />
-                    </div>
-
-                    <div className="hidden md:block w-px bg-slate-200 dark:bg-slate-700 my-4"></div>
-
-                    {/* Location Input */}
-                    <div className="flex-1 flex items-center gap-3 px-6 py-4 bg-slate-50 dark:bg-slate-800/50 rounded-[1.5rem] border border-transparent focus-within:border-orange-500/50 focus-within:ring-2 focus-within:ring-orange-500/20 transition-all group">
-                        <MapPin className="w-5 h-5 text-slate-400 group-focus-within:text-orange-500 transition-colors" />
-                        <input
-                            type="text"
-                            placeholder="Location"
-                            className="w-full bg-transparent border-none focus:outline-none text-slate-900 dark:text-white placeholder-slate-500 font-medium"
-                        />
-                    </div>
-
-                    <div className="hidden md:block w-px bg-slate-200 dark:bg-slate-700 my-4"></div>
-
-                    {/* Dates Input */}
-                    <div className="flex-1 flex items-center gap-3 px-6 py-4 bg-slate-50 dark:bg-slate-800/50 rounded-[1.5rem] border border-transparent focus-within:border-orange-500/50 focus-within:ring-2 focus-within:ring-orange-500/20 transition-all group">
-                        <Calendar className="w-5 h-5 text-slate-400 group-focus-within:text-orange-500 transition-colors" />
-                        <input
-                            type="text"
-                            placeholder="Dates"
-                            className="w-full bg-transparent border-none focus:outline-none text-slate-900 dark:text-white placeholder-slate-500 font-medium"
-                        />
-                    </div>
-
-                    {/* Search Button */}
-                    <button className="md:w-auto md:px-8 w-full py-4 bg-[#FF5E1F] hover:bg-orange-600 text-white rounded-[1.5rem] font-bold shadow-lg shadow-orange-500/30 transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2">
-                        <Search className="w-6 h-6" />
-                        <span className="md:hidden">Search</span>
-                    </button>
+                    <SearchWidget />
                 </motion.div>
 
                 {/* Categories */}
@@ -120,5 +83,225 @@ export function WellnessHero() {
                 </motion.div>
             </div>
         </section>
+    )
+}
+
+function SearchWidget() {
+    const [activeTab, setActiveTab] = useState<'experience' | 'location' | 'dates' | null>(null)
+    const [location, setLocation] = useState('')
+    const [experienceType, setExperienceType] = useState('')
+
+    // Date State
+    const [dateRange, setDateRange] = useState({
+        checkIn: 12,
+        checkOut: 15,
+        month: 'August',
+        year: 2026
+    })
+
+    // Click outside to close
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (!(event.target as HTMLElement).closest('.search-widget-item')) {
+                setActiveTab(null)
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside)
+        return () => document.removeEventListener('mousedown', handleClickOutside)
+    }, [])
+
+    const handleSearch = () => {
+        console.log('Searching wellness:', { location, experienceType, dateRange })
+    }
+
+    const handleDateSelect = (day: number) => {
+        if (dateRange.checkIn && dateRange.checkOut) {
+            setDateRange(prev => ({ ...prev, checkIn: day, checkOut: 0 }))
+        } else if (dateRange.checkIn && !dateRange.checkOut) {
+            if (day > dateRange.checkIn) {
+                setDateRange(prev => ({ ...prev, checkOut: day }))
+            } else {
+                setDateRange(prev => ({ ...prev, checkIn: day, checkOut: 0 }))
+            }
+        } else {
+            setDateRange(prev => ({ ...prev, checkIn: day }))
+        }
+    }
+
+    return (
+        <div className="flex flex-col lg:flex-row divide-y lg:divide-y-0 lg:divide-x divide-slate-200 dark:divide-slate-700 relative">
+            {/* Experience Type */}
+            <div
+                className={`search-widget-item flex-1 p-4 flex items-center gap-4 hover:bg-white/50 dark:hover:bg-slate-800/50 rounded-2xl transition-colors cursor-pointer group relative ${activeTab === 'experience' ? 'bg-white shadow-lg z-30' : 'z-20'}`}
+                onClick={() => setActiveTab('experience')}
+            >
+                <div className="p-3 rounded-full bg-green-50 dark:bg-green-900/20 text-green-500 group-hover:scale-110 transition-transform">
+                    <Leaf className="w-5 h-5" />
+                </div>
+                <div className="flex-1">
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Experience</p>
+                    {activeTab === 'experience' ? (
+                        <input
+                            autoFocus
+                            type="text"
+                            placeholder="e.g. Yoga, Detox"
+                            className="w-full bg-transparent border-none p-0 text-lg font-bold text-slate-900 dark:text-white focus:ring-0 placeholder:text-slate-300 outline-none"
+                            value={experienceType}
+                            onChange={(e) => setExperienceType(e.target.value)}
+                        />
+                    ) : (
+                        <h3 className="text-slate-900 dark:text-white font-bold text-lg">{experienceType || 'Any Experience'}</h3>
+                    )}
+                </div>
+
+                {/* Experience Dropdown */}
+                {activeTab === 'experience' && (
+                    <div className="absolute top-full left-0 w-[300px] bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 mt-2 p-2 overflow-hidden animate-in fade-in zoom-in-95 duration-200 z-50">
+                        <p className="text-xs font-bold text-slate-400 px-4 py-2">POPULAR TYPES</p>
+                        {['Yoga Retreat', 'Meditation', 'Detox Cleanse', 'Sound Healing', 'Forest Bathing', 'Spa Getaway'].map(type => (
+                            <div
+                                key={type}
+                                className="px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg cursor-pointer text-sm font-medium text-slate-700 dark:text-slate-300 flex justify-between group/item"
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    setExperienceType(type)
+                                    setActiveTab(null)
+                                }}
+                            >
+                                <span>{type}</span>
+                                <span className="opacity-0 group-hover/item:opacity-100 text-orange-500 text-xs">Select</span>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            {/* Location */}
+            <div
+                className={`search-widget-item flex-1 p-4 flex items-center gap-4 hover:bg-white/50 dark:hover:bg-slate-800/50 rounded-2xl transition-colors cursor-pointer group relative ${activeTab === 'location' ? 'bg-white shadow-lg z-30' : 'z-20'}`}
+                onClick={() => setActiveTab('location')}
+            >
+                <div className="p-3 rounded-full bg-orange-50 dark:bg-orange-900/20 text-orange-500 group-hover:scale-110 transition-transform">
+                    <MapPin className="w-5 h-5" />
+                </div>
+                <div className="flex-1">
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Destination</p>
+                    {activeTab === 'location' ? (
+                        <input
+                            autoFocus
+                            type="text"
+                            placeholder="Where to?"
+                            className="w-full bg-transparent border-none p-0 text-lg font-bold text-slate-900 dark:text-white focus:ring-0 placeholder:text-slate-300 outline-none"
+                            value={location}
+                            onChange={(e) => setLocation(e.target.value)}
+                        />
+                    ) : (
+                        <h3 className="text-slate-900 dark:text-white font-bold text-lg">{location || 'Anywhere'}</h3>
+                    )}
+                </div>
+
+                {/* Location Dropdown */}
+                {activeTab === 'location' && (
+                    <div className="absolute top-full left-0 w-[300px] bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 mt-2 p-2 overflow-hidden animate-in fade-in zoom-in-95 duration-200 z-50">
+                        <p className="text-xs font-bold text-slate-400 px-4 py-2">POPULAR DESTINATIONS</p>
+                        {['Bali, Indonesia', 'Kyoto, Japan', 'Phuket, Thailand', 'Rishikesh, India', 'Sedona, USA', 'Ubud, Bali'].map(loc => (
+                            <div
+                                key={loc}
+                                className="px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg cursor-pointer text-sm font-medium text-slate-700 dark:text-slate-300 flex justify-between group/item"
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    setLocation(loc)
+                                    setActiveTab(null)
+                                }}
+                            >
+                                <span>{loc}</span>
+                                <span className="opacity-0 group-hover/item:opacity-100 text-orange-500 text-xs">Select</span>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            {/* Dates */}
+            <div
+                className={`search-widget-item flex-1 p-4 flex items-center gap-4 hover:bg-white/50 dark:hover:bg-slate-800/50 rounded-2xl transition-colors cursor-pointer group relative ${activeTab === 'dates' ? 'bg-white shadow-lg z-30' : 'z-20'}`}
+                onClick={() => setActiveTab('dates')}
+            >
+                <div className="p-3 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-500 group-hover:scale-110 transition-transform">
+                    <Calendar className="w-5 h-5" />
+                </div>
+                <div>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Check-in — Check-out</p>
+                    <h3 className="text-slate-900 dark:text-white font-bold text-lg">
+                        {dateRange.month} {dateRange.checkIn} - {dateRange.checkOut ? dateRange.checkOut : ''}
+                    </h3>
+                </div>
+
+                {/* Date Picker Dropdown */}
+                {activeTab === 'dates' && (
+                    <div
+                        className="absolute top-full left-0 w-[320px] bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 mt-2 p-4 overflow-hidden animate-in fade-in zoom-in-95 duration-200 z-50 cursor-default"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex justify-between items-center mb-4">
+                            <h4 className="font-bold text-sm">Select Dates</h4>
+                            <div className="flex gap-2">
+                                <button className="p-1 hover:bg-slate-100 rounded-md"><svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg></button>
+                                <span className="text-sm font-medium">{dateRange.month} {dateRange.year}</span>
+                                <button className="p-1 hover:bg-slate-100 rounded-md"><svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg></button>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-7 gap-1 text-center text-xs mb-2 text-slate-400 font-medium">
+                            <div>Su</div><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div>
+                        </div>
+                        <div className="grid grid-cols-7 gap-1 text-center text-sm">
+                            {[...Array(31)].map((_, i) => {
+                                const day = i + 1;
+                                const isStart = day === dateRange.checkIn;
+                                const isEnd = day === dateRange.checkOut;
+                                const isRange = dateRange.checkOut > 0 && day > dateRange.checkIn && day < dateRange.checkOut;
+
+                                return (
+                                    <div
+                                        key={i}
+                                        onClick={() => handleDateSelect(day)}
+                                        className={`
+                                            aspect-square flex items-center justify-center rounded-full cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors
+                                            ${isRange ? 'bg-blue-50 text-blue-600 rounded-none' : ''}
+                                            ${isStart ? 'bg-blue-500 text-white hover:bg-blue-600 dark:hover:bg-blue-600 rounded-full z-10' : ''}
+                                            ${isEnd ? 'bg-blue-500 text-white hover:bg-blue-600 dark:hover:bg-blue-600 rounded-full z-10' : ''}
+                                       `}
+                                    >
+                                        {day}
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Search Button (Desktop) */}
+            <button
+                onClick={(e) => {
+                    e.stopPropagation()
+                    handleSearch()
+                }}
+                className="hidden lg:flex absolute right-2 top-1/2 -translate-y-1/2 size-12 bg-[#FF5E1F] hover:bg-orange-600 text-white rounded-full items-center justify-center shadow-lg shadow-orange-500/30 transition-all hover:scale-105 active:scale-95 z-50"
+            >
+                <Search className="w-6 h-6" />
+            </button>
+
+            {/* Mobile Search Button */}
+            <div className="lg:hidden p-2 pt-4">
+                <button
+                    onClick={handleSearch}
+                    className="w-full py-4 bg-[#FF5E1F] hover:bg-orange-600 text-white rounded-xl font-bold text-lg shadow-lg shadow-orange-500/30 flex items-center justify-center gap-2"
+                >
+                    <Search className="w-5 h-5" />
+                    Search
+                </button>
+            </div>
+        </div>
     )
 }
