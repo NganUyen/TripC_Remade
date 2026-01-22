@@ -3,6 +3,7 @@
 import React from 'react'
 import { Calendar, MapPin, Heart } from 'lucide-react'
 import { motion } from 'framer-motion'
+import Link from 'next/link'
 
 const EVENTS = [
     { id: 1, title: "Neon Lights Festival", date: "Aug 12, 2026", location: "Central Park, NY", image: "https://images.unsplash.com/photo-1493225255756-d9584f8606e9?q=80&w=800&auto=format&fit=crop", price: 45 },
@@ -25,42 +26,45 @@ export function EventResults() {
                     transition={{ delay: i * 0.05 }}
                     className="group bg-white dark:bg-[#18181b] rounded-[2rem] overflow-hidden border border-slate-100 dark:border-zinc-800 hover:shadow-xl transition-all hover:-translate-y-1"
                 >
-                    {/* Image */}
-                    <div className="h-48 relative overflow-hidden">
-                        <img
-                            src={event.image}
-                            alt={event.title}
-                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                        />
-                        <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-md p-2 rounded-full cursor-pointer hover:bg-white/40 transition-colors">
-                            <Heart className="w-4 h-4 text-white" />
-                        </div>
-                    </div>
-
-                    {/* Content */}
-                    <div className="p-5">
-                        <div className="flex items-start justify-between mb-3">
-                            <h4 className="font-bold text-slate-900 dark:text-white text-lg leading-tight line-clamp-2">{event.title}</h4>
-                        </div>
-
-                        <div className="space-y-2 mb-4">
-                            <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
-                                <Calendar className="w-3.5 h-3.5 text-[#FF5E1F]" />
-                                <span>{event.date}</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
-                                <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                                <span>{event.location}</span>
+                    <Link href="/events/1" className="block h-full">
+                        {/* Image */}
+                        <div className="h-48 relative overflow-hidden">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                                src={event.image}
+                                alt={event.title}
+                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                            />
+                            <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-md p-2 rounded-full cursor-pointer hover:bg-white/40 transition-colors pointer-events-auto z-10">
+                                <Heart className="w-4 h-4 text-white" />
                             </div>
                         </div>
 
-                        <div className="flex items-center justify-between pt-4 border-t border-slate-50 dark:border-zinc-800">
-                            <span className="text-[#FF5E1F] font-black text-lg">${event.price}</span>
-                            <button className="bg-slate-900 dark:bg-white text-white dark:text-black px-4 py-2 rounded-full text-xs font-bold hover:opacity-90 transition-opacity">
-                                Book Now
-                            </button>
+                        {/* Content */}
+                        <div className="p-5">
+                            <div className="flex items-start justify-between mb-3">
+                                <h4 className="font-bold text-slate-900 dark:text-white text-lg leading-tight line-clamp-2">{event.title}</h4>
+                            </div>
+
+                            <div className="space-y-2 mb-4">
+                                <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
+                                    <Calendar className="w-3.5 h-3.5 text-[#FF5E1F]" />
+                                    <span>{event.date}</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
+                                    <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                                    <span>{event.location}</span>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center justify-between pt-4 border-t border-slate-50 dark:border-zinc-800">
+                                <span className="text-[#FF5E1F] font-black text-lg">${event.price}</span>
+                                <button className="bg-slate-900 dark:bg-white text-white dark:text-black px-4 py-2 rounded-full text-xs font-bold hover:opacity-90 transition-opacity">
+                                    Book Now
+                                </button>
+                            </div>
                         </div>
-                    </div>
+                    </Link>
                 </motion.div>
             ))}
         </div>
