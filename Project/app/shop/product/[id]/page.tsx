@@ -6,14 +6,28 @@ import { ShopInfo } from "@/components/shop/product/ShopInfo"
 import { ProductOverview } from "@/components/shop/product/ProductOverview"
 import { PRODUCT_DATA } from "@/components/shop/product/productData"
 import { Footer } from "@/components/Footer"
-import { Header } from "@/components/Header" // Added Header back for navigation context if needed, or keep removed if using global
+import { ProductCard } from "@/components/shop/ProductCard"
+import { Header } from "@/components/Header"
+import Link from "next/link"
+import { ArrowLeft, Star } from "lucide-react"
+
+import { useEffect } from "react"
 
 export default function ProductDetailsPage({ params }: { params: { id: string } }) {
+    useEffect(() => {
+        window.scrollTo(0, 0)
+    }, [])
+
     return (
         <main className="min-h-screen bg-[#fcfaf8] dark:bg-[#0a0a0a] pb-20">
             {/* Breadcrumb Placeholder usually goes here */}
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+                {/* Back Button */}
+                <Link href="/shop" className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors font-medium">
+                    <ArrowLeft className="w-5 h-5" />
+                    Back to Shop
+                </Link>
 
                 {/* Main Product Card */}
                 <div className="bg-white dark:bg-slate-900 rounded-[2rem] p-6 md:p-8 shadow-sm border border-slate-100 dark:border-slate-800">
@@ -70,7 +84,7 @@ export default function ProductDetailsPage({ params }: { params: { id: string } 
                                         </div>
                                         <div className="flex items-center gap-1 mb-2">
                                             {[...Array(5)].map((_, starI) => (
-                                                <div key={starI} className={`w-4 h-4 rounded-sm ${starI < Math.floor(review.rating) ? 'bg-[#FF5E1F]' : 'bg-slate-200'} `} />
+                                                <Star key={starI} className={`w-4 h-4 ${starI < Math.floor(review.rating) ? 'fill-[#FF5E1F] text-[#FF5E1F]' : 'fill-slate-200 text-slate-200 dark:fill-slate-800 dark:text-slate-800'} `} />
                                             ))}
                                         </div>
                                         <p className="text-slate-600 dark:text-slate-400 text-sm">{review.text}</p>
@@ -82,20 +96,23 @@ export default function ProductDetailsPage({ params }: { params: { id: string } 
 
                     {/* Right: Sidebar Recommendation (3 cols) */}
                     <div className="lg:col-span-3 hidden lg:block">
-                        <div className="bg-white dark:bg-slate-900 rounded-[2rem] p-6 shadow-sm border border-slate-100 dark:border-slate-800 sticky top-24">
-                            <h3 className="font-bold text-slate-900 dark:text-white mb-4">From the same store</h3>
-                            <div className="space-y-4">
-                                {[1, 2, 3].map((i) => (
-                                    <div key={i} className="group cursor-pointer">
-                                        <div className="aspect-square bg-slate-100 dark:bg-white/5 rounded-xl mb-2 overflow-hidden">
-                                            <img src={`https://images.unsplash.com/photo-1553062407-98eeb64c6a62?q=80&w=400&auto=format&fit=crop`} alt="Rec" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                        <div className="sticky top-24 space-y-6">
+                            <div className="bg-white dark:bg-slate-900 rounded-[2rem] p-6 shadow-sm border border-slate-100 dark:border-slate-800">
+                                <h3 className="font-bold text-slate-900 dark:text-white mb-4">From the same store</h3>
+                                <div className="space-y-6">
+                                    {[1, 2, 3].map((i) => (
+                                        <div key={i} className="h-[320px]">
+                                            <ProductCard
+                                                id={i + 10}
+                                                title="Monos Metro Duffel - Vegan Leather"
+                                                price={180}
+                                                rating={4.8}
+                                                reviews={24}
+                                                image={`https://images.unsplash.com/photo-1553062407-98eeb64c6a62?q=80&w=400&auto=format&fit=crop`}
+                                            />
                                         </div>
-                                        <div className="text-sm font-medium text-slate-900 dark:text-white line-clamp-2 mb-1 group-hover:text-[#FF5E1F] transition-colors">
-                                            Monos Metro Duffel - Vegan Leather
-                                        </div>
-                                        <div className="font-bold text-[#FF5E1F]">$180</div>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     </div>

@@ -50,8 +50,8 @@ export function ProductGallery({ images }: ProductGalleryProps) {
                         key={idx}
                         onClick={() => setCurrentIndex(idx)}
                         className={`relative w-20 h-20 rounded-2xl overflow-hidden shrink-0 border-2 transition-all ${idx === currentIndex
-                                ? 'border-[#FF5E1F] ring-2 ring-[#FF5E1F]/20'
-                                : 'border-transparent hover:border-slate-200 dark:hover:border-slate-700'
+                            ? 'border-[#FF5E1F] ring-2 ring-[#FF5E1F]/20'
+                            : 'border-transparent hover:border-slate-200 dark:hover:border-slate-700 opacity-60 hover:opacity-100'
                             }`}
                     >
                         <img src={img} alt={`Thumbnail ${idx}`} className="w-full h-full object-cover" />
