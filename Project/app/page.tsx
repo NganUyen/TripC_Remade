@@ -1,13 +1,13 @@
-import { Footer } from "@/components/Footer"
-import { Hero } from "@/components/Hero"
-import { DestinationCard } from "@/components/DestinationCard"
-import Link from 'next/link'
-import { FlashDeals } from '@/components/home/FlashDeals'
-import { CategoryGrid } from '@/components/home/CategoryGrid'
-import { TrustBenefits } from '@/components/home/TrustBenefits'
-import { Newsletter } from '@/components/home/Newsletter'
-import { DownloadApp } from '@/components/home/DownloadApp'
-import { ArrowRight } from 'lucide-react'
+import { Footer } from "@/components/Footer";
+import { Hero } from "@/components/Hero";
+import { DestinationCard } from "@/components/DestinationCard";
+import Link from "next/link";
+import { FlashDeals } from "@/components/home/FlashDeals";
+import { CategoryGrid } from "@/components/home/CategoryGrid";
+import { TrustBenefits } from "@/components/home/TrustBenefits";
+import { Newsletter } from "@/components/home/Newsletter";
+import { DownloadApp } from "@/components/home/DownloadApp";
+import { ArrowRight } from "lucide-react";
 
 export default function Home() {
   return (
@@ -22,10 +22,17 @@ export default function Home() {
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="flex items-end justify-between mb-8">
             <div>
-              <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Popular Destinations</h2>
-              <p className="text-slate-500 dark:text-slate-400 mt-2 text-lg">Don't miss out on these top-rated experiences</p>
+              <h2 className="text-3xl font-bold text-slate-900 dark:text-white">
+                Popular Destinations
+              </h2>
+              <p className="text-slate-500 dark:text-slate-400 mt-2 text-lg">
+                Don't miss out on these top-rated experiences
+              </p>
             </div>
-            <Link href="#" className="hidden sm:flex items-center text-[#FF5E1F] font-bold text-sm hover:underline gap-1">
+            <Link
+              href="#"
+              className="hidden sm:flex items-center text-[#FF5E1F] font-bold text-sm hover:underline gap-1"
+            >
               View all
               <ArrowRight className="w-4 h-4" />
             </Link>
@@ -40,7 +47,11 @@ export default function Home() {
               description="Explore the best hiking trails, suspension bridges, and city views in BC."
               price="120"
               tags={[
-                { text: "20% OFF", icon: "local_fire_department", color: "text-orange-500" }
+                {
+                  text: "20% OFF",
+                  icon: "local_fire_department",
+                  color: "text-orange-500",
+                },
               ]}
             />
             <DestinationCard
@@ -60,9 +71,7 @@ export default function Home() {
               rating="5.0"
               description="Wellness, yoga, and beautiful beaches await in this tropical paradise."
               price="210"
-              tags={[
-                { text: "Popular" }
-              ]}
+              tags={[{ text: "Popular" }]}
             />
           </div>
         </div>
@@ -75,5 +84,5 @@ export default function Home() {
       </main>
       <Footer />
     </>
-  )
+  );
 }
