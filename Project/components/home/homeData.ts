@@ -83,14 +83,62 @@ export const FLASH_DEALS = [
 ]
 
 export const CATEGORIES = [
-    { id: 1, name: "Hotels", icon: Hotel, color: "bg-blue-100 text-blue-600 dark:bg-blue-900/30" },
-    { id: 2, name: "Flights", icon: Plane, color: "bg-sky-100 text-sky-600 dark:bg-sky-900/30" },
-    { id: 3, name: "Events", icon: Calendar, color: "bg-purple-100 text-purple-600 dark:bg-purple-900/30" },
-    { id: 4, name: "Wellness", icon: Sparkles, color: "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30" },
-    { id: 5, name: "Beauty", icon: Camera, color: "bg-pink-100 text-pink-600 dark:bg-pink-900/30" },
-    { id: 6, name: "Transport", icon: Map, color: "bg-orange-100 text-orange-600 dark:bg-orange-900/30" },
-    { id: 7, name: "Food", icon: Utensils, color: "bg-red-100 text-red-600 dark:bg-red-900/30" },
-    { id: 8, name: "Attractions", icon: Coffee, color: "bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30" },
+    {
+        id: 1,
+        name: "Khách Sạn",
+        image: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=800&auto=format&fit=crop",
+        icon: Hotel,
+        color: "bg-blue-100 text-blue-600 dark:bg-blue-900/30"
+    },
+    {
+        id: 2,
+        name: "Vé Máy Bay",
+        image: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=800&auto=format&fit=crop",
+        icon: Plane,
+        color: "bg-sky-100 text-sky-600 dark:bg-sky-900/30"
+    },
+    {
+        id: 3,
+        name: "Sự Kiện",
+        image: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=800&auto=format&fit=crop",
+        icon: Calendar,
+        color: "bg-purple-100 text-purple-600 dark:bg-purple-900/30"
+    },
+    {
+        id: 4,
+        name: "Sức Khỏe",
+        image: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?q=80&w=800&auto=format&fit=crop",
+        icon: Sparkles,
+        color: "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30"
+    },
+    {
+        id: 5,
+        name: "Làm Đẹp",
+        image: "https://images.unsplash.com/photo-1522337660859-02fbefca4702?q=80&w=800&auto=format&fit=crop",
+        icon: Camera,
+        color: "bg-pink-100 text-pink-600 dark:bg-pink-900/30"
+    },
+    {
+        id: 6,
+        name: "Di Chuyển",
+        image: "https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?q=80&w=800&auto=format&fit=crop",
+        icon: Map,
+        color: "bg-orange-100 text-orange-600 dark:bg-orange-900/30"
+    },
+    {
+        id: 7,
+        name: "Ẩm Thực",
+        image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=800&auto=format&fit=crop",
+        icon: Utensils,
+        color: "bg-red-100 text-red-600 dark:bg-red-900/30"
+    },
+    {
+        id: 8,
+        name: "Tham Quan",
+        image: "https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?q=80&w=800&auto=format&fit=crop",
+        icon: Coffee,
+        color: "bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30"
+    },
 ]
 
 export const TRENDING = {

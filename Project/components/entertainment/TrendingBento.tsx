@@ -18,8 +18,8 @@ export function TrendingBento() {
                     className="md:col-span-2 relative h-full min-h-[300px] rounded-[2rem] overflow-hidden group cursor-pointer"
                 >
                     <img
-                        src="https://images.unsplash.com/photo-1597466599360-3b9775841aec?q=80&w=2000&auto=format&fit=crop"
-                        alt="Universal Studios"
+                        src="https://images.unsplash.com/photo-1566737236500-c8ac43014a67?q=80&w=2000&auto=format&fit=crop"
+                        alt="Luxury Karaoke"
                         className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
@@ -28,9 +28,9 @@ export function TrendingBento() {
                         <div className="flex items-center gap-2 mb-2">
                             <span className="bg-[#FF5E1F] text-white text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-full">Top Rated</span>
                         </div>
-                        <h3 className="text-3xl md:text-4xl font-black text-white mb-2 leading-tight">Universal Studios Hollywood</h3>
+                        <h3 className="text-3xl md:text-4xl font-black text-white mb-2 leading-tight">Elite KTV Experience</h3>
                         <div className="flex items-center justify-between">
-                            <p className="text-slate-300 font-medium line-clamp-1 max-w-md">Experience the magic of movies with exclusive behind-the-scenes tours.</p>
+                            <p className="text-slate-300 font-medium line-clamp-1 max-w-md">Private suites, butler service, and the best sound in town.</p>
                             <div className="w-10 h-10 bg-white/20 backdrop-blur rounded-full flex items-center justify-center text-white group-hover:bg-white group-hover:text-black transition-colors">
                                 <ArrowRight className="w-5 h-5" />
                             </div>
@@ -56,10 +56,10 @@ export function TrendingBento() {
                                     <Ticket className="w-4 h-4 text-white/80" />
                                     <span className="text-xs font-bold text-white/80 uppercase">Coming Soon</span>
                                 </div>
-                                <h3 className="text-2xl font-bold text-white leading-tight">Summer Music Fest '26</h3>
+                                <h3 className="text-2xl font-bold text-white leading-tight">Rooftop Jazz Nights</h3>
                             </div>
                             <button className="bg-white/20 hover:bg-white hover:text-purple-600 text-white backdrop-blur-sm px-4 py-2 rounded-full text-sm font-bold transition-all w-fit">
-                                Get Early Access
+                                Reserve Table
                             </button>
                         </div>
                     </motion.div>
@@ -77,8 +77,8 @@ export function TrendingBento() {
                             <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 text-[#FF5E1F] rounded-full flex items-center justify-center mx-auto mb-3">
                                 <TrendingUp className="w-6 h-6" />
                             </div>
-                            <h4 className="text-4xl font-black text-slate-900 dark:text-white mb-1">10k+</h4>
-                            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Events Booked This Week</p>
+                            <h4 className="text-4xl font-black text-slate-900 dark:text-white mb-1">500+</h4>
+                            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Venues Booked Tonight</p>
                         </div>
                     </motion.div>
                 </div>

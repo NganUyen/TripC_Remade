@@ -274,7 +274,13 @@
   color: var(--brand-orange);
 }
 
+
 .rebook-btn:hover {
   background-color: var(--brand-orange);
   color: white;
+}
+
+.mask-linear-fade {
+  mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
 }

@@ -1,32 +1,53 @@
 "use client"
+import { useRouter } from 'next/navigation'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
+import { SelectPopup } from '../ui/SelectPopup'
+import { CounterInput } from '../ui/CounterInput'
+import { SimpleCalendar as Calendar } from '../ui/SimpleCalendar'
 
 export function TransportHero() {
+    const router = useRouter()
     const [serviceType, setServiceType] = useState('one-way') // 'one-way' | 'hourly'
     const [bookingMode, setBookingMode] = useState('address') // 'address' | 'map'
     const [duration, setDuration] = useState('4h')
-    const [date, setDate] = useState('')
+    const [date, setDate] = useState<Date | null>(null)
     const [time, setTime] = useState('')
 
     // Passengers & Luggage State
     const [passengers, setPassengers] = useState({ adults: 1, children: 0, luggage: 2 })
-    const [showPopover, setShowPopover] = useState(false)
-    const popoverRef = useRef<HTMLDivElement>(null)
+    const [activeTab, setActiveTab] = useState<'date' | 'time' | 'passengers' | null>(null)
+
+    // Time options generation
+    const timeOptions = useMemo(() => {
+        const options = []
+        for (let i = 0; i < 24; i++) {
+            const h = i % 12 || 12
+            const ampm = i < 12 ? 'AM' : 'PM'
+            // Format with leading zero for sorting/display if needed, but sticking to simple string for now
+            const hourStr = h < 10 ? `0${h}` : `${h}`
+            options.push(`${hourStr}:00 ${ampm}`)
+            options.push(`${hourStr}:30 ${ampm}`)
+        }
+        return options
+    }, [])
 
     // Locations
     const [pickup, setPickup] = useState('JFK International Airport')
     const [dropoff, setDropoff] = useState('Manhattan, NY')
 
-    // Click outside listener
+    // Click outside listener for activeTab
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
-            if (popoverRef.current && !popoverRef.current.contains(event.target as Node)) {
-                setShowPopover(false)
-            }
+            // Logic handled by SelectPopup for the popups themselves, 
+            // but we might want to close if clicking outside the trigger too?
+            // Actually SelectPopup handles clicking outside of ITSELF.
+            // We need to handle clicking outside the triggers if they are not part of SelectPopup.
+            // But for now let's rely on SelectPopup's onClose.
+            // However, triggers need to toggle.
         }
-        document.addEventListener("mousedown", handleClickOutside)
-        return () => document.removeEventListener("mousedown", handleClickOutside)
+        // document.addEventListener("mousedown", handleClickOutside)
+        // return () => document.removeEventListener("mousedown", handleClickOutside)
     }, [])
 
     const updatePassengers = (type: keyof typeof passengers, operation: 'add' | 'sub') => {
@@ -189,122 +210,130 @@ export function TransportHero() {
 
                                 {/* DATE (4 Cols) */}
                                 <div
-                                    className="w-full md:col-span-4 h-[64px] bg-white/50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-xl px-4 flex flex-col justify-center transition-all hover:bg-white/80 dark:hover:bg-white/10 relative cursor-pointer group"
-                                    onClick={(e) => e.currentTarget.querySelector('input')?.showPicker()}
+                                    className={`w-full md:col-span-4 h-[64px] bg-white/50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-xl px-4 flex flex-col justify-center transition-all hover:bg-white/80 dark:hover:bg-white/10 relative cursor-pointer group ${activeTab === 'date' ? 'bg-white dark:bg-white/10 ring-2 ring-primary/20' : ''}`}
+                                    onClick={() => setActiveTab('date')}
                                 >
                                     <label className="text-[10px] uppercase tracking-widest text-slate-500 dark:text-white/40 font-bold mb-0.5">Date</label>
                                     <div className={`font-bold text-lg ${date ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-white/40'}`}>
-                                        {date || 'Select Date'}
+                                        {date ? date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Select Date'}
                                     </div>
-                                    <input
-                                        type="date"
-                                        className="absolute inset-0 opacity-0 pointer-events-none"
-                                        onChange={(e) => setDate(e.target.value)}
-                                    />
+
+                                    <SelectPopup
+                                        isOpen={activeTab === 'date'}
+                                        onClose={() => setActiveTab(null)}
+                                        className="w-[340px]"
+                                    >
+                                        <Calendar
+                                            selectedDate={date || undefined}
+                                            onSelect={(d) => {
+                                                setDate(d)
+                                                setActiveTab(null)
+                                            }}
+                                            minDate={new Date()}
+                                        />
+                                    </SelectPopup>
                                 </div>
 
                                 {/* TIME (4 Cols) */}
                                 <div
-                                    className="w-full md:col-span-4 h-[64px] bg-white/50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-xl px-4 flex flex-col justify-center transition-all hover:bg-white/80 dark:hover:bg-white/10 relative cursor-pointer group"
-                                    onClick={(e) => e.currentTarget.querySelector('input')?.showPicker()}
+                                    className={`w-full md:col-span-4 h-[64px] bg-white/50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-xl px-4 flex flex-col justify-center transition-all hover:bg-white/80 dark:hover:bg-white/10 relative cursor-pointer group ${activeTab === 'time' ? 'bg-white dark:bg-white/10 ring-2 ring-primary/20' : ''}`}
+                                    onClick={() => setActiveTab('time')}
                                 >
                                     <label className="text-[10px] uppercase tracking-widest text-slate-500 dark:text-white/40 font-bold mb-0.5">Pickup Time</label>
                                     <div className={`font-bold text-lg ${time ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-white/40'}`}>
                                         {time || 'Select Time'}
                                     </div>
-                                    <input
-                                        type="time"
-                                        className="absolute inset-0 opacity-0 pointer-events-none"
-                                        onChange={(e) => setTime(e.target.value)}
-                                    />
+
+                                    <SelectPopup
+                                        isOpen={activeTab === 'time'}
+                                        onClose={() => setActiveTab(null)}
+                                        className="w-[200px] max-h-[300px] overflow-y-auto"
+                                    >
+                                        <div className="flex flex-col gap-1">
+                                            {timeOptions.map((t) => (
+                                                <button
+                                                    key={t}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        setTime(t)
+                                                        setActiveTab(null)
+                                                    }}
+                                                    className={`px-3 py-2 text-left text-sm font-bold rounded-lg transition-colors ${time === t ? 'bg-primary text-white' : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10'}`}
+                                                >
+                                                    {t}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </SelectPopup>
                                 </div>
 
                                 {/* PASSENGERS & LUGGAGE (4 Cols) */}
-                                <div className="w-full md:col-span-4 relative" ref={popoverRef}>
-                                    <div
-                                        className="h-[64px] bg-white/50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-xl px-4 flex flex-col justify-center transition-all hover:bg-white/80 dark:hover:bg-white/10 cursor-pointer"
-                                        onClick={() => setShowPopover(!showPopover)}
-                                    >
-                                        <label className="text-[10px] uppercase tracking-widest text-slate-500 dark:text-white/40 font-bold mb-0.5">Passengers & Bags</label>
-                                        <div className="flex items-center gap-3">
-                                            <div className="flex items-center gap-1">
-                                                <span className="material-symbols-outlined text-lg text-slate-900 dark:text-white">person</span>
-                                                <span className="text-slate-900 dark:text-white font-bold text-lg">{totalPassengers}</span>
-                                            </div>
-                                            <div className="w-px h-4 bg-slate-300 dark:bg-white/20"></div>
-                                            <div className="flex items-center gap-1">
-                                                <span className="material-symbols-outlined text-lg text-slate-900 dark:text-white">business_center</span>
-                                                <span className="text-slate-900 dark:text-white font-bold text-lg">{passengers.luggage}</span>
-                                            </div>
+                                <div className={`w-full md:col-span-4 relative h-[64px] bg-white/50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-xl px-4 flex flex-col justify-center transition-all hover:bg-white/80 dark:hover:bg-white/10 cursor-pointer ${activeTab === 'passengers' ? 'bg-white dark:bg-white/10 ring-2 ring-primary/20' : ''}`}
+                                    onClick={() => setActiveTab('passengers')}
+                                >
+                                    <label className="text-[10px] uppercase tracking-widest text-slate-500 dark:text-white/40 font-bold mb-0.5">Passengers & Bags</label>
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex items-center gap-1">
+                                            <span className="material-symbols-outlined text-lg text-slate-900 dark:text-white">person</span>
+                                            <span className="text-slate-900 dark:text-white font-bold text-lg">{totalPassengers}</span>
+                                        </div>
+                                        <div className="w-px h-4 bg-slate-300 dark:bg-white/20"></div>
+                                        <div className="flex items-center gap-1">
+                                            <span className="material-symbols-outlined text-lg text-slate-900 dark:text-white">business_center</span>
+                                            <span className="text-slate-900 dark:text-white font-bold text-lg">{passengers.luggage}</span>
                                         </div>
                                     </div>
 
-                                    {/* POPOVER */}
-                                    {showPopover && (
-                                        <div className="absolute top-full right-0 mt-3 w-80 bg-white dark:bg-[#18181b] border border-slate-200 dark:border-white/10 rounded-xl shadow-2xl p-5 z-50 animate-fadeIn">
-                                            <div className="flex flex-col gap-4">
-                                                {/* Adults */}
-                                                <div className="flex items-center justify-between">
-                                                    <div>
-                                                        <div className="text-slate-900 dark:text-white font-bold text-sm">Adults</div>
-                                                        <div className="text-slate-500 dark:text-white/40 text-xs">Age 13+</div>
-                                                    </div>
-                                                    <div className="flex items-center gap-3">
-                                                        <button onClick={() => updatePassengers('adults', 'sub')} className="w-8 h-8 rounded-full border border-slate-200 dark:border-white/20 flex items-center justify-center text-slate-600 dark:text-white hover:bg-slate-100 dark:hover:bg-white/5">-</button>
-                                                        <span className="text-slate-900 dark:text-white font-bold w-4 text-center">{passengers.adults}</span>
-                                                        <button onClick={() => updatePassengers('adults', 'add')} className="w-8 h-8 rounded-full border border-slate-200 dark:border-white/20 flex items-center justify-center text-slate-600 dark:text-white hover:bg-slate-100 dark:hover:bg-white/5">+</button>
-                                                    </div>
-                                                </div>
+                                    <SelectPopup
+                                        isOpen={activeTab === 'passengers'}
+                                        onClose={() => setActiveTab(null)}
+                                        className="w-[320px] right-0 left-auto"
+                                    >
+                                        <div className="flex flex-col">
+                                            <CounterInput
+                                                label="Adults"
+                                                subLabel="Age 13+"
+                                                value={passengers.adults}
+                                                onChange={(v) => updatePassengers('adults', v > passengers.adults ? 'add' : 'sub')}
+                                                min={1}
+                                            />
+                                            <CounterInput
+                                                label="Children"
+                                                subLabel="Age 2-12"
+                                                value={passengers.children}
+                                                onChange={(v) => updatePassengers('children', v > passengers.children ? 'add' : 'sub')}
+                                            />
+                                            <div className="w-full h-px bg-slate-100 dark:bg-white/10 my-1"></div>
+                                            <CounterInput
+                                                label="Luggage"
+                                                subLabel="Standard Bags"
+                                                value={passengers.luggage}
+                                                onChange={(v) => updatePassengers('luggage', v > passengers.luggage ? 'add' : 'sub')}
+                                            />
 
-                                                {/* Children */}
-                                                <div className="flex items-center justify-between">
-                                                    <div>
-                                                        <div className="text-slate-900 dark:text-white font-bold text-sm">Children</div>
-                                                        <div className="text-slate-500 dark:text-white/40 text-xs">Age 2-12</div>
-                                                    </div>
-                                                    <div className="flex items-center gap-3">
-                                                        <button onClick={() => updatePassengers('children', 'sub')} className="w-8 h-8 rounded-full border border-slate-200 dark:border-white/20 flex items-center justify-center text-slate-600 dark:text-white hover:bg-slate-100 dark:hover:bg-white/5">-</button>
-                                                        <span className="text-slate-900 dark:text-white font-bold w-4 text-center">{passengers.children}</span>
-                                                        <button onClick={() => updatePassengers('children', 'add')} className="w-8 h-8 rounded-full border border-slate-200 dark:border-white/20 flex items-center justify-center text-slate-600 dark:text-white hover:bg-slate-100 dark:hover:bg-white/5">+</button>
-                                                    </div>
-                                                </div>
-
-                                                <div className="w-full h-px bg-slate-100 dark:bg-white/10 my-1"></div>
-
-                                                {/* Luggage */}
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="material-symbols-outlined text-slate-600 dark:text-white">business_center</span>
-                                                        <div>
-                                                            <div className="text-slate-900 dark:text-white font-bold text-sm">Luggage</div>
-                                                            <div className="text-slate-500 dark:text-white/40 text-xs">Standard Bags</div>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-center gap-3">
-                                                        <button onClick={() => updatePassengers('luggage', 'sub')} className="w-8 h-8 rounded-full border border-slate-200 dark:border-white/20 flex items-center justify-center text-slate-600 dark:text-white hover:bg-slate-100 dark:hover:bg-white/5">-</button>
-                                                        <span className="text-slate-900 dark:text-white font-bold w-4 text-center">{passengers.luggage}</span>
-                                                        <button onClick={() => updatePassengers('luggage', 'add')} className="w-8 h-8 rounded-full border border-slate-200 dark:border-white/20 flex items-center justify-center text-slate-600 dark:text-white hover:bg-slate-100 dark:hover:bg-white/5">+</button>
-                                                    </div>
-                                                </div>
-
-                                                <div className="pt-3 border-t border-slate-200 dark:border-white/10 mt-1">
-                                                    <button
-                                                        onClick={() => setShowPopover(false)}
-                                                        className="w-full py-2 bg-primary hover:bg-primary-hover rounded-lg text-white font-bold text-xs uppercase tracking-wider transition-colors"
-                                                    >
-                                                        Done
-                                                    </button>
-                                                </div>
+                                            <div className="pt-3 border-t border-slate-200 dark:border-white/10 mt-1">
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        setActiveTab(null)
+                                                    }}
+                                                    className="w-full py-2 bg-primary hover:bg-primary-hover rounded-lg text-white font-bold text-xs uppercase tracking-wider transition-colors"
+                                                >
+                                                    Done
+                                                </button>
                                             </div>
                                         </div>
-                                    )}
+                                    </SelectPopup>
                                 </div>
                             </div>
                         </div>
 
                         {/* Search Button */}
                         <div className="absolute left-1/2 -translate-x-1/2 bottom-0 translate-y-1/2 z-40 w-full max-w-sm px-4">
-                            <button className="w-full relative py-4 bg-gradient-to-r from-primary to-[#FF8C42] rounded-full shadow-[0_15px_30px_-5px_rgba(255,94,31,0.5)] transition-transform duration-300 hover:scale-105 active:scale-95 flex items-center justify-center gap-2 overflow-hidden text-white font-black text-lg tracking-wide uppercase">
+                            <button
+                                onClick={() => router.push('/transport/results')}
+                                className="w-full relative py-4 bg-gradient-to-r from-primary to-[#FF8C42] rounded-full shadow-[0_15px_30px_-5px_rgba(255,94,31,0.5)] transition-transform duration-300 hover:scale-105 active:scale-95 flex items-center justify-center gap-2 overflow-hidden text-white font-black text-lg tracking-wide uppercase"
+                            >
                                 <span className="material-symbols-outlined text-2xl">directions_car</span>
                                 {bookingMode === 'map' ? 'Select Location' : 'Search Vehicles'}
                                 <div className="absolute inset-0 -translate-x-full group-hover:animate-shimmer bg-gradient-to-r from-transparent via-white/20 to-transparent z-10"></div>

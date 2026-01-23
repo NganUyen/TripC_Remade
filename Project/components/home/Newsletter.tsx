@@ -1,42 +1,105 @@
 "use client"
 
-import { motion } from 'framer-motion'
-import { Mail, ArrowRight } from 'lucide-react'
+import { motion } from "framer-motion"
+import { Mail, ArrowRight, ShieldCheck } from "lucide-react"
+
+const TRIPC = {
+    accent: "#FF5E1F",
+}
+
+const fadeUp = {
+    initial: { opacity: 0, y: 14 },
+    whileInView: { opacity: 1, y: 0 },
+    viewport: { once: true, amount: 0.4 },
+    transition: { duration: 0.55, ease: "easeOut" },
+}
 
 export function Newsletter() {
     return (
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24">
             <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="relative rounded-[3rem] overflow-hidden bg-slate-900 dark:bg-white/5 p-8 md:p-16 flex flex-col md:flex-row items-center justify-between gap-10 shadow-2xl"
+                {...fadeUp}
+                className="relative overflow-hidden rounded-[2.5rem] border border-slate-200/70 dark:border-white/10 bg-white dark:bg-[#070A12] shadow-[0_20px_60px_rgba(0,0,0,0.10)]"
             >
-                {/* Decor */}
-                <div className="absolute top-0 right-0 w-96 h-96 bg-[#FF5E1F] opacity-10 blur-[100px] rounded-full pointer-events-none translate-x-1/2 -translate-y-1/2" />
-
-                <div className="relative z-10 text-center md:text-left">
-                    <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Get Trip Drops</h2>
-                    <p className="text-slate-400 text-lg max-w-md">
-                        Unlock exclusive deals with up to 50% off. Join 200,000+ travelers.
-                    </p>
+                {/* Clean background (no “AI glow”) */}
+                <div className="absolute inset-0 pointer-events-none">
+                    <div
+                        className="absolute inset-0 opacity-[0.55] dark:opacity-[0.35]"
+                        style={{
+                            backgroundImage:
+                                "linear-gradient(to right, rgba(15,23,42,0.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(15,23,42,0.06) 1px, transparent 1px)",
+                            backgroundSize: "28px 28px",
+                        }}
+                    />
+                    <div
+                        className="absolute -top-24 -right-24 h-[240px] w-[240px] rounded-full blur-3xl opacity-15 dark:opacity-20"
+                        style={{ background: TRIPC.accent }}
+                    />
                 </div>
 
-                <div className="relative z-10 w-full md:w-auto max-w-md flex flex-col gap-3">
-                    <div className="relative group">
-                        <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-500 group-focus-within:text-[#FF5E1F] transition-colors">
-                            <Mail className="w-5 h-5" />
+                <div className="relative p-8 sm:p-10 md:p-12">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-8">
+                        {/* Copy */}
+                        <div className="max-w-xl">
+                            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 px-3 py-1 text-xs font-semibold text-slate-700 dark:text-slate-200">
+                                <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ background: TRIPC.accent }} />
+                                TripC Drops
+                                <span className="text-slate-400 dark:text-slate-400 font-medium">•</span>
+                                Weekly
+                            </div>
+
+                            <h2 className="mt-4 text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-slate-950 dark:text-white">
+                                Deal xịn & tips du lịch — gửi gọn trong 1 email.
+                            </h2>
+
+                            <p className="mt-3 text-base sm:text-lg leading-relaxed text-slate-600 dark:text-slate-300">
+                                Nhận flash deal, gợi ý lịch trình, và cảnh báo giá theo tuyến bạn quan tâm.
+                            </p>
+
+                            <div className="mt-4 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                                <ShieldCheck className="h-4 w-4" />
+                                Không spam. Hủy đăng ký bất kỳ lúc nào.
+                            </div>
                         </div>
-                        <input
-                            type="email"
-                            placeholder="Enter your email"
-                            className="w-full h-14 pl-12 pr-32 rounded-full bg-white/10 border border-white/20 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#FF5E1F] transition-all"
-                        />
-                        <button className="absolute top-2 bottom-2 right-2 px-6 rounded-full bg-[#FF5E1F] hover:bg-orange-600 text-white font-bold text-sm shadow-lg shadow-orange-500/20 transition-all hover:scale-105 active:scale-95 flex items-center justify-center">
-                            Subscribe
-                        </button>
+
+                        {/* Form */}
+                        <div className="w-full md:w-[420px]">
+                            <div className="rounded-2xl border border-slate-200/70 dark:border-white/10 bg-white/70 dark:bg-white/5 p-3 backdrop-blur">
+                                <div className="relative">
+                                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                                    <input
+                                        type="email"
+                                        placeholder="Email của bạn"
+                                        className="w-full h-12 pl-12 pr-32 rounded-xl bg-white dark:bg-[#0B1020] border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-400
+                               focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-[#070A12]"
+                                        style={{
+                                            // Tailwind không dùng được dynamic color tốt cho ring, nên set accent qua outline-like ring
+                                            // Nếu bạn có CSS var thì thay bằng ring-[var(--tripc-accent)]
+                                            // Ở đây giữ tối giản: ring vẫn dùng default màu, accent nằm ở button + dot
+                                        }}
+                                    />
+
+                                    <button
+                                        className="absolute right-1.5 top-1.5 h-9 px-4 rounded-lg font-semibold text-sm text-white
+                               shadow-sm hover:opacity-95 active:opacity-90 transition inline-flex items-center gap-2"
+                                        style={{ background: TRIPC.accent }}
+                                    >
+                                        Subscribe
+                                        <ArrowRight className="h-4 w-4" />
+                                    </button>
+                                </div>
+
+                                <div className="mt-2 px-1 text-[11px] text-slate-500 dark:text-slate-400">
+                                    Bằng việc đăng ký, bạn đồng ý nhận email cập nhật từ TripC.
+                                </div>
+                            </div>
+
+                            {/* Optional: social proof, keep subtle */}
+                            <div className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+                                Hơn <span className="font-semibold text-slate-700 dark:text-slate-200">200k+</span> travelers đang theo dõi TripC Drops.
+                            </div>
+                        </div>
                     </div>
-                    <p className="text-xs text-slate-500 text-center md:text-left pl-4">No spam. Unsubscribe anytime.</p>
                 </div>
             </motion.div>
         </section>

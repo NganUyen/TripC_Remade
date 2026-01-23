@@ -9,12 +9,13 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@clerk/nextjs": "^6.36.8",
+    "@fontsource/outfit": "^5.2.8",
     "@radix-ui/react-label": "^2.1.8",
     "@radix-ui/react-popover": "^1.1.15",
     "@radix-ui/react-slot": "^1.2.4",
     "@radix-ui/react-toast": "^1.2.15",
     "class-variance-authority": "^0.7.1",
-    "@clerk/nextjs": "^6.36.8",
     "clsx": "^2.1.1",
     "convex": "^1.31.5",
     "date-fns": "^4.1.0",

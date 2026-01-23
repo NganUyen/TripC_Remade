@@ -4,10 +4,10 @@ import { ShieldCheck, RefreshCw, Lock, HeadphonesIcon } from 'lucide-react'
 
 export function TrustBenefits() {
     const benefits = [
-        { icon: ShieldCheck, title: "Verified Providers", desc: "Quality vetted partners" },
-        { icon: RefreshCw, title: "Flexible Cancellation", desc: "No-stress booking" },
-        { icon: Lock, title: "Secure Payments", desc: "Bank-level encryption" },
-        { icon: HeadphonesIcon, title: "24/7 Concierge", desc: "Always here for you" },
+        { icon: ShieldCheck, title: "Đối tác uy tín", desc: "Được xác thực kỹ càng" },
+        { icon: RefreshCw, title: "Hủy đặt linh hoạt", desc: "Không lo đổi kế hoạch" },
+        { icon: Lock, title: "Thanh toán an toàn", desc: "Bảo mật chuẩn quốc tế" },
+        { icon: HeadphonesIcon, title: "Hỗ trợ 24/7", desc: "Luôn sẵn sàng giúp đỡ" },
     ]
 
     return (

@@ -6,10 +6,10 @@ import { motion } from 'framer-motion'
 import Link from 'next/link'
 
 const HOT_TICKETS = [
-    { id: 1, title: 'Coldplay: Music of Spheres', date: 'Sat, Aug 24 • 8:00 PM', location: 'Wembley Stadium, London', price: 120, image: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?q=80&w=800&auto=format&fit=crop' },
-    { id: 2, title: 'Disneyland Park 1-Day Pass', date: 'Valid any day until Dec 31', location: 'Anaheim, California', price: 154, image: 'https://images.unsplash.com/photo-1541364983171-a8ba01e95cfc?q=80&w=800&auto=format&fit=crop' },
-    { id: 3, title: 'The Lion King Musical', date: 'Thu, Sep 12 • 7:30 PM', location: 'Minskoff Theatre, NYC', price: 95, image: 'https://images.unsplash.com/photo-1507676184212-d03ab07a11d0?q=80&w=800&auto=format&fit=crop' },
-    { id: 4, title: 'Louvre Museum Skip-Line', date: 'Time slots available', location: 'Paris, France', price: 22, image: 'https://images.unsplash.com/photo-1499856871940-a09627c6dcf6?q=80&w=800&auto=format&fit=crop' },
+    { id: 1, title: 'Galaxy KTV VIP Room', date: 'Daily • Open late', location: 'District 1, HCMC', price: 50, image: 'https://images.unsplash.com/photo-1516280440614-6697288d5d38?q=80&w=800&auto=format&fit=crop' },
+    { id: 2, title: 'Skyline Rooftop Bar', date: 'Reserved Seating', location: 'Marina Bay, SG', price: 35, image: 'https://images.unsplash.com/photo-1519671482538-518b48d195f4?q=80&w=800&auto=format&fit=crop' },
+    { id: 3, title: 'The Jazz Corner', date: 'Tue-Sun • 7:30 PM', location: 'Greenwich Village, NY', price: 45, image: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=800&auto=format&fit=crop' },
+    { id: 4, title: 'O\'Malley\'s Irish Pub', date: 'Live Folk Music', location: 'Boston, MA', price: 0, image: 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?q=80&w=800&auto=format&fit=crop' },
 ]
 
 export function TicketList() {
@@ -20,7 +20,7 @@ export function TicketList() {
                 <button className="text-[#FF5E1F] text-sm font-bold flex items-center gap-1 hover:gap-2 transition-all">
                     View Calendar <ArrowRight className="w-4 h-4" />
                 </button>
-            </div>
+            </div >
 
             <div className="flex gap-6 overflow-x-auto pb-8 -mx-4 px-4 lg:-mx-12 lg:px-12 no-scrollbar snap-x">
                 {HOT_TICKETS.map((ticket, i) => (
@@ -84,6 +84,6 @@ export function TicketList() {
                     </button>
                 </div>
             </div>
-        </section>
+        </section >
     )
 }

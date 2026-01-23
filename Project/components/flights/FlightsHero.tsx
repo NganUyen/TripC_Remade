@@ -3,8 +3,11 @@
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from "sonner"
-import { DatePicker } from "@/components/ui/date-picker"
+// import { DatePicker } from "@/components/ui/date-picker" // Removed
 import { Plane, ArrowRightLeft, Users, Search, Plus } from "lucide-react"
+import { SelectPopup } from '../ui/SelectPopup'
+import { CounterInput } from '../ui/CounterInput'
+import { SimpleCalendar as Calendar } from '../ui/SimpleCalendar'
 
 // Mock Data
 const AIRPORTS = [
@@ -28,13 +31,13 @@ export function FlightsHero() {
 
     // Travelers State
     const [travelers, setTravelers] = useState({ adults: 1, children: 0 })
-    const [showTravelers, setShowTravelers] = useState(false)
+    const [activeTab, setActiveTab] = useState<'depart' | 'return' | 'travelers' | null>(null)
     const travelersRef = useRef<HTMLDivElement>(null)
 
     // Multi-City State (Adapted for DatePicker)
     const [multiCityFlights, setMultiCityFlights] = useState([
-        { id: 1, from: AIRPORTS[0], to: AIRPORTS[1], date: undefined as Date | undefined },
-        { id: 2, from: AIRPORTS[1], to: AIRPORTS[2], date: undefined as Date | undefined }
+        { id: 1, from: AIRPORTS[0], to: AIRPORTS[1], date: undefined as Date | undefined, isOpen: false },
+        { id: 2, from: AIRPORTS[1], to: AIRPORTS[2], date: undefined as Date | undefined, isOpen: false }
     ])
 
     // Swap Animation State
@@ -44,7 +47,7 @@ export function FlightsHero() {
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
             if (travelersRef.current && !travelersRef.current.contains(event.target as Node)) {
-                setShowTravelers(false)
+                // setActiveTab(null) // handled by SelectPopup
             }
         }
         document.addEventListener("mousedown", handleClickOutside)
@@ -76,6 +79,13 @@ export function FlightsHero() {
     const updateMultiCityDate = (index: number, date: Date | undefined) => {
         const newFlights = [...multiCityFlights]
         newFlights[index].date = date
+        newFlights[index].isOpen = false
+        setMultiCityFlights(newFlights)
+    }
+
+    const toggleMultiCityPopup = (index: number, isOpen: boolean) => {
+        const newFlights = [...multiCityFlights]
+        newFlights[index].isOpen = isOpen
         setMultiCityFlights(newFlights)
     }
 
@@ -194,36 +204,63 @@ export function FlightsHero() {
 
                                 {/* Dates & Travelers */}
                                 <div className="flex flex-col md:grid md:grid-cols-12 gap-3">
-                                    <div className={`w-full ${tripType === 'round-trip' ? 'md:col-span-3' : 'md:col-span-6'} bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-xl p-2 transition-all hover:bg-white dark:hover:bg-white/10`}>
-                                        <DatePicker
-                                            label="Depart"
-                                            date={departDate}
-                                            onSelect={setDepartDate}
-                                            placeholder="Select Date"
-                                            className="w-full"
-                                            variant="inline"
-                                        />
+                                    <div
+                                        className={`w-full ${tripType === 'round-trip' ? 'md:col-span-3' : 'md:col-span-6'} bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-xl px-4 flex flex-col justify-center transition-all hover:bg-white dark:hover:bg-white/10 cursor-pointer relative ${activeTab === 'depart' ? 'bg-white dark:bg-white/10 ring-2 ring-[#FF5E1F]/20' : ''}`}
+                                        onClick={() => setActiveTab('depart')}
+                                    >
+                                        <label className="text-[10px] uppercase tracking-widest text-slate-500 dark:text-white/40 font-bold mb-0.5">Depart</label>
+                                        <div className={`font-bold text-lg ${departDate ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-white/40'}`}>
+                                            {departDate ? departDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Select Date'}
+                                        </div>
+
+                                        <SelectPopup
+                                            isOpen={activeTab === 'depart'}
+                                            onClose={() => setActiveTab(null)}
+                                            className="w-[340px]"
+                                        >
+                                            <Calendar
+                                                selectedDate={departDate}
+                                                onSelect={(d) => {
+                                                    setDepartDate(d)
+                                                    setActiveTab(null)
+                                                }}
+                                                minDate={new Date()}
+                                            />
+                                        </SelectPopup>
                                     </div>
 
                                     {tripType === 'round-trip' && (
-                                        <div className="w-full md:col-span-3 bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-xl p-2 transition-all hover:bg-white dark:hover:bg-white/10">
-                                            <DatePicker
-                                                label="Return"
-                                                date={returnDate}
-                                                onSelect={setReturnDate}
-                                                placeholder="Select Date"
-                                                minDate={departDate}
-                                                className="w-full"
-                                                variant="inline"
-                                            />
+                                        <div
+                                            className={`w-full md:col-span-3 bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-xl px-4 flex flex-col justify-center transition-all hover:bg-white dark:hover:bg-white/10 cursor-pointer relative ${activeTab === 'return' ? 'bg-white dark:bg-white/10 ring-2 ring-[#FF5E1F]/20' : ''}`}
+                                            onClick={() => setActiveTab('return')}
+                                        >
+                                            <label className="text-[10px] uppercase tracking-widest text-slate-500 dark:text-white/40 font-bold mb-0.5">Return</label>
+                                            <div className={`font-bold text-lg ${returnDate ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-white/40'}`}>
+                                                {returnDate ? returnDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Select Date'}
+                                            </div>
+
+                                            <SelectPopup
+                                                isOpen={activeTab === 'return'}
+                                                onClose={() => setActiveTab(null)}
+                                                className="w-[340px]"
+                                            >
+                                                <Calendar
+                                                    selectedDate={returnDate}
+                                                    onSelect={(d) => {
+                                                        setReturnDate(d)
+                                                        setActiveTab(null)
+                                                    }}
+                                                    minDate={departDate}
+                                                />
+                                            </SelectPopup>
                                         </div>
                                     )}
 
                                     {/* Travelers */}
                                     <div className={`${tripType === 'round-trip' ? 'md:col-span-6' : 'md:col-span-6'} relative`} ref={travelersRef}>
                                         <div
-                                            className="h-full min-h-[4rem] bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-xl px-4 flex flex-col justify-center transition-all hover:bg-white dark:hover:bg-white/10 cursor-pointer"
-                                            onClick={() => setShowTravelers(!showTravelers)}
+                                            className={`h-full min-h-[4rem] bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-xl px-4 flex flex-col justify-center transition-all hover:bg-white dark:hover:bg-white/10 cursor-pointer ${activeTab === 'travelers' ? 'bg-white dark:bg-white/10 ring-2 ring-[#FF5E1F]/20' : ''}`}
+                                            onClick={() => setActiveTab('travelers')}
                                         >
                                             <label className="text-[10px] uppercase tracking-widest text-slate-500 dark:text-white/40 font-bold mb-0.5">Travelers</label>
                                             <div className="flex items-center gap-2">
@@ -233,47 +270,39 @@ export function FlightsHero() {
                                             </div>
                                         </div>
 
-                                        {showTravelers && (
-                                            <div className="absolute top-full right-0 mt-3 w-72 bg-white dark:bg-[#18181b] border border-slate-200 dark:border-white/10 rounded-xl shadow-2xl p-5 z-50 animate-in fade-in zoom-in-95 duration-200">
-                                                <div className="flex flex-col gap-4">
-                                                    {[
-                                                        { id: 'adults', label: 'Adults', sub: 'Age 12+' },
-                                                        { id: 'children', label: 'Children', sub: 'Age 2-11' },
-                                                    ].map((item) => (
-                                                        <div key={item.id} className="flex items-center justify-between">
-                                                            <div>
-                                                                <div className="text-slate-900 dark:text-white font-bold text-sm">{item.label}</div>
-                                                                <div className="text-slate-500 dark:text-white/40 text-xs">{item.sub}</div>
-                                                            </div>
-                                                            <div className="flex items-center gap-3">
-                                                                <button
-                                                                    onClick={() => updateTravelers(item.id as keyof typeof travelers, 'sub')}
-                                                                    className={`w-7 h-7 rounded-full border border-slate-200 dark:border-white/20 flex items-center justify-center text-slate-600 dark:text-white transition-colors ${travelers[item.id as keyof typeof travelers] === 0 ? 'opacity-30 cursor-not-allowed' : 'hover:bg-slate-100 dark:hover:bg-white/10'}`}
-                                                                    disabled={travelers[item.id as keyof typeof travelers] === 0}
-                                                                >
-                                                                    -
-                                                                </button>
-                                                                <span className="text-slate-900 dark:text-white font-bold w-4 text-center text-sm">{travelers[item.id as keyof typeof travelers]}</span>
-                                                                <button
-                                                                    onClick={() => updateTravelers(item.id as keyof typeof travelers, 'add')}
-                                                                    className="w-7 h-7 rounded-full border border-slate-200 dark:border-white/20 flex items-center justify-center text-slate-600 dark:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
-                                                                >
-                                                                    +
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                    <div className="pt-3 border-t border-slate-200 dark:border-white/10 mt-1">
-                                                        <button
-                                                            onClick={() => setShowTravelers(false)}
-                                                            className="w-full py-2 bg-[#FF5E1F] hover:bg-orange-600 rounded-lg text-white font-bold text-xs uppercase tracking-wider transition-colors"
-                                                        >
-                                                            Done
-                                                        </button>
-                                                    </div>
+                                        <SelectPopup
+                                            isOpen={activeTab === 'travelers'}
+                                            onClose={() => setActiveTab(null)}
+                                            className="w-[320px] right-0 left-auto"
+                                        >
+                                            <div className="flex flex-col">
+                                                <CounterInput
+                                                    label="Adults"
+                                                    subLabel="Age 12+"
+                                                    value={travelers.adults}
+                                                    onChange={(v) => updateTravelers('adults', v > travelers.adults ? 'add' : 'sub')}
+                                                    min={1}
+                                                />
+                                                <CounterInput
+                                                    label="Children"
+                                                    subLabel="Age 2-11"
+                                                    value={travelers.children}
+                                                    onChange={(v) => updateTravelers('children', v > travelers.children ? 'add' : 'sub')}
+                                                />
+
+                                                <div className="pt-3 border-t border-slate-200 dark:border-white/10 mt-1">
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation()
+                                                            setActiveTab(null)
+                                                        }}
+                                                        className="w-full py-2 bg-[#FF5E1F] hover:bg-orange-600 rounded-lg text-white font-bold text-xs uppercase tracking-wider transition-colors"
+                                                    >
+                                                        Done
+                                                    </button>
                                                 </div>
                                             </div>
-                                        )}
+                                        </SelectPopup>
                                     </div>
                                 </div>
                             </div>
@@ -297,14 +326,26 @@ export function FlightsHero() {
                                         </div>
 
                                         {/* Date */}
-                                        <div className="md:col-span-5 bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-xl p-1">
-                                            <DatePicker
-                                                // No label for compactness
-                                                date={flight.date}
-                                                onSelect={(d) => updateMultiCityDate(index, d)}
-                                                placeholder="Select Date"
-                                                variant="inline"
-                                            />
+                                        {/* Date */}
+                                        <div
+                                            className={`md:col-span-5 bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-xl px-4 py-3 cursor-pointer relative ${flight.isOpen ? 'bg-white dark:bg-white/10 ring-2 ring-[#FF5E1F]/20' : ''}`}
+                                            onClick={() => toggleMultiCityPopup(index, true)}
+                                        >
+                                            <div className={`font-bold text-center ${flight.date ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-white/40'}`}>
+                                                {flight.date ? flight.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Select Date'}
+                                            </div>
+
+                                            <SelectPopup
+                                                isOpen={flight.isOpen}
+                                                onClose={() => toggleMultiCityPopup(index, false)}
+                                                className="w-[340px] right-0 left-auto"
+                                            >
+                                                <Calendar
+                                                    selectedDate={flight.date}
+                                                    onSelect={(d) => updateMultiCityDate(index, d)}
+                                                    minDate={new Date()}
+                                                />
+                                            </SelectPopup>
                                         </div>
                                     </div>
                                 ))}
