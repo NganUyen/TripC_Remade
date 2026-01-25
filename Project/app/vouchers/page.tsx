@@ -3,7 +3,7 @@
 import React from 'react'
 import { VoucherHero } from '@/components/vouchers/VoucherHero'
 import { BalanceBanner } from '@/components/vouchers/BalanceBanner'
-import { VoucherEmptyState } from '@/components/vouchers/VoucherEmptyState'
+import { MarketplaceList } from '@/components/vouchers/MarketplaceList'
 import { Footer } from '@/components/Footer'
 
 export default function VouchersPage() {
@@ -20,13 +20,7 @@ export default function VouchersPage() {
 
                 {/* 3. CONTENT AREA */}
                 <section>
-                    <div className="flex items-center justify-between mb-8">
-                        <h2 className="text-3xl font-black text-[#1c140d] dark:text-white">Gift Cards & Vouchers</h2>
-                        <span className="text-slate-400 font-medium text-sm">Showing 0 results</span>
-                    </div>
-
-                    {/* Empty State Container */}
-                    <VoucherEmptyState />
+                    <MarketplaceList />
                 </section>
 
             </div>
