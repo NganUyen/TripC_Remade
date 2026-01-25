@@ -99,9 +99,7 @@ This creates:
 1. Go to [Clerk Dashboard > Webhooks](https://dashboard.clerk.com)
 2. Click **"Add Endpoint"**
 3. Enter:
-   - **Endpoint URL**:
-     - Dev: `https://abc123.ngrok.io/api/webhooks/clerk`
-     - Prod: `https://your-domain.com/api/webhooks/clerk`
+   - **Endpoint URL:** `https://your-domain.com/api/webhooks/clerk`
    - **Subscribe to events**:
      - ✅ `user.created`
      - ✅ `user.updated`
@@ -138,11 +136,7 @@ cd Project
 npm run dev
 ```
 
-**Terminal 2 - ngrok (if testing webhooks locally):**
-
-```bash
-ngrok http 3000
-```
+**Note:** No additional terminal needed for local development. Users auto-sync on first login.
 
 #### Create Test User
 
@@ -358,7 +352,7 @@ const { wishlist } = useWishlist();
 ### "Webhook verification failed"
 
 - ✅ Verify `CLERK_WEBHOOK_SECRET` matches Clerk dashboard
-- ✅ Check ngrok URL is correct in Clerk webhook settings
+- ✅ Check webhook URL is correct in Clerk webhook settings (production only)
 
 ### "User not appearing in Supabase"
 
@@ -387,7 +381,7 @@ const { wishlist } = useWishlist();
 - [ ] Configured Clerk webhook endpoint
 - [ ] Added webhook secret to `.env.local`
 - [ ] Started development server
-- [ ] (Optional) Started ngrok for local webhook testing
+- [ ] (Optional) Configured webhook for production deployment
 - [ ] Created test user and verified in Supabase
 - [ ] Tested creating a booking
 - [ ] Tested wishlist functionality

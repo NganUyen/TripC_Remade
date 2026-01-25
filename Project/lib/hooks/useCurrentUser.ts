@@ -45,20 +45,56 @@ export function useCurrentUser() {
       }
 
       try {
+        // First, try to fetch the user
+        console.log("🔍 Looking for user in Supabase:", clerkUser.id);
+
         const { data, error } = await supabase
           .from("users")
           .select("*")
           .eq("clerk_id", clerkUser.id)
           .single();
 
-        if (error) {
-          console.error("Error loading user from Supabase:", error);
+        console.log("📊 Supabase query result:", {
+          data,
+          error,
+          errorCode: error?.code,
+        });
+
+        if (error && error.code === "PGRST116") {
+          // User doesn't exist in Supabase - create them automatically
+          console.log("⚠️ User not found - creating in Supabase...");
+
+          const response = await fetch("/api/sync-user", { method: "POST" });
+          const result = await response.json();
+
+          console.log("📝 Sync result:", result);
+
+          if (result.success) {
+            // Fetch the newly created user
+            const { data: newUser } = await supabase
+              .from("users")
+              .select("*")
+              .eq("clerk_id", clerkUser.id)
+              .single();
+
+            console.log("✅ User created successfully:", newUser);
+            setSupabaseUser(newUser);
+          } else {
+            console.error(
+              "❌ Failed to create user in Supabase:",
+              result.error,
+            );
+            setSupabaseUser(null);
+          }
+        } else if (error) {
+          console.error("❌ Error loading user from Supabase:", error);
           setSupabaseUser(null);
         } else {
+          console.log("✅ User found in Supabase:", data.email);
           setSupabaseUser(data);
         }
       } catch (err) {
-        console.error("Error:", err);
+        console.error("❌ Unexpected error:", err);
         setSupabaseUser(null);
       } finally {
         setIsLoading(false);
