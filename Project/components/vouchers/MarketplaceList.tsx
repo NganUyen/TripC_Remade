@@ -46,6 +46,8 @@ export function MarketplaceList() {
                 if (res.ok) {
                     const data = await res.json()
                     setVouchers(data.vouchers || [])
+                } else {
+                    console.error('Marketplace fetch failed:', res.status, await res.text())
                 }
             } catch (err) {
                 console.error(err)

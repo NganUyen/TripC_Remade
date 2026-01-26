@@ -9,9 +9,7 @@ export async function GET() {
 
         const { data: vouchers, error } = await supabase
             .from('vouchers')
-            .select('id, code, voucher_type, discount_value, min_spend, tcent_price, total_usage_limit, current_usage_count, expires_at')
-            .eq('is_active', true)
-            .eq('is_purchasable', true)
+            .select('id, code, voucher_type, discount_value, min_spend, tcent_price, total_usage_limit, current_usage_count, expires_at, is_active, is_purchasable')
             .order('tcent_price', { ascending: true })
 
         if (error) {
@@ -24,8 +22,11 @@ export async function GET() {
             return NextResponse.json({ error: 'Failed to fetch marketplace' }, { status: 500 })
         }
 
+        // Filter in JS since DB filtering was behaving inconsistently
+        const activeVouchers = (vouchers || []).filter(v => v.is_active === true && v.is_purchasable === true)
+
         // Process stock calculation
-        const processedVouchers = (vouchers || []).map(v => ({
+        const processedVouchers = activeVouchers.map(v => ({
             ...v,
             stock_remaining: v.total_usage_limit ? (v.total_usage_limit - (v.current_usage_count || 0)) : 999
         }))

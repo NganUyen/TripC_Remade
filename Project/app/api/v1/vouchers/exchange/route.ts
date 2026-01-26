@@ -65,7 +65,7 @@ export async function POST(req: Request) {
         const { error: deductError } = await supabase.rpc('decrement_balance', {
             row_id: user.id,
             amount: voucher.tcent_price
-        }).catch(() => null)
+        })
 
         // Fallback since we didn't define that RPC yet, we do raw update
         // WARNING: Race condition possible in this basic implementation
