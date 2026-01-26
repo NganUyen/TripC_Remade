@@ -1,72 +1,111 @@
-import React from 'react'
+"use client";
+
+import React, { useEffect, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { toast } from 'sonner'
 import MembershipCard from '@/components/bookings/MembershipCard'
 import WelcomeHeader from '@/components/bookings/WelcomeHeader'
+import { Footer } from '@/components/Footer';
 import BookingTabs from '@/components/bookings/BookingTabs'
-import BookingCard from '@/components/bookings/BookingCard'
 import InspirationCard from '@/components/bookings/InspirationCard'
 import QuickAccessLinks from '@/components/bookings/QuickAccessLinks'
-import AIButton from '@/components/bookings/AIButton'
-
-const BOOKINGS = [
-  {
-    id: 1,
-    title: "Đỉnh Alps & Làng cổ Thụy Sĩ",
-    category: "Hành trình 7 ngày 6 đêm",
-    date: "15/10/2023",
-    peopleCount: "02 Người",
-    imageSrc: "https://lh3.googleusercontent.com/aida-public/AB6AXuDjAV_cyS2Cjj8ly4xh3FqLW49F6ZjDHkekHy1warScBfmQRKeGjBNz0t23U1lrhqEPwuQubomDYem6Nmm7WO8T1FwQJ7lnjJVvAjqoWhZUrl0XrVeB-sgH6RsJWwowDpv_DjCnLLKJEg3bty6ixrZTvhZ8M8aQ95icKLgWIN6v22gkiEy5_dUxAfhqo9bH4yZlziQr24T1M3Pl-2IYn-y7gUeliJnnroyGL7Dc9kwcxdS0mr75p-LTAjQ-SRqxVlwio877Tto_tsY",
-    status: "Đã hủy"
-  },
-  {
-    id: 2,
-    title: "Mùa thu lãng mạn tại Paris",
-    category: "Luxury Getaway",
-    date: "02/11/2023",
-    peopleCount: "01 Người",
-    imageSrc: "https://lh3.googleusercontent.com/aida-public/AB6AXuCpCS2im1wvUEa5d8onkvN6bJLSOowRv3bWZ7turRa9ojfKuVezjEnnMoNKJRak3sBEcXgJN_M5K6_zRy7VU7Vbx1aA6dXygcGJem6_O1xhzP-uSdyddKhrRqGM9M8PR4qRkauRri54hp62DCVWmCQJLCstmJu3aCQNr16e_Yv_uR1k2UCnJ4C4mMWwf02g_aJ-tOP1b8G6j3bDpcQdu-0K9kxsdUSiTu9T9CuAbAbqthEsjxkZy2ZNK65Sn_EcTU5lbPR5nHswJIk",
-    status: "Đã hủy"
-  },
-  {
-    id: 3,
-    title: "Khám phá Tokyo - Kyoto 2023",
-    category: "Văn hóa & Ẩm thực",
-    date: "20/12/2023",
-    peopleCount: "04 Người",
-    imageSrc: "https://lh3.googleusercontent.com/aida-public/AB6AXuAYjNqRFDSdM8QArHUin5U1oAdYlzRA1nfApgogZPFgX8v0mpKuJoPVrq5vSsrBQ4WJownyEC48MLp69DiRIh95xF_wnG-yiscn9iRiwFqyuQvhKJsgqJHGG8YF6NwzNwtBcH0IuTXVVhquQ5-l4l4YsSCqK0cuEfPY3uPrYJ1i3IQgYbBe81Z2wq2CjOgeqpuCnEeTiSoPNVCi2r3Ji735HrBb1EHTsEQCwdQ4qLlmqnyAypXIwn2KXGviDTf92sFD-6HwbzFdq-U",
-    status: "Đã hủy"
-  }
-]
+import { Loader2 } from 'lucide-react'
+import UpcomingBookingCard from '@/components/bookings/cards/UpcomingBookingCard'
+import PendingBookingCard from '@/components/bookings/cards/PendingBookingCard'
+import CancelledBookingCard from '@/components/bookings/cards/CancelledBookingCard'
 
 export default function MyBookingsPage() {
+  const searchParams = useSearchParams();
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'cancelled'>('all');
+
+  useEffect(() => {
+    if (searchParams.get('success') === 'true') {
+      toast.success("Thanh toán thành công!", {
+        description: "Đặt chỗ của bạn đã được xác nhận."
+      });
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    async function fetchBookings() {
+      setIsLoading(true);
+      try {
+        const res = await fetch('/api/bookings/user');
+        if (!res.ok) throw new Error('Failed to fetch bookings');
+        const data = await res.json();
+        setBookings(data);
+      } catch (error) {
+        console.error('Error fetching bookings:', error);
+        toast.error("Không thể tải danh sách đặt chỗ");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchBookings();
+  }, []);
+
+  const filteredBookings = bookings.filter((booking: any) => {
+    if (activeTab === 'all') return ['confirmed', 'completed', 'held'].includes(booking.status);
+    if (activeTab === 'pending') return booking.status === 'pending' || booking.status === 'held';
+    if (activeTab === 'cancelled') return booking.status === 'cancelled';
+    return true;
+  });
+
+  const renderBookingCard = (booking: any) => {
+    if (activeTab === 'pending') {
+      return <PendingBookingCard key={booking.id} booking={booking} />;
+    }
+    if (activeTab === 'cancelled') {
+      return <CancelledBookingCard key={booking.id} booking={booking} />;
+    }
+    // Default / Upcoming
+    return <UpcomingBookingCard key={booking.id} booking={booking} />;
+  };
+
   return (
-    <main className="max-w-7xl mx-auto px-4 md:px-6 py-10 bg-[#F9FAFB] dark:bg-[#0a0a0a] min-h-screen transition-colors duration-300">
-      <div className="asymmetric-grid mb-12 gap-y-8">
-        <MembershipCard />
-        <WelcomeHeader />
-      </div>
-      <section className="mb-12">
-        <BookingTabs />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {BOOKINGS.map((booking) => (
-            <BookingCard
-              key={booking.id}
-              title={booking.title}
-              category={booking.category}
-              date={booking.date}
-              peopleCount={booking.peopleCount}
-              imageSrc={booking.imageSrc}
-              status={booking.status}
-            />
-          ))}
+    <>
+      <main className="w-full max-w-none px-6 lg:px-12 xl:px-16 py-10 bg-[#F9FAFB] dark:bg-[#0a0a0a] min-h-screen transition-colors duration-300">
+        <div className="asymmetric-grid w-full max-w-none mb-12 gap-y-8">
+          <MembershipCard />
+          <WelcomeHeader />
         </div>
-      </section>
-      <div className="asymmetric-grid pb-20">
-        <div className="col-span-12 lg:col-span-8">
-          <InspirationCard />
+        <section className="mb-12">
+          <BookingTabs activeTab={activeTab} onTabChange={setActiveTab} />
+
+          {isLoading ? (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="w-12 h-12 animate-spin text-primary" />
+            </div>
+          ) : filteredBookings.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800">
+              <div className="size-20 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
+                <span className="material-symbols-outlined text-4xl text-slate-300">receipt_long</span>
+              </div>
+              <h3 className="text-xl font-bold mb-2">Không có đặt chỗ nào</h3>
+              <p className="text-muted text-sm max-w-xs">
+                {activeTab === 'all'
+                  ? 'Bạn chưa có chuyến đi nào được đặt.'
+                  : activeTab === 'pending'
+                    ? 'Không có đơn hàng nào đang chờ thanh toán.'
+                    : 'Không có đặt chỗ nào bị hủy.'}
+              </p>
+            </div>
+          ) : (
+            <div className={`grid gap-6 ${activeTab === 'pending' ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'}`}>
+              {filteredBookings.map((booking) => renderBookingCard(booking))}
+            </div>
+          )}
+        </section>
+        <div className="asymmetric-grid w-full max-w-none pb-20">
+          <div className="col-span-12 lg:col-span-8">
+            <InspirationCard />
+          </div>
+          <QuickAccessLinks />
         </div>
-        <QuickAccessLinks />
-      </div>
-      <AIButton />
-    </main>
+      </main>
+      <Footer />
+    </>
   )
 }
