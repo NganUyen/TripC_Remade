@@ -1,50 +1,135 @@
 "use client";
 
-import { useQuery, useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { useCurrentUser } from "./useCurrentUser";
+import { useSupabaseClient } from "@/lib/supabase";
+import { useUser } from "@clerk/nextjs";
+import { useEffect, useState } from "react";
 
+interface WishlistItem {
+  id: string;
+  user_id: string;
+  item_type: string;
+  item_id: string;
+  title: string;
+  image_url: string | null;
+  price: number | null;
+  created_at: string;
+}
+
+type NewWishlistItem = Omit<WishlistItem, "id" | "user_id" | "created_at">;
+
+/**
+ * Hook to manage wishlist with Supabase
+ * Uses Clerk session token for authentication (RLS enforced)
+ */
 export function useWishlist() {
-  const { convexUser } = useCurrentUser();
+  const { user } = useUser();
+  const supabase = useSupabaseClient();
+  const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const wishlist = useQuery(
-    api.wishlist.getUserWishlist,
-    convexUser ? { userId: convexUser._id } : "skip",
-  );
+  useEffect(() => {
+    async function loadWishlist() {
+      if (!user) {
+        setWishlist([]);
+        setIsLoading(false);
+        return;
+      }
 
-  const addToWishlist = useMutation(api.wishlist.addToWishlist);
-  const removeFromWishlist = useMutation(api.wishlist.removeFromWishlist);
+      try {
+        // RLS automatically filters to current user's wishlist
+        const { data, error } = await supabase
+          .from("wishlist")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (error) throw error;
+        setWishlist(data || []);
+      } catch (err) {
+        console.error("Error loading wishlist:", err);
+        setWishlist([]);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadWishlist();
+
+    // Optional: Subscribe to realtime changes
+    const channel = supabase
+      .channel("wishlist_changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "wishlist",
+        },
+        () => {
+          loadWishlist();
+        },
+      )
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [user, supabase]);
 
   const isInWishlist = (itemId: string) => {
-    return wishlist?.some((item) => item.itemId === itemId) ?? false;
+    return wishlist.some((item) => item.item_id === itemId);
   };
 
-  const toggleWishlist = async (item: {
-    itemType: string;
-    itemId: string;
-    title: string;
-    imageUrl?: string;
-    price?: number;
-  }) => {
-    if (!convexUser) return;
+  const addToWishlist = async (item: NewWishlistItem) => {
+    if (!user) throw new Error("Must be authenticated");
 
-    const existingItem = wishlist?.find((w) => w.itemId === item.itemId);
+    try {
+      const { data, error } = await supabase
+        .from("wishlist")
+        .insert({
+          ...item,
+          user_id: user.id, // Explicitly set user_id from Clerk
+        })
+        .select()
+        .single();
 
-    if (existingItem) {
-      await removeFromWishlist({ wishlistId: existingItem._id });
+      if (error) throw error;
+      return data;
+    } catch (err) {
+      console.error("Error adding to wishlist:", err);
+      throw err;
+    }
+  };
+
+  const removeFromWishlist = async (itemId: string) => {
+    try {
+      const { error } = await supabase
+        .from("wishlist")
+        .delete()
+        .eq("item_id", itemId);
+
+      if (error) throw error;
+    } catch (err) {
+      console.error("Error removing from wishlist:", err);
+      throw err;
+    }
+  };
+
+  const toggleWishlist = async (item: NewWishlistItem) => {
+    if (isInWishlist(item.item_id)) {
+      await removeFromWishlist(item.item_id);
+      return false; // Removed
     } else {
-      await addToWishlist({
-        userId: convexUser._id,
-        ...item,
-      });
+      await addToWishlist(item);
+      return true; // Added
     }
   };
 
   return {
     wishlist,
+    isLoading,
     isInWishlist,
-    toggleWishlist,
     addToWishlist,
     removeFromWishlist,
+    toggleWishlist,
   };
 }

@@ -6,6 +6,7 @@ import { Star, ShoppingBag, Heart } from 'lucide-react'
 
 export interface ProductCardProps {
     id: string | number
+    slug?: string  // Add slug for SEO-friendly URLs
     title: string
     price: number
     rating: number
@@ -17,12 +18,15 @@ export interface ProductCardProps {
     colors?: string[]
 }
 
-export function ProductCard({ id, title, price, rating, reviews, image, badge, compareAtPrice, category = "Travel Gear", colors = ["#000000", "#1e293b", "#cbd5e1"] }: ProductCardProps) {
+export function ProductCard({ id, slug, title, price, rating, reviews, image, badge, compareAtPrice, category = "Travel Gear", colors = ["#000000", "#1e293b", "#cbd5e1"] }: ProductCardProps) {
     const discount = compareAtPrice ? Math.round(((compareAtPrice - price) / compareAtPrice) * 100) : 0
+
+    // Use slug if available, fallback to id
+    const productUrl = slug ? `/shop/product/${slug}` : `/shop/product/${id}`
 
     return (
         <Link
-            href={`/shop/product/${id}`}
+            href={productUrl}
             prefetch={true}
             className="group relative flex flex-col gap-3 rounded-2xl cursor-pointer"
         >

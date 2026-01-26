@@ -1,0 +1,436 @@
+/**
+ * Shop API Hooks
+ * 
+ * Custom hooks for interacting with the Shop API.
+ * Provides data fetching, caching, and state management for shop features.
+ */
+
+import { useState, useEffect, useCallback } from 'react';
+
+// ============================================================================
+// API Base URL
+// ============================================================================
+
+const API_BASE = '/api/shop';
+
+// ============================================================================
+// Types (matching backend response shapes)
+// ============================================================================
+
+export interface Money {
+    amount: number;
+    currency: string;
+}
+
+export interface ProductListItem {
+    id: string;
+    slug: string;
+    title: string;
+    image_url: string | null;
+    price_from: Money;
+    rating_avg: number;
+    review_count: number;
+    is_featured: boolean;
+}
+
+export interface ProductVariant {
+    id: string;
+    sku: string;
+    title: string;
+    price: Money;
+    compare_at_price: Money | null;
+    stock_on_hand: number;
+    is_active: boolean;
+    options: { name: string; value: string }[];
+}
+
+export interface ProductDetail {
+    id: string;
+    slug: string;
+    title: string;
+    description: string;
+    product_type: string;
+    status: string;
+    rating_avg: number;
+    review_count: number;
+    is_featured: boolean;
+    category: { id: string; slug: string; name: string } | null;
+    brand: { id: string; slug: string; name: string; logo_url?: string } | null;
+    images: { id: string; url: string; alt: string; is_primary: boolean }[];
+    variants: ProductVariant[];
+}
+
+export interface CartItem {
+    id: string;
+    variant_id: string;
+    qty: number;
+    unit_price: Money;
+    line_total: Money;
+    title_snapshot: string;
+    variant_snapshot: Record<string, string>;
+}
+
+export interface Cart {
+    id: string;
+    status: string;
+    currency: string;
+    items: CartItem[];
+    subtotal: Money;
+    discount_total: Money;
+    shipping_total: Money;
+    grand_total: Money;
+    item_count: number;
+    coupon_code: string | null;
+}
+
+export interface Category {
+    id: string;
+    slug: string;
+    name: string;
+    parent_id: string | null;
+    image_url?: string;
+    children?: Category[];
+}
+
+export interface VoucherTemplate {
+    id: string;
+    title: string;
+    description: string;
+    tcent_cost: number;
+    discount_mode: string;
+    discount_value: number;
+    currency: string;
+    min_spend_threshold: number;
+}
+
+// ============================================================================
+// API Client Functions
+// ============================================================================
+
+async function fetchApi<T>(
+    endpoint: string,
+    options?: RequestInit
+): Promise<{ data: T | null; error: string | null }> {
+    try {
+        const response = await fetch(`${API_BASE}${endpoint}`, {
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                // Add session ID for cart operations (stored in localStorage)
+                'x-session-id': typeof window !== 'undefined'
+                    ? localStorage.getItem('shop_session_id') || generateSessionId()
+                    : '',
+                ...options?.headers,
+            },
+        });
+
+        const json = await response.json();
+
+        if (!response.ok) {
+            return { data: null, error: json.error?.message || 'Request failed' };
+        }
+
+        return { data: json.data, error: null };
+    } catch (error) {
+        return { data: null, error: 'Network error' };
+    }
+}
+
+function generateSessionId(): string {
+    const sessionId = `session-${crypto.randomUUID()}`;
+    if (typeof window !== 'undefined') {
+        localStorage.setItem('shop_session_id', sessionId);
+    }
+    return sessionId;
+}
+
+// ============================================================================
+// API Functions
+// ============================================================================
+
+export const shopApi = {
+    // Products
+    async getProducts(params?: {
+        limit?: number;
+        offset?: number;
+        category?: string;
+        brand?: string;
+        featured?: boolean;
+        sort?: string;
+    }): Promise<{ data: ProductListItem[]; total: number; error: string | null }> {
+        const query = new URLSearchParams();
+        if (params?.limit) query.set('limit', String(params.limit));
+        if (params?.offset) query.set('offset', String(params.offset));
+        if (params?.category) query.set('category', params.category);
+        if (params?.brand) query.set('brand', params.brand);
+        if (params?.featured) query.set('featured', 'true');
+        if (params?.sort) query.set('sort', params.sort);
+
+        const response = await fetch(`${API_BASE}/products?${query}`);
+        const json = await response.json();
+
+        if (!response.ok) {
+            return { data: [], total: 0, error: json.error?.message || 'Failed to fetch' };
+        }
+
+        return { data: json.data || [], total: json.meta?.total || 0, error: null };
+    },
+
+    async getProduct(slug: string): Promise<{ data: ProductDetail | null; error: string | null }> {
+        return fetchApi<ProductDetail>(`/products/${slug}`);
+    },
+
+    async searchProducts(query: string, limit = 10): Promise<{ data: ProductListItem[]; error: string | null }> {
+        const response = await fetch(`${API_BASE}/products/search?q=${encodeURIComponent(query)}&limit=${limit}`);
+        const json = await response.json();
+        return { data: json.data || [], error: null };
+    },
+
+    // Categories
+    async getCategories(): Promise<{ data: Category[]; error: string | null }> {
+        const result = await fetchApi<Category[]>('/categories');
+        return { data: result.data || [], error: result.error };
+    },
+
+    // Cart
+    async getCart(): Promise<{ data: Cart | null; error: string | null }> {
+        const sessionId = typeof window !== 'undefined'
+            ? localStorage.getItem('shop_session_id') || generateSessionId()
+            : '';
+
+        const response = await fetch(`${API_BASE}/cart`, {
+            headers: { 'x-session-id': sessionId },
+        });
+        const json = await response.json();
+        return { data: json.data, error: null };
+    },
+
+    async addToCart(variantId: string, qty: number): Promise<{ data: Cart | null; error: string | null }> {
+        const sessionId = typeof window !== 'undefined'
+            ? localStorage.getItem('shop_session_id') || generateSessionId()
+            : '';
+
+        const response = await fetch(`${API_BASE}/cart/items`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-session-id': sessionId,
+            },
+            body: JSON.stringify({ variant_id: variantId, qty }),
+        });
+        const json = await response.json();
+
+        if (!response.ok) {
+            return { data: null, error: json.error?.message || 'Failed to add item' };
+        }
+
+        return { data: json.data, error: null };
+    },
+
+    async updateCartItem(itemId: string, qty: number): Promise<{ data: Cart | null; error: string | null }> {
+        const sessionId = typeof window !== 'undefined'
+            ? localStorage.getItem('shop_session_id') || ''
+            : '';
+
+        const response = await fetch(`${API_BASE}/cart/items/${itemId}`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-session-id': sessionId,
+            },
+            body: JSON.stringify({ qty }),
+        });
+        const json = await response.json();
+
+        if (!response.ok) {
+            return { data: null, error: json.error?.message || 'Failed to update' };
+        }
+
+        return { data: json.data, error: null };
+    },
+
+    async removeCartItem(itemId: string): Promise<{ data: Cart | null; error: string | null }> {
+        const sessionId = typeof window !== 'undefined'
+            ? localStorage.getItem('shop_session_id') || ''
+            : '';
+
+        const response = await fetch(`${API_BASE}/cart/items/${itemId}`, {
+            method: 'DELETE',
+            headers: { 'x-session-id': sessionId },
+        });
+        const json = await response.json();
+        return { data: json.data, error: null };
+    },
+
+    // Vouchers
+    async getVouchers(): Promise<{ data: VoucherTemplate[]; error: string | null }> {
+        const result = await fetchApi<VoucherTemplate[]>('/vouchers/available');
+        return { data: result.data || [], error: result.error };
+    },
+};
+
+// ============================================================================
+// React Hooks
+// ============================================================================
+
+export function useProducts(params?: Parameters<typeof shopApi.getProducts>[0]) {
+    const [products, setProducts] = useState<ProductListItem[]>([]);
+    const [total, setTotal] = useState(0);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        async function fetchProducts() {
+            setLoading(true);
+            const result = await shopApi.getProducts(params);
+
+            if (!cancelled) {
+                setProducts(result.data);
+                setTotal(result.total);
+                setError(result.error);
+                setLoading(false);
+            }
+        }
+
+        fetchProducts();
+
+        return () => { cancelled = true; };
+    }, [params?.limit, params?.offset, params?.category, params?.brand, params?.featured, params?.sort]);
+
+    return { products, total, loading, error };
+}
+
+export function useProduct(slug: string) {
+    const [product, setProduct] = useState<ProductDetail | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        async function fetchProduct() {
+            setLoading(true);
+            const result = await shopApi.getProduct(slug);
+
+            if (!cancelled) {
+                setProduct(result.data);
+                setError(result.error);
+                setLoading(false);
+            }
+        }
+
+        if (slug) fetchProduct();
+
+        return () => { cancelled = true; };
+    }, [slug]);
+
+    return { product, loading, error };
+}
+
+export function useCategories() {
+    const [categories, setCategories] = useState<Category[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        async function fetchCategories() {
+            const result = await shopApi.getCategories();
+
+            if (!cancelled) {
+                setCategories(result.data || []);
+                setError(result.error);
+                setLoading(false);
+            }
+        }
+
+        fetchCategories();
+
+        return () => { cancelled = true; };
+    }, []);
+
+    return { categories, loading, error };
+}
+
+export function useCart() {
+    const [cart, setCart] = useState<Cart | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    const refresh = useCallback(async () => {
+        setLoading(true);
+        const result = await shopApi.getCart();
+        setCart(result.data);
+        setError(result.error);
+        setLoading(false);
+    }, []);
+
+    useEffect(() => {
+        refresh();
+    }, [refresh]);
+
+    const addItem = useCallback(async (variantId: string, qty: number) => {
+        const result = await shopApi.addToCart(variantId, qty);
+        if (result.data) setCart(result.data);
+        return result;
+    }, []);
+
+    const updateItem = useCallback(async (itemId: string, qty: number) => {
+        const result = await shopApi.updateCartItem(itemId, qty);
+        if (result.data) setCart(result.data);
+        return result;
+    }, []);
+
+    const removeItem = useCallback(async (itemId: string) => {
+        const result = await shopApi.removeCartItem(itemId);
+        if (result.data) setCart(result.data);
+        return result;
+    }, []);
+
+    return { cart, loading, error, refresh, addItem, updateItem, removeItem };
+}
+
+export function useVouchers() {
+    const [vouchers, setVouchers] = useState<VoucherTemplate[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        async function fetchVouchers() {
+            const result = await shopApi.getVouchers();
+
+            if (!cancelled) {
+                setVouchers(result.data || []);
+                setError(result.error);
+                setLoading(false);
+            }
+        }
+
+        fetchVouchers();
+
+        return () => { cancelled = true; };
+    }, []);
+
+    return { vouchers, loading, error };
+}
+
+// ============================================================================
+// Utility Functions
+// ============================================================================
+
+export function formatPrice(money: Money): string {
+    const amount = money.amount / 100;
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: money.currency,
+    }).format(amount);
+}
+
+export function formatPriceSimple(cents: number): number {
+    return cents / 100;
+}

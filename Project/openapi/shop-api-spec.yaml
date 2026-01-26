@@ -1,0 +1,1510 @@
+openapi: 3.1.0
+info:
+  title: TripC Shop API
+  version: 1.0.0
+  description: |
+    E-commerce API for TripC SuperApp Shop module.
+    
+    ## Decision Log
+    - Pagination: Default limit=20, offset=0
+    - Guest carts use x-session-id header
+    - All money values in cents (integer)
+    - Currency default: USD
+    - Auth: Bearer JWT from Clerk
+    - Only pending orders can be cancelled
+    
+  contact:
+    name: TripC Dev Team
+
+servers:
+  - url: http://localhost:3000/api/shop
+    description: Local development
+  - url: https://tripc.ai/api/shop
+    description: Production
+
+security:
+  - BearerAuth: []
+  - SessionAuth: []
+
+tags:
+  - name: Health
+    description: Health check endpoints
+  - name: Products
+    description: Product catalog
+  - name: Cart
+    description: Shopping cart operations
+  - name: Checkout
+    description: Checkout and addresses
+  - name: Orders
+    description: Order management
+  - name: Vouchers
+    description: Voucher redemption
+  - name: User
+    description: Wishlist and reviews
+
+paths:
+  # ============================================================================
+  # HEALTH
+  # ============================================================================
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      operationId: getHealth
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /health/ready:
+    get:
+      tags: [Health]
+      summary: Readiness check with dependencies
+      operationId: getHealthReady
+      security: []
+      responses:
+        '200':
+          description: Service is ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadinessResponse'
+
+  # ============================================================================
+  # PRODUCTS
+  # ============================================================================
+  /products:
+    get:
+      tags: [Products]
+      summary: List products
+      operationId: listProducts
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
+        - name: category
+          in: query
+          schema:
+            type: string
+          description: Filter by category slug
+        - name: brand
+          in: query
+          schema:
+            type: string
+          description: Filter by brand slug
+        - name: featured
+          in: query
+          schema:
+            type: boolean
+          description: Filter featured products
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [newest, price_asc, price_desc, rating]
+            default: newest
+      responses:
+        '200':
+          description: List of products
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductListResponse'
+
+  /products/search:
+    get:
+      tags: [Products]
+      summary: Search products
+      operationId: searchProducts
+      security: []
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 2
+          description: Search query
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductListResponse'
+
+  /products/{slug}:
+    get:
+      tags: [Products]
+      summary: Get product detail
+      operationId: getProduct
+      security: []
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Product detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDetailResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /categories:
+    get:
+      tags: [Products]
+      summary: List categories
+      operationId: listCategories
+      security: []
+      responses:
+        '200':
+          description: Category tree
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryListResponse'
+
+  # ============================================================================
+  # CART
+  # ============================================================================
+  /cart:
+    get:
+      tags: [Cart]
+      summary: Get current cart
+      operationId: getCart
+      responses:
+        '200':
+          description: Current cart with items
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartResponse'
+
+  /cart/items:
+    post:
+      tags: [Cart]
+      summary: Add item to cart
+      operationId: addCartItem
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddCartItemRequest'
+      responses:
+        '201':
+          description: Item added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Insufficient stock
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /cart/items/{id}:
+    patch:
+      tags: [Cart]
+      summary: Update cart item quantity
+      operationId: updateCartItem
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCartItemRequest'
+      responses:
+        '200':
+          description: Item updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Cart]
+      summary: Remove cart item
+      operationId: deleteCartItem
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Item removed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /cart/apply-coupon:
+    post:
+      tags: [Cart]
+      summary: Apply coupon code
+      operationId: applyCoupon
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApplyCouponRequest'
+      responses:
+        '200':
+          description: Coupon applied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartResponse'
+        '400':
+          description: Invalid coupon
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ============================================================================
+  # CHECKOUT
+  # ============================================================================
+  /checkout:
+    post:
+      tags: [Checkout]
+      summary: Create order from cart
+      operationId: checkout
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckoutRequest'
+      responses:
+        '201':
+          description: Order created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Cart empty or stock issue
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /addresses:
+    get:
+      tags: [Checkout]
+      summary: List user addresses
+      operationId: listAddresses
+      responses:
+        '200':
+          description: User addresses
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddressListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      tags: [Checkout]
+      summary: Add new address
+      operationId: createAddress
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAddressRequest'
+      responses:
+        '201':
+          description: Address created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddressResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /shipping-methods:
+    get:
+      tags: [Checkout]
+      summary: List shipping methods
+      operationId: listShippingMethods
+      security: []
+      responses:
+        '200':
+          description: Available shipping methods
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShippingMethodListResponse'
+
+  # ============================================================================
+  # ORDERS
+  # ============================================================================
+  /orders:
+    get:
+      tags: [Orders]
+      summary: List user orders
+      operationId: listOrders
+      parameters:
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/OrderStatus'
+      responses:
+        '200':
+          description: User orders
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /orders/{number}:
+    get:
+      tags: [Orders]
+      summary: Get order detail
+      operationId: getOrder
+      parameters:
+        - name: number
+          in: path
+          required: true
+          schema:
+            type: string
+          example: TC-260125-100001
+      responses:
+        '200':
+          description: Order detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDetailResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /orders/{id}/history:
+    get:
+      tags: [Orders]
+      summary: Get order status history
+      operationId: getOrderHistory
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Status history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderHistoryResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /orders/{id}/cancel:
+    post:
+      tags: [Orders]
+      summary: Cancel order
+      operationId: cancelOrder
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelOrderRequest'
+      responses:
+        '200':
+          description: Order cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '400':
+          description: Cannot cancel
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ============================================================================
+  # VOUCHERS
+  # ============================================================================
+  /vouchers/available:
+    get:
+      tags: [Vouchers]
+      summary: List available voucher templates
+      operationId: listVoucherTemplates
+      responses:
+        '200':
+          description: Available vouchers to redeem
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoucherTemplateListResponse'
+
+  /vouchers/redeem:
+    post:
+      tags: [Vouchers]
+      summary: Redeem voucher with TripCent
+      operationId: redeemVoucher
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RedeemVoucherRequest'
+      responses:
+        '201':
+          description: Voucher redeemed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserVoucherResponse'
+        '400':
+          description: Insufficient TripCent or not available
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /vouchers/my:
+    get:
+      tags: [Vouchers]
+      summary: List user's vouchers
+      operationId: listUserVouchers
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, used, expired]
+      responses:
+        '200':
+          description: User's vouchers
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserVoucherListResponse'
+
+  # ============================================================================
+  # USER FEATURES
+  # ============================================================================
+  /wishlist:
+    get:
+      tags: [User]
+      summary: Get wishlist
+      operationId: getWishlist
+      responses:
+        '200':
+          description: User's wishlist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WishlistResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      tags: [User]
+      summary: Add to wishlist
+      operationId: addToWishlist
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddToWishlistRequest'
+      responses:
+        '201':
+          description: Added to wishlist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WishlistResponse'
+        '409':
+          description: Already in wishlist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /wishlist/{productId}:
+    delete:
+      tags: [User]
+      summary: Remove from wishlist
+      operationId: removeFromWishlist
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Removed from wishlist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /reviews:
+    post:
+      tags: [User]
+      summary: Submit product review
+      operationId: submitReview
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateReviewRequest'
+      responses:
+        '201':
+          description: Review submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+# ==============================================================================
+# COMPONENTS
+# ==============================================================================
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Clerk JWT token
+    SessionAuth:
+      type: apiKey
+      in: header
+      name: x-session-id
+      description: Session ID for guest carts
+
+  parameters:
+    LimitParam:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    OffsetParam:
+      name: offset
+      in: query
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    # --------------------------------------------------------------------------
+    # Common
+    # --------------------------------------------------------------------------
+    Money:
+      type: object
+      required: [amount, currency]
+      properties:
+        amount:
+          type: integer
+          description: Amount in cents
+          example: 29900
+        currency:
+          type: string
+          example: USD
+
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              example: CART_ITEM_NOT_FOUND
+            message:
+              type: string
+              example: Cart item does not exist
+            details:
+              type: object
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+
+    ResponseMeta:
+      type: object
+      properties:
+        request_id:
+          type: string
+          format: uuid
+
+    PaginationMeta:
+      type: object
+      properties:
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+        has_more:
+          type: boolean
+
+    # --------------------------------------------------------------------------
+    # Health
+    # --------------------------------------------------------------------------
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        timestamp:
+          type: string
+          format: date-time
+        version:
+          type: string
+
+    ReadinessResponse:
+      type: object
+      properties:
+        ready:
+          type: boolean
+        dependencies:
+          type: object
+          properties:
+            database:
+              type: boolean
+            cache:
+              type: boolean
+            mock:
+              type: boolean
+
+    # --------------------------------------------------------------------------
+    # Products
+    # --------------------------------------------------------------------------
+    Category:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        slug:
+          type: string
+        name:
+          type: string
+        parent_id:
+          type: string
+          format: uuid
+          nullable: true
+        image_url:
+          type: string
+          nullable: true
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
+
+    Brand:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        slug:
+          type: string
+        name:
+          type: string
+        logo_url:
+          type: string
+          nullable: true
+
+    ProductImage:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        url:
+          type: string
+        alt:
+          type: string
+          nullable: true
+        is_primary:
+          type: boolean
+
+    VariantOption:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Size
+        value:
+          type: string
+          example: 28-inch
+
+    ProductVariant:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        sku:
+          type: string
+        title:
+          type: string
+          nullable: true
+        price:
+          $ref: '#/components/schemas/Money'
+        compare_at_price:
+          $ref: '#/components/schemas/Money'
+        stock_on_hand:
+          type: integer
+        is_active:
+          type: boolean
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/VariantOption'
+
+    ProductSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        slug:
+          type: string
+        title:
+          type: string
+        image_url:
+          type: string
+          nullable: true
+        price_from:
+          $ref: '#/components/schemas/Money'
+        rating_avg:
+          type: number
+          format: float
+        review_count:
+          type: integer
+        is_featured:
+          type: boolean
+
+    ProductDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        slug:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        product_type:
+          type: string
+          enum: [physical, digital]
+        status:
+          type: string
+          enum: [draft, active, archived]
+        rating_avg:
+          type: number
+        review_count:
+          type: integer
+        is_featured:
+          type: boolean
+        category:
+          $ref: '#/components/schemas/Category'
+        brand:
+          $ref: '#/components/schemas/Brand'
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductImage'
+        variants:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductVariant'
+
+    ProductListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductSummary'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    ProductDetailResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/ProductDetail'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+
+    CategoryListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+
+    # --------------------------------------------------------------------------
+    # Cart
+    # --------------------------------------------------------------------------
+    CartItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        variant_id:
+          type: string
+          format: uuid
+        qty:
+          type: integer
+        unit_price:
+          $ref: '#/components/schemas/Money'
+        line_total:
+          $ref: '#/components/schemas/Money'
+        title_snapshot:
+          type: string
+        variant_snapshot:
+          type: object
+        product:
+          $ref: '#/components/schemas/ProductSummary'
+
+    Cart:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [active, converted, abandoned]
+        currency:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CartItem'
+        subtotal:
+          $ref: '#/components/schemas/Money'
+        discount_total:
+          $ref: '#/components/schemas/Money'
+        shipping_total:
+          $ref: '#/components/schemas/Money'
+        grand_total:
+          $ref: '#/components/schemas/Money'
+        item_count:
+          type: integer
+        coupon_code:
+          type: string
+          nullable: true
+
+    CartResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Cart'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+
+    AddCartItemRequest:
+      type: object
+      required: [variant_id, qty]
+      properties:
+        variant_id:
+          type: string
+          format: uuid
+        qty:
+          type: integer
+          minimum: 1
+          maximum: 99
+
+    UpdateCartItemRequest:
+      type: object
+      required: [qty]
+      properties:
+        qty:
+          type: integer
+          minimum: 1
+          maximum: 99
+
+    ApplyCouponRequest:
+      type: object
+      required: [code]
+      properties:
+        code:
+          type: string
+          example: NEWYEAR2026
+
+    # --------------------------------------------------------------------------
+    # Checkout
+    # --------------------------------------------------------------------------
+    Address:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        label:
+          type: string
+          nullable: true
+        full_name:
+          type: string
+        phone:
+          type: string
+          nullable: true
+        country:
+          type: string
+        city:
+          type: string
+        district:
+          type: string
+          nullable: true
+        line1:
+          type: string
+        line2:
+          type: string
+          nullable: true
+        postal_code:
+          type: string
+          nullable: true
+        is_default:
+          type: boolean
+
+    CreateAddressRequest:
+      type: object
+      required: [full_name, country, city, line1]
+      properties:
+        label:
+          type: string
+        full_name:
+          type: string
+        phone:
+          type: string
+        country:
+          type: string
+        city:
+          type: string
+        district:
+          type: string
+        line1:
+          type: string
+        line2:
+          type: string
+        postal_code:
+          type: string
+        is_default:
+          type: boolean
+          default: false
+
+    AddressResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Address'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+
+    AddressListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Address'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+
+    ShippingMethod:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        base_fee:
+          $ref: '#/components/schemas/Money'
+        estimated_days_min:
+          type: integer
+        estimated_days_max:
+          type: integer
+
+    ShippingMethodListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ShippingMethod'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+
+    CheckoutRequest:
+      type: object
+      required: [shipping_address_id, shipping_method_id]
+      properties:
+        shipping_address_id:
+          type: string
+          format: uuid
+        shipping_method_id:
+          type: string
+          format: uuid
+        voucher_code:
+          type: string
+          nullable: true
+        customer_notes:
+          type: string
+          nullable: true
+
+    # --------------------------------------------------------------------------
+    # Orders
+    # --------------------------------------------------------------------------
+    OrderStatus:
+      type: string
+      enum: [pending, processing, shipped, delivered, cancelled]
+
+    PaymentStatus:
+      type: string
+      enum: [pending, paid, failed, refunded, partial_refund]
+
+    OrderItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title_snapshot:
+          type: string
+        sku_snapshot:
+          type: string
+        image_url_snapshot:
+          type: string
+          nullable: true
+        qty:
+          type: integer
+        unit_price:
+          $ref: '#/components/schemas/Money'
+        line_total:
+          $ref: '#/components/schemas/Money'
+
+    OrderSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        order_number:
+          type: string
+          example: TC-260125-100001
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+        payment_status:
+          $ref: '#/components/schemas/PaymentStatus'
+        grand_total:
+          $ref: '#/components/schemas/Money'
+        item_count:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+
+    OrderDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        order_number:
+          type: string
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+        payment_status:
+          $ref: '#/components/schemas/PaymentStatus'
+        subtotal:
+          $ref: '#/components/schemas/Money'
+        discount_total:
+          $ref: '#/components/schemas/Money'
+        shipping_total:
+          $ref: '#/components/schemas/Money'
+        grand_total:
+          $ref: '#/components/schemas/Money'
+        tcent_earned:
+          type: integer
+        tcent_used:
+          type: integer
+        shipping_address:
+          $ref: '#/components/schemas/Address'
+        shipping_method:
+          $ref: '#/components/schemas/ShippingMethod'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+        tracking_numbers:
+          type: array
+          items:
+            type: string
+        customer_notes:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    OrderResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/OrderDetail'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+
+    OrderListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderSummary'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    OrderDetailResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/OrderDetail'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+
+    OrderStatusHistoryEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        old_status:
+          type: string
+          nullable: true
+        new_status:
+          type: string
+        old_payment_status:
+          type: string
+          nullable: true
+        new_payment_status:
+          type: string
+          nullable: true
+        changed_by_type:
+          type: string
+          enum: [system, user, admin]
+        notes:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    OrderHistoryResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderStatusHistoryEntry'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+
+    CancelOrderRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+
+    # --------------------------------------------------------------------------
+    # Vouchers
+    # --------------------------------------------------------------------------
+    VoucherTemplate:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        tcent_cost:
+          type: integer
+        discount_mode:
+          type: string
+          enum: [percent, fixed]
+        discount_value:
+          type: number
+        currency:
+          type: string
+        min_spend_threshold:
+          type: integer
+        remaining_inventory:
+          type: integer
+          nullable: true
+        validity_days:
+          type: integer
+        starts_at:
+          type: string
+          format: date-time
+          nullable: true
+        ends_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    VoucherTemplateListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/VoucherTemplate'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+
+    UserVoucher:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        unique_code:
+          type: string
+          example: V-A3F8D9E2
+        status:
+          type: string
+          enum: [active, used, expired]
+        template:
+          $ref: '#/components/schemas/VoucherTemplate'
+        acquired_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+        used_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    UserVoucherResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/UserVoucher'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+
+    UserVoucherListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserVoucher'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+
+    RedeemVoucherRequest:
+      type: object
+      required: [template_id]
+      properties:
+        template_id:
+          type: string
+          format: uuid
+
+    # --------------------------------------------------------------------------
+    # User Features
+    # --------------------------------------------------------------------------
+    WishlistItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        product:
+          $ref: '#/components/schemas/ProductSummary'
+        added_at:
+          type: string
+          format: date-time
+
+    WishlistResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/WishlistItem'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+
+    AddToWishlistRequest:
+      type: object
+      required: [product_id]
+      properties:
+        product_id:
+          type: string
+          format: uuid
+
+    Review:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        product_id:
+          type: string
+          format: uuid
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        title:
+          type: string
+          nullable: true
+        body:
+          type: string
+          nullable: true
+        is_verified_purchase:
+          type: boolean
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+        created_at:
+          type: string
+          format: date-time
+
+    ReviewResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Review'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+
+    CreateReviewRequest:
+      type: object
+      required: [product_id, rating]
+      properties:
+        product_id:
+          type: string
+          format: uuid
+        order_id:
+          type: string
+          format: uuid
+          description: Include for verified purchase badge
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        title:
+          type: string
+          maxLength: 255
+        body:
+          type: string
