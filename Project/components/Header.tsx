@@ -5,10 +5,14 @@ import Link from "next/link";
 import { UserProfileMenu } from "./UserProfileMenu";
 import { BellButton } from "./notifications/BellButton";
 import { SignInButton, SignedIn, SignedOut, useUser } from "@clerk/nextjs";
+import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 
 export function Header() {
   const { user } = useUser();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+
+  // Auto-sync user to Supabase on first login
+  useCurrentUser();
 
   return (
     <header className="sticky top-0 z-[60] bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
