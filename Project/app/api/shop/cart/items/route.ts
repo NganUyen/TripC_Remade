@@ -2,18 +2,23 @@ import { NextRequest } from 'next/server';
 import {
     successResponse,
     errorResponse,
-    getAuthInfo,
     addCartItem,
     getVariantById,
+    getDbUserId,
 } from '@/lib/shop';
+import { auth } from '@clerk/nextjs/server';
 
 export async function POST(request: NextRequest) {
     try {
-        const { userId, sessionId } = getAuthInfo(request);
-        const key = userId || sessionId;
+        const { userId: clerkId } = await auth();
 
-        if (!key) {
-            return errorResponse('UNAUTHORIZED', 'Missing session or auth', 401);
+        if (!clerkId) {
+            return errorResponse('UNAUTHORIZED', 'Missing auth', 401);
+        }
+
+        const userId = await getDbUserId(clerkId);
+        if (!userId) {
+            return errorResponse('USER_NOT_FOUND', 'User record not found', 404);
         }
 
         let body;
@@ -40,7 +45,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Add to cart using queries interface
-        const cart = await addCartItem(key, variant_id, qty);
+        const cart = await addCartItem(userId, variant_id, qty);
         return successResponse(cart, undefined, 201);
     } catch (error) {
         console.error('Cart POST error:', error);

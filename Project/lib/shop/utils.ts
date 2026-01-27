@@ -8,18 +8,8 @@
 import { NextResponse } from 'next/server';
 import type { Money, Cart } from './types';
 
-// Re-export stores from mock (single source of truth)
-export {
-    carts,
-    orders,
-    wishlists,
-    userVouchers,
-    couponUsages,
-    reviews,
-    mockQueries,
-    shopData,
-    generateOrderNumber
-} from '../mock/shop';
+// Mock data exports removed
+
 
 // ============================================================================
 // Response Helpers
@@ -89,33 +79,21 @@ export function errorResponse(
  * DEVELOPMENT: Returns mock userId
  * PRODUCTION: Replace with Clerk auth()
  */
+import { auth } from '@clerk/nextjs/server';
+
+// Helper removed, use auth() directly in async routes
+/*
 export function getAuthInfo(request: Request): {
     userId: string | null;
-    sessionId: string | null;
 } {
-    const authHeader = request.headers.get('authorization');
-    const sessionId = request.headers.get('x-session-id');
-
-    // TODO: Replace with Clerk integration
-    let userId = null;
-    if (authHeader?.startsWith('Bearer ')) {
-        userId = 'mock-user-uuid'; // Mock user
-    }
-
-    return { userId, sessionId };
+    return { userId: null };
 }
+*/
 
 // ============================================================================
 // Cart Helpers (using mock stores)
 // ============================================================================
 
-import { mockQueries as mq } from '../mock/shop';
+// import { mockQueries as mq } from '../mock/shop';
 
-export function getOrCreateCart(sessionId: string | null, userId: string | null): Cart {
-    const key = userId || sessionId || 'guest';
-    return mq.cart.getOrCreate(key);
-}
-
-export function recalculateCart(cart: Cart): void {
-    mq.cart.recalculate(cart);
-}
+// Cart helpers moved to queries.ts

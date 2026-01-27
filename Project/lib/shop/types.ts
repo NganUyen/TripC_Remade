@@ -18,6 +18,10 @@ export interface Product {
     brand_id: string;
     created_at: string;
     updated_at: string;
+    variants: Variant[];
+    images: ProductImage[];
+    category?: Category;
+    brand?: Brand;
 }
 
 export interface Variant {
@@ -30,7 +34,7 @@ export interface Variant {
     currency: string;
     stock_on_hand: number;
     is_active: boolean;
-    options: VariantOption[];
+    options?: VariantOption[];
 }
 
 export interface VariantOption {
@@ -54,6 +58,11 @@ export interface Brand {
     name: string;
     logo_url: string;
     is_active: boolean;
+    tagline?: string;
+    follower_count?: number;
+    rating_avg?: number;
+    response_rate?: number;
+    on_time_ship_rate?: number;
 }
 
 export interface ProductImage {

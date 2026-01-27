@@ -2,18 +2,21 @@ import { NextRequest } from 'next/server';
 import {
     successResponse,
     errorResponse,
-    getAuthInfo,
-    shopData
 } from '@/lib/shop/utils';
-
-// In-memory user vouchers
-const userVouchers: Map<string, any[]> = new Map();
+import { getDbUserId, redeemVoucher } from '@/lib/shop';
+import { createServiceSupabaseClient } from '@/lib/supabase-server';
+import { auth } from '@clerk/nextjs/server';
 
 export async function POST(request: NextRequest) {
-    const { userId } = getAuthInfo(request);
+    const { userId: clerkId } = await auth();
 
-    if (!userId) {
+    if (!clerkId) {
         return errorResponse('UNAUTHORIZED', 'Must be logged in', 401);
+    }
+
+    const userId = await getDbUserId(clerkId);
+    if (!userId) {
+        return errorResponse('USER_NOT_FOUND', 'User record not found', 404);
     }
 
     let body;
@@ -28,45 +31,21 @@ export async function POST(request: NextRequest) {
         return errorResponse('INVALID_REQUEST', 'template_id required', 400);
     }
 
-    const template = shopData.voucher_templates.find(t => t.id === template_id);
-    if (!template || !template.is_active) {
-        return errorResponse('VOUCHER_NOT_AVAILABLE', 'Voucher template not found or inactive', 400);
+    // Get user balance
+    const supabase = createServiceSupabaseClient();
+    const { data: user } = await supabase.from('users').select('tcent_balance').eq('id', userId).single();
+    const balance = user?.tcent_balance || 0;
+
+    try {
+        const result = await redeemVoucher(userId, template_id, balance);
+        return successResponse(result, { status: 201 });
+    } catch (err: any) {
+        if (err.message.includes('Insufficient')) {
+            return errorResponse('INSUFFICIENT_FUNDS', err.message, 409);
+        }
+        if (err.message.includes('found') || err.message.includes('inactive')) {
+            return errorResponse('VOUCHER_NOT_AVAILABLE', err.message, 404);
+        }
+        return errorResponse('INTERNAL_ERROR', err.message, 500);
     }
-
-    // Check inventory
-    if (template.total_inventory && template.redeemed_count >= template.total_inventory) {
-        return errorResponse('VOUCHER_NOT_AVAILABLE', 'Voucher out of stock', 400);
-    }
-
-    // Mock: check TripCent balance (always pass in mock)
-    // In real impl: check users.tcent_balance >= template.tcent_cost
-
-    const voucher = {
-        id: `voucher-${crypto.randomUUID().slice(0, 8)}`,
-        unique_code: `V-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
-        status: 'active',
-        template: {
-            id: template.id,
-            title: template.title,
-            description: template.description,
-            tcent_cost: template.tcent_cost,
-            discount_mode: template.discount_mode,
-            discount_value: template.discount_value,
-            currency: template.currency,
-            min_spend_threshold: template.min_spend_threshold,
-            validity_days: template.validity_days,
-        },
-        acquired_at: new Date().toISOString(),
-        expires_at: new Date(Date.now() + template.validity_days * 24 * 60 * 60 * 1000).toISOString(),
-        used_at: null,
-    };
-
-    if (!userVouchers.has(userId)) {
-        userVouchers.set(userId, []);
-    }
-    userVouchers.get(userId)!.push(voucher);
-
-    return successResponse(voucher, { status: 201 });
 }
-
-export { userVouchers };

@@ -1,41 +1,33 @@
 import { NextRequest } from 'next/server';
-import { successResponse, errorResponse, getAuthInfo, orders } from '@/lib/shop/utils';
+import { successResponse, errorResponse } from '@/lib/shop/utils';
+import { cancelOrder, getDbUserId, getOrderByNumber } from '@/lib/shop';
+import { auth } from '@clerk/nextjs/server';
 
 type Params = { params: Promise<{ number: string }> };
 
 export async function POST(request: NextRequest, { params }: Params) {
     const { number } = await params;
-    const { userId } = getAuthInfo(request);
+    const { userId: clerkId } = await auth();
 
-    if (!userId) {
+    if (!clerkId) {
         return errorResponse('UNAUTHORIZED', 'Must be logged in', 401);
     }
 
-    // Find order by number or id
-    let order = orders.get(number);
-    if (!order) {
-        for (const o of orders.values()) {
-            if (o.id === number || o.order_number === number) {
-                order = o;
-                break;
-            }
+    const userId = await getDbUserId(clerkId);
+    if (!userId) {
+        return errorResponse('USER_NOT_FOUND', 'User record not found', 404);
+    }
+
+    try {
+        const order = await getOrderByNumber(userId, number);
+
+        if (!order) {
+            return errorResponse('ORDER_NOT_FOUND', 'Order not found', 404);
         }
+
+        const cancelledOrder = await cancelOrder(userId, order.id);
+        return successResponse(cancelledOrder);
+    } catch (error: any) {
+        return errorResponse('CANCEL_FAILED', error.message || 'Failed to cancel order', 400);
     }
-
-    if (!order) {
-        return errorResponse('ORDER_NOT_FOUND', 'Order not found', 404);
-    }
-
-    if (order.status !== 'pending') {
-        return errorResponse(
-            'ORDER_CANNOT_CANCEL',
-            `Cannot cancel order with status "${order.status}"`,
-            400
-        );
-    }
-
-    order.status = 'cancelled';
-    order.updated_at = new Date().toISOString();
-
-    return successResponse(order);
 }

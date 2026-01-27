@@ -2,38 +2,44 @@ import { NextRequest } from 'next/server';
 import {
     successResponse,
     errorResponse,
-    getAuthInfo,
-    shopData,
-    money
 } from '@/lib/shop/utils';
-
-// In-memory wishlist
-const wishlists: Map<string, string[]> = new Map();
+import {
+    getWishlist,
+    addToWishlist,
+    getProductImages,
+    getVariantsByProductId
+} from '@/lib/shop';
+import { money } from '@/lib/shop/utils';
+import { auth } from '@clerk/nextjs/server';
 
 export async function GET(request: NextRequest) {
-    const { userId } = getAuthInfo(request);
+    const { userId } = await auth();
 
     if (!userId) {
         return errorResponse('UNAUTHORIZED', 'Must be logged in', 401);
     }
 
-    const productIds = wishlists.get(userId) || [];
+    const products = await getWishlist(userId);
 
-    const items = productIds.map(productId => {
-        const product = shopData.products.find(p => p.id === productId);
-        if (!product) return null;
+    // Format for frontend with images and prices
+    const items = await Promise.all(products.map(async (product) => {
+        const [images, variants] = await Promise.all([
+            getProductImages(product.id),
+            getVariantsByProductId(product.id)
+        ]);
 
-        const variants = shopData.variants.filter(v => v.product_id === productId);
-        const image = shopData.images.find(i => i.product_id === productId && i.is_primary);
-        const minPrice = Math.min(...variants.map(v => v.price));
+        const primaryImage = images.find(i => i.is_primary) || images[0];
+        const minPrice = variants.length > 0
+            ? Math.min(...variants.map(v => v.price))
+            : 0;
 
         return {
-            id: `wish-${productId.slice(0, 8)}`,
+            id: `wish-${product.id.slice(0, 8)}`,
             product: {
                 id: product.id,
                 slug: product.slug,
                 title: product.title,
-                image_url: image?.url || null,
+                image_url: primaryImage?.url || null,
                 price_from: money(minPrice),
                 rating_avg: product.rating_avg,
                 review_count: product.review_count,
@@ -41,13 +47,13 @@ export async function GET(request: NextRequest) {
             },
             added_at: new Date().toISOString(),
         };
-    }).filter(Boolean);
+    }));
 
     return successResponse(items);
 }
 
 export async function POST(request: NextRequest) {
-    const { userId } = getAuthInfo(request);
+    const { userId } = await auth();
 
     if (!userId) {
         return errorResponse('UNAUTHORIZED', 'Must be logged in', 401);
@@ -65,48 +71,13 @@ export async function POST(request: NextRequest) {
         return errorResponse('INVALID_REQUEST', 'product_id required', 400);
     }
 
-    const product = shopData.products.find(p => p.id === product_id);
-    if (!product) {
-        return errorResponse('PRODUCT_NOT_FOUND', 'Product not found', 404);
+    try {
+        const productIds = await addToWishlist(userId, product_id);
+
+        // Return updated list (simplified for now, ideally return full objects)
+        return successResponse({ success: true, count: productIds.length }, { status: 201 });
+    } catch (error) {
+        console.error('Wishlist POST error:', error);
+        return errorResponse('INTERNAL_ERROR', 'Failed to add to wishlist', 500);
     }
-
-    if (!wishlists.has(userId)) {
-        wishlists.set(userId, []);
-    }
-
-    const userWishlist = wishlists.get(userId)!;
-    if (userWishlist.includes(product_id)) {
-        return errorResponse('ALREADY_IN_WISHLIST', 'Product already in wishlist', 409);
-    }
-
-    userWishlist.push(product_id);
-
-    // Return updated wishlist
-    const items = userWishlist.map(pid => {
-        const p = shopData.products.find(pr => pr.id === pid);
-        if (!p) return null;
-
-        const variants = shopData.variants.filter(v => v.product_id === pid);
-        const image = shopData.images.find(i => i.product_id === pid && i.is_primary);
-        const minPrice = Math.min(...variants.map(v => v.price));
-
-        return {
-            id: `wish-${pid.slice(0, 8)}`,
-            product: {
-                id: p.id,
-                slug: p.slug,
-                title: p.title,
-                image_url: image?.url || null,
-                price_from: money(minPrice),
-                rating_avg: p.rating_avg,
-                review_count: p.review_count,
-                is_featured: p.is_featured,
-            },
-            added_at: new Date().toISOString(),
-        };
-    }).filter(Boolean);
-
-    return successResponse(items, { status: 201 });
 }
-
-export { wishlists };

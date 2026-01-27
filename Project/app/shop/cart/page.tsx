@@ -1,30 +1,37 @@
 "use client"
 
-import { useCart, formatPrice } from '@/lib/hooks/useShopAPI'
+import { useCartStore } from '@/store/useCartStore'
+import { formatPrice } from '@/lib/hooks/useShopAPI'
+import { useAuth } from '@clerk/nextjs'
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 import { Footer } from '@/components/Footer'
 import Link from 'next/link'
 import { ArrowLeft, Minus, Plus, Trash2, ShoppingBag, Loader2 } from 'lucide-react'
-import { useState } from 'react'
 
 export default function CartPage() {
-    const { cart, loading, error, updateItem, removeItem } = useCart()
-    const [updating, setUpdating] = useState<string | null>(null)
+    const { cart, isLoading, pendingItemIds, updateItem, removeItem } = useCartStore()
+    const { userId, isLoaded } = useAuth()
+    const router = useRouter()
 
-    const handleUpdateQty = async (itemId: string, newQty: number) => {
+    useEffect(() => {
+        if (isLoaded && !userId) {
+            router.push('/sign-in')
+        }
+    }, [isLoaded, userId, router])
+
+    // No await needed - optimistic update happens immediately
+    const handleUpdateQty = (itemId: string, newQty: number) => {
         if (newQty < 1) return
-        setUpdating(itemId)
-        await updateItem(itemId, newQty)
-        setUpdating(null)
+        updateItem(itemId, newQty)
     }
 
-    const handleRemove = async (itemId: string) => {
-        setUpdating(itemId)
-        await removeItem(itemId)
-        setUpdating(null)
+    const handleRemove = (itemId: string) => {
+        removeItem(itemId)
     }
 
     // Loading state
-    if (loading) {
+    if (isLoading || !isLoaded) {
         return (
             <main className="min-h-screen bg-[#fcfaf8] dark:bg-[#0a0a0a] flex items-center justify-center">
                 <Loader2 className="w-8 h-8 animate-spin text-[#FF5E1F]" />
@@ -77,63 +84,66 @@ export default function CartPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* Cart Items */}
                     <div className="lg:col-span-2 space-y-4">
-                        {cart.items.map((item) => (
-                            <div
-                                key={item.id}
-                                className={`bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-800 transition-opacity ${updating === item.id ? 'opacity-50' : ''}`}
-                            >
-                                <div className="flex gap-4">
-                                    {/* Product Image Placeholder */}
-                                    <div className="w-24 h-24 bg-slate-200 dark:bg-slate-800 rounded-lg flex-shrink-0" />
+                        {cart.items.map((item) => {
+                            const isPending = pendingItemIds.includes(item.id);
+                            return (
+                                <div
+                                    key={item.id}
+                                    className={`bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-800 transition-opacity ${isPending ? 'opacity-50' : ''}`}
+                                >
+                                    <div className="flex gap-4">
+                                        {/* Product Image Placeholder */}
+                                        <div className="w-24 h-24 bg-slate-200 dark:bg-slate-800 rounded-lg flex-shrink-0" />
 
-                                    {/* Product Info */}
-                                    <div className="flex-1 min-w-0">
-                                        <h3 className="font-bold text-slate-900 dark:text-white truncate mb-1">
-                                            {item.title_snapshot}
-                                        </h3>
-                                        <p className="text-sm text-slate-500 mb-2">
-                                            {Object.entries(item.variant_snapshot).map(([k, v]) => `${k}: ${v}`).join(' • ')}
-                                        </p>
-                                        <p className="text-[#FF5E1F] font-bold">
-                                            {formatPrice(item.unit_price)}
-                                        </p>
-                                    </div>
-
-                                    {/* Quantity & Actions */}
-                                    <div className="flex flex-col items-end gap-2">
-                                        <div className="flex items-center border border-slate-200 dark:border-slate-700 rounded-lg">
-                                            <button
-                                                onClick={() => handleUpdateQty(item.id, item.qty - 1)}
-                                                disabled={updating === item.id || item.qty <= 1}
-                                                className="w-8 h-8 flex items-center justify-center hover:bg-slate-50 dark:hover:bg-white/5 disabled:opacity-50"
-                                            >
-                                                <Minus className="w-4 h-4" />
-                                            </button>
-                                            <span className="w-10 text-center font-bold text-slate-900 dark:text-white">{item.qty}</span>
-                                            <button
-                                                onClick={() => handleUpdateQty(item.id, item.qty + 1)}
-                                                disabled={updating === item.id}
-                                                className="w-8 h-8 flex items-center justify-center hover:bg-slate-50 dark:hover:bg-white/5 disabled:opacity-50"
-                                            >
-                                                <Plus className="w-4 h-4" />
-                                            </button>
+                                        {/* Product Info */}
+                                        <div className="flex-1 min-w-0">
+                                            <h3 className="font-bold text-slate-900 dark:text-white truncate mb-1">
+                                                {item.title_snapshot}
+                                            </h3>
+                                            <p className="text-sm text-slate-500 mb-2">
+                                                {Object.entries(item.variant_snapshot).map(([k, v]) => `${k}: ${v}`).join(' • ')}
+                                            </p>
+                                            <p className="text-[#FF5E1F] font-bold">
+                                                {formatPrice(item.unit_price)}
+                                            </p>
                                         </div>
 
-                                        <button
-                                            onClick={() => handleRemove(item.id)}
-                                            disabled={updating === item.id}
-                                            className="text-red-500 hover:text-red-600 p-2"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
+                                        {/* Quantity & Actions */}
+                                        <div className="flex flex-col items-end gap-2">
+                                            <div className="flex items-center border border-slate-200 dark:border-slate-700 rounded-lg">
+                                                <button
+                                                    onClick={() => handleUpdateQty(item.id, item.qty - 1)}
+                                                    disabled={isPending || item.qty <= 1}
+                                                    className="w-8 h-8 flex items-center justify-center hover:bg-slate-50 dark:hover:bg-white/5 disabled:opacity-50"
+                                                >
+                                                    <Minus className="w-4 h-4" />
+                                                </button>
+                                                <span className="w-10 text-center font-bold text-slate-900 dark:text-white">{item.qty}</span>
+                                                <button
+                                                    onClick={() => handleUpdateQty(item.id, item.qty + 1)}
+                                                    disabled={isPending}
+                                                    className="w-8 h-8 flex items-center justify-center hover:bg-slate-50 dark:hover:bg-white/5 disabled:opacity-50"
+                                                >
+                                                    <Plus className="w-4 h-4" />
+                                                </button>
+                                            </div>
 
-                                        <p className="font-bold text-slate-900 dark:text-white">
-                                            {formatPrice(item.line_total)}
-                                        </p>
+                                            <button
+                                                onClick={() => handleRemove(item.id)}
+                                                disabled={isPending}
+                                                className="text-red-500 hover:text-red-600 p-2 disabled:opacity-50"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+
+                                            <p className="font-bold text-slate-900 dark:text-white">
+                                                {formatPrice(item.line_total)}
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
 
                     {/* Order Summary */}

@@ -2,15 +2,15 @@ import { NextRequest } from 'next/server';
 import {
     successResponse,
     errorResponse,
-    getAuthInfo,
     generateRequestId
 } from '@/lib/shop/utils';
+import { auth } from '@clerk/nextjs/server';
 
 // In-memory address store
 const addresses: Map<string, any[]> = new Map();
 
 export async function GET(request: NextRequest) {
-    const { userId } = getAuthInfo(request);
+    const { userId } = await auth();
 
     if (!userId) {
         return errorResponse('UNAUTHORIZED', 'Must be logged in', 401);
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-    const { userId } = getAuthInfo(request);
+    const { userId } = await auth();
 
     if (!userId) {
         return errorResponse('UNAUTHORIZED', 'Must be logged in', 401);

@@ -1,8 +1,10 @@
 "use client"
 
-import { useState, useTransition } from 'react'
-import { Star, Share2, Heart, Truck, RefreshCw, Minus, Plus, Zap, Check, Loader2 } from 'lucide-react'
-import { shopApi } from '@/lib/hooks/useShopAPI'
+import { useState, useRef } from 'react'
+import { Star, Share2, Heart, Truck, RefreshCw, Minus, Plus, Loader2 } from 'lucide-react'
+import { useCartStore } from '@/store/useCartStore'
+import { useCartAnimation } from '@/store/useCartAnimation'
+import { toast } from 'sonner'
 
 interface ProductInfoProps {
     data: any
@@ -13,34 +15,43 @@ interface ProductInfoProps {
 export function ProductInfo({ data, variantId: initialVariantId, onVariantSelect }: ProductInfoProps) {
     const [quantity, setQuantity] = useState(1)
     const [selectedVariant, setSelectedVariant] = useState<Record<string, string>>({})
-    const [isPending, startTransition] = useTransition()
-    const [cartSuccess, setCartSuccess] = useState(false)
-    const [cartError, setCartError] = useState<string | null>(null)
+    const [selectedVariantId, setSelectedVariantId] = useState<string | null>(initialVariantId || null)
+    const { addItem, isLoading } = useCartStore()
 
-    // If data has real variants from API, use them
-    const variantOptions = data.variants?.[0]?.options || []
-    const selectedVariantId = initialVariantId || variantOptions[0]?.id
+    const { startAnimation } = useCartAnimation()
+    const imageRef = useRef<HTMLImageElement>(null)
 
     const decreaseQty = () => setQuantity(q => Math.max(1, q - 1))
     const increaseQty = () => setQuantity(q => Math.min(data.stock || 99, q + 1))
 
-    const handleAddToCart = async () => {
+    const handleAddToCart = async (e: React.MouseEvent) => {
         if (!selectedVariantId) {
-            setCartError('Please select a variant')
+            toast.error('Please select a variant')
             return
         }
 
-        setCartError(null)
-        startTransition(async () => {
-            const result = await shopApi.addToCart(selectedVariantId, quantity)
+        // Trigger animation
+        // find the image element - usually the main gallery image is visible nearby, 
+        // but for now we can use the click event target or specific ref if we had one on the image.
+        // Since ProductGallery is a sibling, getting its ref is hard. 
+        // We can use the button or search for the main image.
+        const mainImage = document.querySelector('.product-gallery-main-image') as HTMLImageElement;
+        if (mainImage) {
+            startAnimation(mainImage, data.images[0]);
+        } else {
+            // Fallback to button itself if image not found (less likely for gallery)
+            startAnimation(e.currentTarget as HTMLElement, data.images[0]);
+        }
 
-            if (result.error) {
-                setCartError(result.error)
-            } else {
-                setCartSuccess(true)
-                setTimeout(() => setCartSuccess(false), 2000)
-            }
-        })
+        // Optimistic data
+        const optimisticData = {
+            price: parseFloat(data.price),
+            title: data.title,
+            image: data.images[0],
+            variantName: selectedVariant[Object.keys(selectedVariant)[0]] // rough guess
+        };
+
+        await addItem(selectedVariantId, quantity, optimisticData)
     }
 
     return (
@@ -49,7 +60,7 @@ export function ProductInfo({ data, variantId: initialVariantId, onVariantSelect
             <div className="border-b border-slate-100 dark:border-slate-800 pb-6">
                 <div className="flex justify-between items-start mb-2">
                     <span className="px-3 py-1 rounded-md bg-[#FF5E1F] text-white text-xs font-bold uppercase tracking-wider">
-                        TripC Shop
+                        {data.brandName}
                     </span>
                     <div className="flex gap-2">
                         <button className="text-slate-400 hover:text-red-500 transition-colors"><Heart className="w-5 h-5" /></button>
@@ -103,11 +114,14 @@ export function ProductInfo({ data, variantId: initialVariantId, onVariantSelect
                                     key={opt.name || opt.id}
                                     onClick={() => {
                                         setSelectedVariant({ ...selectedVariant, [variant.id]: opt.name })
-                                        if (opt.id && onVariantSelect) onVariantSelect(opt.id)
+                                        if (opt.id) {
+                                            setSelectedVariantId(opt.id)
+                                            if (onVariantSelect) onVariantSelect(opt.id)
+                                        }
                                     }}
                                     className={`px-4 py-2 rounded-lg border text-sm font-medium transition-all ${selectedVariant[variant.id] === opt.name
-                                            ? 'border-[#FF5E1F] text-[#FF5E1F] bg-orange-50 dark:bg-orange-900/10'
-                                            : 'border-slate-200 dark:border-slate-700 hover:border-slate-400'
+                                        ? 'border-[#FF5E1F] text-[#FF5E1F] bg-orange-50 dark:bg-orange-900/10'
+                                        : 'border-slate-200 dark:border-slate-700 hover:border-slate-400'
                                         }`}
                                 >
                                     {opt.name}
@@ -149,27 +163,14 @@ export function ProductInfo({ data, variantId: initialVariantId, onVariantSelect
                 </div>
             </div>
 
-            {/* Cart Error/Success Messages */}
-            {cartError && (
-                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-4 py-2 rounded-lg text-sm">
-                    {cartError}
-                </div>
-            )}
-            {cartSuccess && (
-                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-600 dark:text-green-400 px-4 py-2 rounded-lg text-sm flex items-center gap-2">
-                    <Check className="w-4 h-4" />
-                    Added to cart!
-                </div>
-            )}
-
             {/* Actions */}
             <div className="flex gap-4 pt-2">
                 <button
                     onClick={handleAddToCart}
-                    disabled={isPending}
+                    disabled={isLoading}
                     className="flex-1 py-4 rounded-full bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-400 font-bold text-lg hover:bg-cyan-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                    {isPending ? (
+                    {isLoading ? (
                         <><Loader2 className="w-5 h-5 animate-spin" /> Adding...</>
                     ) : (
                         'Add to Cart'

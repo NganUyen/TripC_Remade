@@ -2,16 +2,15 @@ import { NextRequest } from 'next/server';
 import {
     successResponse,
     errorResponse,
-    getAuthInfo,
-    getOrCreateCart,
-    recalculateCart,
-    shopData
 } from '@/lib/shop/utils';
+import { applyCouponToCart } from '@/lib/shop';
+import { auth } from '@clerk/nextjs/server';
 
 export async function POST(request: NextRequest) {
-    const { userId, sessionId } = getAuthInfo(request);
+    const { userId, sessionId } = await auth();
+    const key = userId || sessionId;
 
-    if (!userId && !sessionId) {
+    if (!key) {
         return errorResponse('UNAUTHORIZED', 'Missing session or auth', 401);
     }
 
@@ -27,39 +26,16 @@ export async function POST(request: NextRequest) {
         return errorResponse('INVALID_REQUEST', 'Coupon code required', 400);
     }
 
-    const coupon = shopData.coupons.find(c => c.code === code && c.status === 'active');
+    try {
+        const { cart, error } = await applyCouponToCart(key, code);
 
-    if (!coupon) {
-        return errorResponse('COUPON_INVALID', 'Coupon code not found or inactive', 400);
+        if (error) {
+            return errorResponse('COUPON_ERROR', error, 400);
+        }
+
+        return successResponse(cart);
+    } catch (error) {
+        console.error('Apply coupon error:', error);
+        return errorResponse('INTERNAL_ERROR', 'Failed to apply coupon', 500);
     }
-
-    // Check date validity
-    const now = new Date();
-    if (coupon.starts_at && new Date(coupon.starts_at) > now) {
-        return errorResponse('COUPON_INVALID', 'Coupon not yet active', 400);
-    }
-    if (coupon.ends_at && new Date(coupon.ends_at) < now) {
-        return errorResponse('COUPON_EXPIRED', 'Coupon has expired', 400);
-    }
-
-    // Check usage limit
-    if (coupon.usage_limit_total && coupon.current_usage_count >= coupon.usage_limit_total) {
-        return errorResponse('COUPON_LIMIT_REACHED', 'Coupon usage limit reached', 400);
-    }
-
-    const cart = getOrCreateCart(sessionId, userId);
-
-    // Check minimum spend
-    if (cart.subtotal.amount < coupon.min_order_subtotal) {
-        return errorResponse(
-            'COUPON_MIN_NOT_MET',
-            `Minimum spend of $${(coupon.min_order_subtotal / 100).toFixed(2)} required`,
-            400
-        );
-    }
-
-    cart.coupon_code = code;
-    recalculateCart(cart);
-
-    return successResponse(cart);
 }

@@ -5,7 +5,7 @@
  * Provides data fetching, caching, and state management for shop features.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 
 // ============================================================================
 // API Base URL
@@ -44,6 +44,16 @@ export interface ProductVariant {
     options: { name: string; value: string }[];
 }
 
+export interface Review {
+    id: string;
+    user_id: string;
+    rating: number;
+    title: string;
+    body: string;
+    created_at: string;
+    user_name: string;
+}
+
 export interface ProductDetail {
     id: string;
     slug: string;
@@ -55,9 +65,20 @@ export interface ProductDetail {
     review_count: number;
     is_featured: boolean;
     category: { id: string; slug: string; name: string } | null;
-    brand: { id: string; slug: string; name: string; logo_url?: string } | null;
+    brand: {
+        id: string;
+        slug: string;
+        name: string;
+        logo_url?: string;
+        tagline?: string;
+        follower_count?: number;
+        rating_avg?: number;
+        response_rate?: number;
+        on_time_ship_rate?: number;
+    } | null;
     images: { id: string; url: string; alt: string; is_primary: boolean }[];
     variants: ProductVariant[];
+    reviews?: Review[];
 }
 
 export interface CartItem {
@@ -88,7 +109,9 @@ export interface Category {
     slug: string;
     name: string;
     parent_id: string | null;
-    image_url?: string;
+    image_url: string;
+    sort_order: number;
+    is_active: boolean;
     children?: Category[];
 }
 
@@ -116,10 +139,6 @@ async function fetchApi<T>(
             ...options,
             headers: {
                 'Content-Type': 'application/json',
-                // Add session ID for cart operations (stored in localStorage)
-                'x-session-id': typeof window !== 'undefined'
-                    ? localStorage.getItem('shop_session_id') || generateSessionId()
-                    : '',
                 ...options?.headers,
             },
         });
@@ -134,14 +153,6 @@ async function fetchApi<T>(
     } catch (error) {
         return { data: null, error: 'Network error' };
     }
-}
-
-function generateSessionId(): string {
-    const sessionId = `session-${crypto.randomUUID()}`;
-    if (typeof window !== 'undefined') {
-        localStorage.setItem('shop_session_id', sessionId);
-    }
-    return sessionId;
 }
 
 // ============================================================================
@@ -190,76 +201,6 @@ export const shopApi = {
     async getCategories(): Promise<{ data: Category[]; error: string | null }> {
         const result = await fetchApi<Category[]>('/categories');
         return { data: result.data || [], error: result.error };
-    },
-
-    // Cart
-    async getCart(): Promise<{ data: Cart | null; error: string | null }> {
-        const sessionId = typeof window !== 'undefined'
-            ? localStorage.getItem('shop_session_id') || generateSessionId()
-            : '';
-
-        const response = await fetch(`${API_BASE}/cart`, {
-            headers: { 'x-session-id': sessionId },
-        });
-        const json = await response.json();
-        return { data: json.data, error: null };
-    },
-
-    async addToCart(variantId: string, qty: number): Promise<{ data: Cart | null; error: string | null }> {
-        const sessionId = typeof window !== 'undefined'
-            ? localStorage.getItem('shop_session_id') || generateSessionId()
-            : '';
-
-        const response = await fetch(`${API_BASE}/cart/items`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-session-id': sessionId,
-            },
-            body: JSON.stringify({ variant_id: variantId, qty }),
-        });
-        const json = await response.json();
-
-        if (!response.ok) {
-            return { data: null, error: json.error?.message || 'Failed to add item' };
-        }
-
-        return { data: json.data, error: null };
-    },
-
-    async updateCartItem(itemId: string, qty: number): Promise<{ data: Cart | null; error: string | null }> {
-        const sessionId = typeof window !== 'undefined'
-            ? localStorage.getItem('shop_session_id') || ''
-            : '';
-
-        const response = await fetch(`${API_BASE}/cart/items/${itemId}`, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-session-id': sessionId,
-            },
-            body: JSON.stringify({ qty }),
-        });
-        const json = await response.json();
-
-        if (!response.ok) {
-            return { data: null, error: json.error?.message || 'Failed to update' };
-        }
-
-        return { data: json.data, error: null };
-    },
-
-    async removeCartItem(itemId: string): Promise<{ data: Cart | null; error: string | null }> {
-        const sessionId = typeof window !== 'undefined'
-            ? localStorage.getItem('shop_session_id') || ''
-            : '';
-
-        const response = await fetch(`${API_BASE}/cart/items/${itemId}`, {
-            method: 'DELETE',
-            headers: { 'x-session-id': sessionId },
-        });
-        const json = await response.json();
-        return { data: json.data, error: null };
     },
 
     // Vouchers
@@ -353,44 +294,6 @@ export function useCategories() {
     }, []);
 
     return { categories, loading, error };
-}
-
-export function useCart() {
-    const [cart, setCart] = useState<Cart | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-
-    const refresh = useCallback(async () => {
-        setLoading(true);
-        const result = await shopApi.getCart();
-        setCart(result.data);
-        setError(result.error);
-        setLoading(false);
-    }, []);
-
-    useEffect(() => {
-        refresh();
-    }, [refresh]);
-
-    const addItem = useCallback(async (variantId: string, qty: number) => {
-        const result = await shopApi.addToCart(variantId, qty);
-        if (result.data) setCart(result.data);
-        return result;
-    }, []);
-
-    const updateItem = useCallback(async (itemId: string, qty: number) => {
-        const result = await shopApi.updateCartItem(itemId, qty);
-        if (result.data) setCart(result.data);
-        return result;
-    }, []);
-
-    const removeItem = useCallback(async (itemId: string) => {
-        const result = await shopApi.removeCartItem(itemId);
-        if (result.data) setCart(result.data);
-        return result;
-    }, []);
-
-    return { cart, loading, error, refresh, addItem, updateItem, removeItem };
 }
 
 export function useVouchers() {

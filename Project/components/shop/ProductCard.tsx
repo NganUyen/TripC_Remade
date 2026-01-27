@@ -18,11 +18,76 @@ export interface ProductCardProps {
     colors?: string[]
 }
 
+import { useCartStore } from '@/store/useCartStore';
+import { useCartAnimation } from '@/store/useCartAnimation';
+import { toast } from 'sonner';
+import { useAuth } from '@clerk/nextjs';
+
 export function ProductCard({ id, slug, title, price, rating, reviews, image, badge, compareAtPrice, category = "Travel Gear", colors = ["#000000", "#1e293b", "#cbd5e1"] }: ProductCardProps) {
     const discount = compareAtPrice ? Math.round(((compareAtPrice - price) / compareAtPrice) * 100) : 0
-
     // Use slug if available, fallback to id
     const productUrl = slug ? `/shop/product/${slug}` : `/shop/product/${id}`
+
+    // Hooks
+    const { addItem } = useCartStore();
+    const { startAnimation } = useCartAnimation();
+    const { userId } = useAuth();
+    const [isAdding, setIsAdding] = React.useState(false);
+
+    const handleQuickAdd = async (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (!userId) {
+            toast.error("Please login to add items");
+            return;
+        }
+
+        if (isAdding) return;
+        setIsAdding(true);
+
+
+        try {
+            // Fetch variants using slug if possible, else ID (but ID route is removed now, so only slug)
+            // Wait, if we removed [id] route, we MUST use slug.
+            // ProductCard has slug prop.
+            const identifier = slug || id;
+            const res = await fetch(`/api/shop/products/${identifier}/variants`);
+            if (!res.ok) throw new Error('Failed to fetch variants');
+
+            const json = await res.json();
+            const variants = json.data;
+
+            if (!variants || variants.length === 0) {
+                toast.error('Product unavailable');
+                return;
+            }
+
+            // Pick first active variant
+            const variant = variants.find((v: any) => v.is_active) || variants[0];
+
+            if (!variant) {
+                toast.error('Out of stock');
+                return;
+            }
+
+            // Animation
+            const imgEl = (e.currentTarget.closest('.group')?.querySelector('img') as HTMLImageElement);
+            if (imgEl) {
+                // Pass the element directly, store handles the rect/ref
+                startAnimation(imgEl, image);
+            }
+
+            // Add to Cart
+            await addItem(variant.id, 1);
+
+        } catch (err) {
+            console.error(err);
+            toast.error('Failed to add to cart');
+        } finally {
+            setIsAdding(false);
+        }
+    };
 
     return (
         <Link
@@ -55,13 +120,12 @@ export function ProductCard({ id, slug, title, price, rating, reviews, image, ba
                 {/* Hover Overlay & Quick Add Button Slide Up */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-6">
                     <button
-                        className="cursor-pointer bg-white text-slate-900 hover:bg-[#FF5E1F] hover:text-white px-6 py-2 rounded-full font-bold shadow-xl translate-y-10 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center gap-2 text-sm"
-                        onClick={(e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
-                        }}
+                        className="cursor-pointer bg-white text-slate-900 hover:bg-[#FF5E1F] hover:text-white px-6 py-2 rounded-full font-bold shadow-xl translate-y-10 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center gap-2 text-sm disabled:opacity-70 disabled:cursor-wait"
+                        onClick={handleQuickAdd}
+                        disabled={isAdding}
                     >
-                        <ShoppingBag className="w-3.5 h-3.5" /> Quick Add
+                        <ShoppingBag className="w-3.5 h-3.5" />
+                        {isAdding ? 'Adding...' : 'Quick Add'}
                     </button>
                 </div>
             </div>

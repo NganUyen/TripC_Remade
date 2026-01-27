@@ -1,25 +1,30 @@
 import { NextRequest } from 'next/server';
-import { successResponse, errorResponse, getAuthInfo } from '@/lib/shop/utils';
-import { wishlists } from '../route';
+import {
+    successResponse,
+    errorResponse,
+} from '@/lib/shop/utils';
+import { removeFromWishlist, getDbUserId } from '@/lib/shop';
+import { auth } from '@clerk/nextjs/server';
 
 type Params = { params: Promise<{ productId: string }> };
 
 export async function DELETE(request: NextRequest, { params }: Params) {
     const { productId } = await params;
-    const { userId } = getAuthInfo(request);
+    const { userId: clerkId } = await auth();
 
+    if (!clerkId) {
+        return errorResponse('UNAUTHORIZED', 'Not authenticated', 401);
+    }
+
+    const userId = await getDbUserId(clerkId);
     if (!userId) {
-        return errorResponse('UNAUTHORIZED', 'Must be logged in', 401);
+        return errorResponse('USER_NOT_FOUND', 'User record not found', 404);
     }
 
-    const userWishlist = wishlists.get(userId) || [];
-    const index = userWishlist.indexOf(productId);
-
-    if (index === -1) {
-        return errorResponse('NOT_IN_WISHLIST', 'Product not in wishlist', 404);
+    try {
+        await removeFromWishlist(userId, productId);
+        return successResponse({ success: true });
+    } catch (error) {
+        return errorResponse('DELETE_FAILED', 'Failed to remove from wishlist', 500);
     }
-
-    userWishlist.splice(index, 1);
-
-    return successResponse({ success: true });
 }

@@ -1,47 +1,35 @@
 import { NextRequest } from 'next/server';
-import { successResponse, errorResponse, getAuthInfo, orders } from '@/lib/shop/utils';
+import { successResponse, errorResponse } from '@/lib/shop/utils';
+import { getOrderByNumber, getOrderHistory, getDbUserId } from '@/lib/shop';
+import { auth } from '@clerk/nextjs/server';
 
 type Params = { params: Promise<{ number: string }> };
 
-// In-memory history store
-const orderHistory: Map<string, any[]> = new Map();
-
 export async function GET(request: NextRequest, { params }: Params) {
     const { number } = await params;
-    const { userId } = getAuthInfo(request);
+    const { userId: clerkId } = await auth();
 
-    if (!userId) {
+    if (!clerkId) {
         return errorResponse('UNAUTHORIZED', 'Must be logged in', 401);
     }
 
-    // Find order by number or id
-    let order = orders.get(number);
-    if (!order) {
-        for (const o of orders.values()) {
-            if (o.id === number || o.order_number === number) {
-                order = o;
-                break;
-            }
-        }
+    const userId = await getDbUserId(clerkId);
+    if (!userId) {
+        return errorResponse('USER_NOT_FOUND', 'User record not found', 404);
     }
 
-    if (!order) {
-        return errorResponse('ORDER_NOT_FOUND', 'Order not found', 404);
-    }
-
-    // Return mock history - use order.id as key
-    const history = orderHistory.get(order.id) || [
-        {
-            id: `hist-${crypto.randomUUID().slice(0, 8)}`,
-            old_status: null,
-            new_status: 'pending',
-            old_payment_status: null,
-            new_payment_status: 'pending',
-            changed_by_type: 'system',
-            notes: 'Order created',
-            created_at: order.created_at,
+    try {
+        const order = await getOrderByNumber(userId, number);
+        if (!order) {
+            return errorResponse('ORDER_NOT_FOUND', 'Order not found', 404);
         }
-    ];
 
-    return successResponse(history);
+        const history = await getOrderHistory(userId, order.id);
+        return successResponse(history);
+    } catch (e) {
+        console.error('Order history error', e);
+        return errorResponse('INTERNAL_ERROR', 'Failed to fetch history', 500);
+    }
 }
+
+

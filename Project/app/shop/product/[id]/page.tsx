@@ -56,6 +56,7 @@ export default function ProductDetailsPage() {
     const productData = {
         id: product.id,
         category: product.category?.name || "Travel Gear",
+        brandName: product.brand?.name || "TripC Store",
         title: product.title,
         sku: product.variants[0]?.sku || "N/A",
         rating: String(product.rating_avg),
@@ -94,14 +95,6 @@ export default function ProductDetailsPage() {
                 }))
             }
         ],
-        reviewsList: [
-            {
-                user: "Happy Customer",
-                rating: 5,
-                date: "Jan 2026",
-                text: "Great product! Exactly as described."
-            }
-        ]
     };
 
     return (
@@ -125,14 +118,15 @@ export default function ProductDetailsPage() {
                         <div className="lg:col-span-7">
                             <ProductInfo
                                 data={productData}
-                                variantId={product.variants[0]?.id}
+                            // No pre-selection to force user choice
+                            // variantId={product.variants[0]?.id}
                             />
                         </div>
                     </div>
                 </div>
 
                 {/* Seller Info */}
-                <ShopInfo />
+                <ShopInfo brand={product.brand} />
 
                 {/* Product Details & Reviews Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -169,6 +163,31 @@ export default function ProductDetailsPage() {
                                     ))}
                                 </div>
                                 <span className="text-slate-500">({product.review_count} reviews)</span>
+                            </div>
+
+                            <div className="space-y-6">
+                                {product.reviews?.length ? product.reviews.map((review) => (
+                                    <div key={review.id} className="border-t border-slate-100 dark:border-slate-800 pt-6">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-slate-500 text-xs">
+                                                    {review.user_name?.charAt(0) || 'U'}
+                                                </div>
+                                                <span className="font-medium text-slate-900 dark:text-white">{review.user_name || 'Verified Customer'}</span>
+                                            </div>
+                                            <span className="text-xs text-slate-500">{new Date(review.created_at).toLocaleDateString()}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1 mb-2">
+                                            {[...Array(5)].map((_, i) => (
+                                                <Star key={i} className={`w-3 h-3 ${i < review.rating ? 'fill-[#FF5E1F] text-[#FF5E1F]' : 'fill-slate-200 text-slate-200'}`} />
+                                            ))}
+                                        </div>
+                                        <h4 className="font-bold text-sm text-slate-900 dark:text-white mb-1">{review.title}</h4>
+                                        <p className="text-slate-600 dark:text-slate-400 text-sm">{review.body}</p>
+                                    </div>
+                                )) : (
+                                    <p className="text-slate-500 text-center py-4">No reviews yet.</p>
+                                )}
                             </div>
                         </div>
                     </div>

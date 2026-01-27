@@ -3,10 +3,13 @@
 import React from 'react'
 import Link from 'next/link'
 import { ArrowRight, Ticket, Tag, ShoppingBag } from 'lucide-react'
-import { useCart, formatPrice } from '@/lib/hooks/useShopAPI'
+import { useCartStore } from '@/store/useCartStore'
+import { formatPrice } from '@/lib/hooks/useShopAPI'
 
 export function MarketplaceActions() {
-    const { cart, loading } = useCart();
+    // Subscribe to only what we need from cart store
+    const cart = useCartStore((state) => state.cart);
+    const isLoading = useCartStore((state) => state.isLoading);
 
     return (
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-fr">
@@ -41,7 +44,7 @@ export function MarketplaceActions() {
                 <div>
                     <div className="text-slate-500 dark:text-zinc-400 text-sm font-medium mb-1">Your Shopping Bag</div>
                     <h3 className="text-4xl font-black text-[#1c140d] dark:text-white">
-                        {loading ? '...' : `${cart?.item_count || 0} Item${(cart?.item_count || 0) !== 1 ? 's' : ''}`}
+                        {isLoading ? '...' : `${cart?.item_count || 0} Item${(cart?.item_count || 0) !== 1 ? 's' : ''}`}
                     </h3>
                     <p className="text-xs text-slate-400 mt-2">
                         Subtotal: <span className="text-[#FF5E1F] font-bold text-base">

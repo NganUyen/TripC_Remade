@@ -8,6 +8,7 @@ import {
     getProductImages,
     getCategories,
     getBrands,
+    getReviewsByProductId,
 } from '@/lib/shop';
 
 type Params = { params: Promise<{ slug: string }> };
@@ -24,17 +25,19 @@ export async function GET(request: NextRequest, { params }: Params) {
         }
 
         // Fetch related data
-        const [variants, images, categories, brands] = await Promise.all([
+        const [variants, images, categories, brands, reviews] = await Promise.all([
             getVariantsByProductId(product.id),
             getProductImages(product.id),
             getCategories(),
             getBrands(),
+            getReviewsByProductId(product.id), // Added reviews fetch
         ]);
 
         const category = categories.find((c) => c.id === product.category_id);
         const brand = brands.find((b) => b.id === product.brand_id);
 
-        const response = {
+        // Format response
+        return successResponse({
             id: product.id,
             slug: product.slug,
             title: product.title,
@@ -58,6 +61,11 @@ export async function GET(request: NextRequest, { params }: Params) {
                     slug: brand.slug,
                     name: brand.name,
                     logo_url: brand.logo_url,
+                    tagline: (brand as any).tagline,
+                    follower_count: (brand as any).follower_count,
+                    rating_avg: (brand as any).rating_avg,
+                    response_rate: (brand as any).response_rate,
+                    on_time_ship_rate: (brand as any).on_time_ship_rate,
                 }
                 : null,
             images: images
@@ -69,20 +77,26 @@ export async function GET(request: NextRequest, { params }: Params) {
                     is_primary: i.is_primary,
                 })),
             variants: variants
-                .filter((v) => v.is_active)
-                .map((v) => ({
+                .map((v) => ({ // Removed .filter((v) => v.is_active)
                     id: v.id,
                     sku: v.sku,
                     title: v.title,
-                    price: money(v.price, v.currency),
-                    compare_at_price: v.compare_at_price ? money(v.compare_at_price, v.currency) : null,
+                    price: money(v.price), // Removed currency argument
+                    compare_at_price: v.compare_at_price ? money(v.compare_at_price) : null, // Removed currency argument
                     stock_on_hand: v.stock_on_hand,
                     is_active: v.is_active,
                     options: v.options,
                 })),
-        };
-
-        return successResponse(response);
+            reviews: reviews.slice(0, 5).map(r => ({ // Added reviews
+                id: r.id,
+                user_id: r.user_id,
+                rating: r.rating,
+                title: r.title,
+                body: r.body,
+                created_at: r.created_at,
+                user_name: 'Verified Customer' // Mock name for now as we don't have user profiles public
+            }))
+        });
     } catch (error) {
         console.error('Product detail API error:', error);
         return errorResponse('INTERNAL_ERROR', 'Failed to fetch product', 500);

@@ -2,15 +2,20 @@ import { NextRequest } from 'next/server';
 import {
     successResponse,
     errorResponse,
-    getAuthInfo,
-    shopData
 } from '@/lib/shop/utils';
+import { getProductById, createReview, getDbUserId } from '@/lib/shop';
+import { auth } from '@clerk/nextjs/server';
 
 export async function POST(request: NextRequest) {
-    const { userId } = getAuthInfo(request);
+    const { userId: clerkId } = await auth();
 
-    if (!userId) {
+    if (!clerkId) {
         return errorResponse('UNAUTHORIZED', 'Must be logged in', 401);
+    }
+
+    const userId = await getDbUserId(clerkId);
+    if (!userId) {
+        return errorResponse('USER_NOT_FOUND', 'User record not found', 404);
     }
 
     let body;
@@ -22,6 +27,8 @@ export async function POST(request: NextRequest) {
 
     const { product_id, order_id, rating, title, body: reviewBody } = body;
 
+    // ... validation ...
+
     if (!product_id || !rating) {
         return errorResponse('INVALID_REQUEST', 'product_id and rating required', 400);
     }
@@ -30,21 +37,22 @@ export async function POST(request: NextRequest) {
         return errorResponse('INVALID_REQUEST', 'rating must be 1-5', 400);
     }
 
-    const product = shopData.products.find(p => p.id === product_id);
+    const product = await getProductById(product_id);
     if (!product) {
         return errorResponse('PRODUCT_NOT_FOUND', 'Product not found', 404);
     }
 
-    const review = {
-        id: `review-${crypto.randomUUID().slice(0, 8)}`,
-        product_id,
-        rating,
-        title: title || null,
-        body: reviewBody || null,
-        is_verified_purchase: !!order_id,
-        status: 'pending', // Reviews require moderation
-        created_at: new Date().toISOString(),
-    };
-
-    return successResponse(review, { status: 201 });
+    // Call DB
+    try {
+        const review = await createReview({
+            userId,
+            productId: product_id,
+            rating,
+            title,
+            body: reviewBody
+        });
+        return successResponse(review, { status: 201 });
+    } catch (err: any) {
+        return errorResponse('INTERNAL_ERROR', err.message || 'Failed to create review', 500);
+    }
 }

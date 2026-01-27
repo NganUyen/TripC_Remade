@@ -16,11 +16,11 @@ export default function ShopPage() {
 
             <div className="max-w-[1440px] mx-auto px-4 lg:px-12 mt-8 md:mt-12 space-y-16">
 
-                {/* 2. ACTIONS - Vouchers & Cart */}
-                <MarketplaceActions />
-
-                {/* 3. VOUCHERS - Horizontal Scroll */}
+                {/* 2. VOUCHERS - Horizontal Scroll (Moved Up) */}
                 <VoucherStrip />
+
+                {/* 3. ACTIONS - Vouchers Banner & Cart */}
+                <MarketplaceActions />
 
                 {/* 4. PRODUCTS - Grid */}
                 <ProductGrid />

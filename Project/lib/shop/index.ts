@@ -38,8 +38,9 @@ export {
     successResponse,
     paginatedResponse,
     errorResponse,
-    getAuthInfo,
 } from './utils';
+
+export { getDbUserId } from './queries';
 
 // Database Queries (interface layer - mock now, Supabase later)
 export {
@@ -76,6 +77,7 @@ export {
     getOrders,
     getOrderByNumber,
     cancelOrder,
+    getOrderHistory,
 
     // Vouchers
     getAvailableVouchers,
@@ -88,5 +90,6 @@ export {
     removeFromWishlist,
 
     // Reviews
+    getReviewsByProductId,
     createReview,
 } from './queries';

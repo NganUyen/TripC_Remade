@@ -2,12 +2,12 @@ import { NextRequest } from 'next/server';
 import {
     successResponse,
     errorResponse,
-    getAuthInfo
 } from '@/lib/shop/utils';
 import { userVouchers } from '../redeem/route';
+import { auth } from '@clerk/nextjs/server';
 
 export async function GET(request: NextRequest) {
-    const { userId } = getAuthInfo(request);
+    const { userId } = await auth();
 
     if (!userId) {
         return errorResponse('UNAUTHORIZED', 'Must be logged in', 401);
