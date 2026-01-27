@@ -102,9 +102,9 @@ export default function PingPage() {
       loading: false,
     },
     {
-      method: "POST",
+      method: "GET",
       path: "/api/v1/vouchers/exchange",
-      description: "Voucher: Redeem (Needs Auth)",
+      description: "Voucher: Exchange API Status",
       status: null,
       loading: false,
     },
@@ -133,13 +133,19 @@ export default function PingPage() {
     );
 
     try {
-      const res = await fetch(endpoint.path, { method: endpoint.method });
+      // Don't try to parse response body, just check status
+      const res = await fetch(endpoint.path, {
+        method: endpoint.method,
+        headers: { Accept: "application/json" },
+      });
       setEndpoints((prev) =>
         prev.map((e, i) =>
           i === index ? { ...e, status: res.status, loading: false } : e,
         ),
       );
     } catch (error) {
+      // Network error or CORS issue
+      console.error(`Endpoint check failed for ${endpoint.path}:`, error);
       setEndpoints((prev) =>
         prev.map((e, i) =>
           i === index ? { ...e, status: 0, loading: false } : e,

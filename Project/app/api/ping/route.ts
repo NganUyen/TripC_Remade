@@ -92,9 +92,11 @@ export async function GET(request: NextRequest) {
     try {
       const dbStart = Date.now();
       const supabase = createServiceSupabaseClient();
-      const { error } = await supabase.from('vouchers').select('count', { count: 'exact', head: true });
+      const { error } = await supabase
+        .from("vouchers")
+        .select("count", { count: "exact", head: true });
       voucherDbTime = Date.now() - dbStart;
-      if (error && error.code !== 'PGRST205') {
+      if (error && error.code !== "PGRST205") {
         console.error("Voucher DB query error:", error);
         voucherDbError = error.message;
         voucherDbStatus = "error";
@@ -109,7 +111,11 @@ export async function GET(request: NextRequest) {
 
     const uptime = process.uptime ? process.uptime() : 0;
     const overallStatus =
-      flightDbStatus === "ok" && hotelDbStatus === "ok" && voucherDbStatus === "ok" ? "ok" : "degraded";
+      flightDbStatus === "ok" &&
+      hotelDbStatus === "ok" &&
+      voucherDbStatus === "ok"
+        ? "ok"
+        : "degraded";
 
     // All systems operational
     const response: HealthStatus = {
