@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
             return errorResponse('INSUFFICIENT_STOCK', `Only ${variant.stock_on_hand} in stock`, 409);
         }
 
-        // Add to cart using queries interface
+        // Add to cart
         const cart = await addCartItem(userId, variant_id, qty);
         return successResponse(cart, undefined, 201);
     } catch (error) {

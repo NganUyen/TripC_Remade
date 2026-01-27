@@ -18,7 +18,7 @@ Visit `http://localhost:3000` - you'll see a green test panel at the top showing
 **Fix:**
 
 1. Check webhook in [Clerk Dashboard > Webhooks](https://dashboard.clerk.com)
-2. Verify webhook URL matches your ngrok URL
+2. Verify webhook URL matches your production domain (webhooks optional for local dev)
 3. Check "Message Attempts" tab for errors
 4. Try creating a NEW test user (webhook only fires on new signups)
 
@@ -113,7 +113,7 @@ SELECT auth.jwt();
 1. **Always restart dev server** after changing `.env.local`
 2. **Clear browser cache** if you created JWT template
 3. **Check Clerk webhook logs** for failed attempts
-4. **Use ngrok for local testing** - regular localhost won't work
+4. **Local development** - users automatically sync on first login, no webhook needed
 5. **Sign out and back in** after any Clerk config changes
 
 ## 📊 What to Share if Still Stuck

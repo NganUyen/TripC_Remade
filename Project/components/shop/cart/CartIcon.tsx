@@ -6,22 +6,32 @@ import { ShoppingCart } from "lucide-react";
 import { useCartStore } from "@/store/useCartStore";
 import { useCartAnimation } from "@/store/useCartAnimation";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@clerk/nextjs";
 
 export const CartIcon = () => {
     const pathname = usePathname();
-    // Subscribe only to item_count to avoid re-renders on other cart changes
-    const itemCount = useCartStore((state) => state.cart?.item_count ?? 0);
+    const { userId, isLoaded } = useAuth();
+    
+    // Subscribe to the whole cart to ensure re-renders when cart changes
+    const cart = useCartStore((state) => state.cart);
+    const itemCount = cart?.item_count ?? 0;
     const initCart = useCartStore((state) => state.initCart);
     const { setTargetRef } = useCartAnimation();
     const iconRef = useRef<HTMLAnchorElement>(null);
 
-    // Auto-init cart on mount
+    // Auto-init cart when user is authenticated
     useEffect(() => {
-        initCart();
+        if (isLoaded && userId) {
+            initCart();
+        }
+    }, [isLoaded, userId, initCart]);
+
+    // Set target ref for fly animation
+    useEffect(() => {
         if (iconRef.current) {
             setTargetRef(iconRef as any);
         }
-    }, [initCart, setTargetRef]);
+    }, [setTargetRef]);
 
     // Only visible on /shop routes
     if (!pathname?.startsWith("/shop")) return null;

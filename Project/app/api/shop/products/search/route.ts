@@ -58,8 +58,10 @@ export async function GET(request: NextRequest) {
         const { items: rawProducts, total } = await searchProductsFuzzy({
             query: query || undefined,
             category,
+            brand: searchParams.get('brand') || undefined,
             minPrice,
             maxPrice,
+            minRating: searchParams.get('min_rating') ? parseFloat(searchParams.get('min_rating')!) : undefined,
             sort,
             limit,
             offset

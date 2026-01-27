@@ -111,7 +111,16 @@ export function SearchBar() {
             {showSuggestions && query.length >= 2 && (
                 <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-zinc-900 rounded-2xl shadow-xl border border-slate-100 dark:border-zinc-800 overflow-hidden max-h-[400px] overflow-y-auto">
                     <div className="p-2">
-                        <div className="text-xs font-bold text-slate-400 px-3 py-2 uppercase tracking-wider">Suggestions</div>
+                        <div className="flex items-center justify-between px-3 py-2">
+                            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Suggestions</div>
+                            <Link
+                                href={`/shop/search?q=${encodeURIComponent(query)}`}
+                                onClick={() => setShowSuggestions(false)}
+                                className="text-xs font-bold text-[#FF5E1F] hover:text-orange-600 transition-colors"
+                            >
+                                View all results
+                            </Link>
+                        </div>
 
                         {loading ? (
                             <div className="p-4 text-center text-slate-400 text-sm">Searching...</div>
@@ -143,13 +152,6 @@ export function SearchBar() {
                                         </div>
                                     </Link>
                                 ))}
-                                <Link
-                                    href={`/shop/search?q=${encodeURIComponent(query)}`}
-                                    onClick={() => setShowSuggestions(false)}
-                                    className="block w-full text-center py-3 text-sm font-bold text-[#FF5E1F] hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl transition-colors mt-1"
-                                >
-                                    View all results for "{query}"
-                                </Link>
                             </>
                         ) : (
                             <div className="px-3 py-6 text-center">

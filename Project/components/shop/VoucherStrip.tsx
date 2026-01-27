@@ -30,10 +30,11 @@ export function VoucherStrip() {
                 <div className="flex items-center justify-between mb-8">
                     <h3 className="text-2xl font-bold">Exclusive Vouchers</h3>
                 </div>
-                <div className="flex gap-6 overflow-x-auto pb-8 -mx-4 px-4 lg:-mx-12 lg:px-12">
-                    {[1, 2, 3, 4].map((i) => (
-                        <div key={i} className="snap-start shrink-0 w-80 h-40 bg-slate-200 dark:bg-zinc-800 rounded-2xl animate-pulse" />
-                    ))}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pb-8">
+                    <div className="h-40 bg-slate-100 dark:bg-zinc-800 rounded-2xl animate-pulse" />
+                    <div className="h-40 bg-slate-100 dark:bg-zinc-800 rounded-2xl animate-pulse hidden md:block" />
+                    <div className="h-40 bg-slate-100 dark:bg-zinc-800 rounded-2xl animate-pulse hidden lg:block" />
+                    <div className="h-40 bg-slate-100 dark:bg-zinc-800 rounded-2xl animate-pulse hidden lg:block" />
                 </div>
             </section>
         )
@@ -49,7 +50,7 @@ export function VoucherStrip() {
             <div className="flex items-center justify-between mb-8">
                 <h3 className="text-2xl font-bold">Exclusive Vouchers</h3>
                 <Link
-                    href="/shop/vouchers"
+                    href="/vouchers"
                     className="text-[#FF5E1F] text-sm font-bold flex items-center gap-1 hover:gap-2 transition-all"
                 >
                     View All <ChevronRight className="w-4 h-4" />
@@ -85,7 +86,7 @@ export function VoucherStrip() {
                                 <div className="flex items-center justify-between">
                                     <span className="text-xs text-slate-400">{voucher.tcent_cost} TripCent</span>
                                     <Link
-                                        href="/shop/vouchers"
+                                        href="/vouchers"
                                         className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white border border-slate-200 dark:border-zinc-700 rounded px-2 py-1 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors"
                                     >
                                         Redeem

@@ -126,6 +126,7 @@ export interface CartItem {
     line_total: Money;
     title_snapshot: string;
     variant_snapshot: Record<string, string>;
+    image?: string | null;
 }
 
 export interface Cart {

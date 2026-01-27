@@ -10,9 +10,16 @@ import Link from 'next/link'
 import { ArrowLeft, Minus, Plus, Trash2, ShoppingBag, Loader2 } from 'lucide-react'
 
 export default function CartPage() {
-    const { cart, isLoading, pendingItemIds, updateItem, removeItem } = useCartStore()
+    const { cart, isLoading, pendingItemIds, updateItem, removeItem, initCart } = useCartStore()
     const { userId, isLoaded } = useAuth()
     const router = useRouter()
+
+    // Fetch cart data on mount
+    useEffect(() => {
+        if (isLoaded && userId) {
+            initCart()
+        }
+    }, [isLoaded, userId, initCart])
 
     useEffect(() => {
         if (isLoaded && !userId) {
@@ -33,8 +40,23 @@ export default function CartPage() {
     // Loading state
     if (isLoading || !isLoaded) {
         return (
-            <main className="min-h-screen bg-[#fcfaf8] dark:bg-[#0a0a0a] flex items-center justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-[#FF5E1F]" />
+            <main className="min-h-screen bg-[#fcfaf8] dark:bg-[#0a0a0a] pb-20">
+                <div className="max-w-6xl mx-auto px-4 py-8">
+                    <div className="flex items-center justify-between mb-8">
+                        <div className="h-8 w-48 bg-slate-200 dark:bg-zinc-800 rounded-lg animate-pulse" />
+                        <div className="h-6 w-16 bg-slate-200 dark:bg-zinc-800 rounded-lg animate-pulse" />
+                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div className="lg:col-span-2 space-y-4">
+                            {[1, 2, 3].map((i) => (
+                                <div key={i} className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-800 h-32 animate-pulse" />
+                            ))}
+                        </div>
+                        <div className="lg:col-span-1">
+                            <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-800 h-80 animate-pulse" />
+                        </div>
+                    </div>
+                </div>
             </main>
         )
     }
@@ -93,7 +115,16 @@ export default function CartPage() {
                                 >
                                     <div className="flex gap-4">
                                         {/* Product Image Placeholder */}
-                                        <div className="w-24 h-24 bg-slate-200 dark:bg-slate-800 rounded-lg flex-shrink-0" />
+                                        {/* Product Image */}
+                                        <div className="w-24 h-24 bg-slate-100 dark:bg-slate-800 rounded-lg flex-shrink-0 overflow-hidden border border-slate-100 dark:border-slate-700">
+                                            {item.image ? (
+                                                <img src={item.image} alt={item.title_snapshot} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center text-slate-300">
+                                                    <ShoppingBag className="w-8 h-8" />
+                                                </div>
+                                            )}
+                                        </div>
 
                                         {/* Product Info */}
                                         <div className="flex-1 min-w-0">

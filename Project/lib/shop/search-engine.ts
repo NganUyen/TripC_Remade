@@ -80,8 +80,10 @@ async function getSearchIndex() {
 interface SearchParams {
     query?: string;
     category?: string; // slug
+    brand?: string; // slug
     minPrice?: number;
     maxPrice?: number;
+    minRating?: number;
     sort?: 'relevance' | 'newest' | 'price_asc' | 'price_desc' | 'rating' | 'best_selling';
     limit?: number;
     offset?: number;
@@ -114,12 +116,20 @@ export async function searchProductsFuzzy(params: SearchParams) {
         results = results.filter(p => (p as any).category_slug === params.category);
     }
 
+    if (params.brand) {
+        results = results.filter(p => (p as any).brand_slug === params.brand);
+    }
+
     if (params.minPrice !== undefined) {
         results = results.filter(p => p.price >= params.minPrice!);
     }
 
     if (params.maxPrice !== undefined) {
         results = results.filter(p => p.price <= params.maxPrice!);
+    }
+
+    if (params.minRating !== undefined) {
+        results = results.filter(p => p.rating_avg >= params.minRating!);
     }
 
     // 3. Sorting

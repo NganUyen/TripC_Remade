@@ -72,21 +72,21 @@ export function ShopHero() {
                     </div>
                 </div>
 
-                {/* Quick Category Pills */}
-                <div className="w-full overflow-visible">
-                    <div className="flex justify-center gap-2.5 flex-wrap px-2">
+                {/* Quick Category Pills - Slider */}
+                <div className="w-full overflow-hidden">
+                    <div className="flex gap-3 overflow-x-auto pb-4 pt-1 snap-x px-4 no-scrollbar mask-gradient-x justify-start md:justify-center">
                         {categories.map((cat) => (
                             <Link
                                 key={cat.slug}
                                 href={`/shop/search?category=${cat.slug}`}
-                                className="whitespace-nowrap px-4 py-2 
-                                    bg-white/70 dark:bg-black/50 backdrop-blur-md 
-                                    border border-slate-200/50 dark:border-white/10 
+                                className="snap-start shrink-0 whitespace-nowrap px-6 py-3 
+                                    bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md 
+                                    border border-white/20 dark:border-white/10 
                                     rounded-full 
-                                    text-slate-800 dark:text-white 
-                                    text-sm font-bold 
-                                    hover:bg-white hover:scale-105 hover:shadow-md
-                                    transition-all duration-200"
+                                    text-slate-900 dark:text-white 
+                                    text-sm font-bold tracking-wide
+                                    hover:bg-white dark:hover:bg-zinc-800 hover:scale-105 hover:shadow-lg
+                                    transition-all duration-300 ease-out"
                             >
                                 {cat.name}
                             </Link>

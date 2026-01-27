@@ -432,37 +432,54 @@ async function getCartByKey(key: string): Promise<{ cart: any; isUserId: boolean
     const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(key);
 
     if (isUUID) {
-        const { data } = await supabase
+        // Use .limit(1) instead of .single() to handle multiple carts gracefully
+        const { data, error } = await supabase
             .from('carts')
             .select('*, cart_items(*)')
             .eq('user_id', key)
             .eq('status', 'active')
-            .single();
-        if (data) return { cart: data, isUserId: true };
+            .order('created_at', { ascending: false })
+            .limit(1);
+        
+        if (error) {
+            console.error('Error fetching cart by user_id:', error);
+        }
+        if (data && data.length > 0) {
+            return { cart: data[0], isUserId: true };
+        }
     }
 
     // Try session_id
-    const { data } = await supabase
+    const { data, error } = await supabase
         .from('carts')
         .select('*, cart_items(*)')
         .eq('session_id', key)
         .eq('status', 'active')
-        .single();
+        .order('created_at', { ascending: false })
+        .limit(1);
 
-    if (data) return { cart: data, isUserId: false };
+    if (error) {
+        console.error('Error fetching cart by session_id:', error);
+    }
+    if (data && data.length > 0) {
+        return { cart: data[0], isUserId: false };
+    }
     return null;
 }
 
 function formatCart(cartData: any): Cart {
-    const items: CartItem[] = (cartData.cart_items || []).map((item: any) => ({
-        id: item.id,
-        variant_id: item.variant_id,
-        qty: item.qty,
-        unit_price: money(item.unit_price, item.currency || 'USD'),
-        line_total: money(item.unit_price * item.qty, item.currency || 'USD'),
-        title_snapshot: item.title_snapshot || '',
-        variant_snapshot: item.variant_snapshot || {}
-    }));
+    const items: CartItem[] = (cartData.cart_items || []).map((item: any) => {
+        return {
+            id: item.id,
+            variant_id: item.variant_id,
+            qty: item.qty,
+            unit_price: money(item.unit_price, item.currency || 'USD'),
+            line_total: money(item.unit_price * item.qty, item.currency || 'USD'),
+            title_snapshot: item.title_snapshot || '',
+            variant_snapshot: item.variant_snapshot || {},
+            image: item.image_url || null // Use stored image_url if available
+        };
+    });
 
     const subtotal = items.reduce((sum, item) => sum + item.line_total.amount, 0);
     const itemCount = items.reduce((sum, item) => sum + item.qty, 0);
@@ -508,6 +525,7 @@ export async function getOrCreateCart(sessionKey: string): Promise<Cart> {
         .single();
 
     if (error || !newCart) {
+        console.error('[getOrCreateCart] Failed to create cart:', error);
         throw new Error('Failed to create cart');
     }
 
@@ -528,26 +546,31 @@ export async function addCartItem(
         throw new Error('Variant not found');
     }
 
-    // Check if item exists
+    // Check if item already exists in cart
     const { data: existingItem } = await supabase
         .from('cart_items')
         .select('*')
         .eq('cart_id', cart.id)
         .eq('variant_id', variantId)
-        .single();
+        .limit(1);
 
-    if (existingItem) {
+    if (existingItem && existingItem.length > 0) {
         // Update quantity
-        await supabase
+        const { error } = await supabase
             .from('cart_items')
-            .update({ qty: existingItem.qty + qty, updated_at: new Date().toISOString() })
-            .eq('id', existingItem.id);
+            .update({ qty: existingItem[0].qty + qty, updated_at: new Date().toISOString() })
+            .eq('id', existingItem[0].id);
+
+        if (error) {
+            console.error('Error updating cart item:', error);
+            throw new Error(`Failed to update item: ${error.message}`);
+        }
     } else {
-        // Get product for title
+        // Get product for title snapshot
         const product = await getProductById(variant.product_id);
 
         // Insert new item
-        await supabase
+        const { error } = await supabase
             .from('cart_items')
             .insert({
                 cart_id: cart.id,
@@ -556,12 +579,21 @@ export async function addCartItem(
                 unit_price: variant.price,
                 currency: variant.currency,
                 title_snapshot: product?.title || variant.title,
-                variant_snapshot: (variant.options || []).reduce((acc, opt) => ({ ...acc, [opt.name]: opt.value }), {})
+                variant_snapshot: (variant.options || []).reduce((acc: any, opt: any) => ({ ...acc, [opt.name]: opt.value }), {})
             });
+
+        if (error) {
+            console.error('Error inserting cart item:', error);
+            throw new Error(`Failed to insert item: ${error.message}`);
+        }
     }
 
     // Return updated cart
-    return (await getCart(sessionKey))!;
+    const updatedCart = await getCart(sessionKey);
+    if (!updatedCart) {
+        throw new Error('Failed to fetch updated cart');
+    }
+    return updatedCart;
 }
 
 export async function updateCartItem(

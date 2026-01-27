@@ -3,7 +3,6 @@
 import React, { useState } from 'react'
 import { ProductCard } from './ProductCard'
 import { useProducts, formatPriceSimple } from '@/lib/hooks/useShopAPI'
-import { Loader2 } from 'lucide-react'
 
 export function ProductGrid() {
     const [sort, setSort] = useState<string>('newest');
@@ -108,10 +107,7 @@ export function ProductGrid() {
                         className="px-8 py-4 bg-slate-100 dark:bg-zinc-800 rounded-full font-bold text-sm hover:bg-slate-200 dark:hover:bg-zinc-700 transition-colors disabled:opacity-50 flex items-center gap-2"
                     >
                         {loading ? (
-                            <>
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                                Loading...
-                            </>
+                            <span className="animate-pulse">Loading...</span>
                         ) : (
                             `Load More Products (${products.length}/${total})`
                         )}

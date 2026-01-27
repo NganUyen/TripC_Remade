@@ -5,7 +5,8 @@ import {
     updateCartItem,
     removeCartItem,
     getVariantById,
-    getCart
+    getCart,
+    getDbUserId
 } from '@/lib/shop';
 import { auth } from '@clerk/nextjs/server';
 
@@ -14,10 +15,15 @@ export async function PATCH(
     { params }: { params: { id: string } }
 ) {
     try {
-        const { userId } = await auth();
+        const { userId: clerkId } = await auth();
 
-        if (!userId) {
+        if (!clerkId) {
             return errorResponse('UNAUTHORIZED', 'Missing auth', 401);
+        }
+
+        const userId = await getDbUserId(clerkId);
+        if (!userId) {
+            return errorResponse('USER_NOT_FOUND', 'User record not found', 404);
         }
 
         let body;
@@ -35,6 +41,7 @@ export async function PATCH(
         // Validate stock if increasing
         // Get the item first to find variant_id.
         const cart = await getCart(userId);
+
         const item = cart?.items.find(i => i.id === params.id);
 
         if (!item) {
@@ -62,10 +69,15 @@ export async function DELETE(
     { params }: { params: { id: string } }
 ) {
     try {
-        const { userId } = await auth();
+        const { userId: clerkId } = await auth();
 
-        if (!userId) {
+        if (!clerkId) {
             return errorResponse('UNAUTHORIZED', 'Missing auth', 401);
+        }
+
+        const userId = await getDbUserId(clerkId);
+        if (!userId) {
+            return errorResponse('USER_NOT_FOUND', 'User record not found', 404);
         }
 
         const updatedCart = await removeCartItem(userId, params.id);

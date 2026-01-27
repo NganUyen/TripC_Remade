@@ -87,8 +87,8 @@ export const useCartStore = create<CartState>((set, get) => ({
                 pendingItemIds: [...get().pendingItemIds, variantId] // Mark as pending
             });
         } else {
-            // Fallback if no cart loaded yet (unlikely if authorized)
-            set({ isLoading: true });
+            // No cart loaded yet - set loading and let the server response create it
+            set({ isLoading: true, pendingItemIds: [...get().pendingItemIds, variantId] });
         }
 
         try {

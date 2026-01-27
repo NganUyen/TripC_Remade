@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { MapPin, Star } from 'lucide-react'
 
 interface DestinationCardProps {
     image: string
@@ -13,7 +14,6 @@ interface DestinationCardProps {
 
 export function DestinationCard({
     image,
-    location,
     country,
     title,
     rating,
@@ -22,38 +22,38 @@ export function DestinationCard({
     tags
 }: DestinationCardProps) {
     return (
-        // Outer wrapper: Handles hover transform only
+        // 1. Outer Wrapper (The Mover)
         <div className="group hover:-translate-y-1 transition-transform duration-300 transform-gpu">
-            {/* Inner card: Handles clipping, background, border, shadow */}
+            {/* 2. Inner Container (The Shell) */}
             <div
-                className="bg-white dark:bg-slate-800 rounded-2xl overflow-hidden shadow-subtle hover:shadow-xl transition-shadow duration-300 border border-slate-100 dark:border-slate-700 h-full flex flex-col relative"
+                className="relative h-full bg-white dark:bg-slate-900 rounded-[2rem] overflow-hidden border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl transition-shadow flex flex-col"
                 style={{ WebkitMaskImage: '-webkit-radial-gradient(white, black)' }}
             >
+                {/* 3. Content */}
                 <div className="relative h-56 overflow-hidden shrink-0">
                     <img
                         src={image}
                         alt={title}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                        data-location={location}
                     />
                     {tags?.map((tag, i) => (
-                        <div key={i} className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-slate-900 shadow-sm flex items-center gap-1">
-                            {tag.icon && <span className={`material-symbols-outlined text-xs ${tag.color || ''}`}>{tag.icon}</span>}
-                            {tag.text}
+                        <div key={i} className="absolute top-4 right-4 bg-white/95 dark:bg-black/80 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-slate-900 dark:text-white shadow-sm border border-white/10 flex items-center gap-1">
+                            {tag.icon && <span className={`text-xs ${tag.color || ''}`}>{tag.text}</span>}
+                            {!tag.icon && tag.text}
                         </div>
                     ))}
                     <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/60 to-transparent">
                         <div className="flex items-center gap-1 text-white">
-                            <span className="material-symbols-outlined text-sm">location_on</span>
+                            <MapPin size={14} className="text-white" />
                             <span className="text-xs font-medium">{country}</span>
                         </div>
                     </div>
                 </div>
                 <div className="p-5 flex flex-col flex-1">
                     <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-bold text-lg text-slate-900 dark:text-white group-hover:text-primary transition-colors">{title}</h3>
+                        <h3 className="font-bold text-lg text-slate-900 dark:text-white group-hover:text-[#FF5E1F] transition-colors">{title}</h3>
                         <div className="flex items-center gap-1 text-amber-500 bg-amber-50 dark:bg-amber-900/30 px-1.5 py-0.5 rounded-md">
-                            <span className="material-symbols-outlined text-sm">star</span>
+                            <Star size={12} fill="currentColor" strokeWidth={0} />
                             <span className="text-xs font-bold">{rating}</span>
                         </div>
                     </div>
@@ -62,7 +62,7 @@ export function DestinationCard({
                         <div className="text-slate-900 dark:text-white font-bold">
                             ${price} <span className="text-slate-400 text-xs font-normal">/ person</span>
                         </div>
-                        <button className="px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white font-semibold text-xs hover:bg-primary hover:text-white transition-colors">Book Now</button>
+                        <button className="px-4 py-2 rounded-full bg-[#FF5E1F] text-white font-bold text-xs hover:bg-orange-600 shadow-lg shadow-orange-500/20 transition-colors">Book Now</button>
                     </div>
                 </div>
             </div>

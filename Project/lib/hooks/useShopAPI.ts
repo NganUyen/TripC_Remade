@@ -166,18 +166,27 @@ export const shopApi = {
         offset?: number;
         category?: string;
         brand?: string;
+        minPrice?: number;
+        maxPrice?: number;
+        minRating?: number;
         featured?: boolean;
         sort?: string;
+        q?: string; // Add query support here too
     }): Promise<{ data: ProductListItem[]; total: number; error: string | null }> {
         const query = new URLSearchParams();
         if (params?.limit) query.set('limit', String(params.limit));
         if (params?.offset) query.set('offset', String(params.offset));
         if (params?.category) query.set('category', params.category);
         if (params?.brand) query.set('brand', params.brand);
+        if (params?.minPrice) query.set('min_price', String(params.minPrice));
+        if (params?.maxPrice) query.set('max_price', String(params.maxPrice));
+        if (params?.minRating) query.set('min_rating', String(params.minRating));
         if (params?.featured) query.set('featured', 'true');
         if (params?.sort) query.set('sort', params.sort);
+        if (params?.q) query.set('q', params.q);
 
-        const response = await fetch(`${API_BASE}/products?${query}`);
+        const endpoint = params?.q ? '/products/search' : '/products';
+        const response = await fetch(`${API_BASE}${endpoint}?${query}`);
         const json = await response.json();
 
         if (!response.ok) {
@@ -206,6 +215,12 @@ export const shopApi = {
     // Vouchers
     async getVouchers(): Promise<{ data: VoucherTemplate[]; error: string | null }> {
         const result = await fetchApi<VoucherTemplate[]>('/vouchers/available');
+        return { data: result.data || [], error: result.error };
+    },
+
+    // Brands
+    async getBrands(): Promise<{ data: Brand[]; error: string | null }> {
+        const result = await fetchApi<Brand[]>('/brands');
         return { data: result.data || [], error: result.error };
     },
 };
@@ -238,7 +253,7 @@ export function useProducts(params?: Parameters<typeof shopApi.getProducts>[0]) 
         fetchProducts();
 
         return () => { cancelled = true; };
-    }, [params?.limit, params?.offset, params?.category, params?.brand, params?.featured, params?.sort]);
+    }, [params?.limit, params?.offset, params?.category, params?.brand, params?.minPrice, params?.maxPrice, params?.minRating, params?.featured, params?.sort, params?.q]);
 
     return { products, total, loading, error };
 }
@@ -320,6 +335,32 @@ export function useVouchers() {
     }, []);
 
     return { vouchers, loading, error };
+}
+
+export function useBrands() {
+    const [brands, setBrands] = useState<Brand[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        async function fetchBrands() {
+            const result = await shopApi.getBrands();
+
+            if (!cancelled) {
+                setBrands(result.data || []);
+                setError(result.error);
+                setLoading(false);
+            }
+        }
+
+        fetchBrands();
+
+        return () => { cancelled = true; };
+    }, []);
+
+    return { brands, loading, error };
 }
 
 // ============================================================================

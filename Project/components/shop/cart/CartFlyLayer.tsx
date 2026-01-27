@@ -1,19 +1,39 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCartAnimation } from "@/store/useCartAnimation";
 
 export const CartFlyLayer = () => {
     const { targetRef, flyingItem, removeFlyingItem } = useCartAnimation();
-    const [targetPos, setTargetPos] = useState({ x: 0, y: 0 });
+    const [targetPos, setTargetPos] = useState<{ x: number; y: number } | null>(null);
+
+    const updateTargetPos = useCallback(() => {
+        // First try using the ref
+        if (targetRef?.current) {
+            const rect = targetRef.current.getBoundingClientRect();
+            setTargetPos({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
+            return;
+        }
+        
+        // Fallback: find cart icon by ID in the DOM
+        const cartIcon = document.getElementById('cart-icon-target');
+        if (cartIcon) {
+            const rect = cartIcon.getBoundingClientRect();
+            setTargetPos({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
+            return;
+        }
+
+        // Ultimate fallback: top-right corner of screen (where cart icon usually is)
+        setTargetPos({ x: window.innerWidth - 100, y: 40 });
+    }, [targetRef]);
 
     useEffect(() => {
-        if (!targetRef?.current) return;
-        const rect = targetRef.current.getBoundingClientRect();
-        // Target center of the cart icon
-        setTargetPos({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
-    }, [targetRef, flyingItem]);
+        updateTargetPos();
+    }, [targetRef, flyingItem, updateTargetPos]);
+
+    // Don't render animation if we don't have a valid target position yet
+    if (!targetPos) return null;
 
     return (
         <div className="fixed inset-0 pointer-events-none z-[100]">
