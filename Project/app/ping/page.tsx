@@ -9,6 +9,7 @@ interface HealthStatus {
     flight_db?: string;
     hotel_db?: string;
     voucher_db?: string;
+    transport_db?: string;
   };
   timestamp?: string;
   error?: string;
@@ -31,7 +32,8 @@ export default function PingPage() {
     {
       method: "GET",
       path: "/api/ping",
-      description: "Health check (Flight + Hotel + Voucher Services)",
+      description:
+        "Health check (Flight + Hotel + Voucher + Transport Services)",
       status: null,
       loading: false,
     },
@@ -105,6 +107,14 @@ export default function PingPage() {
       method: "GET",
       path: "/api/v1/vouchers/exchange",
       description: "Voucher: Exchange API Status",
+      status: null,
+      loading: false,
+    },
+    // Transport Service Endpoints
+    {
+      method: "GET",
+      path: "/api/transport/search?origin=SGN&destination=HAN&date=2026-02-20",
+      description: "Transport: Search routes",
       status: null,
       loading: false,
     },
@@ -236,7 +246,8 @@ export default function PingPage() {
           TripC Services Health Monitor
         </h1>
         <p style={{ color: "#666", marginBottom: "20px" }}>
-          Internal monitoring dashboard - Flight, Hotel & Voucher Services
+          Internal monitoring dashboard - Flight, Hotel, Voucher & Transport
+          Services
         </p>
 
         <div style={{ marginBottom: "20px" }}>
@@ -343,6 +354,19 @@ export default function PingPage() {
                     }}
                   >
                     {health.services?.voucher_db?.toUpperCase() || "UNKNOWN"}
+                  </td>
+                </tr>
+                <tr style={{ borderBottom: "1px solid #ddd" }}>
+                  <td style={{ padding: "12px" }}>Transport Database</td>
+                  <td
+                    style={{
+                      padding: "12px",
+                      textAlign: "right",
+                      color: getStatusColor(health.services?.transport_db),
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {health.services?.transport_db?.toUpperCase() || "UNKNOWN"}
                   </td>
                 </tr>
                 <tr>
