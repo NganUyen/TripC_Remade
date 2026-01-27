@@ -60,7 +60,10 @@ export async function GET(request: NextRequest) {
     let hotelDbError = "";
     try {
       const dbStart = Date.now();
-      const { data, error } = await hotelDb.from("hotels").select("id").limit(1);
+      const { data, error } = await hotelDb
+        .from("hotels")
+        .select("id")
+        .limit(1);
       hotelDbTime = Date.now() - dbStart;
       if (error) {
         console.error("Hotel DB query error:", error);
@@ -68,7 +71,11 @@ export async function GET(request: NextRequest) {
         hotelDbStatus = "error";
       } else {
         hotelDbStatus = "ok";
-        console.log("Hotel DB check successful, found", data?.length || 0, "hotels");
+        console.log(
+          "Hotel DB check successful, found",
+          data?.length || 0,
+          "hotels",
+        );
       }
     } catch (err) {
       console.error("Hotel DB health check failed:", err);
