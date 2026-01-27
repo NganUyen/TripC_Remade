@@ -10,6 +10,7 @@ interface HealthStatus {
     hotel_db?: string;
     voucher_db?: string;
     transport_db?: string;
+    dining_db?: string;
   };
   timestamp?: string;
   error?: string;
@@ -33,7 +34,7 @@ export default function PingPage() {
       method: "GET",
       path: "/api/ping",
       description:
-        "Health check (Flight + Hotel + Voucher + Transport Services)",
+        "Health check (Flight + Hotel + Voucher + Transport + Dining Services)",
       status: null,
       loading: false,
     },
@@ -115,6 +116,35 @@ export default function PingPage() {
       method: "GET",
       path: "/api/transport/search?origin=SGN&destination=HAN&date=2026-02-20",
       description: "Transport: Search routes",
+      status: null,
+      loading: false,
+    },
+    // Dining Service Endpoints
+    {
+      method: "GET",
+      path: "/api/dining/venues?city=Bangkok",
+      description: "Dining: Search venues",
+      status: null,
+      loading: false,
+    },
+    {
+      method: "GET",
+      path: "/api/dining/venues/featured",
+      description: "Dining: Featured venues",
+      status: null,
+      loading: false,
+    },
+    {
+      method: "GET",
+      path: "/api/dining/cart",
+      description: "Dining: Get cart",
+      status: null,
+      loading: false,
+    },
+    {
+      method: "GET",
+      path: "/api/dining/reservations/check?venue_id=test&date=2026-02-20&time=19:00",
+      description: "Dining: Check availability",
       status: null,
       loading: false,
     },
@@ -246,8 +276,8 @@ export default function PingPage() {
           TripC Services Health Monitor
         </h1>
         <p style={{ color: "#666", marginBottom: "20px" }}>
-          Internal monitoring dashboard - Flight, Hotel, Voucher & Transport
-          Services
+          Internal monitoring dashboard - Flight, Hotel, Voucher, Transport &
+          Dining Services
         </p>
 
         <div style={{ marginBottom: "20px" }}>
@@ -367,6 +397,19 @@ export default function PingPage() {
                     }}
                   >
                     {health.services?.transport_db?.toUpperCase() || "UNKNOWN"}
+                  </td>
+                </tr>
+                <tr style={{ borderBottom: "1px solid #ddd" }}>
+                  <td style={{ padding: "12px" }}>Dining Database</td>
+                  <td
+                    style={{
+                      padding: "12px",
+                      textAlign: "right",
+                      color: getStatusColor(health.services?.dining_db),
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {health.services?.dining_db?.toUpperCase() || "UNKNOWN"}
                   </td>
                 </tr>
                 <tr>

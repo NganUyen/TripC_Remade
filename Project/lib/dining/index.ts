@@ -6,12 +6,17 @@
 // ============================================================
 
 // Types
-export * from './types'
+export * from "./types";
 
 // Services
-export { venueService, VenueService } from './services/venueService'
-export { menuService, MenuService } from './services/menuService'
-export { reservationService, ReservationService } from './services/reservationService'
+export { venueService, VenueService } from "./services/venueService";
+export { menuService, MenuService } from "./services/menuService";
+export {
+  reservationService,
+  ReservationService,
+} from "./services/reservationService";
+export { reviewService, ReviewService } from "./services/reviewService";
+export { cartService, CartService } from "./services/cartService";
 
 // Re-export for convenience
 export type {
@@ -26,4 +31,14 @@ export type {
   CreateReservationRequest,
   VenueSearchParams,
   VenueListResponse,
-} from './types'
+} from "./types";
+
+// Re-export review types
+export type {
+  DiningReview,
+  CreateReviewRequest,
+  ReviewStats,
+} from "./services/reviewService";
+
+// Re-export cart types
+export type { CartItem, CreateCartItemRequest } from "./services/cartService";

@@ -4,7 +4,7 @@
  * GET /api/ping
  *
  * Returns system health status including API availability, database connectivity,
- * and uptime information. Tests Flight, Hotel, Voucher, and Transport service databases.
+ * and uptime information. Tests Flight, Hotel, Voucher, Transport, and Dining service databases.
  *
  * @returns {JSON} Health status
  */
@@ -19,6 +19,10 @@ import {
   supabaseServerClient as transportDb,
   testDatabaseConnection as testTransportDb,
 } from "@/lib/transport/supabaseServerClient";
+import {
+  supabaseServerClient as diningDb,
+  testDatabaseConnection as testDiningDb,
+} from "@/lib/dining/supabaseServerClient";
 import { createServiceSupabaseClient } from "@/lib/supabase-server";
 
 export const dynamic = "force-dynamic";
@@ -32,6 +36,7 @@ interface HealthStatus {
     hotel_db: "ok" | "error";
     voucher_db: "ok" | "error";
     transport_db: "ok" | "error";
+    dining_db: "ok" | "error";
   };
   performance: {
     api_response_time_ms: number;
@@ -39,6 +44,7 @@ interface HealthStatus {
     hotel_db_response_time_ms: number;
     voucher_db_response_time_ms: number;
     transport_db_response_time_ms: number;
+    dining_db_response_time_ms: number;
   };
   version: string;
   environment: string;
@@ -127,12 +133,25 @@ export async function GET(request: NextRequest) {
       console.error("Transport DB health check failed:", err);
     }
 
+    // Test Dining database
+    let diningDbStatus: "ok" | "error" = "error";
+    let diningDbTime = 0;
+    try {
+      const dbStart = Date.now();
+      const dbHealthy = await testDiningDb();
+      diningDbTime = Date.now() - dbStart;
+      diningDbStatus = dbHealthy ? "ok" : "error";
+    } catch (err) {
+      console.error("Dining DB health check failed:", err);
+    }
+
     const uptime = process.uptime ? process.uptime() : 0;
     const overallStatus =
       flightDbStatus === "ok" &&
       hotelDbStatus === "ok" &&
       voucherDbStatus === "ok" &&
-      transportDbStatus === "ok"
+      transportDbStatus === "ok" &&
+      diningDbStatus === "ok"
         ? "ok"
         : "degraded";
 
@@ -146,6 +165,7 @@ export async function GET(request: NextRequest) {
         hotel_db: hotelDbStatus,
         voucher_db: voucherDbStatus,
         transport_db: transportDbStatus,
+        dining_db: diningDbStatus,
       },
       performance: {
         api_response_time_ms: Date.now() - startTime,
@@ -153,6 +173,7 @@ export async function GET(request: NextRequest) {
         hotel_db_response_time_ms: hotelDbTime,
         voucher_db_response_time_ms: voucherDbTime,
         transport_db_response_time_ms: transportDbTime,
+        dining_db_response_time_ms: diningDbTime,
       },
       version: "1.0.0",
       environment: process.env.NODE_ENV || "development",
@@ -175,6 +196,7 @@ export async function GET(request: NextRequest) {
         hotel_db: "error",
         voucher_db: "error",
         transport_db: "error",
+        dining_db: "error",
       },
       performance: {
         api_response_time_ms: Date.now() - startTime,
@@ -182,6 +204,7 @@ export async function GET(request: NextRequest) {
         hotel_db_response_time_ms: 0,
         voucher_db_response_time_ms: 0,
         transport_db_response_time_ms: 0,
+        dining_db_response_time_ms: 0,
       },
       version: "1.0.0",
       environment: process.env.NODE_ENV || "development",
