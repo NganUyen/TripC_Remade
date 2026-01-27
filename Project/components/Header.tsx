@@ -5,6 +5,8 @@ import Link from "next/link";
 import { UserProfileMenu } from "./UserProfileMenu";
 import { BellButton } from "./notifications/BellButton";
 import { SignInButton, SignedIn, SignedOut, useUser } from "@clerk/nextjs";
+import { CartIcon } from "@/components/shop/cart/CartIcon";
+import { Globe, Search } from "lucide-react";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 
 export function Header() {
@@ -21,9 +23,7 @@ export function Header() {
           <div className="flex items-center gap-8 flex-1">
             <Link href="/" className="flex items-center gap-2 group">
               <div className="text-primary size-8 bg-primary/10 rounded-lg flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors">
-                <span className="material-symbols-outlined text-2xl">
-                  travel_explore
-                </span>
+                <Globe className="w-5 h-5" />
               </div>
               <h2 className="text-slate-900 dark:text-white text-xl font-bold tracking-tight">
                 TripC Pro
@@ -32,9 +32,7 @@ export function Header() {
             <div className="hidden md:flex flex-1 max-w-md">
               <div className="relative w-full group">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="material-symbols-outlined text-slate-400">
-                    search
-                  </span>
+                  <Search className="w-5 h-5 text-slate-400" />
                 </div>
                 <input
                   type="text"
@@ -71,7 +69,10 @@ export function Header() {
                 Partner
               </Link>
             </nav>
-            <div className="flex items-center gap-3" suppressHydrationWarning>
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <CartIcon />
+              </div>
               <BellButton className="flex items-center justify-center size-10 rounded-full bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" />
 
               <SignedIn>

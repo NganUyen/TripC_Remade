@@ -5,7 +5,7 @@ import { Search } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 export function EntertainmentHero() {
-    const categories = ['Theme Parks', 'Concerts', 'Museums', 'Zoos', 'Workshops', 'Sports', 'Nightlife', 'Cinema']
+    const categories = ['Karaoke', 'Rooftop Bars', 'Nightclubs', 'Live Music', 'Speakeasies', 'Lounges', 'Pubs', 'Comedy']
 
     return (
         // MATCHED SHOP HERO: Use min-h-[550px] for better mobile responsiveness
@@ -14,8 +14,8 @@ export function EntertainmentHero() {
             {/* Background Image & Overlay */}
             <div className="absolute inset-0 z-0 overflow-hidden rounded-b-[2.5rem]">
                 <img
-                    src="https://images.unsplash.com/photo-1517457373958-b7bdd4587205?q=80&w=2669&auto=format&fit=crop"
-                    alt="Concert Crowd"
+                    src="https://images.unsplash.com/photo-1566737236500-c8ac43014a67?q=80&w=2000&auto=format&fit=crop"
+                    alt="Nightlife Atmosphere"
                     className="w-full h-full object-cover opacity-90"
                 />
 
@@ -23,7 +23,7 @@ export function EntertainmentHero() {
                     via-60% pushes the dark gradient up, ensuring the bottom is white/light 
                     so the category buttons below are readable in dark text.
                 */}
-                <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/20 via-60% to-[#fcfaf8] dark:to-[#0a0a0a]"></div>
+                <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 via-60% to-[#fcfaf8] dark:to-[#0a0a0a]"></div>
             </div>
 
             {/* Hero Content */}
@@ -34,7 +34,7 @@ export function EntertainmentHero() {
                     transition={{ duration: 0.6 }}
                     className="text-white text-4xl md:text-5xl font-bold mb-8 text-center drop-shadow-md"
                 >
-                    Fun &<br />Entertainment
+                    Nightlife &<br />Entertainment
                 </motion.h1>
 
                 {/* Search Console */}
@@ -45,7 +45,7 @@ export function EntertainmentHero() {
                         </div>
                         <input
                             type="text"
-                            placeholder="Find concerts, parks, or museums..."
+                            placeholder="Find karaoke rooms, rooftop bars, or clubs..."
                             // MATCHED SHOP HERO INPUT STYLE
                             className="w-full h-14 pl-14 pr-6 rounded-full bg-white/95 dark:bg-zinc-900/90 backdrop-blur-md border border-white/20 shadow-xl text-lg outline-none focus:ring-2 focus:ring-[#FF5E1F] transition-all placeholder:text-slate-400"
                         />
@@ -69,7 +69,7 @@ export function EntertainmentHero() {
                                 // MATCHED SHOP HERO BUTTONS:
                                 // Dark text (text-slate-900) on Light Glass Background (bg-white/60)
                                 // because the gradient bottom is now white.
-                                className="whitespace-nowrap px-4 py-2 
+                                className="cursor-pointer whitespace-nowrap px-4 py-2 
                                 bg-white/60 dark:bg-black/40 backdrop-blur-md 
                                 border border-slate-200 dark:border-white/10 
                                 rounded-full 

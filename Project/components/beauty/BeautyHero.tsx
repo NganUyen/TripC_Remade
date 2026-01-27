@@ -75,15 +75,15 @@ export function BeautyHero() {
                     </div>
 
                     {/* Categories - Glass Pills */}
-                    <div className="w-full overflow-x-auto no-scrollbar pb-2 px-4 mask-fade-sides">
-                        <div className="flex justify-center gap-3 w-fit min-w-full md:min-w-0 px-4">
+                    <div className="w-full overflow-hidden z-20 relative px-4">
+                        <div className="flex justify-start md:justify-center gap-3 overflow-x-auto pb-4 no-scrollbar">
                             {categories.map((cat, i) => (
                                 <motion.button
                                     key={i}
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: 0.3 + (i * 0.05) }}
-                                    className="whitespace-nowrap px-6 py-2.5 bg-white/10 border border-white/20 rounded-full text-white text-sm font-bold hover:bg-[#FF5E1F] hover:border-[#FF5E1F] backdrop-blur-md transition-all shadow-sm hover:scale-105"
+                                    className="cursor-pointer whitespace-nowrap px-6 py-2.5 bg-white/70 dark:bg-black/40 backdrop-blur-md border border-white/20 rounded-full text-slate-900 dark:text-white text-sm font-bold hover:bg-white hover:scale-105 transition-all shadow-sm shrink-0"
                                 >
                                     {cat}
                                 </motion.button>
