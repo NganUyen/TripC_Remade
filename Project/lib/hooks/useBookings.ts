@@ -4,26 +4,28 @@ import { useSupabaseClient } from "@/lib/supabase";
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 
+
 interface Booking {
   id: string;
   user_id: string;
-  booking_type:
-    | "hotel"
-    | "flight"
-    | "restaurant"
-    | "activity"
-    | "event"
-    | "wellness"
-    | "beauty"
-    | "transport";
+  category:
+  | "hotel"
+  | "flight"
+  | "restaurant"
+  | "activity"
+  | "event"
+  | "wellness"
+  | "beauty"
+  | "transport";
   title: string;
   description: string | null;
   start_date: string;
   end_date: string | null;
   status: "confirmed" | "pending" | "cancelled" | "completed";
-  price: number;
+  total_amount: number;
   currency: string;
   image_url: string | null;
+  location_summary: string | null;
   metadata: any;
   created_at: string;
   updated_at: string;

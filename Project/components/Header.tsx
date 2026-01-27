@@ -16,7 +16,7 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-[60] bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full px-6 lg:px-12 xl:px-16">
         <div className="flex items-center justify-between h-16 sm:h-20 gap-4">
           <div className="flex items-center gap-8 flex-1">
             <Link href="/" className="flex items-center gap-2 group">
@@ -71,7 +71,7 @@ export function Header() {
                 Partner
               </Link>
             </nav>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3" suppressHydrationWarning>
               <BellButton className="flex items-center justify-center size-10 rounded-full bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" />
 
               <SignedIn>
@@ -94,11 +94,14 @@ export function Header() {
               </SignedIn>
 
               <SignedOut>
-                <SignInButton mode="modal">
-                  <button className="px-4 py-2 bg-primary hover:bg-primary-hover text-white rounded-full font-semibold text-sm transition-colors">
-                    Sign In
-                  </button>
-                </SignInButton>
+                <div className="flex items-center">
+                  <SignInButton mode="modal">
+                    <button className="flex items-center gap-2 px-4 py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-full font-bold hover:opacity-90 transition-opacity">
+                      <span className="material-symbols-outlined text-[20px]">account_circle</span>
+                      <span>Sign In</span>
+                    </button>
+                  </SignInButton>
+                </div>
               </SignedOut>
             </div>
           </div>
