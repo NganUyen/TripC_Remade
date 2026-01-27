@@ -10,10 +10,8 @@ export default function WellnessPage() {
         <main className="min-h-screen bg-[#fcfaf8] dark:bg-[#0a0a0a]">
             <WellnessHero />
 
-            <div className="relative z-10 -mt-20">
-                <MoodFilters />
-                <ExperienceList />
-            </div>
+            <MoodFilters />
+            <ExperienceList />
 
             <Footer />
         </main>

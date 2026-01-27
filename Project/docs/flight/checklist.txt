@@ -1,0 +1,360 @@
+# Flight Service MVP - Acceptance Checklist
+
+## Prerequisites
+- [ ] Node.js 18+ installed
+- [ ] Supabase project created
+- [ ] Clerk account configured
+- [ ] Environment variables set in `.env.local`
+
+---
+
+## Database Setup
+- [ ] Schema migration executed successfully
+  - [ ] `flights` table created
+  - [ ] `flight_offers` table created
+  - [ ] `flight_bookings` table created
+  - [ ] `flight_search_cache` table created
+  - [ ] All indexes created
+  - [ ] Triggers created for `updated_at` columns
+
+- [ ] Seed data loaded
+  - [ ] 10 flights inserted
+  - [ ] ~30 flight offers inserted
+  - [ ] Sample data verifiable via SQL query
+
+- [ ] Database connectivity verified
+  - [ ] Can connect from Next.js application
+  - [ ] Service role key working
+  - [ ] No connection errors in logs
+
+---
+
+## API Endpoints - Functionality
+
+### Health Check (/api/ping)
+- [ ] Endpoint returns 200 OK when healthy
+- [ ] Returns JSON with status fields: `{ status, timestamp, api, database, version }`
+- [ ] `api` field shows "ok"
+- [ ] `database` field shows "ok"
+- [ ] Returns 503 if database is unreachable
+- [ ] Includes error message when degraded
+
+### Flight Search (/api/flight/search)
+- [ ] Accepts GET requests
+- [ ] Requires `origin`, `destination`, `date` parameters
+- [ ] Returns 400 if required parameters missing
+- [ ] Validates IATA codes (must be 3 letters)
+- [ ] Validates date format (YYYY-MM-DD)
+- [ ] Returns flight offers matching search criteria
+- [ ] Returns empty array if no results found
+- [ ] Joins flight details with offers
+- [ ] Sorts results by price (lowest first)
+- [ ] Supports optional `cabin_class` filter
+- [ ] Supports pagination via `limit` and `offset`
+- [ ] Limits maximum results to 100 per page
+- [ ] Response includes `total`, `limit`, `offset` metadata
+
+### Flight Booking (/api/flight/book)
+- [ ] Accepts POST requests
+- [ ] Requires authentication (Clerk)
+- [ ] Returns 401 if not authenticated
+- [ ] Requires `offer_id`, `passengers`, `contact_info` in body
+- [ ] Returns 400 if required fields missing
+- [ ] Validates passenger data format
+- [ ] Validates contact_info has email and phone
+- [ ] Checks offer exists
+- [ ] Returns 404 if offer not found
+- [ ] Checks offer hasn't expired
+- [ ] Returns 400 if offer expired
+- [ ] Checks seat availability
+- [ ] Returns 400 if insufficient seats
+- [ ] Generates unique PNR (6 characters)
+- [ ] Creates booking record in database
+- [ ] Decrements `seats_available` in offers table
+- [ ] Returns 201 with booking details
+- [ ] Response includes `id`, `pnr`, `status`
+- [ ] Auto-confirms booking (status = 'confirmed')
+
+### Get Booking (/api/flight/booking/:id)
+- [ ] Accepts GET requests with booking ID
+- [ ] Requires authentication (Clerk)
+- [ ] Returns 401 if not authenticated
+- [ ] Returns 404 if booking not found
+- [ ] Returns 403 if user doesn't own booking
+- [ ] Returns complete booking details
+- [ ] Includes flight information
+- [ ] Includes passenger details
+- [ ] Includes contact information
+- [ ] Includes pricing information
+
+### Cancel Booking (DELETE /api/flight/booking/:id)
+- [ ] Accepts DELETE requests
+- [ ] Requires authentication
+- [ ] Verifies booking ownership
+- [ ] Returns 403 if not owner
+- [ ] Updates booking status to 'cancelled'
+- [ ] Sets `cancelled_at` timestamp
+- [ ] Returns seats to inventory
+- [ ] Returns 400 if already cancelled
+- [ ] Returns success message
+
+---
+
+## Frontend
+
+### Health Monitor Page (/ping)
+- [ ] Page loads without errors
+- [ ] Displays overall system status
+- [ ] Shows API status indicator
+- [ ] Shows database status indicator
+- [ ] Status uses color coding (green/yellow/red)
+- [ ] Displays last checked timestamp
+- [ ] "Refresh Now" button works
+- [ ] Auto-refresh toggle works
+- [ ] Auto-refreshes every 10 seconds when enabled
+- [ ] Displays endpoint documentation
+- [ ] Shows server timestamp
+- [ ] Error messages displayed when present
+- [ ] Responsive design works on mobile
+- [ ] Dark mode works correctly
+
+---
+
+## Security & Authentication
+
+- [ ] Service role key not exposed to client
+- [ ] Clerk authentication working
+- [ ] Protected endpoints reject unauthenticated requests
+- [ ] Users can only access their own bookings
+- [ ] Input validation prevents SQL injection
+- [ ] CORS configured correctly
+- [ ] Error messages don't leak sensitive data
+
+---
+
+## Data Integrity
+
+- [ ] Bookings have valid user IDs
+- [ ] Foreign keys maintain referential integrity
+- [ ] PNRs are unique across all bookings
+- [ ] Seat counts never go negative
+- [ ] Prices are always non-negative
+- [ ] IATA codes are always 3 characters
+- [ ] Arrival times are after departure times
+- [ ] Timestamps auto-update on record changes
+
+---
+
+## Testing Scenarios
+
+### Scenario 1: Search Flights
+```bash
+curl 'http://localhost:3000/api/flight/search?origin=SGN&destination=HAN&date=2026-02-20'
+```
+- [ ] Returns 200 OK
+- [ ] Returns array of flight offers
+- [ ] Each offer has flight details
+- [ ] Results sorted by price
+
+### Scenario 2: Invalid Search
+```bash
+curl 'http://localhost:3000/api/flight/search?origin=INVALID&destination=HAN&date=2026-02-20'
+```
+- [ ] Returns 400 Bad Request
+- [ ] Error message explains IATA code format
+
+### Scenario 3: Book Flight (Authenticated)
+```bash
+curl -X POST 'http://localhost:3000/api/flight/book' \
+  -H 'Authorization: Bearer <TOKEN>' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "offer_id": "<VALID_OFFER_ID>",
+    "passengers": [{"first_name": "John", "last_name": "Doe"}],
+    "contact_info": {"email": "john@example.com", "phone": "+84901234567"}
+  }'
+```
+- [ ] Returns 201 Created
+- [ ] Response includes PNR
+- [ ] Booking status is 'confirmed'
+- [ ] Seats decremented in database
+
+### Scenario 4: Book Without Auth
+```bash
+curl -X POST 'http://localhost:3000/api/flight/book' \
+  -H 'Content-Type: application/json' \
+  -d '{"offer_id": "test", "passengers": [], "contact_info": {}}'
+```
+- [ ] Returns 401 Unauthorized
+
+### Scenario 5: Book with Insufficient Seats
+- [ ] Find offer with low seat count
+- [ ] Attempt to book more passengers than available
+- [ ] Returns 400 Bad Request
+- [ ] Error message explains insufficient seats
+
+### Scenario 6: View Booking
+```bash
+curl -X GET 'http://localhost:3000/api/flight/booking/<BOOKING_ID>' \
+  -H 'Authorization: Bearer <TOKEN>'
+```
+- [ ] Returns 200 OK
+- [ ] Includes all booking details
+- [ ] Includes flight information
+
+### Scenario 7: Cancel Booking
+```bash
+curl -X DELETE 'http://localhost:3000/api/flight/booking/<BOOKING_ID>' \
+  -H 'Authorization: Bearer <TOKEN>'
+```
+- [ ] Returns 200 OK
+- [ ] Booking status updated to 'cancelled'
+- [ ] Seats returned to inventory
+
+### Scenario 8: Health Check
+```bash
+curl 'http://localhost:3000/api/ping'
+```
+- [ ] Returns 200 OK
+- [ ] All systems show 'ok'
+
+### Scenario 9: Health Monitor Page
+- [ ] Open http://localhost:3000/ping
+- [ ] Page loads successfully
+- [ ] All systems show green status
+- [ ] Auto-refresh works
+
+---
+
+## Documentation
+
+- [ ] README.md exists and is complete
+- [ ] schema.md documents all tables
+- [ ] api.md documents all endpoints
+- [ ] tasks.md lists completed and pending tasks
+- [ ] migration.txt has clear instructions
+- [ ] checklist.txt (this file) is complete
+- [ ] All code has inline comments
+- [ ] Environment variables documented
+
+---
+
+## Environment Variables
+
+- [ ] `.env.local` file exists
+- [ ] `NEXT_PUBLIC_SUPABASE_URL` set
+- [ ] `NEXT_PUBLIC_SUPABASE_ANON_KEY` set
+- [ ] `SUPABASE_SERVICE_ROLE_KEY` set
+- [ ] `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` set
+- [ ] `CLERK_SECRET_KEY` set
+- [ ] No secrets committed to git
+- [ ] `.env.local.example` provided
+
+---
+
+## Code Quality
+
+- [ ] No TypeScript errors
+- [ ] No ESLint errors
+- [ ] Consistent code formatting
+- [ ] Meaningful variable names
+- [ ] Functions have clear purposes
+- [ ] Error handling implemented
+- [ ] No console.log in production code (use proper logging)
+- [ ] Comments explain complex logic
+
+---
+
+## Performance
+
+- [ ] Database queries use indexes
+- [ ] No N+1 query problems
+- [ ] Search endpoint responds < 1 second
+- [ ] Booking creation responds < 1 second
+- [ ] Health check responds < 100ms
+- [ ] Pagination prevents large result sets
+
+---
+
+## Error Handling
+
+- [ ] All endpoints handle errors gracefully
+- [ ] Error messages are user-friendly
+- [ ] Server errors don't expose stack traces
+- [ ] Database errors are caught and logged
+- [ ] Invalid input returns clear error messages
+- [ ] Network errors handled appropriately
+
+---
+
+## Final Acceptance
+
+### Manual Testing
+- [ ] Complete all testing scenarios above
+- [ ] Test on different browsers
+- [ ] Test on mobile device
+- [ ] Test with slow network
+- [ ] Test with database temporarily down
+
+### Code Review
+- [ ] All files created as specified
+- [ ] Code follows project conventions
+- [ ] No obvious security issues
+- [ ] No hardcoded credentials
+
+### Deployment Readiness
+- [ ] Can build without errors: `npm run build`
+- [ ] Can start without errors: `npm run dev`
+- [ ] All dependencies installed
+- [ ] Database migrations documented
+- [ ] Rollback procedure documented
+
+---
+
+## Sign-Off
+
+**Completed By**: ___________________
+
+**Date**: ___________________
+
+**MVP Status**: 
+- [ ] Ready for QA
+- [ ] Ready for Staging
+- [ ] Ready for Production
+- [ ] Needs Revisions
+
+**Notes**:
+___________________________________________________
+___________________________________________________
+___________________________________________________
+
+---
+
+## Quick Test Commands
+
+Run these commands to verify everything works:
+
+```bash
+# 1. Health check
+curl http://localhost:3000/api/ping
+
+# 2. Search flights
+curl 'http://localhost:3000/api/flight/search?origin=SGN&destination=HAN&date=2026-02-20'
+
+# 3. Open health monitor
+open http://localhost:3000/ping
+# (or visit in browser)
+
+# 4. Check database
+# Run in Supabase SQL Editor:
+SELECT COUNT(*) FROM flights;
+SELECT COUNT(*) FROM flight_offers WHERE seats_available > 0;
+```
+
+**Expected Results**:
+- Health check returns `{ status: "ok", ... }`
+- Search returns array with offers
+- Health monitor page shows all green
+- Database shows 10 flights, 30+ offers
+
+If all checkboxes are marked, **the MVP is complete**! ✅

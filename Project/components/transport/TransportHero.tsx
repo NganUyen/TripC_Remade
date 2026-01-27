@@ -1,33 +1,82 @@
 "use client"
+import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
+import { SearchHistoryDropdown } from './SearchHistoryDropdown'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
+import { SelectPopup } from '../ui/SelectPopup'
+import { CounterInput } from '../ui/CounterInput'
+import { SimpleCalendar as Calendar } from '../ui/SimpleCalendar'
+import { useAuth } from "@clerk/nextjs"
 
 export function TransportHero() {
+    const router = useRouter()
+    const { userId } = useAuth()
     const [serviceType, setServiceType] = useState('one-way') // 'one-way' | 'hourly'
     const [bookingMode, setBookingMode] = useState('address') // 'address' | 'map'
     const [duration, setDuration] = useState('4h')
-    const [date, setDate] = useState('')
-    const [time, setTime] = useState('')
+    const [date, setDate] = useState<Date | null>(null)
+    const [showHistory, setShowHistory] = useState(false)
+
+    // Set default time to 2 hours from now
+    const getDefaultTime = () => {
+        const now = new Date()
+        now.setHours(now.getHours() + 2)
+        const hours = now.getHours()
+        const minutes = now.getMinutes() >= 30 ? 30 : 0
+        const h = hours % 12 || 12
+        const ampm = hours < 12 ? 'AM' : 'PM'
+        const hourStr = h < 10 ? `0${h}` : `${h}`
+        return `${hourStr}:${minutes === 0 ? '00' : '30'} ${ampm}`
+    }
+
+    const [time, setTime] = useState(getDefaultTime())
 
     // Passengers & Luggage State
     const [passengers, setPassengers] = useState({ adults: 1, children: 0, luggage: 2 })
-    const [showPopover, setShowPopover] = useState(false)
-    const popoverRef = useRef<HTMLDivElement>(null)
+    const [activeTab, setActiveTab] = useState<'date' | 'time' | 'passengers' | null>(null)
 
     // Locations
-    const [pickup, setPickup] = useState('JFK International Airport')
-    const [dropoff, setDropoff] = useState('Manhattan, NY')
+    const [pickup, setPickup] = useState('')
+    const [dropoff, setDropoff] = useState('')
 
-    // Click outside listener
-    useEffect(() => {
-        function handleClickOutside(event: MouseEvent) {
-            if (popoverRef.current && !popoverRef.current.contains(event.target as Node)) {
-                setShowPopover(false)
+    // Time options generation
+    const timeOptions = useMemo(() => {
+        const options = []
+        const now = new Date();
+        const isToday = date && date.toDateString() === now.toDateString();
+
+        // If today, only show times > now + 1 hour (buffer)
+        // If no date selected, we can show all or wait. Let's show all for better UX before date pick.
+
+        for (let i = 0; i < 24; i++) {
+            const h = i % 12 || 12
+            const ampm = i < 12 ? 'AM' : 'PM'
+            const hourStr = h < 10 ? `0${h}` : `${h}`
+            const timeStr = `${hourStr}:00 ${ampm}`
+            const timeStrHalf = `${hourStr}:30 ${ampm}`
+
+            // Helper to check validity
+            const checkTime = (str: string) => {
+                if (!isToday) return true;
+
+                const [t, m] = str.split(' ');
+                let [hh, mm] = t.split(':').map(Number);
+                if (m === 'PM' && hh < 12) hh += 12;
+                if (m === 'AM' && hh === 12) hh = 0;
+
+                const slotTime = new Date(date!);
+                slotTime.setHours(hh, mm, 0, 0);
+
+                const diff = (slotTime.getTime() - now.getTime()) / (1000 * 60); // minutes
+                return diff >= 60; // 1 hour buffer
             }
+
+            if (checkTime(timeStr)) options.push(timeStr);
+            if (checkTime(timeStrHalf)) options.push(timeStrHalf);
         }
-        document.addEventListener("mousedown", handleClickOutside)
-        return () => document.removeEventListener("mousedown", handleClickOutside)
-    }, [])
+        return options
+    }, [date])
 
     const updatePassengers = (type: keyof typeof passengers, operation: 'add' | 'sub') => {
         setPassengers(prev => {
@@ -45,6 +94,81 @@ export function TransportHero() {
         const temp = pickup
         setPickup(dropoff)
         setDropoff(temp)
+    }
+
+    const validateTime = (selectedDate: Date | null, selectedTime: string) => {
+        if (!selectedDate || !selectedTime) return true;
+
+        const now = new Date();
+        const selected = new Date(selectedDate);
+
+        // Parse 12h time to 24h
+        const [timePart, ampm] = selectedTime.split(' ');
+        let [hours, minutes] = timePart.split(':').map(Number);
+        if (ampm === 'PM' && hours < 12) hours += 12;
+        if (ampm === 'AM' && hours === 12) hours = 0;
+
+        selected.setHours(hours, minutes, 0, 0);
+
+        const diffMinutes = (selected.getTime() - now.getTime()) / 1000 / 60;
+
+        if (diffMinutes < 60) {
+            toast.error("Invalid Time", {
+                description: "Booking must be at least 1 hour in advance."
+            });
+            return false;
+        }
+        return true;
+    }
+
+    const handleSearch = async () => {
+        if (!pickup) {
+            toast.error("Thiếu điểm đón", { description: "Vui lòng nhập điểm đón khách!" });
+            return;
+        }
+        if (serviceType === 'one-way' && !dropoff) {
+            toast.error("Thiếu điểm đến", { description: "Vui lòng nhập điểm đến!" });
+            return;
+        }
+        if (!date) {
+            toast.error("Thiếu thông tin ngày đi", { description: "Vui lòng chọn ngày khởi hành!" });
+            return;
+        }
+        if (!time) {
+            toast.error("Thiếu thông tin giờ đón", { description: "Vui lòng chọn giờ đón khách!" });
+            return;
+        }
+
+        if (!validateTime(date, time)) return;
+
+        // Save History (Fire & Forget)
+        if (userId) {
+            fetch('/api/user/history', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    origin: pickup,
+                    destination: dropoff,
+                    searchDate: new Date().toISOString()
+                })
+            });
+        }
+
+        const params = new URLSearchParams();
+        params.set('origin', pickup);
+        params.set('destination', dropoff);
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        params.set('date', `${y}-${m}-${d}`);
+        params.set('time', time);
+        params.set('passengers', String(passengers.adults + passengers.children));
+        if (serviceType === 'hourly') {
+            params.set('serviceType', 'hourly');
+            params.set('duration', duration);
+        }
+
+        router.push(`/transport/results?${params.toString()}`);
     }
 
     return (
@@ -125,15 +249,28 @@ export function TransportHero() {
                                 <div className="flex flex-col md:grid md:grid-cols-12 gap-3 relative items-center animate-fadeIn">
 
                                     {/* PICKUP (5 Cols) */}
-                                    <div className="w-full md:col-span-5 h-[64px] bg-white/50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-xl px-4 flex flex-col justify-center transition-all hover:bg-white/80 dark:hover:bg-white/10 focus-within:ring-2 focus-within:ring-primary/50 group">
-                                        <label className="text-[10px] uppercase tracking-widest text-slate-500 dark:text-white/40 font-bold mb-0.5">Pickup Location</label>
-                                        <input
-                                            type="text"
-                                            value={pickup}
-                                            onChange={(e) => setPickup(e.target.value)}
-                                            className="bg-transparent border-none p-0 text-slate-900 dark:text-white font-bold text-lg focus:ring-0 w-full truncate placeholder-slate-400 dark:placeholder-white/30"
-                                            placeholder="Enter pickup address"
-                                        />
+                                    <div className="w-full md:col-span-5 relative">
+                                        <div className="h-[64px] bg-white/50 dark:bg-white/5 rounded-xl px-4 flex flex-col justify-center transition-all hover:bg-white/80 dark:hover:bg-white/10 focus-within:ring-2 focus-within:ring-primary/50 group">
+                                            <label className="text-[10px] uppercase tracking-widest text-slate-500 dark:text-white/40 font-bold mb-0.5">Pickup Location</label>
+                                            <input
+                                                type="text"
+                                                value={pickup}
+                                                onChange={(e) => setPickup(e.target.value)}
+                                                onFocus={() => setShowHistory(true)}
+                                                onBlur={() => setTimeout(() => setShowHistory(false), 200)}
+                                                className="bg-transparent border-none outline-none p-0 text-slate-900 dark:text-white font-bold text-lg focus:ring-0 w-full truncate placeholder:text-slate-400/80 dark:placeholder:text-white/30"
+                                                placeholder="Enter pickup address"
+                                            />
+                                        </div>
+                                        {showHistory && (
+                                            <SearchHistoryDropdown
+                                                onSelect={(o, d) => {
+                                                    setPickup(o);
+                                                    setDropoff(d);
+                                                    setShowHistory(false);
+                                                }}
+                                            />
+                                        )}
                                     </div>
 
                                     {/* SWAP / SEPARATOR */}
@@ -151,7 +288,7 @@ export function TransportHero() {
                                     </div>
 
                                     {/* DROPOFF or DURATION (5 Cols) */}
-                                    <div className="w-full md:col-span-5 h-[64px] bg-white/50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-xl px-4 flex flex-col justify-center transition-all hover:bg-white/80 dark:hover:bg-white/10 focus-within:ring-2 focus-within:ring-primary/50 group relative">
+                                    <div className="w-full md:col-span-5 h-[64px] bg-white/50 dark:bg-white/5 rounded-xl px-4 flex flex-col justify-center transition-all hover:bg-white/80 dark:hover:bg-white/10 focus-within:ring-2 focus-within:ring-primary/50 group relative">
                                         {serviceType === 'one-way' ? (
                                             <>
                                                 <label className="text-[10px] uppercase tracking-widest text-slate-500 dark:text-white/40 font-bold mb-0.5">Dropoff Location</label>
@@ -159,7 +296,8 @@ export function TransportHero() {
                                                     type="text"
                                                     value={dropoff}
                                                     onChange={(e) => setDropoff(e.target.value)}
-                                                    className="bg-transparent border-none p-0 text-slate-900 dark:text-white font-bold text-lg focus:ring-0 w-full truncate placeholder-slate-400 dark:placeholder-white/30"
+                                                    onFocus={(e) => e.target.select()}
+                                                    className="bg-transparent border-none outline-none p-0 text-slate-900 dark:text-white font-bold text-lg focus:ring-0 w-full truncate placeholder:text-slate-400/80 dark:placeholder:text-white/30"
                                                     placeholder="Enter destination"
                                                 />
                                             </>
@@ -189,122 +327,130 @@ export function TransportHero() {
 
                                 {/* DATE (4 Cols) */}
                                 <div
-                                    className="w-full md:col-span-4 h-[64px] bg-white/50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-xl px-4 flex flex-col justify-center transition-all hover:bg-white/80 dark:hover:bg-white/10 relative cursor-pointer group"
-                                    onClick={(e) => e.currentTarget.querySelector('input')?.showPicker()}
+                                    className={`w-full md:col-span-4 h-[64px] bg-white/50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-xl px-4 flex flex-col justify-center transition-all hover:bg-white/80 dark:hover:bg-white/10 relative cursor-pointer group ${activeTab === 'date' ? 'bg-white dark:bg-white/10 ring-2 ring-primary/20' : ''}`}
+                                    onClick={() => setActiveTab('date')}
                                 >
                                     <label className="text-[10px] uppercase tracking-widest text-slate-500 dark:text-white/40 font-bold mb-0.5">Date</label>
                                     <div className={`font-bold text-lg ${date ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-white/40'}`}>
-                                        {date || 'Select Date'}
+                                        {date ? date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Select Date'}
                                     </div>
-                                    <input
-                                        type="date"
-                                        className="absolute inset-0 opacity-0 pointer-events-none"
-                                        onChange={(e) => setDate(e.target.value)}
-                                    />
+
+                                    <SelectPopup
+                                        isOpen={activeTab === 'date'}
+                                        onClose={() => setActiveTab(null)}
+                                        className="w-[340px]"
+                                    >
+                                        <Calendar
+                                            selectedDate={date || undefined}
+                                            onSelect={(d) => {
+                                                setDate(d)
+                                                setActiveTab(null)
+                                            }}
+                                            minDate={new Date()}
+                                        />
+                                    </SelectPopup>
                                 </div>
 
                                 {/* TIME (4 Cols) */}
                                 <div
-                                    className="w-full md:col-span-4 h-[64px] bg-white/50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-xl px-4 flex flex-col justify-center transition-all hover:bg-white/80 dark:hover:bg-white/10 relative cursor-pointer group"
-                                    onClick={(e) => e.currentTarget.querySelector('input')?.showPicker()}
+                                    className={`w-full md:col-span-4 h-[64px] bg-white/50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-xl px-4 flex flex-col justify-center transition-all hover:bg-white/80 dark:hover:bg-white/10 relative cursor-pointer group ${activeTab === 'time' ? 'bg-white dark:bg-white/10 ring-2 ring-primary/20' : ''}`}
+                                    onClick={() => setActiveTab('time')}
                                 >
                                     <label className="text-[10px] uppercase tracking-widest text-slate-500 dark:text-white/40 font-bold mb-0.5">Pickup Time</label>
                                     <div className={`font-bold text-lg ${time ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-white/40'}`}>
                                         {time || 'Select Time'}
                                     </div>
-                                    <input
-                                        type="time"
-                                        className="absolute inset-0 opacity-0 pointer-events-none"
-                                        onChange={(e) => setTime(e.target.value)}
-                                    />
+
+                                    <SelectPopup
+                                        isOpen={activeTab === 'time'}
+                                        onClose={() => setActiveTab(null)}
+                                        className="w-[200px] max-h-[300px] overflow-y-auto"
+                                    >
+                                        <div className="flex flex-col gap-1">
+                                            {timeOptions.map((t) => (
+                                                <button
+                                                    key={t}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        setTime(t)
+                                                        setActiveTab(null)
+                                                    }}
+                                                    className={`px-3 py-2 text-left text-sm font-bold rounded-lg transition-colors ${time === t ? 'bg-primary text-white' : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10'}`}
+                                                >
+                                                    {t}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </SelectPopup>
                                 </div>
 
                                 {/* PASSENGERS & LUGGAGE (4 Cols) */}
-                                <div className="w-full md:col-span-4 relative" ref={popoverRef}>
-                                    <div
-                                        className="h-[64px] bg-white/50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-xl px-4 flex flex-col justify-center transition-all hover:bg-white/80 dark:hover:bg-white/10 cursor-pointer"
-                                        onClick={() => setShowPopover(!showPopover)}
-                                    >
-                                        <label className="text-[10px] uppercase tracking-widest text-slate-500 dark:text-white/40 font-bold mb-0.5">Passengers & Bags</label>
-                                        <div className="flex items-center gap-3">
-                                            <div className="flex items-center gap-1">
-                                                <span className="material-symbols-outlined text-lg text-slate-900 dark:text-white">person</span>
-                                                <span className="text-slate-900 dark:text-white font-bold text-lg">{totalPassengers}</span>
-                                            </div>
-                                            <div className="w-px h-4 bg-slate-300 dark:bg-white/20"></div>
-                                            <div className="flex items-center gap-1">
-                                                <span className="material-symbols-outlined text-lg text-slate-900 dark:text-white">business_center</span>
-                                                <span className="text-slate-900 dark:text-white font-bold text-lg">{passengers.luggage}</span>
-                                            </div>
+                                <div className={`w-full md:col-span-4 relative h-[64px] bg-white/50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-xl px-4 flex flex-col justify-center transition-all hover:bg-white/80 dark:hover:bg-white/10 cursor-pointer ${activeTab === 'passengers' ? 'bg-white dark:bg-white/10 ring-2 ring-primary/20' : ''}`}
+                                    onClick={() => setActiveTab('passengers')}
+                                >
+                                    <label className="text-[10px] uppercase tracking-widest text-slate-500 dark:text-white/40 font-bold mb-0.5">Passengers & Bags</label>
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex items-center gap-1">
+                                            <span className="material-symbols-outlined text-lg text-slate-900 dark:text-white">person</span>
+                                            <span className="text-slate-900 dark:text-white font-bold text-lg">{totalPassengers}</span>
+                                        </div>
+                                        <div className="w-px h-4 bg-slate-300 dark:bg-white/20"></div>
+                                        <div className="flex items-center gap-1">
+                                            <span className="material-symbols-outlined text-lg text-slate-900 dark:text-white">business_center</span>
+                                            <span className="text-slate-900 dark:text-white font-bold text-lg">{passengers.luggage}</span>
                                         </div>
                                     </div>
 
-                                    {/* POPOVER */}
-                                    {showPopover && (
-                                        <div className="absolute top-full right-0 mt-3 w-80 bg-white dark:bg-[#18181b] border border-slate-200 dark:border-white/10 rounded-xl shadow-2xl p-5 z-50 animate-fadeIn">
-                                            <div className="flex flex-col gap-4">
-                                                {/* Adults */}
-                                                <div className="flex items-center justify-between">
-                                                    <div>
-                                                        <div className="text-slate-900 dark:text-white font-bold text-sm">Adults</div>
-                                                        <div className="text-slate-500 dark:text-white/40 text-xs">Age 13+</div>
-                                                    </div>
-                                                    <div className="flex items-center gap-3">
-                                                        <button onClick={() => updatePassengers('adults', 'sub')} className="w-8 h-8 rounded-full border border-slate-200 dark:border-white/20 flex items-center justify-center text-slate-600 dark:text-white hover:bg-slate-100 dark:hover:bg-white/5">-</button>
-                                                        <span className="text-slate-900 dark:text-white font-bold w-4 text-center">{passengers.adults}</span>
-                                                        <button onClick={() => updatePassengers('adults', 'add')} className="w-8 h-8 rounded-full border border-slate-200 dark:border-white/20 flex items-center justify-center text-slate-600 dark:text-white hover:bg-slate-100 dark:hover:bg-white/5">+</button>
-                                                    </div>
-                                                </div>
+                                    <SelectPopup
+                                        isOpen={activeTab === 'passengers'}
+                                        onClose={() => setActiveTab(null)}
+                                        className="w-[320px] right-0 left-auto"
+                                    >
+                                        <div className="flex flex-col">
+                                            <CounterInput
+                                                label="Adults"
+                                                subLabel="Age 13+"
+                                                value={passengers.adults}
+                                                onChange={(v) => updatePassengers('adults', v > passengers.adults ? 'add' : 'sub')}
+                                                min={1}
+                                            />
+                                            <CounterInput
+                                                label="Children"
+                                                subLabel="Age 2-12"
+                                                value={passengers.children}
+                                                onChange={(v) => updatePassengers('children', v > passengers.children ? 'add' : 'sub')}
+                                            />
+                                            <div className="w-full h-px bg-slate-100 dark:bg-white/10 my-1"></div>
+                                            <CounterInput
+                                                label="Luggage"
+                                                subLabel="Standard Bags"
+                                                value={passengers.luggage}
+                                                onChange={(v) => updatePassengers('luggage', v > passengers.luggage ? 'add' : 'sub')}
+                                            />
 
-                                                {/* Children */}
-                                                <div className="flex items-center justify-between">
-                                                    <div>
-                                                        <div className="text-slate-900 dark:text-white font-bold text-sm">Children</div>
-                                                        <div className="text-slate-500 dark:text-white/40 text-xs">Age 2-12</div>
-                                                    </div>
-                                                    <div className="flex items-center gap-3">
-                                                        <button onClick={() => updatePassengers('children', 'sub')} className="w-8 h-8 rounded-full border border-slate-200 dark:border-white/20 flex items-center justify-center text-slate-600 dark:text-white hover:bg-slate-100 dark:hover:bg-white/5">-</button>
-                                                        <span className="text-slate-900 dark:text-white font-bold w-4 text-center">{passengers.children}</span>
-                                                        <button onClick={() => updatePassengers('children', 'add')} className="w-8 h-8 rounded-full border border-slate-200 dark:border-white/20 flex items-center justify-center text-slate-600 dark:text-white hover:bg-slate-100 dark:hover:bg-white/5">+</button>
-                                                    </div>
-                                                </div>
-
-                                                <div className="w-full h-px bg-slate-100 dark:bg-white/10 my-1"></div>
-
-                                                {/* Luggage */}
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="material-symbols-outlined text-slate-600 dark:text-white">business_center</span>
-                                                        <div>
-                                                            <div className="text-slate-900 dark:text-white font-bold text-sm">Luggage</div>
-                                                            <div className="text-slate-500 dark:text-white/40 text-xs">Standard Bags</div>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-center gap-3">
-                                                        <button onClick={() => updatePassengers('luggage', 'sub')} className="w-8 h-8 rounded-full border border-slate-200 dark:border-white/20 flex items-center justify-center text-slate-600 dark:text-white hover:bg-slate-100 dark:hover:bg-white/5">-</button>
-                                                        <span className="text-slate-900 dark:text-white font-bold w-4 text-center">{passengers.luggage}</span>
-                                                        <button onClick={() => updatePassengers('luggage', 'add')} className="w-8 h-8 rounded-full border border-slate-200 dark:border-white/20 flex items-center justify-center text-slate-600 dark:text-white hover:bg-slate-100 dark:hover:bg-white/5">+</button>
-                                                    </div>
-                                                </div>
-
-                                                <div className="pt-3 border-t border-slate-200 dark:border-white/10 mt-1">
-                                                    <button
-                                                        onClick={() => setShowPopover(false)}
-                                                        className="w-full py-2 bg-primary hover:bg-primary-hover rounded-lg text-white font-bold text-xs uppercase tracking-wider transition-colors"
-                                                    >
-                                                        Done
-                                                    </button>
-                                                </div>
+                                            <div className="pt-3 border-t border-slate-200 dark:border-white/10 mt-1">
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        setActiveTab(null)
+                                                    }}
+                                                    className="w-full py-2 bg-primary hover:bg-primary-hover rounded-lg text-white font-bold text-xs uppercase tracking-wider transition-colors"
+                                                >
+                                                    Done
+                                                </button>
                                             </div>
                                         </div>
-                                    )}
+                                    </SelectPopup>
                                 </div>
                             </div>
                         </div>
 
                         {/* Search Button */}
                         <div className="absolute left-1/2 -translate-x-1/2 bottom-0 translate-y-1/2 z-40 w-full max-w-sm px-4">
-                            <button className="w-full relative py-4 bg-gradient-to-r from-primary to-[#FF8C42] rounded-full shadow-[0_15px_30px_-5px_rgba(255,94,31,0.5)] transition-transform duration-300 hover:scale-105 active:scale-95 flex items-center justify-center gap-2 overflow-hidden text-white font-black text-lg tracking-wide uppercase">
+                            <button
+                                onClick={handleSearch}
+                                className="w-full relative py-4 bg-gradient-to-r from-primary to-[#FF8C42] rounded-full shadow-[0_15px_30px_-5px_rgba(255,94,31,0.5)] transition-transform duration-300 hover:scale-105 active:scale-95 flex items-center justify-center gap-2 overflow-hidden text-white font-black text-lg tracking-wide uppercase"
+                            >
                                 <span className="material-symbols-outlined text-2xl">directions_car</span>
                                 {bookingMode === 'map' ? 'Select Location' : 'Search Vehicles'}
                                 <div className="absolute inset-0 -translate-x-full group-hover:animate-shimmer bg-gradient-to-r from-transparent via-white/20 to-transparent z-10"></div>

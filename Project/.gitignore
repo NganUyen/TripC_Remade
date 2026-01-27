@@ -26,6 +26,10 @@ yarn-error.log*
 .env*.local
 .env
 
+# convex
+.convex/
+convex/_generated/
+
 # vercel
 .vercel
 

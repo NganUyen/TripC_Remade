@@ -21,30 +21,42 @@ export function CategorySlider() {
     const pathname = usePathname()
 
     // Assuming "detail" pages are anything deeper than the first segment (e.g. /events/123)
-    // We allow root "/" and any top-level path "/events"
-    const isDiscoverPage = pathname === "/" || /^\/[^/]+$/.test(pathname)
+    // We allow root "/", any top-level path "/events", and the compare page
+    const isDiscoverPage = pathname === "/" || /^\/[^/]+$/.test(pathname) || pathname === '/hotels/compare'
 
     if (!isDiscoverPage) return null
 
     return (
-        <div className="sticky top-16 sm:top-20 z-50 w-full glass-panel transition-all duration-300 shadow-sm">
+        <div className="sticky top-16 sm:top-20 z-50 w-full bg-white dark:bg-[#0f111a] border-b border-slate-200 dark:border-slate-800 transition-all duration-300 shadow-sm">
             <div className="max-w-[1440px] mx-auto relative group/slider">
                 <div className="relative overflow-x-auto no-scrollbar scroll-smooth">
                     <div className="flex items-center gap-2 sm:gap-4 px-4 sm:px-6 lg:px-8 py-3 min-w-max mx-auto justify-start lg:justify-center">
                         {categories.map((cat, i) => {
                             const isActive = pathname === cat.href
+                            // Dynamic Active State Styles
+                            const activeBg = cat.bg || cat.hoverBg?.replace('hover:', '')
+                            const activeDarkBg = cat.darkBg || cat.darkHoverBg?.replace('dark:hover:', 'dark:')
+
+                            // Icons: Remove 'group-hover:' to apply color directly
+                            const activeIconColor = cat.color.replace('group-hover:', '')
+                            const activeDarkIconColor = cat.darkColor.replace('dark:group-hover:', 'dark:')
+
+                            // Labels: Shift shade for contrast (600->700 for light, 400->300 for dark)
+                            const activeLabelColor = activeIconColor.replace('600', '700')
+                            const activeDarkLabelColor = activeDarkIconColor.replace('400', '300')
+
                             if (isActive) {
                                 return (
-                                    <Link key={i} href={cat.href} className={`active group flex flex-col items-center justify-center px-4 py-2 rounded-xl transition-all duration-300 ${cat.bg} ${cat.darkBg}`}>
-                                        <span className={`material-symbols-outlined mb-1 text-[26px] ${cat.color} ${cat.darkColor}`}>{cat.icon}</span>
-                                        <span className={`text-[11px] font-bold tracking-wide text-orange-700 dark:text-orange-300`}>{cat.label}</span>
+                                    <Link key={i} href={cat.href} className={`active group flex flex-col items-center justify-center min-w-[70px] px-2 py-2 rounded-xl transition-all duration-300 bg-transparent`}>
+                                        <span className={`material-symbols-outlined mb-1 text-[26px] ${activeIconColor} ${activeDarkIconColor}`}>{cat.icon}</span>
+                                        <span className={`text-[11px] font-bold tracking-wide transition-colors ${activeLabelColor} ${activeDarkLabelColor}`}>{cat.label}</span>
                                     </Link>
                                 )
                             }
                             return (
                                 <Link key={i} href={cat.href} className={`group flex flex-col items-center justify-center min-w-[70px] px-2 py-2 rounded-xl transition-all duration-300 bg-transparent ${cat.hoverBg} ${cat.darkHoverBg}`}>
                                     <span className={`material-symbols-outlined text-slate-500 dark:text-slate-400 mb-1 text-[26px] transition-colors ${cat.color} ${cat.darkColor}`}>{cat.icon}</span>
-                                    <span className={`text-slate-600 dark:text-slate-400 text-[11px] font-semibold tracking-wide transition-colors ${cat.color?.replace('text-', 'text-sl-').replace('group-hover:', 'group-hover:text-')} ${cat.darkColor?.replace('dark:text-', 'dark:text-sl-').replace('dark:group-hover:', 'dark:group-hover:text-')}`.replace(/text-(sky|blue|pink|indigo|red|green|teal|rose|purple|amber|cyan)-600/g, 'text-$1-700').replace(/text-(sky|blue|pink|indigo|red|green|teal|rose|purple|amber|cyan)-400/g, 'text-$1-300')}>{cat.label}</span>
+                                    <span className={`text-slate-600 dark:text-slate-400 text-[11px] font-semibold tracking-wide transition-colors ${cat.color} ${cat.darkColor}`}>{cat.label}</span>
                                 </Link>
                             )
                         })}

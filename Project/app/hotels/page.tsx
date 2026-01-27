@@ -27,25 +27,7 @@ export default function HotelsPage() {
                 </div>
             </div>
 
-            {/* Floating Map Toggle */}
-            <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50">
-                <button
-                    onClick={() => setIsMapView(!isMapView)}
-                    className="flex items-center gap-2 pl-4 pr-5 py-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-full shadow-xl shadow-slate-900/20 hover:scale-105 active:scale-95 transition-all font-bold"
-                >
-                    {isMapView ? (
-                        <>
-                            <List className="w-5 h-5" />
-                            Show List
-                        </>
-                    ) : (
-                        <>
-                            <Map className="w-5 h-5" />
-                            Show Map
-                        </>
-                    )}
-                </button>
-            </div>
+
 
             <Footer />
         </main>

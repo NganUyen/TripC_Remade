@@ -25,7 +25,8 @@
       "@/store/*": ["./store/*"],
       "@/context/*": ["./context/*"],
       "@/types/*": ["./types/*"],
-      "@/config/*": ["./config/*"]
+      "@/config/*": ["./config/*"],
+      "@database/*": ["./database/*"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

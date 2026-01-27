@@ -3,57 +3,11 @@
 import { motion } from 'framer-motion'
 import { Star, Heart, MapPin, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
-
-const experiences = [
-    {
-        id: 1,
-        title: "Bali Silence Retreat",
-        location: "Ubud, Indonesia",
-        rating: 4.9,
-        reviews: 420,
-        price: 850,
-        image: "https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?q=80&w=2070&auto=format&fit=crop",
-        badge: "Instant Confirmation",
-        duration: "7 Days"
-    },
-    {
-        id: 2,
-        title: "Urban Float Tank Experience",
-        location: "Singapore",
-        rating: 4.8,
-        reviews: 156,
-        price: 95,
-        image: "https://images.unsplash.com/photo-1596131397999-dbdcbdd0e8fb?q=80&w=1968&auto=format&fit=crop",
-        badge: "Best Value",
-        duration: "90 Mins"
-    },
-    {
-        id: 3,
-        title: "Forest Bathing & Meditation",
-        location: "Kyoto, Japan",
-        rating: 5.0,
-        reviews: 89,
-        price: 120,
-        image: "https://images.unsplash.com/photo-1505322101000-19457c432243?q=80&w=1928&auto=format&fit=crop",
-        badge: null,
-        duration: "4 Hours"
-    },
-    {
-        id: 4,
-        title: "Himalayan Sound Healing",
-        location: "Pokhara, Nepal",
-        rating: 4.9,
-        reviews: 310,
-        price: 450,
-        image: "https://images.unsplash.com/photo-1590159763784-5f15c7213824?q=80&w=1974&auto=format&fit=crop",
-        badge: "Top Rated",
-        duration: "3 Days"
-    }
-]
+import { wellnessExperiences } from '@/data/wellness'
 
 export function ExperienceList() {
     return (
-        <section className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8 mb-20">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mb-20">
             <div className="flex items-center justify-between mb-8">
                 <div>
                     <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Featured Experiences</h2>
@@ -65,7 +19,7 @@ export function ExperienceList() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {experiences.map((item, index) => (
+                {wellnessExperiences.map((item, index) => (
                     <motion.div
                         key={item.id}
                         initial={{ opacity: 0, y: 20 }}
@@ -122,9 +76,11 @@ export function ExperienceList() {
                                     ${item.price}
                                 </span>
 
-                                <button className="bg-[#FF5E1F] text-white px-6 py-2.5 rounded-full text-sm font-bold opacity-0 translate-y-8 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500 shadow-lg hover:bg-orange-600">
-                                    Book Now
-                                </button>
+                                <Link href={`/wellness/${item.id}`}>
+                                    <button className="bg-[#FF5E1F] text-white px-6 py-2.5 rounded-full text-sm font-bold opacity-0 translate-y-8 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500 shadow-lg hover:bg-orange-600">
+                                        Book Now
+                                    </button>
+                                </Link>
                             </div>
                         </div>
                     </motion.div>
