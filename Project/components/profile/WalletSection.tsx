@@ -1,9 +1,25 @@
 "use client"
 
+
 import { motion } from 'framer-motion'
 import { Wallet, CreditCard, ChevronRight, Award, Zap } from 'lucide-react'
 
-export function WalletSection() {
+interface WalletSectionProps {
+    profile?: {
+        tcent_balance: number
+        membership_tier: string
+    } | null
+}
+
+export function WalletSection({ profile }: WalletSectionProps) {
+    const tier = profile?.membership_tier || 'MEMBER'
+    const balance = profile?.tcent_balance || 0
+    // Simple logic for progress roughly based on common tiers
+    // Bronze: 0-999, Silver: 1000-4999, Gold: 5000-9999, Platinum: 10000+
+    // Since we don't have explicit logic docs, I'll use a placeholder progress logic
+    const progress = 45 // Fixed for now or could be calculated if we knew the max
+    const nextTierPoints = 1000 // Placeholder
+
     return (
         <section className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
             {/* Wallet Card - Virtual Visa Style */}
@@ -29,7 +45,9 @@ export function WalletSection() {
                 </div>
 
                 <div className="relative z-10">
-                    <h2 className="text-5xl font-black mb-1">0 <span className="text-2xl font-bold opacity-80">T-Cent</span></h2>
+                    <h2 className="text-5xl font-black mb-1">
+                        {balance.toLocaleString()} <span className="text-2xl font-bold opacity-80">T-Cent</span>
+                    </h2>
                     <p className="text-sm text-orange-100 font-medium font-mono">**** **** **** 8842</p>
                 </div>
             </motion.div>
@@ -49,7 +67,9 @@ export function WalletSection() {
                                 <Award className="w-6 h-6" />
                             </div>
                             <div>
-                                <h3 className="text-xl font-black text-slate-900 dark:text-white">Gold Member</h3>
+                                <h3 className="text-xl font-black text-slate-900 dark:text-white capitalize">
+                                    {tier.toLowerCase()} Member
+                                </h3>
                                 <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Tier Status</p>
                             </div>
                         </div>
@@ -61,13 +81,13 @@ export function WalletSection() {
 
                 <div>
                     <div className="flex justify-between text-xs font-bold text-slate-500 mb-2">
-                        <span>Progress to Platinum</span>
-                        <span>450 / 1000 pts</span>
+                        <span>Progress to Next Tier</span>
+                        <span>{balance} / {nextTierPoints} pts</span>
                     </div>
                     <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden mb-4">
                         <motion.div
                             initial={{ width: 0 }}
-                            animate={{ width: '45%' }}
+                            animate={{ width: `${Math.min((balance / nextTierPoints) * 100, 100)}%` }}
                             transition={{ duration: 1, delay: 0.5 }}
                             className="h-full bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full"
                         />

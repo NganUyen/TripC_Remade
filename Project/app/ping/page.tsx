@@ -8,6 +8,9 @@ interface HealthStatus {
   services?: {
     flight_db?: string;
     hotel_db?: string;
+    voucher_db?: string;
+    transport_db?: string;
+    dining_db?: string;
   };
   timestamp?: string;
   error?: string;
@@ -30,7 +33,8 @@ export default function PingPage() {
     {
       method: "GET",
       path: "/api/ping",
-      description: "Health check (Flight + Hotel Services)",
+      description:
+        "Health check (Flight + Hotel + Voucher + Transport + Dining Services)",
       status: null,
       loading: false,
     },
@@ -92,6 +96,58 @@ export default function PingPage() {
       status: null,
       loading: false,
     },
+    // Voucher Service Endpoints
+    {
+      method: "GET",
+      path: "/api/v1/vouchers/marketplace",
+      description: "Voucher: Marketplace",
+      status: null,
+      loading: false,
+    },
+    {
+      method: "GET",
+      path: "/api/v1/vouchers/exchange",
+      description: "Voucher: Exchange API Status",
+      status: null,
+      loading: false,
+    },
+    // Transport Service Endpoints
+    {
+      method: "GET",
+      path: "/api/transport/search?origin=SGN&destination=HAN&date=2026-02-20",
+      description: "Transport: Search routes",
+      status: null,
+      loading: false,
+    },
+    // Dining Service Endpoints
+    {
+      method: "GET",
+      path: "/api/dining/venues?city=Bangkok",
+      description: "Dining: Search venues",
+      status: null,
+      loading: false,
+    },
+    {
+      method: "GET",
+      path: "/api/dining/venues/featured",
+      description: "Dining: Featured venues",
+      status: null,
+      loading: false,
+    },
+    {
+      method: "GET",
+      path: "/api/dining/cart",
+      description: "Dining: Get cart",
+      status: null,
+      loading: false,
+    },
+    {
+      method: "GET",
+      path: "/api/dining/reservations/check?venue_id=test&date=2026-02-20&time=19:00",
+      description: "Dining: Check availability",
+      status: null,
+      loading: false,
+    },
   ]);
 
   const checkHealth = async () => {
@@ -117,13 +173,19 @@ export default function PingPage() {
     );
 
     try {
-      const res = await fetch(endpoint.path, { method: endpoint.method });
+      // Don't try to parse response body, just check status
+      const res = await fetch(endpoint.path, {
+        method: endpoint.method,
+        headers: { Accept: "application/json" },
+      });
       setEndpoints((prev) =>
         prev.map((e, i) =>
           i === index ? { ...e, status: res.status, loading: false } : e,
         ),
       );
     } catch (error) {
+      // Network error or CORS issue
+      console.error(`Endpoint check failed for ${endpoint.path}:`, error);
       setEndpoints((prev) =>
         prev.map((e, i) =>
           i === index ? { ...e, status: 0, loading: false } : e,
@@ -214,7 +276,8 @@ export default function PingPage() {
           TripC Services Health Monitor
         </h1>
         <p style={{ color: "#666", marginBottom: "20px" }}>
-          Internal monitoring dashboard - Flight & Hotel Services
+          Internal monitoring dashboard - Flight, Hotel, Voucher, Transport &
+          Dining Services
         </p>
 
         <div style={{ marginBottom: "20px" }}>
@@ -308,6 +371,45 @@ export default function PingPage() {
                     }}
                   >
                     {health.services?.hotel_db?.toUpperCase() || "UNKNOWN"}
+                  </td>
+                </tr>
+                <tr style={{ borderBottom: "1px solid #ddd" }}>
+                  <td style={{ padding: "12px" }}>Voucher Database</td>
+                  <td
+                    style={{
+                      padding: "12px",
+                      textAlign: "right",
+                      color: getStatusColor(health.services?.voucher_db),
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {health.services?.voucher_db?.toUpperCase() || "UNKNOWN"}
+                  </td>
+                </tr>
+                <tr style={{ borderBottom: "1px solid #ddd" }}>
+                  <td style={{ padding: "12px" }}>Transport Database</td>
+                  <td
+                    style={{
+                      padding: "12px",
+                      textAlign: "right",
+                      color: getStatusColor(health.services?.transport_db),
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {health.services?.transport_db?.toUpperCase() || "UNKNOWN"}
+                  </td>
+                </tr>
+                <tr style={{ borderBottom: "1px solid #ddd" }}>
+                  <td style={{ padding: "12px" }}>Dining Database</td>
+                  <td
+                    style={{
+                      padding: "12px",
+                      textAlign: "right",
+                      color: getStatusColor(health.services?.dining_db),
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {health.services?.dining_db?.toUpperCase() || "UNKNOWN"}
                   </td>
                 </tr>
                 <tr>

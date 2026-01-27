@@ -2,9 +2,55 @@
 
 import React, { useState } from 'react'
 import { Calendar, Clock, Users, ChevronDown } from 'lucide-react'
+import { diningApi } from '@/lib/dining/api'
+import { useRouter } from 'next/navigation'
 
-export function ReservationSidebar() {
+interface ReservationSidebarProps {
+    venueId?: string
+}
+
+export function ReservationSidebar({ venueId }: ReservationSidebarProps) {
     const [guests, setGuests] = useState(2)
+    const [date, setDate] = useState(new Date().toISOString().split('T')[0])
+    const [time, setTime] = useState('19:30')
+    const [loading, setLoading] = useState(false)
+    const router = useRouter()
+
+    const handleReservation = async () => {
+        if (!venueId) {
+            alert('Please select a restaurant')
+            return
+        }
+
+        setLoading(true)
+        try {
+            // Check availability first
+            const availability = await diningApi.checkAvailability(venueId, date, time, guests)
+            
+            if (!availability.available) {
+                alert(availability.reason || 'This time slot is not available')
+                setLoading(false)
+                return
+            }
+
+            // Create reservation
+            const reservation = await diningApi.createReservation({
+                venue_id: venueId,
+                reservation_date: date,
+                reservation_time: time,
+                guest_count: guests,
+                guest_name: 'Guest', // You'll want to get this from user context
+            })
+
+            alert(`Reservation confirmed! Code: ${reservation.reservation_code}`)
+            router.push(`/dining/reservations/${reservation.id}`)
+        } catch (error: any) {
+            console.error('Error creating reservation:', error)
+            alert(error.message || 'Failed to create reservation')
+        } finally {
+            setLoading(false)
+        }
+    }
 
     return (
         <div className="sticky top-24 bg-white dark:bg-[#18181b] rounded-[2rem] p-6 shadow-xl border border-slate-100 dark:border-zinc-800">
@@ -25,14 +71,25 @@ export function ReservationSidebar() {
                     <button className="flex items-center justify-between px-4 py-3 bg-slate-50 dark:bg-zinc-900 rounded-full border border-slate-200 dark:border-zinc-700 hover:border-[#FF5E1F] transition-colors group">
                         <div className="flex items-center gap-2 overflow-hidden">
                             <Calendar className="w-4 h-4 text-slate-400 group-hover:text-[#FF5E1F]" />
-                            <span className="text-sm font-bold text-slate-900 dark:text-white">Oct 24</span>
+                            <input
+                                type="date"
+                                value={date}
+                                onChange={(e) => setDate(e.target.value)}
+                                min={new Date().toISOString().split('T')[0]}
+                                className="text-sm font-bold text-slate-900 dark:text-white bg-transparent border-none outline-none cursor-pointer"
+                            />
                         </div>
                         <ChevronDown className="w-3 h-3 text-slate-400" />
                     </button>
                     <button className="flex items-center justify-between px-4 py-3 bg-slate-50 dark:bg-zinc-900 rounded-full border border-slate-200 dark:border-zinc-700 hover:border-[#FF5E1F] transition-colors group">
                         <div className="flex items-center gap-2 overflow-hidden">
                             <Clock className="w-4 h-4 text-slate-400 group-hover:text-[#FF5E1F]" />
-                            <span className="text-sm font-bold text-slate-900 dark:text-white">19:30</span>
+                            <input
+                                type="time"
+                                value={time}
+                                onChange={(e) => setTime(e.target.value)}
+                                className="text-sm font-bold text-slate-900 dark:text-white bg-transparent border-none outline-none cursor-pointer"
+                            />
                         </div>
                         <ChevronDown className="w-3 h-3 text-slate-400" />
                     </button>
@@ -51,9 +108,13 @@ export function ReservationSidebar() {
                 </div>
             </div>
 
-            <button className="w-full bg-[#FF5E1F] hover:bg-[#e04f18] text-white font-bold py-4 rounded-full shadow-lg shadow-orange-500/20 transition-all active:scale-95 mb-3 flex items-center justify-center gap-2 relative overflow-hidden group">
+            <button
+                onClick={handleReservation}
+                disabled={loading || !venueId}
+                className="w-full bg-[#FF5E1F] hover:bg-[#e04f18] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-4 rounded-full shadow-lg shadow-orange-500/20 transition-all active:scale-95 mb-3 flex items-center justify-center gap-2 relative overflow-hidden group"
+            >
                 <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 rounded-full"></div>
-                <span className="relative">Confirm Booking</span>
+                <span className="relative">{loading ? 'Processing...' : 'Confirm Booking'}</span>
             </button>
 
             <button className="w-full text-slate-500 dark:text-slate-400 font-bold text-sm hover:text-slate-900 dark:hover:text-white transition-colors">

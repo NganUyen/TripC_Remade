@@ -20,21 +20,12 @@ export function useSupabaseClient() {
         global: {
           // Inject Clerk session token into Supabase requests
           fetch: async (url, options = {}) => {
-            let clerkToken;
-            if (session) {
-              try {
-                clerkToken = await session.getToken({
-                  template: "supabase",
-                });
-              } catch (e) {
-                console.error("Error fetching Clerk token:", e);
-              }
-            }
+            const clerkToken = await session?.getToken({
+              template: "supabase",
+            });
 
             const headers = new Headers(options?.headers);
-            if (clerkToken) {
-              headers.set("Authorization", `Bearer ${clerkToken}`);
-            }
+            headers.set("Authorization", `Bearer ${clerkToken}`);
 
             return fetch(url, {
               ...options,
