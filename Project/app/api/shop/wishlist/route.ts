@@ -6,75 +6,75 @@ import {
 import {
     getWishlist,
     addToWishlist,
-    getProductImages,
-    getVariantsByProductId
+    getDbUserId
 } from '@/lib/shop';
 import { money } from '@/lib/shop/utils';
 import { auth } from '@clerk/nextjs/server';
 
 export async function GET(request: NextRequest) {
-    const { userId } = await auth();
+    try {
+        const { userId: clerkId } = await auth();
 
-    if (!userId) {
-        return errorResponse('UNAUTHORIZED', 'Must be logged in', 401);
-    }
+        if (!clerkId) {
+            return errorResponse('UNAUTHORIZED', 'Must be logged in', 401);
+        }
 
-    const products = await getWishlist(userId);
+        const userId = await getDbUserId(clerkId);
+        if (!userId) {
+            return errorResponse('USER_NOT_FOUND', 'User record not found', 404);
+        }
 
-    // Format for frontend with images and prices
-    const items = await Promise.all(products.map(async (product) => {
-        const [images, variants] = await Promise.all([
-            getProductImages(product.id),
-            getVariantsByProductId(product.id)
-        ]);
+        const products = await getWishlist(userId);
 
-        const primaryImage = images.find(i => i.is_primary) || images[0];
-        const minPrice = variants.length > 0
-            ? Math.min(...variants.map(v => v.price))
-            : 0;
-
-        return {
+        // Format products with optimized batch loading
+        const items = products.map((product: any) => ({
             id: `wish-${product.id.slice(0, 8)}`,
             product: {
                 id: product.id,
                 slug: product.slug,
                 title: product.title,
-                image_url: primaryImage?.url || null,
-                price_from: money(minPrice),
+                image_url: product.images?.[0]?.url || null,
+                price_from: money(product.variants?.[0]?.price || 0),
                 rating_avg: product.rating_avg,
                 review_count: product.review_count,
                 is_featured: product.is_featured,
             },
-            added_at: new Date().toISOString(),
-        };
-    }));
+            added_at: product.wishlist_added_at || new Date().toISOString(),
+        }));
 
-    return successResponse(items);
+        return successResponse(items);
+    } catch (error) {
+        console.error('Wishlist GET error:', error);
+        return errorResponse('INTERNAL_ERROR', 'Failed to fetch wishlist', 500);
+    }
 }
 
 export async function POST(request: NextRequest) {
-    const { userId } = await auth();
-
-    if (!userId) {
-        return errorResponse('UNAUTHORIZED', 'Must be logged in', 401);
-    }
-
-    let body;
     try {
-        body = await request.json();
-    } catch {
-        return errorResponse('INVALID_BODY', 'Invalid JSON body', 400);
-    }
+        const { userId: clerkId } = await auth();
 
-    const { product_id } = body;
-    if (!product_id) {
-        return errorResponse('INVALID_REQUEST', 'product_id required', 400);
-    }
+        if (!clerkId) {
+            return errorResponse('UNAUTHORIZED', 'Must be logged in', 401);
+        }
 
-    try {
+        const userId = await getDbUserId(clerkId);
+        if (!userId) {
+            return errorResponse('USER_NOT_FOUND', 'User record not found', 404);
+        }
+
+        let body;
+        try {
+            body = await request.json();
+        } catch {
+            return errorResponse('INVALID_BODY', 'Invalid JSON body', 400);
+        }
+
+        const { product_id } = body;
+        if (!product_id) {
+            return errorResponse('INVALID_REQUEST', 'product_id required', 400);
+        }
+
         const productIds = await addToWishlist(userId, product_id);
-
-        // Return updated list (simplified for now, ideally return full objects)
         return successResponse({ success: true, count: productIds.length }, { status: 201 });
     } catch (error) {
         console.error('Wishlist POST error:', error);

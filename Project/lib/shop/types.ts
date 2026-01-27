@@ -191,8 +191,19 @@ export interface Review {
     rating: number;
     title: string;
     body: string;
+    photos?: string[];
+    is_verified_purchase?: boolean;
     status: 'pending' | 'approved' | 'rejected';
     created_at: string;
+    user_name?: string; // Virtual field for UI
+}
+
+export interface ReviewSummary {
+    rating_avg: number;
+    review_count: number;
+    rating_distribution: {
+        [key: number]: number; // 1-5
+    };
 }
 
 // Mock Data Interface

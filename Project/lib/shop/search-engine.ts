@@ -9,23 +9,60 @@ interface ProductIndexItem {
     description: string | null;
     slug: string;
     category_name: string;
+    category_slug: string;
     brand_name: string;
+    brand_slug: string;
     price: number; // Lowest variant price for filtering
     rating_avg: number;
     created_at: string;
     tags: string[]; // Potential future use
 }
 
+// Cache configuration
 let searchIndexCache: ProductIndexItem[] | null = null;
 let lastCacheTime = 0;
 const CACHE_TTL = 1000 * 60 * 5; // 5 minutes
+let cachePromise: Promise<ProductIndexItem[]> | null = null; // Prevent thundering herd
 
-async function getSearchIndex() {
+/**
+ * Invalidate the search cache - call when products are updated
+ */
+export function invalidateSearchCache(): void {
+    searchIndexCache = null;
+    lastCacheTime = 0;
+    cachePromise = null;
+}
+
+/**
+ * Get or build the search index with caching and request deduplication
+ */
+async function getSearchIndex(): Promise<ProductIndexItem[]> {
     const now = Date.now();
+    
+    // Return cached data if still valid
     if (searchIndexCache && (now - lastCacheTime < CACHE_TTL)) {
         return searchIndexCache;
     }
 
+    // If a cache build is already in progress, wait for it (prevents thundering herd)
+    if (cachePromise) {
+        return cachePromise;
+    }
+
+    // Build new cache
+    cachePromise = buildSearchIndex();
+    
+    try {
+        const index = await cachePromise;
+        searchIndexCache = index;
+        lastCacheTime = Date.now();
+        return index;
+    } finally {
+        cachePromise = null;
+    }
+}
+
+async function buildSearchIndex(): Promise<ProductIndexItem[]> {
     const supabase = createServiceSupabaseClient();
 
     // Fetch all active products with minimal necessary fields for search & key filters
@@ -72,8 +109,6 @@ async function getSearchIndex() {
         };
     });
 
-    searchIndexCache = index;
-    lastCacheTime = now;
     return index;
 }
 

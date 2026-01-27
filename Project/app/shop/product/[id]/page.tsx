@@ -4,6 +4,7 @@ import { ProductGallery } from "@/components/shop/product/ProductGallery"
 import { ProductInfo } from "@/components/shop/product/ProductInfo"
 import { ShopInfo } from "@/components/shop/product/ShopInfo"
 import { ProductOverview } from "@/components/shop/product/ProductOverview"
+import { ProductReviews } from "@/components/shop/product/ProductReviews"
 import { Footer } from "@/components/Footer"
 import { ProductCard } from "@/components/shop/ProductCard"
 import Link from "next/link"
@@ -68,14 +69,10 @@ export default function ProductDetailsPage() {
         stock: product.variants[0]?.stock_on_hand || 0,
         description: product.description,
         images: product.images.map(img => img.url),
-        highlights: [
-            { icon: null, text: "Fast Shipping" },
-            { icon: null, text: "Lifetime Warranty" },
-            { icon: null, text: "100-Day Return" },
-        ],
+        highlights: [],
         inclusions: product.variants[0]?.options.map(opt => ({
-            icon: null,
-            text: `${opt.name}: ${opt.value}`
+            label: opt.name,
+            value: opt.value
         })) || [],
         aiInsight: {
             match: "Perfect Match",
@@ -144,8 +141,8 @@ export default function ProductDetailsPage() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {productData.inclusions.map((item, i) => (
                                         <div key={i} className="flex justify-between py-2 border-b border-slate-50 dark:border-slate-800/50">
-                                            <span className="text-slate-500 dark:text-slate-400 text-sm">Spec {i + 1}</span>
-                                            <span className="text-slate-900 dark:text-white font-medium text-sm text-right">{item.text}</span>
+                                            <span className="text-slate-500 dark:text-slate-400 text-sm">{item.label}</span>
+                                            <span className="text-slate-900 dark:text-white font-medium text-sm text-right">{item.value}</span>
                                         </div>
                                     ))}
                                 </div>
@@ -154,41 +151,7 @@ export default function ProductDetailsPage() {
 
                         {/* Reviews Card */}
                         <div className="bg-white dark:bg-slate-900 rounded-[2rem] p-8 shadow-sm border border-slate-100 dark:border-slate-800">
-                            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Ratings & Reviews</h2>
-                            <div className="flex items-center gap-4 mb-6">
-                                <div className="text-4xl font-bold text-slate-900 dark:text-white">{product.rating_avg}</div>
-                                <div className="flex items-center gap-1">
-                                    {[...Array(5)].map((_, i) => (
-                                        <Star key={i} className={`w-5 h-5 ${i < Math.floor(product.rating_avg) ? 'fill-[#FF5E1F] text-[#FF5E1F]' : 'fill-slate-200 text-slate-200'}`} />
-                                    ))}
-                                </div>
-                                <span className="text-slate-500">({product.review_count} reviews)</span>
-                            </div>
-
-                            <div className="space-y-6">
-                                {product.reviews?.length ? product.reviews.map((review) => (
-                                    <div key={review.id} className="border-t border-slate-100 dark:border-slate-800 pt-6">
-                                        <div className="flex items-center justify-between mb-2">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-slate-500 text-xs">
-                                                    {review.user_name?.charAt(0) || 'U'}
-                                                </div>
-                                                <span className="font-medium text-slate-900 dark:text-white">{review.user_name || 'Verified Customer'}</span>
-                                            </div>
-                                            <span className="text-xs text-slate-500">{new Date(review.created_at).toLocaleDateString()}</span>
-                                        </div>
-                                        <div className="flex items-center gap-1 mb-2">
-                                            {[...Array(5)].map((_, i) => (
-                                                <Star key={i} className={`w-3 h-3 ${i < review.rating ? 'fill-[#FF5E1F] text-[#FF5E1F]' : 'fill-slate-200 text-slate-200'}`} />
-                                            ))}
-                                        </div>
-                                        <h4 className="font-bold text-sm text-slate-900 dark:text-white mb-1">{review.title}</h4>
-                                        <p className="text-slate-600 dark:text-slate-400 text-sm">{review.body}</p>
-                                    </div>
-                                )) : (
-                                    <p className="text-slate-500 text-center py-4">No reviews yet.</p>
-                                )}
-                            </div>
+                            <ProductReviews slug={product.slug} />
                         </div>
                     </div>
 

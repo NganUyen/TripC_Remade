@@ -17,7 +17,8 @@ import type {
     VoucherTemplate,
     Address,
     Money,
-    Review
+    Review,
+    ReviewSummary
 } from './types';
 
 import { createServiceSupabaseClient } from '../supabase-server';
@@ -303,7 +304,7 @@ export async function getVariantsByProductId(productId: string): Promise<Variant
         is_active: v.is_active,
         options: (options || [])
             .filter(o => o.variant_id === v.id)
-            .map(o => ({ name: o.name, value: o.value }))
+            .map(o => ({ name: o.option_name, value: o.option_value }))
     })) as Variant[];
 }
 
@@ -425,6 +426,85 @@ export async function getReviewsByProductId(productId: string): Promise<Review[]
     return (data || []) as Review[];
 }
 
+export async function getReviews(params: {
+    productId: string;
+    rating?: number;
+    hasPhotos?: boolean;
+    limit?: number;
+    offset?: number;
+}): Promise<{ data: Review[]; total: number }> {
+    const supabase = getSupabase();
+    const limit = params.limit || 10;
+    const offset = params.offset || 0;
+
+    let query = supabase
+        .from('shop_reviews')
+        .select('*', { count: 'exact' })
+        .eq('product_id', params.productId)
+        .eq('status', 'approved');
+
+    if (params.rating) {
+        query = query.eq('rating', params.rating);
+    }
+
+    if (params.hasPhotos) {
+        // Correct way to check for non-empty array in Supabase/Postgres
+        query = query.not('photos', 'is', null).filter('photos', 'not.eq', '{}');
+    }
+
+    query = query
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
+
+    const { data, count, error } = await query;
+
+    if (error) {
+        console.error('getReviews error:', error);
+        return { data: [], total: 0 };
+    }
+
+    // Attempt to map user names if we had a join, but for now we follow route.ts pattern
+    // In a real app, we'd join 'users' table.
+    return {
+        data: (data || []) as Review[],
+        total: count || 0
+    };
+}
+
+export async function getReviewsSummary(productId: string): Promise<ReviewSummary> {
+    const supabase = getSupabase();
+
+    // Fetch basic stats from product table (source of truth for aggregates usually)
+    const { data: product } = await supabase
+        .from('shop_products')
+        .select('rating_avg, review_count')
+        .eq('id', productId)
+        .single();
+
+    // Compute distribution
+    const { data: distributionData, error: distError } = await supabase
+        .from('shop_reviews')
+        .select('rating')
+        .eq('product_id', productId)
+        .eq('status', 'approved');
+
+    const distribution: { [key: number]: number } = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+
+    if (distributionData) {
+        distributionData.forEach((r: any) => {
+            if (distribution[r.rating] !== undefined) {
+                distribution[r.rating]++;
+            }
+        });
+    }
+
+    return {
+        rating_avg: product?.rating_avg || 0,
+        review_count: product?.review_count || 0,
+        rating_distribution: distribution
+    };
+}
+
 async function getCartByKey(key: string): Promise<{ cart: any; isUserId: boolean } | null> {
     const supabase = getSupabase();
 
@@ -440,7 +520,7 @@ async function getCartByKey(key: string): Promise<{ cart: any; isUserId: boolean
             .eq('status', 'active')
             .order('created_at', { ascending: false })
             .limit(1);
-        
+
         if (error) {
             console.error('Error fetching cart by user_id:', error);
         }
@@ -769,6 +849,44 @@ export async function getUserAddresses(userId: string): Promise<Address[]> {
     return (data || []) as Address[];
 }
 
+export async function createAddress(userId: string, addressData: {
+    label?: string | null;
+    recipient_name: string;
+    phone?: string | null;
+    country_code: string;
+    city: string;
+    state_province?: string;
+    address_line1: string;
+    address_line2?: string | null;
+    postal_code?: string | null;
+    is_default?: boolean;
+}): Promise<Address> {
+    const supabase = getSupabase();
+
+    // If setting as default, unset other defaults first
+    if (addressData.is_default) {
+        await supabase
+            .from('addresses')
+            .update({ is_default: false })
+            .eq('user_id', userId);
+    }
+
+    const { data, error } = await supabase
+        .from('addresses')
+        .insert({
+            user_id: userId,
+            ...addressData
+        })
+        .select()
+        .single();
+
+    if (error || !data) {
+        throw new Error(`Failed to create address: ${error?.message || 'Unknown error'}`);
+    }
+
+    return data as Address;
+}
+
 // =============================================================================
 // ORDERS
 // =============================================================================
@@ -782,6 +900,12 @@ function generateOrderNumber(): string {
     return `TC-${yy}${mm}${dd}-${rand}`;
 }
 
+/**
+ * Create order with improved atomicity
+ * Uses sequential operations with rollback on failure
+ * 
+ * TODO: When Supabase supports it, use database transactions or RPC
+ */
 export async function createOrder(
     userId: string,
     sessionKey: string,
@@ -790,22 +914,42 @@ export async function createOrder(
 ): Promise<Order> {
     const supabase = getSupabase();
 
+    // 1. Validate cart
     const cart = await getCart(sessionKey);
     if (!cart || cart.items.length === 0) {
         throw new Error('Cart is empty');
     }
 
+    // 2. Validate shipping method
     const shippingMethods = await getShippingMethods();
     const shippingMethod = shippingMethods.find(m => m.id === shippingMethodId);
     if (!shippingMethod) {
         throw new Error('Invalid shipping method');
     }
 
+    // 3. Validate stock for all items BEFORE creating order
+    const stockValidation = await Promise.all(
+        cart.items.map(async (item) => {
+            const variant = await getVariantById(item.variant_id);
+            return {
+                item,
+                variant,
+                hasStock: variant ? variant.stock_on_hand >= item.qty : false
+            };
+        })
+    );
+
+    const outOfStock = stockValidation.filter(v => !v.hasStock);
+    if (outOfStock.length > 0) {
+        const items = outOfStock.map(v => v.item.title_snapshot).join(', ');
+        throw new Error(`Insufficient stock for: ${items}`);
+    }
+
     const orderNumber = generateOrderNumber();
     const now = new Date().toISOString();
 
-    // Create order
-    const { data: order, error } = await supabase
+    // 4. Create order
+    const { data: order, error: orderError } = await supabase
         .from('shop_orders')
         .insert({
             order_number: orderNumber,
@@ -825,30 +969,57 @@ export async function createOrder(
         .select()
         .single();
 
-    if (error || !order) {
-        throw new Error('Failed to create order');
+    if (orderError || !order) {
+        throw new Error(`Failed to create order: ${orderError?.message || 'Unknown error'}`);
     }
 
-    // Create order items
-    for (const item of cart.items) {
-        await supabase
+    try {
+        // 5. Create order items in batch
+        const orderItems = cart.items.map(item => ({
+            order_id: order.id,
+            variant_id: item.variant_id,
+            qty: item.qty,
+            unit_price: item.unit_price.amount,
+            currency: item.unit_price.currency,
+            title_snapshot: item.title_snapshot,
+            variant_snapshot: item.variant_snapshot
+        }));
+
+        const { error: itemsError } = await supabase
             .from('order_items')
-            .insert({
-                order_id: order.id,
-                variant_id: item.variant_id,
-                qty: item.qty,
-                unit_price: item.unit_price.amount,
-                currency: item.unit_price.currency,
-                title_snapshot: item.title_snapshot,
-                variant_snapshot: item.variant_snapshot
-            });
-    }
+            .insert(orderItems);
 
-    // Mark cart as converted
-    await supabase
-        .from('carts')
-        .update({ status: 'converted', updated_at: now })
-        .eq('id', cart.id);
+        if (itemsError) {
+            // Rollback: delete the order if items failed
+            await supabase.from('shop_orders').delete().eq('id', order.id);
+            throw new Error(`Failed to create order items: ${itemsError.message}`);
+        }
+
+        // 6. Decrement stock for each variant
+        for (const validation of stockValidation) {
+            if (validation.variant) {
+                const newStock = validation.variant.stock_on_hand - validation.item.qty;
+                await supabase
+                    .from('product_variants')
+                    .update({ stock_on_hand: Math.max(0, newStock) })
+                    .eq('id', validation.variant.id);
+            }
+        }
+
+        // 7. Mark cart as converted
+        await supabase
+            .from('carts')
+            .update({ status: 'converted', updated_at: now })
+            .eq('id', cart.id);
+
+    } catch (error) {
+        // If any step after order creation fails, mark order as failed
+        await supabase
+            .from('shop_orders')
+            .update({ status: 'cancelled', updated_at: new Date().toISOString() })
+            .eq('id', order.id);
+        throw error;
+    }
 
     return {
         id: order.id,
@@ -1066,25 +1237,61 @@ export async function redeemVoucher(userId: string, templateId: string, tcentBal
 // WISHLIST
 // =============================================================================
 
-export async function getWishlist(userId: string): Promise<Product[]> {
+export async function getWishlist(userId: string): Promise<(Product & { wishlist_added_at?: string })[]> {
     const supabase = getSupabase();
 
-    const { data: wishlistItems } = await supabase
+    // Get wishlist items with product details, images, and variants in optimized joins
+    const { data: wishlistItems, error } = await supabase
         .from('shop_wishlist')
-        .select('product_id')
+        .select(`
+            product_id,
+            created_at,
+            shop_products!inner(
+                id,
+                slug,
+                title,
+                description,
+                product_type,
+                status,
+                rating_avg,
+                review_count,
+                is_featured,
+                category_id,
+                brand_id,
+                created_at,
+                updated_at,
+                product_images(id, url, alt, sort_order, is_primary),
+                product_variants(id, price, currency)
+            )
+        `)
         .eq('user_id', userId);
 
-    if (!wishlistItems || wishlistItems.length === 0) return [];
+    if (error || !wishlistItems || wishlistItems.length === 0) return [];
 
-    const productIds = wishlistItems.map(w => w.product_id);
+    // Format products with wishlist metadata
+    return wishlistItems
+        .filter((w: any) => w.shop_products?.status === 'active')
+        .map((w: any) => {
+            const p = w.shop_products;
+            // Sort images by sort_order and get primary
+            const sortedImages = (p.product_images || []).sort((a: any, b: any) => {
+                if (a.is_primary && !b.is_primary) return -1;
+                if (!a.is_primary && b.is_primary) return 1;
+                return a.sort_order - b.sort_order;
+            });
 
-    const { data: products } = await supabase
-        .from('shop_products')
-        .select('*')
-        .in('id', productIds)
-        .eq('status', 'active');
+            // Get min price from variants
+            const prices = (p.product_variants || []).map((v: any) => v.price);
+            const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
 
-    return (products || []) as Product[];
+            return {
+                ...p,
+                images: sortedImages,
+                variants: p.product_variants?.map((v: any) => ({ ...v, price: v.price })) || [],
+                wishlist_added_at: w.created_at,
+                price_from: minPrice
+            };
+        }) as (Product & { wishlist_added_at?: string })[];
 }
 
 export async function addToWishlist(userId: string, productId: string): Promise<string[]> {

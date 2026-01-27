@@ -3,22 +3,27 @@ import {
     paginatedResponse,
     errorResponse,
 } from '@/lib/shop/utils';
-import { getOrders } from '@/lib/shop';
+import { getOrders, getDbUserId } from '@/lib/shop';
 import { auth } from '@clerk/nextjs/server';
 
 export async function GET(request: NextRequest) {
-    const { userId } = await auth();
-
-    if (!userId) {
-        return errorResponse('UNAUTHORIZED', 'Must be logged in', 401);
-    }
-
-    const { searchParams } = new URL(request.url);
-    const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100);
-    const offset = parseInt(searchParams.get('offset') || '0');
-    const status = searchParams.get('status') || undefined;
-
     try {
+        const { userId: clerkId } = await auth();
+
+        if (!clerkId) {
+            return errorResponse('UNAUTHORIZED', 'Must be logged in', 401);
+        }
+
+        const userId = await getDbUserId(clerkId);
+        if (!userId) {
+            return errorResponse('USER_NOT_FOUND', 'User record not found', 404);
+        }
+
+        const { searchParams } = new URL(request.url);
+        const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100);
+        const offset = parseInt(searchParams.get('offset') || '0');
+        const status = searchParams.get('status') || undefined;
+
         const { data: orders, total } = await getOrders(userId, {
             limit,
             offset,

@@ -28,6 +28,7 @@ export type {
     Address,
     UserVoucher,
     Review,
+    ReviewSummary,
     ShopMockData,
 } from './types';
 
@@ -91,5 +92,10 @@ export {
 
     // Reviews
     getReviewsByProductId,
+    getReviews,
+    getReviewsSummary,
     createReview,
+
+    // Addresses
+    createAddress,
 } from './queries';

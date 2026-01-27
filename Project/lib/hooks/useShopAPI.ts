@@ -47,11 +47,23 @@ export interface ProductVariant {
 export interface Review {
     id: string;
     user_id: string;
+    product_id: string;
     rating: number;
     title: string;
     body: string;
+    photos?: string[];
+    is_verified_purchase?: boolean;
+    status: 'pending' | 'approved' | 'rejected';
     created_at: string;
-    user_name: string;
+    user_name?: string;
+}
+
+export interface ReviewSummary {
+    rating_avg: number;
+    review_count: number;
+    rating_distribution: {
+        [key: number]: number;
+    };
 }
 
 export interface ProductDetail {
@@ -113,6 +125,19 @@ export interface Category {
     sort_order: number;
     is_active: boolean;
     children?: Category[];
+}
+
+export interface Brand {
+    id: string;
+    slug: string;
+    name: string;
+    logo_url: string;
+    is_active: boolean;
+    tagline?: string;
+    follower_count?: number;
+    rating_avg?: number;
+    response_rate?: number;
+    on_time_ship_rate?: number;
 }
 
 export interface VoucherTemplate {
@@ -222,6 +247,33 @@ export const shopApi = {
     async getBrands(): Promise<{ data: Brand[]; error: string | null }> {
         const result = await fetchApi<Brand[]>('/brands');
         return { data: result.data || [], error: result.error };
+    },
+
+    // Reviews
+    async getReviews(slug: string, params?: {
+        rating?: number;
+        has_photos?: boolean;
+        limit?: number;
+        offset?: number;
+    }): Promise<{ data: Review[]; total: number; error: string | null }> {
+        const query = new URLSearchParams();
+        if (params?.rating) query.set('rating', String(params.rating));
+        if (params?.has_photos) query.set('has_photos', 'true');
+        if (params?.limit) query.set('limit', String(params.limit));
+        if (params?.offset) query.set('offset', String(params.offset));
+
+        const response = await fetch(`${API_BASE}/products/${slug}/reviews?${query}`);
+        const json = await response.json();
+
+        if (!response.ok) {
+            return { data: [], total: 0, error: json.error?.message || 'Failed to fetch' };
+        }
+
+        return { data: json.data || [], total: json.meta?.total || 0, error: null };
+    },
+
+    async getReviewsSummary(slug: string): Promise<{ data: ReviewSummary | null; error: string | null }> {
+        return fetchApi<ReviewSummary>(`/products/${slug}/reviews/summary`);
     },
 };
 
@@ -361,6 +413,62 @@ export function useBrands() {
     }, []);
 
     return { brands, loading, error };
+}
+
+export function useReviews(slug: string, params?: Parameters<typeof shopApi.getReviews>[1]) {
+    const [reviews, setReviews] = useState<Review[]>([]);
+    const [total, setTotal] = useState(0);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        async function fetchReviews() {
+            setLoading(true);
+            const result = await shopApi.getReviews(slug, params);
+
+            if (!cancelled) {
+                setReviews(result.data);
+                setTotal(result.total);
+                setError(result.error);
+                setLoading(false);
+            }
+        }
+
+        if (slug) fetchReviews();
+
+        return () => { cancelled = true; };
+    }, [slug, params?.rating, params?.has_photos, params?.limit, params?.offset]);
+
+    return { reviews, total, loading, error };
+}
+
+export function useReviewsSummary(slug: string) {
+    const [summary, setSummary] = useState<ReviewSummary | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        async function fetchSummary() {
+            setLoading(true);
+            const result = await shopApi.getReviewsSummary(slug);
+
+            if (!cancelled) {
+                setSummary(result.data);
+                setError(result.error);
+                setLoading(false);
+            }
+        }
+
+        if (slug) fetchSummary();
+
+        return () => { cancelled = true; };
+    }, [slug]);
+
+    return { summary, loading, error };
 }
 
 // ============================================================================
