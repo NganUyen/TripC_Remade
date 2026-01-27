@@ -124,44 +124,56 @@ export function VoucherDrawer({ voucher, onClose }: { voucher: Voucher | null, o
                     </motion.div>
 
                     {/* Desktop Drawer (Side) */}
+                    {/* Desktop Drawer (Side) */}
                     <motion.div
                         initial={{ x: '100%', opacity: 0 }}
                         animate={{ x: 0, opacity: 1 }}
                         exit={{ x: '100%', opacity: 0 }}
                         transition={{ type: "spring", damping: 30, stiffness: 300 }}
-                        className="fixed top-4 right-4 bottom-4 w-96 bg-white dark:bg-[#111] rounded-[2rem] p-8 z-50 shadow-2xl border border-slate-100 dark:border-white/10 hidden lg:flex flex-col"
+                        className="fixed top-0 right-0 bottom-0 w-96 bg-white dark:bg-[#111] z-[60] shadow-2xl border-l border-slate-100 dark:border-white/10 hidden lg:flex flex-col"
                     >
-                        <button onClick={onClose} className="absolute top-6 right-6 p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-colors">
-                            <X className="w-6 h-6 text-slate-500" />
-                        </button>
-
-                        <div className={`w-24 h-24 rounded-3xl ${getVoucherColor(voucher.voucher_type)} text-white flex items-center justify-center shadow-xl mb-8`}>
-                            <TicketIcon category={voucher.voucher_type} className="w-12 h-12" />
+                        {/* Static Header with Close Button */}
+                        <div className="p-6 border-b border-slate-100 dark:border-white/10 flex justify-end">
+                            <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-colors">
+                                <X className="w-6 h-6 text-slate-500" />
+                            </button>
                         </div>
 
-                        <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">{voucher.code}</h2>
-                        <span className="text-slate-500 dark:text-slate-400 font-medium mb-6">Values: {voucher.discount_value} OFF (Min Spend: {voucher.min_spend})</span>
+                        {/* Scrollable Content */}
+                        <div className="flex-1 overflow-y-auto p-8">
+                            <div className={`w-24 h-24 rounded-3xl ${getVoucherColor(voucher.voucher_type)} text-white flex items-center justify-center shadow-xl mb-8 mx-auto`}>
+                                <TicketIcon category={voucher.voucher_type} className="w-12 h-12" />
+                            </div>
 
-                        <div className="flex items-center gap-2 text-[#FF5E1F] font-bold text-2xl mb-8">
-                            <TcentIcon className="w-8 h-8" />
-                            <span>{voucher.tcent_price?.toLocaleString()}</span>
-                        </div>
-
-                        <div className="flex-1">
-                            <h4 className="font-bold text-slate-900 dark:text-white mb-2">Description</h4>
-                            <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed mb-6">
-                                Redeem this voucher to enjoy exclusive benefits on your next trip. This reward is part of the Gold Tier benefits package.
+                            <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-2 text-center">{voucher.code}</h2>
+                            <p className="text-slate-500 dark:text-slate-400 font-medium mb-6 text-center">
+                                Values: {voucher.discount_value} OFF<br />(Min Spend: {voucher.min_spend})
                             </p>
+
+                            <div className="flex items-center justify-center gap-2 text-[#FF5E1F] font-bold text-2xl mb-8">
+                                <TcentIcon className="w-8 h-8" />
+                                <span>{voucher.tcent_price?.toLocaleString()}</span>
+                            </div>
+
+                            <div className="mb-8">
+                                <h4 className="font-bold text-slate-900 dark:text-white mb-2">Description</h4>
+                                <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+                                    Redeem this voucher to enjoy exclusive benefits on your next trip. This reward is part of the Gold Tier benefits package.
+                                </p>
+                            </div>
                         </div>
 
-                        <button
-                            onClick={handleRedeem}
-                            disabled={redeeming}
-                            className="w-full py-4 bg-[#FF5E1F] text-white font-bold rounded-full shadow-xl shadow-orange-500/20 hover:scale-[1.02] active:scale-95 transition-transform flex items-center justify-center gap-2"
-                        >
-                            {redeeming && <Loader2 className="w-5 h-5 animate-spin" />}
-                            {redeeming ? 'Processing...' : 'Confirm Redemption'}
-                        </button>
+                        {/* Static Footer with Action Button */}
+                        <div className="p-6 border-t border-slate-100 dark:border-white/10 bg-white dark:bg-[#111]">
+                            <button
+                                onClick={handleRedeem}
+                                disabled={redeeming}
+                                className="w-full py-4 bg-[#FF5E1F] text-white font-bold rounded-full shadow-xl shadow-orange-500/20 hover:scale-[1.02] active:scale-95 transition-transform flex items-center justify-center gap-2"
+                            >
+                                {redeeming && <Loader2 className="w-5 h-5 animate-spin" />}
+                                {redeeming ? 'Processing...' : 'Confirm Redemption'}
+                            </button>
+                        </div>
                     </motion.div>
                 </>
             )}
