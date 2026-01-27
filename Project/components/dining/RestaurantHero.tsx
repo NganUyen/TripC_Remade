@@ -1,18 +1,78 @@
 "use client"
 
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { ArrowLeft, Share2, Heart, Star, MapPin } from 'lucide-react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
+import { diningApi } from '@/lib/dining/api'
+import type { DiningVenue } from '@/lib/dining/types'
 
-export function RestaurantHero() {
+interface RestaurantHeroProps {
+    venueId?: string
+}
+
+export function RestaurantHero({ venueId }: RestaurantHeroProps) {
+    const [venue, setVenue] = useState<DiningVenue | null>(null)
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        if (venueId) {
+            async function fetchVenue() {
+                try {
+                    const data = await diningApi.getVenueById(venueId)
+                    setVenue(data)
+                } catch (error) {
+                    console.error('Error fetching venue:', error)
+                } finally {
+                    setLoading(false)
+                }
+            }
+            fetchVenue()
+        } else {
+            setLoading(false)
+        }
+    }, [venueId])
+
+    const getPriceRangeDisplay = (priceRange: string | null) => {
+        if (!priceRange) return '$$'
+        const map: Record<string, string> = {
+            budget: '$',
+            moderate: '$$',
+            upscale: '$$$',
+            fine_dining: '$$$$',
+        }
+        return map[priceRange] || '$$'
+    }
+
+    const getCuisineDisplay = (cuisines: string[] | null) => {
+        if (!cuisines || cuisines.length === 0) return 'Restaurant'
+        return cuisines.join(', ')
+    }
+    if (loading) {
+        return (
+            <section className="relative w-full mb-24">
+                <div className="h-[500px] w-full relative z-0 overflow-hidden rounded-b-[2.5rem] bg-slate-200 dark:bg-zinc-800 animate-pulse" />
+            </section>
+        )
+    }
+
+    const displayVenue = venue || {
+        name: 'Restaurant',
+        cuisine_type: null,
+        price_range: null,
+        average_rating: 0,
+        review_count: 0,
+        location_summary: 'Location',
+        cover_image_url: 'https://images.unsplash.com/photo-1514362545857-3bc165497db5?q=80&w=2670&auto=format&fit=crop',
+    }
+
     return (
         <section className="relative w-full mb-24">
             {/* Tall Hero Image Container with Mask */}
             <div className="h-[500px] w-full relative z-0 overflow-hidden rounded-b-[2.5rem]">
                 <img
-                    src="https://images.unsplash.com/photo-1514362545857-3bc165497db5?q=80&w=2670&auto=format&fit=crop"
-                    alt="Restaurant Interior"
+                    src={displayVenue.cover_image_url || "https://images.unsplash.com/photo-1514362545857-3bc165497db5?q=80&w=2670&auto=format&fit=crop"}
+                    alt={displayVenue.name}
                     className="w-full h-full object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30"></div>
@@ -45,24 +105,32 @@ export function RestaurantHero() {
                 >
                     <div>
                         <div className="flex flex-wrap gap-2 mb-3">
-                            <span className="px-3 py-1 bg-[#FF5E1F]/10 text-[#FF5E1F] rounded-full text-xs font-bold uppercase tracking-wider">Vietnamese Fusion</span>
-                            <span className="px-3 py-1 bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 rounded-full text-xs font-bold">$$$</span>
-                            <span className="px-3 py-1 bg-black text-white rounded-full text-xs font-bold flex items-center gap-1">
-                                <Star className="w-3 h-3 fill-current" /> Michelin Guide
+                            {displayVenue.cuisine_type && displayVenue.cuisine_type.length > 0 && (
+                                <span className="px-3 py-1 bg-[#FF5E1F]/10 text-[#FF5E1F] rounded-full text-xs font-bold uppercase tracking-wider">
+                                    {getCuisineDisplay(displayVenue.cuisine_type)}
+                                </span>
+                            )}
+                            <span className="px-3 py-1 bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 rounded-full text-xs font-bold">
+                                {getPriceRangeDisplay(displayVenue.price_range)}
                             </span>
+                            {displayVenue.is_verified && (
+                                <span className="px-3 py-1 bg-black text-white rounded-full text-xs font-bold flex items-center gap-1">
+                                    <Star className="w-3 h-3 fill-current" /> Verified
+                                </span>
+                            )}
                         </div>
-                        <h1 className="text-3xl md:text-5xl font-black text-slate-900 dark:text-white mb-2">Madame Vo's Kitchen</h1>
+                        <h1 className="text-3xl md:text-5xl font-black text-slate-900 dark:text-white mb-2">{displayVenue.name}</h1>
 
                         <div className="flex items-center gap-4 text-sm font-medium text-slate-500 dark:text-slate-400">
                             <div className="flex items-center gap-1 text-amber-500">
                                 <Star className="w-4 h-4 fill-current" />
-                                <span className="text-slate-900 dark:text-white font-bold">4.9</span>
-                                <span className="text-slate-400">(2.3k Review)</span>
+                                <span className="text-slate-900 dark:text-white font-bold">{displayVenue.average_rating.toFixed(1)}</span>
+                                <span className="text-slate-400">({displayVenue.review_count} Review{displayVenue.review_count !== 1 ? 's' : ''})</span>
                             </div>
                             <div className="w-1 h-1 bg-slate-300 rounded-full"></div>
                             <div className="flex items-center gap-1">
                                 <MapPin className="w-4 h-4" />
-                                <span>Da Nang, Vietnam</span>
+                                <span>{displayVenue.location_summary || displayVenue.address || 'Location'}</span>
                             </div>
                         </div>
                     </div>
