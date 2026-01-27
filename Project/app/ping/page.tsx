@@ -5,7 +5,10 @@ import { useEffect, useState } from "react";
 interface HealthStatus {
   status: string;
   api?: string;
-  database?: string;
+  services?: {
+    flight_db?: string;
+    hotel_db?: string;
+  };
   timestamp?: string;
   error?: string;
 }
@@ -27,35 +30,65 @@ export default function PingPage() {
     {
       method: "GET",
       path: "/api/ping",
-      description: "Health check",
+      description: "Health check (Flight + Hotel Services)",
       status: null,
       loading: false,
     },
+    // Flight Service Endpoints
     {
       method: "GET",
       path: "/api/flight/search?origin=SGN&destination=HAN&date=2026-02-20",
-      description: "Search flights",
+      description: "Flight: Search flights",
       status: null,
       loading: false,
     },
     {
       method: "POST",
       path: "/api/flight/book",
-      description: "Create booking",
+      description: "Flight: Create booking",
       status: null,
       loading: false,
     },
     {
       method: "GET",
       path: "/api/flight/booking/test-id",
-      description: "Get booking",
+      description: "Flight: Get booking",
       status: null,
       loading: false,
     },
     {
       method: "DELETE",
       path: "/api/flight/booking/test-id",
-      description: "Cancel booking",
+      description: "Flight: Cancel booking",
+      status: null,
+      loading: false,
+    },
+    // Hotel Service Endpoints
+    {
+      method: "GET",
+      path: "/api/hotels?city=Bangkok",
+      description: "Hotel: List hotels",
+      status: null,
+      loading: false,
+    },
+    {
+      method: "GET",
+      path: "/api/hotels/luxury-bangkok-hotel",
+      description: "Hotel: Get hotel details",
+      status: null,
+      loading: false,
+    },
+    {
+      method: "GET",
+      path: "/api/hotels/luxury-bangkok-hotel/rooms",
+      description: "Hotel: List rooms",
+      status: null,
+      loading: false,
+    },
+    {
+      method: "GET",
+      path: "/api/hotels/luxury-bangkok-hotel/rates?start=2025-02-01&end=2025-02-05",
+      description: "Hotel: Get rates",
       status: null,
       loading: false,
     },
@@ -178,10 +211,10 @@ export default function PingPage() {
     >
       <div style={{ maxWidth: "800px", margin: "0 auto" }}>
         <h1 style={{ fontSize: "24px", marginBottom: "10px" }}>
-          Flight Service Health Monitor
+          TripC Services Health Monitor
         </h1>
         <p style={{ color: "#666", marginBottom: "20px" }}>
-          Internal monitoring dashboard
+          Internal monitoring dashboard - Flight & Hotel Services
         </p>
 
         <div style={{ marginBottom: "20px" }}>
@@ -252,16 +285,29 @@ export default function PingPage() {
                   </td>
                 </tr>
                 <tr style={{ borderBottom: "1px solid #ddd" }}>
-                  <td style={{ padding: "12px" }}>Database</td>
+                  <td style={{ padding: "12px" }}>Flight Database</td>
                   <td
                     style={{
                       padding: "12px",
                       textAlign: "right",
-                      color: getStatusColor(health.database),
+                      color: getStatusColor(health.services?.flight_db),
                       fontWeight: "bold",
                     }}
                   >
-                    {health.database?.toUpperCase() || "UNKNOWN"}
+                    {health.services?.flight_db?.toUpperCase() || "UNKNOWN"}
+                  </td>
+                </tr>
+                <tr style={{ borderBottom: "1px solid #ddd" }}>
+                  <td style={{ padding: "12px" }}>Hotel Database</td>
+                  <td
+                    style={{
+                      padding: "12px",
+                      textAlign: "right",
+                      color: getStatusColor(health.services?.hotel_db),
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {health.services?.hotel_db?.toUpperCase() || "UNKNOWN"}
                   </td>
                 </tr>
                 <tr>
