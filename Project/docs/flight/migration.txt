@@ -1,0 +1,365 @@
+# Flight Service Database Migration Instructions
+
+## Prerequisites
+
+- PostgreSQL 14+ (via Supabase)
+- Supabase CLI (optional) OR direct database access
+- Administrator privileges for database
+
+---
+
+## Option 1: Using Supabase CLI (Recommended)
+
+### Step 1: Install Supabase CLI
+
+```bash
+npm install -g supabase
+```
+
+### Step 2: Login and Link Project
+
+```bash
+# Login to Supabase
+supabase login
+
+# Link to your project
+supabase link --project-ref your-project-ref
+```
+
+### Step 3: Run Migrations
+
+```bash
+# Navigate to project directory
+cd Project
+
+# Run schema migration
+supabase db push
+
+# Or run specific migration file
+supabase db execute --file supabase/migrations/20260125_flight_service_schema.sql
+```
+
+### Step 4: Seed Database
+
+```bash
+# Run seed file
+supabase db execute --file supabase/migrations/20260125_flight_service_seed.sql
+```
+
+### Step 5: Verify
+
+```bash
+# Open Supabase Studio
+supabase db studio
+
+# Or query from CLI
+supabase db query "SELECT COUNT(*) FROM flights"
+```
+
+---
+
+## Option 2: Using psql (Direct Database Connection)
+
+### Step 1: Get Database Connection String
+
+From Supabase Dashboard:
+1. Go to Project Settings > Database
+2. Copy the connection string (use "connection pooling" for production)
+3. Replace `[YOUR-PASSWORD]` with your actual password
+
+Example:
+```
+postgresql://postgres:[YOUR-PASSWORD]@db.xxxxxxxxxxxx.supabase.co:5432/postgres
+```
+
+### Step 2: Run Schema Migration
+
+```bash
+# Run from Project directory
+psql "postgresql://postgres:[PASSWORD]@db.xxxxxxxxxxxx.supabase.co:5432/postgres" \
+  -f supabase/migrations/20260125_flight_service_schema.sql
+```
+
+Expected output:
+```
+CREATE EXTENSION
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+...
+CREATE TRIGGER
+COMMENT
+```
+
+### Step 3: Run Seed Data
+
+```bash
+psql "postgresql://postgres:[PASSWORD]@db.xxxxxxxxxxxx.supabase.co:5432/postgres" \
+  -f supabase/migrations/20260125_flight_service_seed.sql
+```
+
+Expected output:
+```
+INSERT 0 10
+INSERT 0 30
+```
+
+### Step 4: Verify Tables
+
+```bash
+psql "postgresql://postgres:[PASSWORD]@db.xxxxxxxxxxxx.supabase.co:5432/postgres" \
+  -c "\dt"
+```
+
+You should see:
+- flights
+- flight_offers
+- flight_bookings
+- flight_search_cache
+
+---
+
+## Option 3: Using Supabase Dashboard (Web UI)
+
+### Step 1: Open SQL Editor
+
+1. Go to Supabase Dashboard
+2. Navigate to SQL Editor
+3. Click "New Query"
+
+### Step 2: Run Schema Migration
+
+1. Copy contents of `supabase/migrations/20260125_flight_service_schema.sql`
+2. Paste into SQL Editor
+3. Click "Run"
+4. Wait for "Success" message
+
+### Step 3: Run Seed Data
+
+1. Copy contents of `supabase/migrations/20260125_flight_service_seed.sql`
+2. Paste into SQL Editor
+3. Click "Run"
+4. Wait for "Success" message
+
+### Step 4: Verify
+
+1. Go to Table Editor
+2. Check that all 4 tables exist
+3. Browse "flights" table - should see 10 flights
+4. Browse "flight_offers" table - should see ~30 offers
+
+---
+
+## Verification Queries
+
+After running migrations, verify the setup:
+
+### Check Table Counts
+
+```sql
+SELECT 
+  'flights' as table_name, COUNT(*) as count FROM flights
+UNION ALL
+SELECT 
+  'flight_offers' as table_name, COUNT(*) as count FROM flight_offers
+UNION ALL
+SELECT 
+  'flight_bookings' as table_name, COUNT(*) as count FROM flight_bookings;
+```
+
+Expected:
+- flights: 10
+- flight_offers: ~30
+- flight_bookings: 0 (empty initially)
+
+### Test Search Query
+
+```sql
+SELECT 
+  f.airline_code,
+  f.flight_number,
+  f.origin,
+  f.destination,
+  f.departure_at,
+  fo.total_price,
+  fo.cabin_class,
+  fo.seats_available
+FROM flight_offers fo
+JOIN flights f ON fo.flight_id = f.id
+WHERE f.origin = 'SGN'
+  AND f.destination = 'HAN'
+  AND DATE(f.departure_at) = '2026-02-20'
+  AND fo.seats_available > 0
+ORDER BY fo.total_price ASC
+LIMIT 5;
+```
+
+Should return ~5 offers for SGN to HAN route.
+
+### Check Indexes
+
+```sql
+SELECT 
+  tablename, 
+  indexname, 
+  indexdef
+FROM pg_indexes
+WHERE schemaname = 'public'
+  AND tablename LIKE 'flight%'
+ORDER BY tablename, indexname;
+```
+
+Should show all indexes created.
+
+---
+
+## Rollback (If Needed)
+
+### To Remove All Tables
+
+```sql
+-- Drop tables in correct order (respecting foreign keys)
+DROP TABLE IF EXISTS flight_search_cache CASCADE;
+DROP TABLE IF EXISTS flight_bookings CASCADE;
+DROP TABLE IF EXISTS flight_offers CASCADE;
+DROP TABLE IF EXISTS flights CASCADE;
+
+-- Drop trigger function
+DROP FUNCTION IF EXISTS update_updated_at_column() CASCADE;
+
+-- Drop extension (only if not used elsewhere)
+-- DROP EXTENSION IF EXISTS "uuid-ossp";
+```
+
+**WARNING**: This will delete all flight service data!
+
+### Safer Rollback: Just Truncate Data
+
+```sql
+-- Keep tables, just remove data
+TRUNCATE TABLE flight_bookings CASCADE;
+TRUNCATE TABLE flight_offers CASCADE;
+TRUNCATE TABLE flights CASCADE;
+TRUNCATE TABLE flight_search_cache CASCADE;
+```
+
+---
+
+## Updating Seed Data
+
+To refresh seed data with new dates:
+
+1. Update dates in `20260125_flight_service_seed.sql`
+2. Truncate existing data:
+   ```sql
+   TRUNCATE TABLE flight_offers CASCADE;
+   TRUNCATE TABLE flights CASCADE;
+   ```
+3. Re-run seed file:
+   ```bash
+   psql [CONNECTION_STRING] -f supabase/migrations/20260125_flight_service_seed.sql
+   ```
+
+---
+
+## Environment Variables
+
+After migration, ensure these are set in `.env.local`:
+
+```env
+# Required for API to work
+NEXT_PUBLIC_SUPABASE_URL=https://xxxxxxxxxxxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+Get these from:
+Supabase Dashboard > Project Settings > API
+
+---
+
+## Common Issues
+
+### Issue: "permission denied for schema public"
+
+**Solution**: Use service role key or grant permissions:
+```sql
+GRANT ALL ON SCHEMA public TO postgres;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres;
+```
+
+### Issue: "relation already exists"
+
+**Solution**: Tables already exist. Either:
+- Drop tables first (see Rollback section)
+- Or modify migration to use `CREATE TABLE IF NOT EXISTS`
+
+### Issue: "uuid_generate_v4() does not exist"
+
+**Solution**: Extension not enabled. Run:
+```sql
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+```
+
+### Issue: Seed data dates in the past
+
+**Solution**: Update dates in seed SQL file to future dates before running.
+
+### Issue: Connection timeout
+
+**Solution**: 
+- Check firewall/network settings
+- Verify Supabase project is not paused
+- Use connection pooling URL for better stability
+
+---
+
+## Production Migration
+
+For production deployment:
+
+1. **Backup** existing database first
+2. **Test** migration on staging environment
+3. **Schedule** during low-traffic window
+4. **Monitor** during and after migration
+5. **Verify** all endpoints work post-migration
+6. **Have rollback plan** ready
+
+---
+
+## Next Steps
+
+After successful migration:
+
+1. Start the Next.js dev server:
+   ```bash
+   npm run dev
+   ```
+
+2. Test health endpoint:
+   ```bash
+   curl http://localhost:3000/api/ping
+   ```
+
+3. Test search endpoint:
+   ```bash
+   curl 'http://localhost:3000/api/flight/search?origin=SGN&destination=HAN&date=2026-02-20'
+   ```
+
+4. Open health monitor:
+   ```
+   http://localhost:3000/ping
+   ```
+
+All should return successful responses.
+
+---
+
+## Support
+
+If you encounter issues:
+- Check Supabase logs in Dashboard > Logs
+- Review API error messages
+- Verify environment variables are correct
+- Check network connectivity
+- Consult schema.md for table structure details

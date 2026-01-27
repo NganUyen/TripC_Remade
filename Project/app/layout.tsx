@@ -2,12 +2,10 @@ import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
-import { CategorySlider } from "@/components/CategorySlider";
-import { Header } from "@/components/Header";
-import { ChatWidget } from "@/components/ChatWidget";
 import { Providers } from "@/components/Providers";
 import { SyncUser } from "@/components/SyncUser"; // TODO: Re-enable after `npx convex dev` is run
-import { Toaster } from "@/components/ui/sonner"
+import { Toaster } from "@/components/ui/sonner";
+import { ConditionalLayout } from "@/components/ConditionalLayout";
 
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -41,16 +39,16 @@ export default function RootLayout({
       <body className="bg-background-light dark:bg-background-dark font-display min-h-screen flex flex-col text-slate-900 dark:text-slate-100 antialiased overflow-x-hidden">
         <Providers>
           {/* <SyncUser /> */}
-          <Header />
-          <CategorySlider />
-          {children}
-          <ChatWidget />
+          <ConditionalLayout>{children}</ConditionalLayout>
         </Providers>
-        <Toaster position="bottom-left" toastOptions={{
-          classNames: {
-            error: 'bg-red-500 text-white border-red-600',
-          }
-        }} />
+        <Toaster
+          position="bottom-left"
+          toastOptions={{
+            classNames: {
+              error: "bg-red-500 text-white border-red-600",
+            },
+          }}
+        />
       </body>
     </html>
   );

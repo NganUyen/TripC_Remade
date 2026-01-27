@@ -6,10 +6,10 @@ import { Loader2 } from "lucide-react";
 import Link from "next/link";
 
 export function BookingsList() {
-  const { isAuthenticated, isLoaded } = useCurrentUser();
+  const { isAuthenticated, isLoading } = useCurrentUser();
   const { bookings } = useBookings();
 
-  if (!isLoaded) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -55,17 +55,18 @@ export function BookingsList() {
     );
   }
 
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {bookings.map((booking) => (
         <div
-          key={booking._id}
+          key={booking.id}
           className="bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-subtle hover:shadow-depth transition-shadow"
         >
-          {booking.imageUrl && (
+          {booking.image_url && (
             <div className="aspect-[4/3] relative overflow-hidden">
               <img
-                src={booking.imageUrl}
+                src={booking.image_url}
                 alt={booking.title}
                 className="w-full h-full object-cover"
               />
@@ -77,30 +78,32 @@ export function BookingsList() {
                 {booking.title}
               </h3>
               <span
-                className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                  booking.status === "confirmed"
-                    ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                    : booking.status === "pending"
-                      ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
-                      : booking.status === "cancelled"
-                        ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                        : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400"
-                }`}
+                className={`px-2 py-1 rounded-full text-xs font-semibold ${booking.status === "confirmed"
+                  ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                  : booking.status === "pending"
+                    ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                    : booking.status === "cancelled"
+                      ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                      : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400"
+                  }`}
               >
                 {booking.status}
               </span>
             </div>
-            {booking.description && (
+            {(booking.description || booking.location_summary) && (
               <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                {booking.location_summary && (
+                  <span className="block font-semibold mb-1">{booking.location_summary}</span>
+                )}
                 {booking.description}
               </p>
             )}
             <div className="flex items-center justify-between">
               <div className="text-sm text-slate-500 dark:text-slate-500">
-                {new Date(booking.startDate).toLocaleDateString()}
+                {new Date(booking.start_date).toLocaleDateString()}
               </div>
               <div className="text-lg font-bold text-primary">
-                ${booking.price}
+                {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: booking.currency || 'VND' }).format(booking.total_amount)}
               </div>
             </div>
           </div>

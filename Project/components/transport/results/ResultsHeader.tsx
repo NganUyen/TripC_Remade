@@ -2,7 +2,20 @@
 
 import Link from "next/link";
 
-export function ResultsHeader() {
+interface ResultsHeaderProps {
+    origin: string;
+    destination: string;
+    date: string | null;
+    time?: string | null;
+    passengers: string;
+    serviceType?: string | null;
+    duration?: string | null;
+}
+
+export function ResultsHeader({ origin, destination, date, time, passengers, serviceType, duration }: ResultsHeaderProps) {
+    const formattedDate = date ? new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+    const isHourly = serviceType === 'hourly';
+
     return (
         <header className="sticky top-0 z-30 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md px-6 py-4 flex items-center justify-between border-b border-border-subtle dark:border-[#333]">
             <div className="flex items-center gap-6">
@@ -10,16 +23,15 @@ export function ResultsHeader() {
                     <span className="material-symbols-outlined">arrow_back</span>
                 </Link>
                 <div className="flex flex-col">
-                    <h1 className="text-lg font-bold tracking-tight">Paris to Nice</h1>
-                    <p className="text-sm text-muted dark:text-[#a0a0a0]">Oct 12, 2023 • 2 Passengers</p>
+                    <h1 className="text-lg font-bold tracking-tight">
+                        {isHourly ? `Charter from ${origin}` : `${origin} to ${destination}`}
+                    </h1>
+                    <p className="text-sm text-muted-foreground dark:text-[#a0a0a0]">
+                        {formattedDate} • {time} • {passengers} Pass. {isHourly && `• ${duration}`}
+                    </p>
                 </div>
             </div>
-            <div className="flex items-center gap-3">
-                <div className="size-8 bg-primary rounded-full flex items-center justify-center">
-                    <span className="material-symbols-outlined text-white text-sm">trip_origin</span>
-                </div>
-                <h2 className="text-xl font-bold tracking-tighter">TripC</h2>
-            </div>
+
         </header>
     );
 }
