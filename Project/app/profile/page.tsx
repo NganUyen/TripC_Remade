@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { ProfileHero } from '@/components/profile/ProfileHero'
 import { WalletSection } from '@/components/profile/WalletSection'
 import { ActivityGrid } from '@/components/profile/ActivityGrid'
@@ -10,6 +11,8 @@ import { Footer } from '@/components/Footer'
 export default function ProfilePage() {
     const [profile, setProfile] = useState(null)
     const [loading, setLoading] = useState(true)
+    const searchParams = useSearchParams()
+    const autoEdit = searchParams.get('action') === 'edit-profile'
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -34,7 +37,11 @@ export default function ProfilePage() {
             {/* Dashboard Container */}
             <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 pb-32">
                 <div className="max-w-5xl mx-auto">
-                    <ProfileHero profile={profile} />
+                    <ProfileHero
+                        profile={profile}
+                        initialEditMode={autoEdit}
+                        onProfileUpdate={(newProfile) => setProfile(newProfile)}
+                    />
                     <WalletSection profile={profile} />
                     <ActivityGrid />
                     <GrowthSection />

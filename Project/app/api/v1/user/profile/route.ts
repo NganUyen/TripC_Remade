@@ -12,9 +12,10 @@ export async function GET() {
 
         const supabase = createServiceSupabaseClient()
 
+
         const { data: user, error } = await supabase
             .from('users')
-            .select('membership_tier, tcent_balance, tcent_pending')
+            .select('membership_tier, tcent_balance, tcent_pending, name, email, bio, city, country, phone_number, lifetime_spend, total_orders_completed')
             .eq('clerk_id', userId)
             .single()
 
@@ -40,22 +41,52 @@ export async function GET() {
                     return NextResponse.json({ error: 'Failed to create user record' }, { status: 500 })
                 }
 
-                return NextResponse.json({
-                    membership_tier: newUser.membership_tier,
-                    tcent_balance: newUser.tcent_balance,
-                    tcent_pending: newUser.tcent_pending,
-                })
+                return NextResponse.json(newUser)
             }
 
             console.error('Error fetching user profile:', error)
             return NextResponse.json({ error: 'Failed to fetch user data' }, { status: 500 })
         }
 
-        return NextResponse.json({
-            membership_tier: user.membership_tier,
-            tcent_balance: user.tcent_balance,
-            tcent_pending: user.tcent_pending,
-        })
+        return NextResponse.json(user)
+    } catch (err) {
+        console.error('Internal error:', err)
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+    }
+}
+
+export async function PATCH(request: Request) {
+    try {
+        const { userId } = await auth()
+        if (!userId) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+
+        const body = await request.json()
+        const { name, bio, city, country, phone_number } = body
+
+        const supabase = createServiceSupabaseClient()
+
+        const { data: updatedUser, error } = await supabase
+            .from('users')
+            .update({
+                name,
+                bio,
+                city,
+                country,
+                phone_number
+            })
+            .eq('clerk_id', userId)
+            .select()
+            .single()
+
+        if (error) {
+            console.error('Error updating profile:', error)
+            return NextResponse.json({ error: 'Failed to update profile' }, { status: 500 })
+        }
+
+        return NextResponse.json(updatedUser)
+
     } catch (err) {
         console.error('Internal error:', err)
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
