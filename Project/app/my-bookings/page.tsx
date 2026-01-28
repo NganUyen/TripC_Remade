@@ -9,18 +9,68 @@ import { Footer } from '@/components/Footer';
 import BookingTabs from '@/components/bookings/BookingTabs'
 import InspirationCard from '@/components/bookings/InspirationCard'
 import QuickAccessLinks from '@/components/bookings/QuickAccessLinks'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Ticket } from 'lucide-react'
 import UpcomingBookingCard from '@/components/bookings/cards/UpcomingBookingCard'
 import PendingBookingCard from '@/components/bookings/cards/PendingBookingCard'
 import CancelledBookingCard from '@/components/bookings/cards/CancelledBookingCard'
+import { motion, AnimatePresence } from 'framer-motion'
 
 export default function MyBookingsPage() {
   const searchParams = useSearchParams();
   const [bookings, setBookings] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'cancelled'>('all');
+  const [activeTab, setActiveTab] = useState<string>('all');
 
   useEffect(() => {
+    // Handle MoMo redirect params
+    const momoOrderId = searchParams.get('orderId');
+    const momoResultCode = searchParams.get('resultCode');
+    const momoMessage = searchParams.get('message');
+    const momoSignature = searchParams.get('signature');
+
+    if (momoOrderId && momoResultCode !== null) {
+      console.log('[MOMO_REDIRECT_DETECTED]', {
+        orderId: momoOrderId,
+        resultCode: momoResultCode,
+      });
+
+      // Call verify endpoint to process payment
+      const verifyPayment = async () => {
+        try {
+          const res = await fetch('/api/payments/momo/verify-redirect', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              orderId: momoOrderId,
+              resultCode: momoResultCode,
+              message: momoMessage,
+              signature: momoSignature,
+            }),
+          });
+
+          const data = await res.json();
+
+          if (data.ok && data.status === 'success') {
+            // Reload bookings after successful payment
+            window.location.href = '/my-bookings?success=true';
+          } else if (data.status === 'failed') {
+            toast.error("Thanh toán thất bại", {
+              description: momoMessage || "Vui lòng thử lại."
+            });
+            // Reload without params
+            setTimeout(() => window.location.href = '/my-bookings', 2000);
+          }
+        } catch (error) {
+          console.error('[MOMO_REDIRECT_VERIFY_ERROR]', error);
+          toast.error("Không thể xác minh thanh toán");
+        }
+      };
+
+      verifyPayment();
+      return; // Skip showing success toast yet
+    }
+
+    // Handle regular success param (after verification redirect)
     if (searchParams.get('success') === 'true') {
       toast.success("Thanh toán thành công!", {
         description: "Đặt chỗ của bạn đã được xác nhận."
@@ -47,65 +97,110 @@ export default function MyBookingsPage() {
   }, []);
 
   const filteredBookings = bookings.filter((booking: any) => {
-    if (activeTab === 'all') return ['confirmed', 'completed', 'held'].includes(booking.status);
-    if (activeTab === 'pending') return booking.status === 'pending' || booking.status === 'held';
-    if (activeTab === 'cancelled') return booking.status === 'cancelled';
-    return true;
+    if (activeTab === 'all') return true;
+    return booking.booking_type === activeTab;
   });
 
   const renderBookingCard = (booking: any) => {
-    if (activeTab === 'pending') {
+    if (booking.status === 'pending_payment' || booking.status === 'unpaid' || booking.payment_status === 'unpaid' || booking.status === 'held') {
       return <PendingBookingCard key={booking.id} booking={booking} />;
     }
-    if (activeTab === 'cancelled') {
+    if (booking.status === 'cancelled') {
       return <CancelledBookingCard key={booking.id} booking={booking} />;
     }
-    // Default / Upcoming
     return <UpcomingBookingCard key={booking.id} booking={booking} />;
+  };
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1
+    }
   };
 
   return (
     <>
-      <main className="w-full max-w-none px-6 lg:px-12 xl:px-16 py-10 bg-[#F9FAFB] dark:bg-[#0a0a0a] min-h-screen transition-colors duration-300">
-        <div className="asymmetric-grid w-full max-w-none mb-12 gap-y-8">
+      <motion.main
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="w-full max-w-[1440px] mx-auto px-4 lg:px-12 py-12 bg-[#fcfaf8] dark:bg-[#0a0a0a] min-h-screen transition-colors duration-500"
+      >
+        <div className="grid grid-cols-12 w-full mb-12 gap-8">
           <MembershipCard />
           <WelcomeHeader />
         </div>
-        <section className="mb-12">
+
+        <section className="mb-16">
           <BookingTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
           {isLoading ? (
-            <div className="flex items-center justify-center py-20">
-              <Loader2 className="w-12 h-12 animate-spin text-primary" />
+            <div className="flex flex-col items-center justify-center py-40 gap-4">
+              <Loader2 className="size-12 animate-spin text-primary" />
+              <p className="text-slate-400 font-bold animate-pulse uppercase tracking-[0.2em] text-xs">Đang tải hành trình...</p>
             </div>
           ) : filteredBookings.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-center bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800">
-              <div className="size-20 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
-                <span className="material-symbols-outlined text-4xl text-slate-300">receipt_long</span>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex flex-col items-center justify-center py-24 text-center bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-[2rem] border border-slate-100 dark:border-white/5 shadow-xl shadow-slate-200/50 dark:shadow-none"
+            >
+              <div className="size-20 bg-slate-50 dark:bg-white/5 rounded-full flex items-center justify-center mb-6 shadow-inner">
+                <Ticket className="size-8 text-slate-300 dark:text-slate-700" />
               </div>
-              <h3 className="text-xl font-bold mb-2">Không có đặt chỗ nào</h3>
-              <p className="text-muted text-sm max-w-xs">
+              <h3 className="text-2xl font-black mb-3 text-slate-900 dark:text-white">Sẵn sàng cho chuyến đi mới?</h3>
+              <p className="text-slate-500 dark:text-slate-400 text-sm max-w-sm leading-relaxed mb-8">
                 {activeTab === 'all'
-                  ? 'Bạn chưa có chuyến đi nào được đặt.'
-                  : activeTab === 'pending'
-                    ? 'Không có đơn hàng nào đang chờ thanh toán.'
-                    : 'Không có đặt chỗ nào bị hủy.'}
+                  ? 'Bạn chưa có đặt chỗ nào. Bắt đầu khám phá và lên kế hoạch cho hành trình tiếp theo ngay hôm nay!'
+                  : `Không tìm thấy đặt chỗ nào trong mục ${activeTab}. Hãy thử kiểm tra các danh mục khác nhé.`}
               </p>
-            </div>
+              <button className="px-8 py-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-full font-black text-sm hover:scale-105 active:scale-95 transition-all shadow-lg">
+                Khám phá ngay
+              </button>
+            </motion.div>
           ) : (
-            <div className={`grid gap-6 ${activeTab === 'pending' ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'}`}>
-              {filteredBookings.map((booking) => renderBookingCard(booking))}
-            </div>
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              className="grid gap-8 grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-3"
+            >
+              <AnimatePresence mode="popLayout">
+                {filteredBookings.map((booking) => (
+                  <motion.div
+                    key={booking.id}
+                    variants={itemVariants}
+                    layout
+                  >
+                    {renderBookingCard(booking)}
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </motion.div>
           )}
         </section>
-        <div className="asymmetric-grid w-full max-w-none pb-20">
+
+        <div className="grid grid-cols-12 w-full pb-16 border-t border-slate-100 dark:border-white/5 pt-16 gap-8">
           <div className="col-span-12 lg:col-span-8">
             <InspirationCard />
           </div>
-          <QuickAccessLinks />
+          <div className="col-span-12 lg:col-span-4">
+            <QuickAccessLinks />
+          </div>
         </div>
-      </main>
+      </motion.main>
       <Footer />
     </>
   )
 }
+
