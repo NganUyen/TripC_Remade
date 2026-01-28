@@ -11,6 +11,7 @@ interface HealthStatus {
     voucher_db?: string;
     transport_db?: string;
     dining_db?: string;
+    shop_db?: string;
   };
   timestamp?: string;
   error?: string;
@@ -34,7 +35,7 @@ export default function PingPage() {
       method: "GET",
       path: "/api/ping",
       description:
-        "Health check (Flight + Hotel + Voucher + Transport + Dining Services)",
+        "Health check (Flight + Hotel + Voucher + Transport + Dining + Shop Services)",
       status: null,
       loading: false,
     },
@@ -145,6 +146,63 @@ export default function PingPage() {
       method: "GET",
       path: "/api/dining/reservations/check?venue_id=test&date=2026-02-20&time=19:00",
       description: "Dining: Check availability",
+      status: null,
+      loading: false,
+    },
+    // Shop Service Endpoints
+    {
+      method: "GET",
+      path: "/api/shop/health",
+      description: "Shop: Health check",
+      status: null,
+      loading: false,
+    },
+    {
+      method: "GET",
+      path: "/api/shop/products",
+      description: "Shop: List products",
+      status: null,
+      loading: false,
+    },
+    {
+      method: "GET",
+      path: "/api/shop/categories",
+      description: "Shop: List categories",
+      status: null,
+      loading: false,
+    },
+    {
+      method: "GET",
+      path: "/api/shop/cart",
+      description: "Shop: Get cart",
+      status: null,
+      loading: false,
+    },
+    {
+      method: "GET",
+      path: "/api/shop/orders",
+      description: "Shop: List orders",
+      status: null,
+      loading: false,
+    },
+    {
+      method: "GET",
+      path: "/api/shop/wishlist",
+      description: "Shop: Get wishlist",
+      status: null,
+      loading: false,
+    },
+    {
+      method: "GET",
+      path: "/api/shop/shipping-methods",
+      description: "Shop: Shipping methods",
+      status: null,
+      loading: false,
+    },
+    {
+      method: "GET",
+      path: "/api/shop/vouchers/available",
+      description: "Shop: Available vouchers",
       status: null,
       loading: false,
     },
@@ -276,8 +334,8 @@ export default function PingPage() {
           TripC Services Health Monitor
         </h1>
         <p style={{ color: "#666", marginBottom: "20px" }}>
-          Internal monitoring dashboard - Flight, Hotel, Voucher, Transport &
-          Dining Services
+          Internal monitoring dashboard - Flight, Hotel, Voucher, Transport,
+          Dining & Shop Services
         </p>
 
         <div style={{ marginBottom: "20px" }}>
@@ -410,6 +468,19 @@ export default function PingPage() {
                     }}
                   >
                     {health.services?.dining_db?.toUpperCase() || "UNKNOWN"}
+                  </td>
+                </tr>
+                <tr style={{ borderBottom: "1px solid #ddd" }}>
+                  <td style={{ padding: "12px" }}>Shop Database</td>
+                  <td
+                    style={{
+                      padding: "12px",
+                      textAlign: "right",
+                      color: getStatusColor(health.services?.shop_db),
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {health.services?.shop_db?.toUpperCase() || "UNKNOWN"}
                   </td>
                 </tr>
                 <tr>
