@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
 import MembershipCard from '@/components/bookings/MembershipCard'
@@ -19,23 +19,26 @@ export default function MyBookingsPage() {
   const searchParams = useSearchParams();
   const [bookings, setBookings] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('all');
 
+  // Ref to prevent double-processing (MoMo, PayPal, Success Toast)
+  const processedRef = useRef<boolean>(false);
+
+  // Handle Return Params (MoMo & PayPal & Success)
   useEffect(() => {
-    // Handle MoMo redirect params
+    // 1. Handle MoMo
     const momoOrderId = searchParams.get('orderId');
     const momoResultCode = searchParams.get('resultCode');
     const momoMessage = searchParams.get('message');
     const momoSignature = searchParams.get('signature');
 
     if (momoOrderId && momoResultCode !== null) {
-      console.log('[MOMO_REDIRECT_DETECTED]', {
-        orderId: momoOrderId,
-        resultCode: momoResultCode,
-      });
+      if (processedRef.current) return;
+      processedRef.current = true;
+      setIsSyncing(true); // BLOCK UI to prevent showing 'unpaid'
 
-      // Call verify endpoint to process payment
-      const verifyPayment = async () => {
+      const verifyMomo = async () => {
         try {
           const res = await fetch('/api/payments/momo/verify-redirect', {
             method: 'POST',
@@ -51,35 +54,84 @@ export default function MyBookingsPage() {
           const data = await res.json();
 
           if (data.ok && data.status === 'success') {
-            // Reload bookings after successful payment
             window.location.href = '/my-bookings?success=true';
           } else if (data.status === 'failed') {
             toast.error("Thanh toán thất bại", {
               description: momoMessage || "Vui lòng thử lại."
             });
-            // Reload without params
             setTimeout(() => window.location.href = '/my-bookings', 2000);
           }
         } catch (error) {
           console.error('[MOMO_REDIRECT_VERIFY_ERROR]', error);
           toast.error("Không thể xác minh thanh toán");
+          setIsSyncing(false);
         }
       };
 
-      verifyPayment();
-      return; // Skip showing success toast yet
+      verifyMomo();
+      return;
     }
 
-    // Handle regular success param (after verification redirect)
-    if (searchParams.get('success') === 'true') {
-      toast.success("Thanh toán thành công!", {
-        description: "Đặt chỗ của bạn đã được xác nhận."
-      });
+    // 2. Handle PayPal (Sync)
+    const paypalToken = searchParams.get('token');
+    const paypalPayerId = searchParams.get('PayerID');
+
+    if (paypalToken && paypalPayerId) {
+      if (processedRef.current) return;
+      processedRef.current = true;
+      setIsSyncing(true); // BLOCK UI
+
+      const syncPayPal = async () => {
+        try {
+          toast.loading("Đang xác minh thanh toán PayPal...", { id: 'paypal-sync' });
+          const res = await fetch('/api/payments/sync', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              provider: 'paypal',
+              token: paypalToken,
+              payerId: paypalPayerId
+            })
+          });
+
+          const data = await res.json();
+
+          if (data.ok) {
+            toast.success("Thanh toán thành công!", { id: 'paypal-sync' });
+            setTimeout(() => {
+              window.location.href = '/my-bookings?success=true';
+            }, 1000);
+          } else {
+            toast.error(`Lỗi xác minh: ${data.error}`, { id: 'paypal-sync' });
+            setIsSyncing(false);
+          }
+        } catch (err) {
+          console.error('PayPal sync failed', err);
+          toast.error("Không thể kết nối máy chủ", { id: 'paypal-sync' });
+          setIsSyncing(false);
+        }
+      };
+
+      syncPayPal();
+      return;
     }
+
+    // 3. Handle Regular Success
+    if (searchParams.get('success') === 'true') {
+      if (!processedRef.current) {
+        processedRef.current = true;
+        toast.success("Thanh toán thành công!", {
+          description: "Đặt chỗ của bạn đã được xác nhận."
+        });
+      }
+    }
+
   }, [searchParams]);
 
   useEffect(() => {
     async function fetchBookings() {
+      if (isSyncing) return; // Don't fetch while verifying
+
       setIsLoading(true);
       try {
         const res = await fetch('/api/bookings/user');
@@ -94,7 +146,7 @@ export default function MyBookingsPage() {
       }
     }
     fetchBookings();
-  }, []);
+  }, [isSyncing]);
 
   const filteredBookings = bookings.filter((booking: any) => {
     if (activeTab === 'all') return true;
@@ -144,10 +196,12 @@ export default function MyBookingsPage() {
         <section className="mb-16">
           <BookingTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
-          {isLoading ? (
+          {isLoading || isSyncing ? (
             <div className="flex flex-col items-center justify-center py-40 gap-4">
               <Loader2 className="size-12 animate-spin text-primary" />
-              <p className="text-slate-400 font-bold animate-pulse uppercase tracking-[0.2em] text-xs">Đang tải hành trình...</p>
+              <p className="text-slate-400 font-bold animate-pulse uppercase tracking-[0.2em] text-xs">
+                {isSyncing ? 'Đang xác minh thanh toán...' : 'Đang tải hành trình...'}
+              </p>
             </div>
           ) : filteredBookings.length === 0 ? (
             <motion.div
@@ -203,4 +257,3 @@ export default function MyBookingsPage() {
     </>
   )
 }
-

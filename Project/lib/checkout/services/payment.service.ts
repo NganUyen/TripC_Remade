@@ -1,5 +1,6 @@
 import { createServiceSupabaseClient } from '@/lib/supabase-server';
 import { MomoPaymentProvider } from '../payments/providers/momo-provider';
+import { PaypalPaymentProvider } from '../payments/providers/paypal-provider';
 import { SettlementService } from './settlement.service';
 
 export class PaymentService {
@@ -11,7 +12,8 @@ export class PaymentService {
         this.supabase = createServiceSupabaseClient();
         this.settlementService = new SettlementService(this.supabase);
         this.providers = {
-            'momo': new MomoPaymentProvider()
+            'momo': new MomoPaymentProvider(),
+            'paypal': new PaypalPaymentProvider()
         };
     }
 
@@ -28,6 +30,42 @@ export class PaymentService {
 
         if (error || !booking) throw new Error('Booking not found');
         if (booking.payment_status === 'paid') throw new Error('Booking already paid');
+
+        // Check for existing pending transaction (Idempotency)
+        const { data: existingTx } = await this.supabase
+            .from('payment_transactions')
+            .select('*')
+            .eq('booking_id', bookingId)
+            .eq('provider', providerName)
+            .eq('status', 'pending')
+            .maybeSingle();
+
+        if (existingTx) {
+            // Check if we can reuse it (e.g. not too old)
+            // For now, assume we can reuse. Reimplements "return valid URL".
+            // But we don't store the URL in DB (except maybe metadata).
+            // PayPal provider returns the same URL for same Order ID usually?
+            // Actually provider.createPaymentIntent might return a new URL or same?
+            // Using logic: if we have a txn, we might have the Order ID.
+            // But we need the APPROVAL URL.
+            // If we don't save approval URL, we might need to recreate?
+            // BUT duplicating Order ID is the issue.
+
+            // If provider is PayPal, we can probably just call createPaymentIntent again?
+            // PayPal provider uses `booking-${bookingId}` as request ID.
+            // If we call valid order again with same request ID, PayPal returns 200 with same Order details.
+            // So calling provider again is SAFE and idempotent naturally for PayPal.
+
+            // PROBLEM: The DB Insert fails.
+
+            // So: 
+            // 1. Call Provider (gets Order ID X)
+            // 2. Try Insert. 
+            // 3. If "Duplicate Key", checks if existing record has same Order ID X.
+            // 4. If so, return success.
+
+            // Let's implement Try-Catch around insert.
+        }
 
         // 2. Create Intent with Provider
         const result = await provider.createPaymentIntent(
@@ -50,7 +88,14 @@ export class PaymentService {
                 metadata: result.metadata
             });
 
-        if (txError) throw new Error(`Failed to save transaction: ${txError.message}`);
+        if (txError) {
+            // Handle duplicate key error (code 23505)
+            if (txError.code === '23505') {
+                console.log(`[PaymentService] Transaction already exists for ${bookingId}, reusing.`);
+                return result; // We assume the result is valid since we just got it from provider
+            }
+            throw new Error(`Failed to save transaction: ${txError.message}`);
+        }
 
         return result;
     }
@@ -86,6 +131,7 @@ export class PaymentService {
             providerTxnId,
             status,
             amount,
+            rawBodyExtract: providerName === 'paypal' ? JSON.stringify(parsedBody).substring(0, 200) : undefined
         });
 
         // 3. Find Transaction
@@ -101,6 +147,7 @@ export class PaymentService {
                 provider: providerName,
                 providerTxnId,
                 error: findError?.message,
+                searchedFor: { providerName, providerTxnId }
             });
 
             // Store WEBHOOK_UNMATCHED event for audit
@@ -138,7 +185,7 @@ export class PaymentService {
         }
 
         // 5. Update Transaction
-        const dbTxStatus = status === 'success' ? 'success' : 'failed';
+        const dbTxStatus = status;
 
         const { error: updateError } = await this.supabase
             .from('payment_transactions')

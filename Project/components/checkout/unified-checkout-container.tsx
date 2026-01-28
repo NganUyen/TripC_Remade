@@ -42,7 +42,7 @@ export const UnifiedCheckoutContainer = ({ serviceType, initialData }: Props) =>
 
     const handlePaymentSelect = async (method: string) => {
         if (!bookingId) return;
-        if (method === 'momo' || method === 'vnpay') {
+        if (method === 'momo' || method === 'paypal') {
             await initiatePayment(bookingId, method);
         } else {
             toast.info('This method is coming soon');

@@ -6,7 +6,7 @@ export interface CreatePaymentIntentResult {
 
 export interface WebhookResult {
     providerTxnId: string;
-    status: 'success' | 'failed';
+    status: 'success' | 'failed' | 'pending';
     amount: number;
     currency: string;
     metadata?: any;

@@ -32,7 +32,7 @@ export const useUnifiedCheckout = () => {
         }
     };
 
-    const initiatePayment = async (bookingId: string, provider: 'momo' | 'vnpay') => {
+    const initiatePayment = async (bookingId: string, provider: 'momo' | 'vnpay' | 'paypal') => {
         setIsLoading(true);
         try {
             const response = await fetch('/api/payments/create', {
