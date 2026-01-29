@@ -1,6 +1,29 @@
 -- WARNING: This schema is for context only and is not meant to be run.
 -- Table order and constraints may not be valid for execution.
 
+CREATE TABLE public.activities (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  title text NOT NULL,
+  location text,
+  description text,
+  rating numeric DEFAULT 0,
+  reviews_count integer DEFAULT 0,
+  price numeric NOT NULL,
+  old_price numeric,
+  image_url text,
+  images ARRAY,
+  is_instant boolean DEFAULT false,
+  features jsonb DEFAULT '{}'::jsonb,
+  ticket_types jsonb DEFAULT '[]'::jsonb,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  category text,
+  highlights ARRAY DEFAULT '{}'::text[],
+  inclusions ARRAY DEFAULT '{}'::text[],
+  exclusions ARRAY DEFAULT '{}'::text[],
+  important_info text,
+  CONSTRAINT activities_pkey PRIMARY KEY (id)
+);
 CREATE TABLE public.addresses (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   user_id uuid,
@@ -123,7 +146,7 @@ CREATE TABLE public.cart_items (
   cart_id uuid NOT NULL,
   variant_id uuid NOT NULL,
   qty integer NOT NULL CHECK (qty > 0),
-  unit_price integer NOT NULL CHECK (unit_price >= 0),
+  unit_price numeric NOT NULL CHECK (unit_price >= 0::numeric),
   currency character varying DEFAULT 'USD'::character varying,
   title_snapshot character varying,
   variant_snapshot jsonb,
@@ -161,6 +184,28 @@ CREATE TABLE public.categories (
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT categories_pkey PRIMARY KEY (id),
   CONSTRAINT categories_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.categories(id)
+);
+CREATE TABLE public.chat_conversations (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid,
+  title text,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  metadata jsonb DEFAULT '{}'::jsonb,
+  CONSTRAINT chat_conversations_pkey PRIMARY KEY (id),
+  CONSTRAINT chat_conversations_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.chat_messages (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  conversation_id uuid,
+  role text NOT NULL CHECK (role = ANY (ARRAY['user'::text, 'assistant'::text, 'system'::text, 'function'::text])),
+  content text,
+  function_call jsonb,
+  function_result jsonb,
+  created_at timestamp with time zone DEFAULT now(),
+  metadata jsonb DEFAULT '{}'::jsonb,
+  CONSTRAINT chat_messages_pkey PRIMARY KEY (id),
+  CONSTRAINT chat_messages_conversation_id_fkey FOREIGN KEY (conversation_id) REFERENCES public.chat_conversations(id)
 );
 CREATE TABLE public.coupon_usages (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -934,8 +979,8 @@ CREATE TABLE public.order_items (
   variant_snapshot jsonb,
   image_url_snapshot character varying,
   qty integer NOT NULL CHECK (qty > 0),
-  unit_price integer NOT NULL CHECK (unit_price >= 0),
-  line_total integer NOT NULL,
+  unit_price numeric NOT NULL CHECK (unit_price >= 0::numeric),
+  line_total numeric NOT NULL,
   currency character varying DEFAULT 'USD'::character varying,
   created_at timestamp with time zone DEFAULT now(),
   CONSTRAINT order_items_pkey PRIMARY KEY (id),
@@ -1005,7 +1050,7 @@ CREATE TABLE public.product_variants (
   product_id uuid NOT NULL,
   sku character varying NOT NULL UNIQUE,
   title character varying,
-  price integer NOT NULL CHECK (price >= 0),
+  price real NOT NULL CHECK (price >= 0::double precision),
   compare_at_price integer,
   currency character varying DEFAULT 'USD'::character varying,
   stock_on_hand integer NOT NULL DEFAULT 0 CHECK (stock_on_hand >= 0),
@@ -1102,9 +1147,9 @@ CREATE TABLE public.shop_orders (
   order_number character varying NOT NULL UNIQUE,
   user_id uuid,
   cart_id uuid,
-  subtotal integer NOT NULL CHECK (subtotal >= 0),
-  discount_total integer DEFAULT 0 CHECK (discount_total >= 0),
-  shipping_total integer DEFAULT 0 CHECK (shipping_total >= 0),
+  subtotal numeric NOT NULL CHECK (subtotal >= 0::numeric),
+  discount_total numeric DEFAULT 0 CHECK (discount_total >= 0::numeric),
+  shipping_total numeric DEFAULT 0 CHECK (shipping_total >= 0::numeric),
   tcent_earned integer DEFAULT 0 CHECK (tcent_earned >= 0),
   tcent_used integer DEFAULT 0 CHECK (tcent_used >= 0),
   shipping_method_id uuid,
@@ -1192,8 +1237,17 @@ CREATE TABLE public.tcent_ledger (
   reference_id uuid,
   description text,
   created_at timestamp with time zone DEFAULT now(),
+  total_spend_usd numeric,
   CONSTRAINT tcent_ledger_pkey PRIMARY KEY (id),
   CONSTRAINT tcent_ledger_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.tier_configs (
+  tier_name character varying NOT NULL,
+  earning_multiplier numeric DEFAULT 1.00,
+  min_lifetime_spend_usd numeric NOT NULL,
+  min_total_orders integer NOT NULL,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT tier_configs_pkey PRIMARY KEY (tier_name)
 );
 CREATE TABLE public.transport_providers (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -1279,6 +1333,11 @@ CREATE TABLE public.users (
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   last_login_at timestamp with time zone,
+  bio text,
+  city text,
+  country text,
+  phone_number text,
+  total_orders_completed integer DEFAULT 0,
   CONSTRAINT users_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.variant_options (
@@ -1323,6 +1382,23 @@ CREATE TABLE public.vouchers (
   is_active boolean DEFAULT true,
   created_at timestamp with time zone DEFAULT now(),
   CONSTRAINT vouchers_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.wellness (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  title text NOT NULL,
+  location text,
+  rating numeric DEFAULT 0,
+  reviews_count integer DEFAULT 0,
+  price numeric NOT NULL,
+  image_url text,
+  images ARRAY,
+  badge text,
+  duration text,
+  description text,
+  features jsonb DEFAULT '[]'::jsonb,
+  reviews_data jsonb DEFAULT '[]'::jsonb,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT wellness_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.wishlist (
   id uuid NOT NULL DEFAULT gen_random_uuid(),

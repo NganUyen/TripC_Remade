@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { ShopCheckoutDetails } from '@/lib/checkout/types';
+import { BuyerInfoSection } from './buyer-info-section';
+import { ShippingSection } from './shipping-section';
+import { OrderSummaryCard } from './order-summary-card';
 
 interface ShopCheckoutFormProps {
     initialData?: any;
@@ -7,51 +10,54 @@ interface ShopCheckoutFormProps {
 }
 
 export const ShopCheckoutForm = ({ initialData, onSubmit }: ShopCheckoutFormProps) => {
-    // Placeholder: Need actual address selection logic
-    // For now, hardcode or simple input
     const [shippingAddressId, setShippingAddressId] = useState('addr_default');
     const [shippingMethodId, setShippingMethodId] = useState('method_standard');
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
+    const items = initialData?.items || [];
+    const subtotal = items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
+    const shippingCost = 0; // Free for now
+    const discount = 0;
+    const total = subtotal + shippingCost - discount;
 
+    const handleSubmit = () => {
         const payload: ShopCheckoutDetails = {
-            items: initialData?.items || [], // Items passed from cart context
+            items: items,
             shippingAddressId,
             shippingMethodId,
             cartId: initialData?.cartId
         };
-
         onSubmit(payload);
     };
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="bg-white dark:bg-zinc-900 p-6 rounded-xl border border-zinc-200 dark:border-zinc-800">
-                <h3 className="text-lg font-semibold mb-4">Shipping Info</h3>
-                <div className="text-sm text-zinc-500 mb-4">
-                    Address selection will go here. Defaulting to 'Default Address'.
+        <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="flex flex-col lg:flex-row gap-8 items-start">
+
+                {/* Left Column: Forms */}
+                <div className="w-full lg:flex-1 space-y-8">
+                    <BuyerInfoSection />
+
+                    <div className="w-full h-px bg-slate-100 dark:bg-slate-800" />
+
+                    <ShippingSection
+                        selectedMethodId={shippingMethodId}
+                        onSelect={setShippingMethodId}
+                    />
+                </div>
+
+                {/* Right Column: Sticky Summary */}
+                <div className="w-full lg:w-[380px] flex-shrink-0 sticky top-4">
+                    <OrderSummaryCard
+                        items={items}
+                        subtotal={subtotal}
+                        shippingCost={shippingCost}
+                        discount={discount}
+                        total={total}
+                        onContinue={handleSubmit}
+                    />
                 </div>
             </div>
-
-            <div className="bg-white dark:bg-zinc-900 p-6 rounded-xl border border-zinc-200 dark:border-zinc-800">
-                <h3 className="text-lg font-semibold mb-4">Order Summary</h3>
-                <ul className="space-y-3 mb-4">
-                    {initialData?.items?.map((item: any, idx: number) => (
-                        <li key={idx} className="flex justify-between text-sm">
-                            <span>{item.quantity}x {item.name}</span>
-                            <span>{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price)}</span>
-                        </li>
-                    ))}
-                </ul>
-            </div>
-
-            <button
-                type="submit"
-                className="w-full bg-black text-white py-3 rounded-lg hover:bg-zinc-800 transition-colors"
-            >
-                Continue to Payment
-            </button>
         </form>
     );
 };
+

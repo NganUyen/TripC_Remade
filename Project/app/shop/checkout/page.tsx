@@ -30,7 +30,8 @@ export default function ShopCheckoutPage() {
             variantId: item.id, // or variant_id if different
             name: item.title_snapshot, // Helpful for display in summary
             quantity: item.qty,
-            price: item.unit_price.amount // Pass the numeric amount (cents)
+            price: item.unit_price.amount, // Pass the numeric amount (cents)
+            image: item.image // Pass image if available
         })) || [],
         cartId: cart?.id
     };

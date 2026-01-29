@@ -1,5 +1,6 @@
 import { createHmac } from 'crypto';
 import { PaymentProvider, CreatePaymentIntentResult, WebhookResult } from './payment-provider.interface';
+import { convertUsdToVnd, formatCurrency } from '@/lib/utils/currency';
 
 // Helper to generate signature
 function generateSignature(rawSignatureString: string, secretKey: string): string {
@@ -42,8 +43,17 @@ export class MomoPaymentProvider implements PaymentProvider {
         const requestType = "captureWallet";
         const extraData = ""; // Can send email here if needed
 
+        // CONVERSION LOGIC: MoMo requires VND.
+        // If incoming is USD, convert it. If VND, keep it.
+        let finalAmount = amount;
+        if (currency === 'USD') {
+            finalAmount = convertUsdToVnd(amount);
+            console.log(`[MOMO_PROVIDER] Converted ${formatCurrency(amount, 'USD')} to ${formatCurrency(finalAmount, 'VND')}`);
+        }
+
         // Signature format: accessKey=$accessKey&amount=$amount&extraData=$extraData&ipnUrl=$ipnUrl&orderId=$orderId&orderInfo=$orderInfo&partnerCode=$partnerCode&redirectUrl=$redirectUrl&requestId=$requestId&requestType=$requestType
-        const rawSignature = `accessKey=${this.accessKey}&amount=${amount}&extraData=${extraData}&ipnUrl=${ipnUrl}&orderId=${orderId}&orderInfo=${orderInfo}&partnerCode=${this.partnerCode}&redirectUrl=${redirectUrl}&requestId=${requestId}&requestType=${requestType}`;
+        // MUST use finalAmount (VND) for signature and payload
+        const rawSignature = `accessKey=${this.accessKey}&amount=${finalAmount}&extraData=${extraData}&ipnUrl=${ipnUrl}&orderId=${orderId}&orderInfo=${orderInfo}&partnerCode=${this.partnerCode}&redirectUrl=${redirectUrl}&requestId=${requestId}&requestType=${requestType}`;
 
         const signature = generateSignature(rawSignature, this.secretKey);
 
@@ -52,7 +62,7 @@ export class MomoPaymentProvider implements PaymentProvider {
             partnerName: "TripC",
             storeId: "TripC_Store",
             requestId: requestId,
-            amount: amount,
+            amount: finalAmount, // Send VND
             orderId: orderId,
             orderInfo: orderInfo,
             redirectUrl: redirectUrl,

@@ -62,9 +62,9 @@ export default function ProductDetailsPage() {
         sku: product.variants[0]?.sku || "N/A",
         rating: String(product.rating_avg),
         reviews: String(product.review_count),
-        price: String(formatPriceSimple(product.variants[0]?.price.amount || 0)),
+        price: String(product.variants[0]?.price.amount || 0),
         oldPrice: product.variants[0]?.compare_at_price
-            ? String(formatPriceSimple(product.variants[0].compare_at_price.amount))
+            ? String(product.variants[0].compare_at_price.amount)
             : undefined,
         stock: product.variants[0]?.stock_on_hand || 0,
         description: product.description,
@@ -87,12 +87,14 @@ export default function ProductDetailsPage() {
                 options: product.variants.map(v => ({
                     id: v.id,
                     name: v.title,
-                    price: formatPriceSimple(v.price.amount),
+                    price: v.price.amount,
                     stock: v.stock_on_hand
                 }))
             }
         ],
     };
+
+    console.log('DEBUG: productData:', JSON.stringify(productData, null, 2));
 
     return (
         <main className="min-h-screen bg-[#fcfaf8] dark:bg-[#0a0a0a] pb-20">
@@ -167,7 +169,7 @@ export default function ProductDetailsPage() {
                                                 id={p.id}
                                                 slug={p.slug}
                                                 title={p.title}
-                                                price={formatPriceSimple(p.price_from.amount)}
+                                                price={p.price_from.amount}
                                                 rating={p.rating_avg}
                                                 reviews={p.review_count}
                                                 image={p.image_url || "https://via.placeholder.com/400"}

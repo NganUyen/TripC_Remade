@@ -47,15 +47,13 @@ export class PaypalPaymentProvider implements PaymentProvider {
         try {
             const accessToken = await this.getAccessToken();
 
-            let finalAmount = amount;
-            let finalCurrency = currency;
+            // PAYPAL LOGIC: Use USD directly.
+            // If incoming is VND, we might need to convert to USD (future proof),
+            // but for now TripC is USD-first.
+            // We assume 'amount' is already correct for the 'currency'.
 
-            if (currency === 'VND') {
-                finalAmount = amount / 25450;
-                finalCurrency = 'USD';
-            }
-
-            const value = Number(finalAmount).toFixed(2);
+            // Just ensure 2 decimals for PayPal
+            const value = Number(amount).toFixed(2);
 
             // Note: Assuming 'returnUrl' is where the user goes after approval.
             // We strip query params for the cancel_url default.
@@ -66,7 +64,7 @@ export class PaypalPaymentProvider implements PaymentProvider {
                 purchase_units: [{
                     reference_id: bookingId,
                     amount: {
-                        currency_code: finalCurrency,
+                        currency_code: currency,
                         value: value
                     },
                     description: `Booking ${bookingId}`
