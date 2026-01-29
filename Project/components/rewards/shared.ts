@@ -35,6 +35,7 @@ export interface Quest {
     is_active: boolean
     starts_at: string | null
     expires_at: string | null
+    status?: 'pending' | 'approved' | 'rejected' | 'completed' | 'claimed'
 }
 
 // --- Data ---

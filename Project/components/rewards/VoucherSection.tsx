@@ -204,9 +204,20 @@ export function VoucherSection({ onSelect }: { onSelect: (v: Voucher) => void })
         fetchVouchers()
     }, [])
 
-    const filteredVouchers = activeFilter === 'All'
-        ? vouchers
-        : vouchers.filter(v => v.voucher_type?.toLowerCase().includes(activeFilter.toLowerCase().replace('s', ''))) // Simple match 
+    const filteredVouchers = vouchers.filter(v => {
+        if (activeFilter === 'All') return true
+        const type = v.voucher_type?.toLowerCase() || ''
+        const filter = activeFilter.toLowerCase()
+
+        if (filter === 'transport') return type.includes('transport') || type.includes('flight')
+        if (filter === 'hotels') return type.includes('hotel')
+        if (filter === 'wellness') return type.includes('wellness') || type.includes('spa')
+        if (filter === 'events') return type.includes('event') || type.includes('entertainment') || type.includes('concert')
+
+        // Fallback for strict match (e.g. if we add new filters later)
+        // Handle "s" removal only at end for simple plurals
+        return type.includes(filter.replace(/s$/, ''))
+    })
 
     return (
         <div className="mb-20">

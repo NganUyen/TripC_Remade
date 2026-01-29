@@ -8,6 +8,8 @@ function SubmitModal({ quest, isOpen, onClose }: { quest: Quest | null, isOpen: 
     const [notes, setNotes] = useState('')
     const [submitting, setSubmitting] = useState(false)
 
+
+
     if (!isOpen || !quest) return null
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -89,6 +91,37 @@ export function EarnList() {
     const [quests, setQuests] = useState<Quest[]>([])
     const [loading, setLoading] = useState(true)
     const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null)
+    const [claimingId, setClaimingId] = useState<string | null>(null)
+
+    const handleClaim = async (questId: string) => {
+        if (claimingId) return // Prevent double clicks
+        setClaimingId(questId)
+
+        try {
+            const res = await fetch('/api/v1/quests/claim', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ questId })
+            })
+
+            if (res.ok) {
+                const data = await res.json()
+                // Update local state to show 'claimed' or just refresh
+                setQuests(prev => prev.map(q =>
+                    q.id === questId ? { ...q, status: 'claimed' } : q
+                ))
+                window.alert(`Reward claimed! New balance: ${data.newBalance} Tcent`)
+                window.location.reload() // Refresh to update balance in header
+            } else {
+                const err = await res.json()
+                window.alert(err.error || 'Claim failed')
+            }
+        } catch (error) {
+            console.error('Claim error:', error)
+        } finally {
+            setClaimingId(null)
+        }
+    }
 
     useEffect(() => {
         const fetchQuests = async () => {
@@ -140,13 +173,40 @@ export function EarnList() {
                                 </div>
                             </div>
                             <div className="flex items-center gap-3">
-                                <span className="font-bold text-slate-900 dark:text-white text-sm">+{quest.reward_amount}</span>
-                                <button
-                                    onClick={() => setSelectedQuest(quest)}
-                                    className="p-2 hover:bg-slate-200 dark:hover:bg-white/10 rounded-full transition-colors"
-                                >
-                                    <Upload className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                                </button>
+                                <span className="font-bold text-slate-900 dark:text-white text-sm">
+                                    {quest.status === 'completed' ? 'Claim' :
+                                        quest.status === 'claimed' ? 'Done' :
+                                            `+${quest.reward_amount}`}
+                                </span>
+
+                                {quest.status === 'claimed' ? (
+                                    <div className="p-2 rounded-full bg-green-100 text-green-600 dark:bg-green-500/10 dark:text-green-400">
+                                        <Check className="w-4 h-4" />
+                                    </div>
+                                ) : quest.status === 'completed' ? (
+                                    <button
+                                        onClick={() => handleClaim(quest.id)}
+                                        disabled={claimingId === quest.id}
+                                        className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-600/50 text-white rounded-xl text-xs font-bold transition-colors flex items-center gap-2"
+                                    >
+                                        {claimingId === quest.id && <Loader2 className="w-3 h-3 animate-spin" />}
+                                        Claim
+                                    </button>
+                                ) : quest.quest_type === 'IDENTITY' || quest.title === 'Complete Profile' ? (
+                                    <button
+                                        onClick={() => window.location.href = '/profile?action=edit-profile'}
+                                        className="p-2 hover:bg-slate-200 dark:hover:bg-white/10 rounded-full transition-colors group/btn"
+                                    >
+                                        <Upload className="w-4 h-4 text-indigo-600 dark:text-indigo-400 rotate-90 group-hover/btn:translate-x-1 transition-transform" />
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={() => setSelectedQuest(quest)}
+                                        className="p-2 hover:bg-slate-200 dark:hover:bg-white/10 rounded-full transition-colors"
+                                    >
+                                        <Upload className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                                    </button>
+                                )}
                             </div>
                         </motion.div>
                     ))
