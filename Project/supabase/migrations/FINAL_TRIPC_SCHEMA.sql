@@ -99,14 +99,14 @@ CREATE TABLE public.booking_reservations (
 );
 CREATE TABLE public.bookings (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
-  booking_type text NOT NULL CHECK (booking_type = ANY (ARRAY['hotel'::text, 'flight'::text, 'restaurant'::text, 'activity'::text, 'event'::text, 'wellness'::text, 'beauty'::text, 'transport'::text, 'shop'::text])),
+  category text NOT NULL CHECK (category = ANY (ARRAY['hotel'::text, 'flight'::text, 'restaurant'::text, 'activity'::text, 'event'::text, 'wellness'::text, 'beauty'::text, 'transport'::text, 'shop'::text])),
   title text NOT NULL,
   description text,
   image_url text,
   location_summary text,
   start_date timestamp with time zone NOT NULL,
   end_date timestamp with time zone,
-  status text DEFAULT 'pending_payment'::text CHECK (status = ANY (ARRAY['draft'::text, 'pending_payment'::text, 'payment_processing'::text, 'confirmed'::text, 'completed'::text, 'failed'::text, 'cancelled'::text, 'refunded'::text, 'no_show'::text])),
+  status text DEFAULT 'pending_payment'::text CHECK (status = ANY (ARRAY['held'::text, 'confirmed'::text, 'completed'::text, 'cancelled'::text, 'payment_failed'::text, 'refunded'::text, 'pending'::text])),
   total_amount numeric NOT NULL,
   currency text DEFAULT 'VND'::text,
   booking_code text UNIQUE,
@@ -114,12 +114,13 @@ CREATE TABLE public.bookings (
   metadata jsonb,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
-  user_id uuid,
+  user_id text,
   payment_status character varying DEFAULT 'unpaid'::character varying CHECK (payment_status::text = ANY (ARRAY['unpaid'::character varying, 'pending'::character varying, 'paid'::character varying, 'refunded'::character varying, 'failed'::character varying]::text[])),
   idempotency_key character varying UNIQUE,
   breakdown jsonb,
-  CONSTRAINT bookings_pkey PRIMARY KEY (id),
-  CONSTRAINT bookings_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+  expires_at timestamp with time zone,
+  held_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT bookings_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.brands (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -570,15 +571,15 @@ CREATE TABLE public.flight_bookings (
   completed_at timestamp with time zone,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
-  booking_id uuid,
+  booking_id uuid UNIQUE,
   user_uuid uuid NOT NULL,
   CONSTRAINT flight_bookings_pkey PRIMARY KEY (id),
   CONSTRAINT flight_bookings_offer_id_fkey FOREIGN KEY (offer_id) REFERENCES public.flight_offers(id),
   CONSTRAINT flight_bookings_flight_id_fkey FOREIGN KEY (flight_id) REFERENCES public.flights(id),
   CONSTRAINT flight_bookings_search_session_id_fkey FOREIGN KEY (search_session_id) REFERENCES public.flight_search_sessions(id),
   CONSTRAINT flight_bookings_supplier_id_fkey FOREIGN KEY (supplier_id) REFERENCES public.flight_suppliers(id),
-  CONSTRAINT flight_bookings_booking_id_fkey FOREIGN KEY (booking_id) REFERENCES public.bookings(id),
-  CONSTRAINT flight_bookings_user_uuid_fkey FOREIGN KEY (user_uuid) REFERENCES public.users(id)
+  CONSTRAINT flight_bookings_user_uuid_fkey FOREIGN KEY (user_uuid) REFERENCES public.users(id),
+  CONSTRAINT flight_bookings_booking_id_fkey FOREIGN KEY (booking_id) REFERENCES public.bookings(id)
 );
 CREATE TABLE public.flight_checkins (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -806,7 +807,7 @@ CREATE TABLE public.hotel_bookings (
   confirmed_at timestamp with time zone,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
-  booking_id uuid,
+  booking_id uuid UNIQUE,
   user_uuid uuid NOT NULL,
   CONSTRAINT hotel_bookings_pkey PRIMARY KEY (id),
   CONSTRAINT hotel_bookings_booking_id_fkey FOREIGN KEY (booking_id) REFERENCES public.bookings(id),
@@ -1249,6 +1250,19 @@ CREATE TABLE public.tier_configs (
   created_at timestamp with time zone DEFAULT now(),
   CONSTRAINT tier_configs_pkey PRIMARY KEY (tier_name)
 );
+CREATE TABLE public.transport_bookings (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  booking_id uuid NOT NULL UNIQUE,
+  route_id uuid,
+  passenger_info jsonb,
+  vehicle_snapshot jsonb,
+  status text DEFAULT 'confirmed'::text,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT transport_bookings_pkey PRIMARY KEY (id),
+  CONSTRAINT transport_bookings_booking_id_fkey FOREIGN KEY (booking_id) REFERENCES public.bookings(id),
+  CONSTRAINT transport_bookings_route_id_fkey FOREIGN KEY (route_id) REFERENCES public.transport_routes(id)
+);
 CREATE TABLE public.transport_providers (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   name text NOT NULL,
@@ -1271,8 +1285,10 @@ CREATE TABLE public.transport_routes (
   vehicle_details jsonb,
   images ARRAY,
   created_at timestamp with time zone DEFAULT now(),
+  booking_id uuid,
   CONSTRAINT transport_routes_pkey PRIMARY KEY (id),
-  CONSTRAINT transport_routes_provider_id_fkey FOREIGN KEY (provider_id) REFERENCES public.transport_providers(id)
+  CONSTRAINT transport_routes_provider_id_fkey FOREIGN KEY (provider_id) REFERENCES public.transport_providers(id),
+  CONSTRAINT transport_routes_booking_id_fkey FOREIGN KEY (booking_id) REFERENCES public.bookings(id)
 );
 CREATE TABLE public.user_flight_preferences (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -1298,9 +1314,9 @@ CREATE TABLE public.user_search_history (
   category text NOT NULL CHECK (category = ANY (ARRAY['flight'::text, 'hotel'::text, 'vouchers'::text, 'events'::text, 'dining'::text, 'activities'::text, 'wellness'::text, 'beauty'::text, 'entertainment'::text, 'shop'::text, 'transport'::text])),
   search_params jsonb NOT NULL,
   created_at timestamp with time zone DEFAULT now(),
-  user_uuid uuid NOT NULL,
+  user_id uuid NOT NULL,
   CONSTRAINT user_search_history_pkey PRIMARY KEY (id),
-  CONSTRAINT user_search_history_user_uuid_fkey FOREIGN KEY (user_uuid) REFERENCES public.users(id)
+  CONSTRAINT user_search_history_user_uuid_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
 );
 CREATE TABLE public.user_vouchers (
   id uuid NOT NULL DEFAULT gen_random_uuid(),

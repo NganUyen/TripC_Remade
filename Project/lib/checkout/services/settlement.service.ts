@@ -1,6 +1,17 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { ISettlementHandler } from './settlement/types';
-import { ShopSettlementHandler, HotelSettlementHandler, FlightSettlementHandler } from './settlement/handlers';
+import {
+    ShopSettlementHandler,
+    HotelSettlementHandler,
+    FlightSettlementHandler,
+    DiningSettlementHandler,
+    TransportSettlementHandler,
+    ActivitySettlementHandler,
+    EventSettlementHandler,
+    WellnessSettlementHandler,
+    BeautySettlementHandler,
+    EntertainmentSettlementHandler
+} from './settlement/handlers';
 
 export class SettlementService {
     private handlers: Record<string, ISettlementHandler>;
@@ -10,6 +21,13 @@ export class SettlementService {
             'shop': new ShopSettlementHandler(supabase),
             'hotel': new HotelSettlementHandler(supabase),
             'flight': new FlightSettlementHandler(supabase),
+            'restaurant': new DiningSettlementHandler(supabase), // Note: booking_type is 'restaurant'
+            'transport': new TransportSettlementHandler(supabase),
+            'activity': new ActivitySettlementHandler(supabase),
+            'event': new EventSettlementHandler(supabase),
+            'wellness': new WellnessSettlementHandler(supabase),
+            'beauty': new BeautySettlementHandler(supabase),
+            'entertainment': new EntertainmentSettlementHandler(supabase),
         };
     }
 
@@ -47,11 +65,14 @@ export class SettlementService {
         }
 
         // 3. Delegate to Handler
-        const handler = this.handlers[booking.booking_type];
+        // Ledger uses 'category', but some legacy rows might need handling.
+        const serviceType = booking.category || booking.booking_type;
+        const handler = this.handlers[serviceType];
+
         if (handler) {
             await handler.settle(booking);
         } else {
-            console.warn('[SETTLEMENT_NO_HANDLER]', { type: booking.booking_type });
+            console.warn('[SETTLEMENT_NO_HANDLER]', { type: serviceType });
         }
 
         // 4. Update Booking Status (Final Confirmation)

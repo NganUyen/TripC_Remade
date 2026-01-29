@@ -20,6 +20,9 @@ export const CheckoutFormFactory = ({ serviceType, initialData, onSubmit }: Prop
             // return <FlightCheckoutForm ... />
             return <div className="p-4 bg-gray-100 rounded">Flight Checkout Form Coming Soon</div>;
 
+        case 'transport':
+            return <div className="p-4 bg-gray-100 rounded">Transport Checkout Form Coming Soon</div>;
+
         default:
             return <div className="text-red-500">Service type not supported: {serviceType}</div>;
     }

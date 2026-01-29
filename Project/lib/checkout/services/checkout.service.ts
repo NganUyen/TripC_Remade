@@ -44,12 +44,12 @@ export class CheckoutService {
         const { data: booking, error } = await this.supabase
             .from('bookings')
             .insert({
-                booking_type: payload.serviceType,
+                category: payload.serviceType, // Standardized: Ledger uses 'category'
                 user_id: userId, // Ensure this is UUID
                 title: title,
                 total_amount: totalAmount,
                 currency: payload.currency,
-                status: 'pending_payment',
+                status: 'pending',
                 payment_status: 'unpaid',
                 metadata: payload, // Save full payload for context/settlement
                 start_date: new Date().toISOString(), // Required field default
