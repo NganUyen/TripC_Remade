@@ -9,9 +9,8 @@ import { useUser } from '@clerk/nextjs';
 import { toast } from 'sonner';
 import { CurrencyConversionInfo } from './CurrencyConversionInfo';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AlertTriangle, X, ShieldCheck } from 'lucide-react';
+import { CurrencyGuardModal } from './currency-guard-modal';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import { convertUsdToVnd, EXCHANGE_RATE_USD_VND, formatCurrency } from '@/lib/utils/currency';
 import { CheckoutSteps } from './checkout-steps';
 import { ShopCheckoutSkeleton } from '@/components/checkout/forms/shop-checkout-skeleton';
@@ -119,16 +118,16 @@ export const UnifiedCheckoutContainer = ({ serviceType, initialData }: Props) =>
         }
     };
 
-    const handleGuardCancel = () => {
+    const handleGuardClose = () => {
         setShowCurrencyGuard(false);
         setPendingMethod(null);
-        setPaymentMethod(null); // Deselect
+        setPaymentMethod(null); // Deselect if cancelled
     };
 
-    const handleGuardSwitch = () => {
+    const handleGuardSwitch = (provider: string) => {
         setShowCurrencyGuard(false);
         setPendingMethod(null);
-        handlePaymentSelect('paypal'); // Switch to PayPal
+        handlePaymentSelect(provider);
     };
 
     return (
@@ -183,87 +182,15 @@ export const UnifiedCheckoutContainer = ({ serviceType, initialData }: Props) =>
                     )}
 
                     {/* Currency Guard Modal */}
-                    <AnimatePresence>
-                        {showCurrencyGuard && (
-                            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                                <motion.div
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    exit={{ opacity: 0 }}
-                                    className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-                                    onClick={handleGuardCancel}
-                                />
-                                <motion.div
-                                    initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                                    exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                                    className="bg-white dark:bg-slate-900 rounded-3xl p-6 md:p-8 max-w-md w-full relative shadow-2xl z-10 border border-slate-200 dark:border-slate-800"
-                                >
-                                    <button
-                                        onClick={handleGuardCancel}
-                                        className="absolute top-4 right-4 p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                                    >
-                                        <X className="w-5 h-5 text-slate-500" />
-                                    </button>
-
-                                    <div className="mb-6 flex flex-col items-center text-center">
-                                        <div className="w-16 h-16 rounded-full bg-yellow-50 dark:bg-yellow-900/20 flex items-center justify-center mb-4 text-yellow-600 dark:text-yellow-500">
-                                            <AlertTriangle className="w-8 h-8" />
-                                        </div>
-                                        <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
-                                            Currency Mismatch
-                                        </h3>
-                                        <p className="text-slate-500 dark:text-slate-400">
-                                            Total is <strong className="text-slate-900 dark:text-white">${bookingAmount} (USD)</strong>. You are about to pay with MoMo.
-                                        </p>
-                                    </div>
-
-                                    <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 mb-8 text-sm text-slate-600 dark:text-slate-300">
-                                        <div className="flex flex-col gap-2">
-                                            <p>MoMo primarily supports VND. We will convert this amount to VND automatically:</p>
-                                            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-lg flex justify-between items-center mt-1">
-                                                <span className="text-slate-500">Exchange Rate</span>
-                                                <span className="font-mono font-medium">1 USD ≈ {formatCurrency(EXCHANGE_RATE_USD_VND, 'VND')}</span>
-                                            </div>
-                                            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-lg flex justify-between items-center">
-                                                <span className="text-slate-500">Converted Amount</span>
-                                                <span className="font-bold text-slate-900 dark:text-white text-lg">
-                                                    {formatCurrency(convertUsdToVnd(bookingAmount), 'VND')}
-                                                </span>
-                                            </div>
-                                            <p className="text-xs text-slate-400 mt-1">
-                                                <strong>PayPal</strong> is recommended for USD transactions to avoid conversion fees.
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-3">
-                                        <button
-                                            onClick={handleGuardSwitch}
-                                            className="w-full bg-[#003087] hover:bg-[#00256b] text-white py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2"
-                                        >
-                                            <Image src="/assets/payment/paypal-logo.png" width={20} height={20} alt="PayPal" className="brightness-0 invert" />
-                                            Switch to PayPal (Recommended)
-                                        </button>
-
-                                        <button
-                                            onClick={handleGuardProceed}
-                                            className="w-full bg-white dark:bg-slate-900 border-2 border-[#A50064] text-[#A50064] py-4 rounded-xl font-bold hover:bg-[#A50064]/5 transition-all"
-                                        >
-                                            Proceed with MoMo
-                                        </button>
-
-                                        <button
-                                            onClick={handleGuardCancel}
-                                            className="w-full py-2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 font-medium text-sm"
-                                        >
-                                            Cancel
-                                        </button>
-                                    </div>
-                                </motion.div>
-                            </div>
-                        )}
-                    </AnimatePresence>
+                    <CurrencyGuardModal
+                        isOpen={showCurrencyGuard}
+                        onClose={handleGuardClose}
+                        onConfirm={handleGuardProceed}
+                        onSwitchProvider={handleGuardSwitch}
+                        amount={bookingAmount}
+                        currency={bookingCurrency}
+                        targetProvider={pendingMethod || ''}
+                    />
                 </>
             )}
         </div>

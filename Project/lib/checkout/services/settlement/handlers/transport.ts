@@ -19,13 +19,17 @@ export class TransportSettlementHandler implements ISettlementHandler {
             return;
         }
 
-        // 2. Extract Metadata
+        // 2. Extract Metadata robustly
+        // CheckoutService often stores the whole payload in metadata, so our data might be in metadata.metadata
+        const payload = booking.metadata || {};
+        const metadata = payload.metadata || payload;
+
         const {
             routeId,
             vehicleDetails,
             passengerInfo,
             contactInfo
-        } = booking.metadata || {};
+        } = metadata;
 
         if (!routeId) {
             console.error('[TRANSPORT_SETTLEMENT] Missing routeId', { bookingId: booking.id });

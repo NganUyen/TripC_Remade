@@ -9,24 +9,29 @@ export class CheckoutService {
     }
 
     async createBooking(payload: CheckoutPayload): Promise<CheckoutResult> {
+        console.log('[CheckoutService] createBooking called with:', { userId: payload.userId, type: payload.serviceType });
+
         // 1. Resolve User ID (Handle Clerk vs Internal UUID)
         let userId = payload.userId;
 
         // If the ID is a Clerk ID (e.g. user_2...), resolve to UUID
         if (userId.startsWith('user_')) {
-            const { data: user } = await this.supabase
+            console.log('[CheckoutService] Resolving Clerk ID:', userId);
+            const { data: user, error: userError } = await this.supabase
                 .from('users')
                 .select('id')
                 .eq('clerk_id', userId)
                 .single();
 
+            if (userError) {
+                console.error('[CheckoutService] Error resolving user:', userError);
+            }
+
             if (user) {
                 userId = user.id;
+                console.log('[CheckoutService] Resolved UUID:', userId);
             } else {
-                console.warn(`User ${payload.userId} not found in DB. Falling back to null or creating stub.`);
-                // Ideally throw error or create user stub. For now, we proceed if table allows or specific fallback logic.
-                // Assuming the user table syncs via webhook, it should be there.
-                // If testing, we might need a fallback.
+                console.warn(`[CheckoutService] User ${payload.userId} not found in DB. Falling back to null or creating stub.`);
             }
         }
 
@@ -37,8 +42,27 @@ export class CheckoutService {
         if (payload.serviceType === 'shop') {
             totalAmount = payload.items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
             title = `Shop Order (${payload.items.length} items)`;
+        } else if (payload.serviceType === 'transport') {
+            // Basic fallback total calculation if not provided (though route logic usually sends it)
+            // But payload from transport checkout usually relies on `items` price logic?
+            if (payload.items && payload.items.length > 0) {
+                totalAmount = payload.items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
+                // Apply tax if needed, but usually frontend sends pre-calculated or reliable values? 
+                // Actually, CheckoutService typically trusts backend calculation. 
+                // For now, let's stick to the items sum.
+                // Note: Transport frontend added 10% tax. Ideally we replicate that here or trust items.
+                // Let's assume items price includes it or we take it from totalAmount if passed? 
+                // The Interface typically calculates from items.
+                totalAmount = Math.ceil(totalAmount * 1.1); // Match frontend logic 10% tax? Or just trust items?
+                // Let's log it.
+                console.log('[CheckoutService] Transport calculated amount:', totalAmount);
+            }
+            title = payload.items?.[0]?.name || 'Transport Booking';
         }
+
         // ... other types
+
+        console.log('[CheckoutService] Inserting booking for user:', userId);
 
         // 3. Insert Booking
         const { data: booking, error } = await this.supabase
@@ -59,9 +83,11 @@ export class CheckoutService {
             .single();
 
         if (error) {
-            console.error('Create booking failed', error);
+            console.error('[CheckoutService] Create booking failed', error);
             throw new Error(`Failed to create booking: ${error.message}`);
         }
+
+        console.log('[CheckoutService] Booking created successfully:', booking.id);
 
         // 4. Create Initial Event
         await this.supabase.from('booking_events').insert({

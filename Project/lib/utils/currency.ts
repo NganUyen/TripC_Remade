@@ -24,3 +24,11 @@ export function formatCurrency(amount: number, currency: 'USD' | 'VND'): string 
     }
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
 }
+
+/**
+ * Converts VND amount to USD.
+ * Rounds to 2 decimal places.
+ */
+export function convertVndToUsd(vndAmount: number): number {
+    return Number((vndAmount / EXCHANGE_RATE_USD_VND).toFixed(2));
+}

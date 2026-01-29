@@ -1,4 +1,5 @@
 import { PaymentProvider, CreatePaymentIntentResult, WebhookResult } from './payment-provider.interface';
+import { EXCHANGE_RATE_USD_VND } from '@/lib/utils/currency';
 
 export class PaypalPaymentProvider implements PaymentProvider {
     readonly providerName = 'paypal';
@@ -48,12 +49,22 @@ export class PaypalPaymentProvider implements PaymentProvider {
             const accessToken = await this.getAccessToken();
 
             // PAYPAL LOGIC: Use USD directly.
-            // If incoming is VND, we might need to convert to USD (future proof),
-            // but for now TripC is USD-first.
-            // We assume 'amount' is already correct for the 'currency'.
+            // If incoming is VND, convert to USD.
+            let paymentAmount = amount;
+            let paymentCurrency = currency;
 
-            // Just ensure 2 decimals for PayPal
-            const value = Number(amount).toFixed(2);
+            if (currency === 'VND') {
+                // Convert VND to USD
+                // usage: amount / rate. e.g. 500,000 / 25,450 = 19.64
+                // We use Math.ceil to ensure we cover the cost, or standard rounding?
+                // Standard rounding (toFixed(2)) is usually safer for UX, but businesses prefer ceil.
+                // Let's stick to standard math for now.
+                paymentAmount = paymentAmount / EXCHANGE_RATE_USD_VND;
+                paymentCurrency = 'USD';
+            }
+
+            // Ensure 2 decimals for PayPal
+            const value = Number(paymentAmount).toFixed(2);
 
             // Note: Assuming 'returnUrl' is where the user goes after approval.
             // We strip query params for the cancel_url default.
@@ -64,7 +75,7 @@ export class PaypalPaymentProvider implements PaymentProvider {
                 purchase_units: [{
                     reference_id: bookingId,
                     amount: {
-                        currency_code: currency,
+                        currency_code: paymentCurrency,
                         value: value
                     },
                     description: `Booking ${bookingId}`
