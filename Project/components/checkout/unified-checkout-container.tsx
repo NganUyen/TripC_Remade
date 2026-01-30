@@ -14,6 +14,8 @@ import { useRouter } from 'next/navigation';
 import { convertUsdToVnd, EXCHANGE_RATE_USD_VND, formatCurrency } from '@/lib/utils/currency';
 import { CheckoutSteps } from './checkout-steps';
 import { ShopCheckoutSkeleton } from '@/components/checkout/forms/shop-checkout-skeleton';
+import { TermsAndConditions } from './terms-and-conditions';
+import { cn } from '@/lib/utils';
 
 interface Props {
     serviceType: ServiceType;
@@ -38,6 +40,7 @@ export const UnifiedCheckoutContainer = ({ serviceType, initialData }: Props) =>
     const [bookingCurrency, setBookingCurrency] = useState<string>('USD'); // Default Shop is USD
     const [showCurrencyGuard, setShowCurrencyGuard] = useState(false);
     const [pendingMethod, setPendingMethod] = useState<string | null>(null);
+    const [isTermsAccepted, setIsTermsAccepted] = useState(false);
     const router = useRouter();
 
     const handleDetailsSubmit = async (details: any) => {
@@ -69,13 +72,22 @@ export const UnifiedCheckoutContainer = ({ serviceType, initialData }: Props) =>
     };
 
     const handlePaymentSelect = async (method: string) => {
+        // Terms Check
+        if (!isTermsAccepted) {
+            toast.error("Vui lòng đồng ý với điều khoản dịch vụ trước khi thanh toán.");
+            return;
+        }
+
         setPaymentMethod(method);
         if (!bookingId) return;
 
-        // Currency Mismatch Guard (USD -> MoMo)
-        // If currency is USD and method is MoMo, show blocking modal.
-        // We assume 'shop' uses USD by default as per line 36.
-        if (bookingCurrency === 'USD' && method === 'momo') {
+        // Currency Mismatch Guard
+        // 1. USD -> MoMo/VNPAY (Needs conversion to VND)
+        // 2. VND -> PayPal (Needs conversion to USD)
+        const isUsdToMomo = bookingCurrency === 'USD' && (method === 'momo' || method === 'vnpay');
+        const isVndToPaypal = bookingCurrency === 'VND' && method === 'paypal';
+
+        if (isUsdToMomo || isVndToPaypal) {
             setPendingMethod(method);
             setShowCurrencyGuard(true);
             return;
@@ -89,8 +101,12 @@ export const UnifiedCheckoutContainer = ({ serviceType, initialData }: Props) =>
 
         // MoMo Limit Check (10,000,000 VND)
         if (method === 'momo') {
-            const { convertUsdToVnd } = await import('@/lib/utils/currency');
-            const vnAmount = convertUsdToVnd(bookingAmount);
+            let vnAmount = bookingAmount;
+            if (bookingCurrency === 'USD') {
+                const { convertUsdToVnd } = await import('@/lib/utils/currency');
+                vnAmount = convertUsdToVnd(bookingAmount);
+            }
+
             if (vnAmount > 10000000) {
                 toast.error('MoMo payments are limited to 10,000,000 VND.');
                 return;
@@ -131,15 +147,21 @@ export const UnifiedCheckoutContainer = ({ serviceType, initialData }: Props) =>
     };
 
     return (
-        <div className="max-w-6xl mx-auto px-4 md:px-6 pb-8">
+        <div className="max-w-4xl mx-auto px-4 md:px-0 pb-12">
 
             {serviceType === 'shop' && <CheckoutSteps currentStep={getCurrentStep()} className="mb-4" />}
 
-            <div className="mb-6 text-center">
-                <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
-                    {step === 'details' ? 'Checkout' : 'Payment'}
-                </h1>
-            </div>
+            {/* Step Title for Payment */}
+            {step === 'payment' && (
+                <div className="mb-8 text-center animate-in fade-in slide-in-from-top-4">
+                    <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white mb-2">
+                        Thanh Toán Đơn Hàng
+                    </h1>
+                    <p className="text-slate-500 dark:text-slate-400">
+                        Vui lòng xem lại thông tin và xác nhận thanh toán
+                    </p>
+                </div>
+            )}
 
             {isLoading && !initialData && step === 'details' ? (
                 <ShopCheckoutSkeleton />
@@ -154,19 +176,30 @@ export const UnifiedCheckoutContainer = ({ serviceType, initialData }: Props) =>
                     )}
 
                     {step === 'payment' && (
-                        <div className="space-y-8 animate-in fade-in slide-in-from-right-8 duration-500">
-                            <div className="bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800 p-4 rounded-xl flex items-center gap-3 text-green-700 dark:text-green-300 mb-6">
-                                <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-800 flex items-center justify-center flex-shrink-0">
-                                    <span className="text-lg font-bold">✓</span>
+                        <div className="space-y-8 max-w-lg mx-auto">
+
+                            {/* 1. Terms Section (Scroll mandatory) */}
+                            <TermsAndConditions
+                                isAccepted={isTermsAccepted}
+                                onAccept={() => setIsTermsAccepted(true)}
+                                onDecline={() => setIsTermsAccepted(false)}
+                            />
+
+                            {/* Divider with Lock Icon */}
+                            <div className="relative py-4">
+                                <div className="absolute inset-0 flex items-center">
+                                    <div className="w-full border-t border-slate-200 dark:border-slate-800"></div>
                                 </div>
-                                <div>
-                                    <h3 className="font-bold">Booking Created Successfully!</h3>
-                                    <p className="text-sm opacity-90">Booking ID: <span className="font-mono">{bookingId}</span></p>
+                                <div className="relative flex justify-center">
+                                    <span className="bg-slate-50 dark:bg-slate-950 px-2 text-xs font-bold text-slate-400 uppercase tracking-widest">
+                                        Secure Payment
+                                    </span>
                                 </div>
                             </div>
 
-                            <div className="space-y-6">
-                                <PaymentMethodSelector onSelect={handlePaymentSelect} disabled={isLoading} defaultValue={paymentMethod} />
+                            {/* 2. Payment Method Selector (Disabled until accepted) */}
+                            <div className={cn("transition-all duration-300", !isTermsAccepted && "opacity-50 grayscale pointer-events-none")}>
+                                <PaymentMethodSelector onSelect={handlePaymentSelect} disabled={isLoading || !isTermsAccepted} defaultValue={paymentMethod} />
                             </div>
 
                             {/* Currency Info */}
