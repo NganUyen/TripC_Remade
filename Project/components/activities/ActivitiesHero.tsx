@@ -32,27 +32,34 @@ export function ActivitiesHero({ allActivities }: ActivitiesHeroProps) {
     }
 
     return (
-        <section className="relative min-h-[550px] w-full flex flex-col items-center justify-center p-4">
-            {/* Background Image & Overlay */}
+        <section className="relative min-h-[500px] w-full flex flex-col items-center justify-center p-4">
+            {/* Background Image & Overlay - Cinematic Contrast */}
             <div className="absolute inset-0 z-0 overflow-hidden rounded-b-[2.5rem]">
-                <img
-                    src="https://images.unsplash.com/photo-1533587851505-d119e13fa0d7?q=80&w=2670&auto=format&fit=crop"
-                    alt="Adventure"
-                    className="w-full h-full object-cover"
-                />
-                {/* Standard Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/20 to-[#fcfaf8] dark:to-[#0a0a0a]"></div>
+                <motion.div
+                    initial={{ scale: 1 }}
+                    animate={{ scale: 1.1 }}
+                    transition={{ duration: 20, ease: "linear" }}
+                    className="w-full h-full"
+                >
+                    <img
+                        src="https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2670&auto=format&fit=crop"
+                        alt="Adventure Activities"
+                        className="w-full h-full object-cover"
+                    />
+                </motion.div>
+                {/* Studio Vignette Gradient for readability */}
+                <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/20 via-50% to-[#fcfaf8] dark:to-[#0a0a0a]"></div>
             </div>
 
             {/* Hero Content */}
-            <div className="relative z-10 w-full max-w-3xl flex flex-col items-center mt-12 md:mt-24">
+            <div className="relative z-10 w-full max-w-2xl flex flex-col items-center mt-12 md:mt-16">
                 <motion.h1
-                    initial={{ opacity: 0, y: 30 }}
+                    initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6 }}
-                    className="text-white text-4xl md:text-6xl font-black mb-8 text-center drop-shadow-lg tracking-tight"
+                    className="text-white text-4xl md:text-5xl font-black mb-4 text-center drop-shadow-md"
                 >
-                    Your Adventure<br />Awaits
+                    Explore & Experience
                 </motion.h1>
 
                 {/* FLOATING CONSOLE - Search & Pills Overlapping Bottom */}
@@ -79,6 +86,7 @@ export function ActivitiesHero({ allActivities }: ActivitiesHeroProps) {
                             className="shadow-xl"
                         />
                     </div>
+                </div>
 
                     {/* Categories - Glass Pills */}
                     <div className="w-full overflow-x-auto no-scrollbar pb-4 px-4">

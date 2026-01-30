@@ -1,3 +1,9 @@
+/**
+ * Server-side Supabase Client
+ * 
+ * This file provides a Supabase client for use in API routes and server components.
+ * Uses service role key to bypass RLS for admin operations.
+ */
 
 import { createClient } from "@supabase/supabase-js";
 

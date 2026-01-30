@@ -3,13 +3,39 @@ import { Tag, Zap, Star, ShoppingBag, Plane, Hotel, Music, Gift } from 'lucide-r
 
 // --- Types ---
 
+export type UserTier = 'BRONZE' | 'SILVER' | 'GOLD' | 'PLATINUM'
+
+export const TIER_MULTIPLIERS: Record<UserTier, number> = {
+    'BRONZE': 1.0,
+    'SILVER': 1.2,
+    'GOLD': 1.5,
+    'PLATINUM': 2.0
+}
+
 export interface Voucher {
+    id: string
+    code: string
+    voucher_type: string
+    discount_value: number
+    min_spend: number
+    tcent_price: number | null
+    total_usage_limit: number | null
+    current_usage_count: number
+    is_purchasable: boolean
+    is_active: boolean
+    // Frontend helpers (will need to be derived or mapped if not in DB, but adhering to strict DB fields for 'Voucher' type itself as requested)
+}
+
+export interface Quest {
     id: string
     title: string
     description: string
-    cost: number
-    category: 'Hotel' | 'Transport' | 'Wellness' | 'Entertainment'
-    color: string
+    quest_type: string
+    reward_amount: number
+    is_active: boolean
+    starts_at: string | null
+    expires_at: string | null
+    status?: 'pending' | 'approved' | 'rejected' | 'completed' | 'claimed'
 }
 
 // --- Data ---
@@ -29,10 +55,54 @@ export const USE_CASES = [
 ]
 
 export const VOUCHERS: Voucher[] = [
-    { id: '101', title: '$20 Hotel Credit', description: 'Valid for focused hotels worldwide', cost: 2000, category: 'Hotel', color: 'bg-blue-500' },
-    { id: '102', title: 'Airport Lounge', description: 'One-time access pass', cost: 3500, category: 'Transport', color: 'bg-indigo-500' },
-    { id: '103', title: 'Spa Day Pass', description: 'Relax at partner centers', cost: 5000, category: 'Wellness', color: 'bg-emerald-500' },
-    { id: '104', title: 'Concert Ticket', description: 'VIP access to select events', cost: 8000, category: 'Entertainment', color: 'bg-rose-500' },
+    {
+        id: '101',
+        code: 'HOTEL20',
+        voucher_type: 'Hotel Credit',
+        discount_value: 20,
+        min_spend: 0,
+        tcent_price: 2000,
+        total_usage_limit: 1000,
+        current_usage_count: 50,
+        is_purchasable: true,
+        is_active: true
+    },
+    {
+        id: '102',
+        code: 'LOUNGE_ACCESS',
+        voucher_type: 'Transport',
+        discount_value: 0,
+        min_spend: 0,
+        tcent_price: 3500,
+        total_usage_limit: 500,
+        current_usage_count: 20,
+        is_purchasable: true,
+        is_active: true
+    },
+    {
+        id: '103',
+        code: 'SPA_DAY',
+        voucher_type: 'Wellness',
+        discount_value: 50,
+        min_spend: 100,
+        tcent_price: 5000,
+        total_usage_limit: 200,
+        current_usage_count: 45,
+        is_purchasable: true,
+        is_active: true
+    },
+    {
+        id: '104',
+        code: 'CONCERT_VIP',
+        voucher_type: 'Entertainment',
+        discount_value: 0,
+        min_spend: 0,
+        tcent_price: 8000,
+        total_usage_limit: 50,
+        current_usage_count: 48,
+        is_purchasable: true,
+        is_active: true
+    },
 ]
 
 // --- Animation Config ---

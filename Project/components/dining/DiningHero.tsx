@@ -5,7 +5,7 @@ import { Search, Calendar, ChevronDown, User, ArrowRight } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 export function DiningHero() {
-    const categories = ['Fine Dining', 'Italian', 'Japanese', 'Rooftop', 'Street Food', 'Steakhouse', 'Vegan']
+    const categories = ['Italian', 'Japanese', 'Rooftop', 'Steakhouse', 'Vegan']
 
     return (
         <section className="relative min-h-[550px] w-full flex flex-col items-center justify-center p-4">
@@ -70,18 +70,20 @@ export function DiningHero() {
                     </motion.div>
 
                     {/* Categories below search */}
-                    <div className="mt-8 flex justify-center gap-3 overflow-x-auto pb-4 no-scrollbar px-4">
-                        {categories.map((cat, i) => (
-                            <motion.button
-                                key={i}
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.3 + (i * 0.05) }}
-                                className="whitespace-nowrap px-4 py-2 bg-white/10 border border-white/20 rounded-full text-white text-sm font-bold hover:bg-white/20 backdrop-blur-sm transition-colors shadow-sm"
-                            >
-                                {cat}
-                            </motion.button>
-                        ))}
+                    <div className="mt-8 w-full overflow-hidden z-20 relative px-4">
+                        <div className="flex justify-start md:justify-center gap-3 overflow-x-auto pb-4 no-scrollbar">
+                            {categories.map((cat, i) => (
+                                <motion.button
+                                    key={i}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.3 + (i * 0.05) }}
+                                    className="cursor-pointer whitespace-nowrap px-5 py-2.5 bg-white/70 dark:bg-black/40 backdrop-blur-md border border-white/20 rounded-full text-slate-900 dark:text-white text-sm font-bold hover:bg-white hover:scale-105 transition-all shadow-sm shrink-0"
+                                >
+                                    {cat}
+                                </motion.button>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </div>

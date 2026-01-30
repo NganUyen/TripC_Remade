@@ -115,54 +115,90 @@ export default function TransportCheckoutPage() {
             const rawAmount = route.price * parseInt(passengers);
             const totalAmount = rawAmount * 1.1; // +10% tax
 
-            const res = await fetch('/api/bookings/create', {
+            // UNIFIED BOOKING PIPELINE INTEGRATION
+            console.log("Calling /api/checkout/initialize with payload...");
+            const res = await fetch('/api/checkout/initialize', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    category: 'transport',
-                    title: route.transport_providers?.name || 'Transport Booking',
-                    description: `${route.vehicle_type} • ${route.type}`,
-                    imageUrl: route.images?.[0],
-                    locationSummary: `${route.origin} -> ${route.destination}`,
-                    startDate: route.departure_time,
-                    endDate: route.arrival_time,
-                    totalAmount: totalAmount,
-                    guestDetails: {
-                        ...formData,
-                        passengersCount: parseInt(passengers)
-                    },
+                    serviceType: 'transport', // Match 'category' in DB
+                    userId: user.id,
+                    currency: 'VND', // Default for now
+                    items: [{
+                        name: `${route.vehicle_type} • ${route.origin} -> ${route.destination}`,
+                        price: route.price,
+                        quantity: parseInt(passengers),
+                        image: route.images?.[0]
+                    }],
+                    // Metadata: This is what TransportSettlementHandler reads!
                     metadata: {
                         routeId: route.id,
                         vehicleType: route.vehicle_type,
-                        type: route.type
+                        tripType: route.type,
+                        pickupLocation: route.origin, // Added based on Handler requirement
+                        dropoffLocation: route.destination, // Added based on Handler requirement
+                        pickupTime: route.departure_time, // Added based on Handler requirement
+                        passengerCount: parseInt(passengers),
+                        luggageCount: 0, // TODO: Add luggage UI field if needed
+                        vehicleDetails: {
+                            type: route.vehicle_type,
+                            provider: route.transport_providers?.name
+                        },
+                        passengerInfo: formData, // Full form data for Handler
+                        contactInfo: {
+                            email: formData.email,
+                            phone: formData.phone
+                        }
                     }
                 })
             });
 
+            console.log("Response status:", res.status);
+
             if (!res.ok) {
-                const err = await res.json();
-                throw new Error(err.error || "Booking failed");
+                const errText = await res.text();
+                console.error("API Error Body:", errText);
+                let errJson;
+                try { errJson = JSON.parse(errText); } catch (e) { }
+                throw new Error((errJson && errJson.error) || "Booking initialization failed: " + res.statusText);
             }
 
-            const newBooking = await res.json();
-            console.log("Booking created successfully:", newBooking);
+            const checkoutResult = await res.json();
+            console.log("Checkout API Result:", checkoutResult);
 
-            if (!newBooking || !newBooking.id) {
-                throw new Error("API did not return a valid booking ID");
+            // Unified API returns { ok: true, data: { bookingId, ... } }
+            const bookingId = checkoutResult.data?.bookingId;
+
+            if (!bookingId) {
+                console.error("Booking ID missing in response data:", checkoutResult);
+                throw new Error("Could not retrieve Booking ID from server response");
             }
 
-            setBooking(newBooking);
+            // We need to fetch the full booking object to match existing state expectations
+            // OR just mock it enough for the next step. 
+            // Looking at PaymentSection, it just needs { bookingId, amount }.
+            // Looking at BookingSummary, it needs full booking data? 
+            // Let's refetch the full booking to be safe and consistent.
+
+            const { data: fullBooking, error: fetchError } = await supabase
+                .from('bookings')
+                .select('*')
+                .eq('id', bookingId) // Corrected access
+                .single();
+
+            if (fetchError) throw fetchError;
+
+            setBooking(fullBooking);
 
             // Save ID to local storage just in case of reload
-            localStorage.setItem('pendingBookingId', newBooking.id);
+            localStorage.setItem('pendingBookingId', fullBooking.id);
 
             toast.success("Đặt chỗ thành công!", {
                 description: "Đang chuyển đến trang thanh toán..."
             });
 
-            // REDIRECT TO GLOBAL CHECKOUT
-            console.log("Redirecting to:", `/checkout?bookingId=${newBooking.id}`);
-            router.push(`/checkout?bookingId=${newBooking.id}`);
+            // Redirect to Unified Payment Page
+            router.push(`/payment?bookingId=${fullBooking.id}`);
 
         } catch (error: any) {
             console.error(error);
@@ -194,7 +230,6 @@ export default function TransportCheckoutPage() {
                 <CheckoutHeader currentStep={1} />
 
                 <div className="flex flex-col lg:flex-row items-stretch gap-16 min-h-[700px]">
-
                     <PassengerDetailsForm onSubmit={handleBookingCreation} isSubmitting={isSubmitting} />
 
                     <CheckoutBookingSummary

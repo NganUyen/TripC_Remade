@@ -2,8 +2,8 @@
 
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { useBookings } from "@/lib/hooks/useBookings";
-import { Loader2 } from "lucide-react";
 import Link from "next/link";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function BookingsList() {
   const { isAuthenticated, isLoading } = useCurrentUser();
@@ -11,8 +11,30 @@ export function BookingsList() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          <div key={i} className="bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-subtle border border-slate-100 dark:border-slate-800">
+            {/* Image Skeleton */}
+            <Skeleton className="aspect-[4/3] w-full rounded-none" />
+            <div className="p-6 space-y-4">
+              {/* Title & Badge */}
+              <div className="flex justify-between items-start">
+                <Skeleton className="h-6 w-2/3 rounded-md" />
+                <Skeleton className="h-5 w-16 rounded-full" />
+              </div>
+              {/* Description lines */}
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-full rounded-md" />
+                <Skeleton className="h-4 w-4/5 rounded-md" />
+              </div>
+              {/* Footer: Date & Price */}
+              <div className="flex justify-between items-center pt-2">
+                <Skeleton className="h-4 w-24 rounded-md" />
+                <Skeleton className="h-6 w-32 rounded-md" />
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
     );
   }

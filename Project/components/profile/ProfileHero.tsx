@@ -1,9 +1,52 @@
-"use client"
 
+import { useState, useEffect } from 'react'
+import { useUser } from '@clerk/nextjs'
 import { motion } from 'framer-motion'
 import { Edit2, Share2, MapPin } from 'lucide-react'
+import { EditProfileModal } from './EditProfileModal'
 
-export function ProfileHero() {
+interface ProfileHeroProps {
+    profile?: {
+        membership_tier: string
+        name?: string
+        bio?: string
+        city?: string
+        country?: string
+    } | null
+    initialEditMode?: boolean
+    onProfileUpdate?: (newProfile: any) => void
+}
+
+export function ProfileHero({ profile, initialEditMode, onProfileUpdate }: ProfileHeroProps) {
+    const { user, isLoaded } = useUser()
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+
+    useEffect(() => {
+        if (initialEditMode) {
+            setIsEditModalOpen(true)
+        }
+    }, [initialEditMode])
+
+    if (!isLoaded) {
+        return (
+            <div className="w-full pt-32 pb-8 animate-pulse">
+                <div className="flex flex-col md:flex-row items-end md:items-center justify-between gap-6">
+                    <div className="flex items-center gap-6">
+                        <div className="w-24 h-24 rounded-full bg-slate-200 dark:bg-slate-800" />
+                        <div>
+                            <div className="h-8 w-48 bg-slate-200 dark:bg-slate-800 rounded mb-2" />
+                            <div className="h-4 w-32 bg-slate-200 dark:bg-slate-800 rounded" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
+    // Use profile data if available (DB source of truth), fall back to Clerk for basic info
+    const displayName = profile?.name || user?.fullName || user?.firstName || 'Traveller'
+    const displayLocation = profile?.city ? `${profile.city}, ${profile.country || ''}` : null
+
     return (
         <section className="w-full pt-32 pb-8">
             <motion.div
@@ -16,8 +59,8 @@ export function ProfileHero() {
                     <div className="relative shrink-0">
                         <div className="w-24 h-24 md:w-28 md:h-28 rounded-full p-1 bg-gradient-to-tr from-orange-500 to-amber-500 shadow-lg">
                             <img
-                                src="https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=300&auto=format&fit=crop"
-                                alt="Doan Luc"
+                                src={user?.imageUrl}
+                                alt={displayName}
                                 className="w-full h-full rounded-full object-cover border-4 border-[#fcfaf8] dark:border-[#0a0a0a]"
                             />
                         </div>
@@ -27,14 +70,40 @@ export function ProfileHero() {
                     {/* User Info */}
                     <div>
                         <div className="flex flex-col md:flex-row items-start md:items-center gap-2 mb-1">
-                            <h1 className="text-3xl font-black text-slate-900 dark:text-white">Doan Luc</h1>
+                            <h1 className="text-3xl font-black text-slate-900 dark:text-white">
+                                {displayName}
+                            </h1>
                             <span className="px-3 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 text-xs font-bold rounded-full border border-orange-200 dark:border-orange-800/50">
-                                Travel Enthusiast
+                                {profile?.membership_tier || 'Member'}
                             </span>
                         </div>
-                        <p className="text-slate-500 dark:text-slate-400 font-medium mb-3">@trongucl • Joined 2023</p>
 
-                        {/* Stats */}
+                        <div className="flex flex-wrap items-center gap-4 mb-3 text-sm text-slate-500 dark:text-slate-400 font-medium">
+                            <span>
+                                {user?.username ? `@${user.username}` : user?.primaryEmailAddress?.emailAddress}
+                            </span>
+                            <span>•</span>
+                            <span>Joined {user?.createdAt ? new Date(user.createdAt).getFullYear() : '2024'}</span>
+
+                            {displayLocation && (
+                                <>
+                                    <span>•</span>
+                                    <span className="flex items-center gap-1 text-slate-700 dark:text-slate-300">
+                                        <MapPin className="w-3 h-3" />
+                                        {displayLocation}
+                                    </span>
+                                </>
+                            )}
+                        </div>
+
+                        {/* Bio if exists */}
+                        {profile?.bio && (
+                            <p className="text-slate-600 dark:text-slate-300 max-w-lg mb-4 text-sm leading-relaxed">
+                                {profile.bio}
+                            </p>
+                        )}
+
+                        {/* Stats - Keeping mocked for now as per plan */}
                         <div className="flex gap-6">
                             <div className="flex items-baseline gap-1">
                                 <span className="font-black text-slate-900 dark:text-white">1.2k</span>
@@ -49,9 +118,11 @@ export function ProfileHero() {
                 </div>
 
                 {/* Actions */}
-                {/* Actions */}
                 <div className="flex gap-3 w-full md:w-auto mt-6 md:mt-0">
-                    <button className="flex-1 md:flex-none h-11 px-6 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors flex items-center justify-center gap-2">
+                    <button
+                        onClick={() => setIsEditModalOpen(true)}
+                        className="flex-1 md:flex-none h-11 px-6 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors flex items-center justify-center gap-2"
+                    >
                         <Edit2 className="w-4 h-4" />
                         <span>Edit</span>
                     </button>
@@ -61,6 +132,15 @@ export function ProfileHero() {
                     </button>
                 </div>
             </motion.div>
+
+            <EditProfileModal
+                isOpen={isEditModalOpen}
+                onClose={() => setIsEditModalOpen(false)}
+                profile={profile}
+                onUpdate={(newProfile) => {
+                    if (onProfileUpdate) onProfileUpdate(newProfile)
+                }}
+            />
         </section>
     )
 }

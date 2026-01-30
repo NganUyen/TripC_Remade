@@ -1,56 +1,36 @@
 "use client"
 
 import { motion } from 'framer-motion'
-import { Sparkles, Sun, CloudRain, Briefcase, Music, Mic2, Shirt, Beer, Tent, Zap, Star, Activity } from 'lucide-react'
+import { Sparkles, Sun, CloudRain, Briefcase, Music, Mic2, Shirt, Beer, Tent, Zap, Star } from 'lucide-react'
 import Link from 'next/link'
+import { EventDetails } from './EventDetails'
 
 export function EventContent() {
     return (
         <div className="space-y-12">
             {/* AI Insight Magic Card */}
-            <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                className="relative overflow-hidden rounded-[2rem] p-px bg-gradient-to-r from-purple-500 to-pink-500 shadow-xl"
-            >
-                <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-3xl rounded-[1.9rem] p-6 relative">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+            {/* Insider Tip - Tier 3 Overlay */}
+            {/* About This Experience (Priority 1) */}
+            <EventDetails />
 
-                    <div className="flex items-start gap-4 relatie z-10">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shrink-0 shadow-lg text-white">
-                            <Sparkles className="w-5 h-5" />
-                        </div>
-                        <div>
-                            <h3 className="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 mb-2">
-                                AI Insight: Don't Miss Out
-                            </h3>
-                            <p className="text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
-                                "This year's <span className="text-purple-500 font-bold">Main Stage Headline</span> is rumored to have a surprise guest.
-                                Arrive early for the <span className="text-pink-500 font-bold">Sunset Acoustic Set</span> at the smaller stage.
-                                TIP: The food truck line gets long at 7 PM, so grab a bite early!"
-                            </p>
-                        </div>
-                    </div>
+            {/* Insider Tip - Minimalist Editorial Style (Priority 2) */}
+            <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="relative pl-6 py-2 border-l-4 border-primary"
+            >
+                <div className="mb-2 flex items-center gap-2">
+                    <span className="text-xs font-bold uppercase tracking-widest text-primary">
+                        Insider Tip
+                    </span>
                 </div>
+                <p className="text-slate-900 dark:text-white text-lg md:text-xl font-medium leading-relaxed font-display italic">
+                    "Arrive early for the <span className="font-bold">Sunset Acoustic Set</span>. The food truck line peaks at 7 PM, so grab a bite before then!"
+                </p>
             </motion.div>
 
-            {/* About This Experience */}
-            <div>
-                <div className="flex items-center gap-2 mb-4">
-                    <Activity className="w-5 h-5 text-blue-500" />
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">About This Experience</h3>
-                </div>
-                <div className="bg-white dark:bg-slate-900 rounded-[1.5rem] p-6 border border-slate-100 dark:border-slate-800 shadow-sm leading-relaxed text-slate-600 dark:text-slate-300">
-                    <p>
-                        Get ready for the ultimate summer music festival experience in the heart of the city.
-                        Start your journey with a scenic ferry ride to the island venue, followed by a welcome drink at the Sunset Lounge.
-                        As the sun goes down, the Main Stage comes alive with world-class performances.
-                        Between sets, explore the silent disco, artisan food market, and interactive art installations.
-                        Ends with a spectacular drone light show finale. Suitable for music lovers of all ages.
-                    </p>
-                </div>
-            </div>
+
 
             {/* Widgets Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

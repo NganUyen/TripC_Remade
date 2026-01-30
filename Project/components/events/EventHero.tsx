@@ -53,12 +53,12 @@ export function EventHero() {
                 </div>
 
                 {/* Categories - Shop Style with Cinematic Adaptation */}
-                <div className="mt-20 w-full overflow-visible z-10 relative">
+                <div className="mt-10 w-full overflow-visible z-10 relative">
                     <div className="flex justify-center gap-3 overflow-x-auto pb-4 px-4 no-scrollbar">
                         {categories.map((cat, i) => (
                             <button
                                 key={i}
-                                className="whitespace-nowrap px-4 py-2 bg-white/60 dark:bg-black/40 backdrop-blur-md border border-white/20 rounded-full text-slate-900 dark:text-white text-sm font-bold hover:bg-white hover:scale-105 transition-all shadow-sm"
+                                className="cursor-pointer whitespace-nowrap px-4 py-2 bg-white/60 dark:bg-black/40 backdrop-blur-md border border-white/20 rounded-full text-slate-900 dark:text-white text-sm font-bold hover:bg-white hover:scale-105 transition-all shadow-sm"
                             >
                                 {cat}
                             </button>

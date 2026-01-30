@@ -1,7 +1,7 @@
 "use client"
 
 import React from 'react'
-import { Star, Heart, Ticket, Zap, ArrowRight } from 'lucide-react'
+import { Star, Heart, Ticket, Zap, Share2 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { Activity } from '@/types'
 import Link from 'next/link'

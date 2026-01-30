@@ -10,13 +10,13 @@ export function Hero() {
             <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center px-4">
                 <div className="max-w-3xl space-y-4">
                     <span className="inline-block py-1 px-3 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white text-xs font-bold uppercase tracking-wider">
-                        Your Journey Begins
+                        Hành trình bắt đầu
                     </span>
                     <h1 className="text-4xl md:text-6xl font-extrabold text-white tracking-tight drop-shadow-md">
-                        Explore the world <br /><span className="text-primary-hover">your way</span>
+                        Khám phá thế giới <br /><span className="text-primary-hover">theo cách riêng</span>
                     </h1>
                     <p className="text-lg md:text-xl text-white/90 font-medium max-w-xl mx-auto drop-shadow">
-                        Discover flights, hotels, and unique experiences tailored just for your lifestyle.
+                        Tìm kiếm chuyến bay, khách sạn và những trải nghiệm độc đáo dành riêng cho bạn.
                     </p>
                 </div>
             </div>
