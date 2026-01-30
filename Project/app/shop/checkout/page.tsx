@@ -33,15 +33,17 @@ export default function ShopCheckoutPage() {
             price: item.unit_price.amount, // Pass the numeric amount (cents)
             image: item.image // Pass image if available
         })) || [],
-        cartId: cart?.id
+        cartId: cart?.id,
+        couponCode: cart?.coupon_code, // Add coupon code
+        discountAmount: cart?.discount_total?.amount || 0 // Add discount amount
     };
 
     return (
-        <div className="min-h-screen bg-[#fcfaf8] dark:bg-[#0a0a0a] py-12">
+        <div className="min-h-screen bg-[#fcfaf8] dark:bg-[#0a0a0a] py-12" >
             <UnifiedCheckoutContainer
                 serviceType="shop"
                 initialData={initialData}
             />
-        </div>
+        </div >
     );
 }

@@ -4,15 +4,21 @@ import { useCartStore } from '@/store/useCartStore'
 import { formatPrice } from '@/lib/hooks/useShopAPI'
 import { useAuth } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Footer } from '@/components/Footer'
 import Link from 'next/link'
 import { ArrowLeft, Minus, Plus, Trash2, ShoppingBag, Loader2 } from 'lucide-react'
 
 export default function CartPage() {
-    const { cart, isLoading, pendingItemIds, updateItem, removeItem, initCart } = useCartStore()
+    const { cart, isLoading, pendingItemIds, updateItem, removeItem, initCart, applyVoucher } = useCartStore()
     const { userId, isLoaded } = useAuth()
     const router = useRouter()
+    const [couponInput, setCouponInput] = useState('')
+
+    const handleApplyCoupon = () => {
+        if (!couponInput) return
+        applyVoucher(couponInput)
+    }
 
     // Fetch cart data on mount
     useEffect(() => {
@@ -114,7 +120,6 @@ export default function CartPage() {
                                     className={`bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-800 transition-opacity ${isPending ? 'opacity-50' : ''}`}
                                 >
                                     <div className="flex gap-4">
-                                        {/* Product Image Placeholder */}
                                         {/* Product Image */}
                                         <div className="w-24 h-24 bg-slate-100 dark:bg-slate-800 rounded-lg flex-shrink-0 overflow-hidden border border-slate-100 dark:border-slate-700">
                                             {item.image ? (
@@ -214,12 +219,24 @@ export default function CartPage() {
                                     <input
                                         type="text"
                                         placeholder="Coupon code"
+                                        value={couponInput}
+                                        onChange={(e) => setCouponInput(e.target.value)}
+                                        onKeyDown={(e) => e.key === 'Enter' && handleApplyCoupon()}
                                         className="flex-1 px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-transparent text-sm focus:outline-none focus:border-[#FF5E1F]"
                                     />
-                                    <button className="px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
-                                        Apply
+                                    <button
+                                        onClick={handleApplyCoupon}
+                                        disabled={isLoading || !couponInput}
+                                        className="px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
+                                    >
+                                        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Apply'}
                                     </button>
                                 </div>
+                                {cart.coupon_code && (
+                                    <div className="mt-2 text-xs text-green-600 font-medium">
+                                        Applied: {cart.coupon_code}
+                                    </div>
+                                )}
                             </div>
 
                             {/* Checkout Button */}

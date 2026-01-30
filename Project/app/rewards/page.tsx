@@ -10,6 +10,7 @@ import { StartEarningBar } from '@/components/rewards/StartEarningBar'
 import { EarnList } from '@/components/rewards/EarnList'
 import { InfoCard } from '@/components/rewards/InfoCard'
 import { UseGrid } from '@/components/rewards/UseGrid'
+import { DailyStreak } from '@/components/rewards/DailyStreak'
 import { VoucherSection, VoucherDrawer } from '@/components/rewards/VoucherSection'
 import { staggerContainer, Voucher } from '@/components/rewards/shared'
 
@@ -56,6 +57,7 @@ export default function RewardsPage() {
                         />
                         <PromoBanners />
                         <QuestCard />
+                        <DailyStreak />
                         <StartEarningBar />
                         <EarnList />
                     </div>

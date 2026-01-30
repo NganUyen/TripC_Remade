@@ -6,6 +6,7 @@ import { X, CheckCheck, Inbox, Gift, Calendar, AlertCircle } from 'lucide-react'
 import { NOTIFICATIONS, Notification } from './notificationData'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
+import { formatDistanceToNow } from 'date-fns'
 
 interface NotificationDrawerProps {
     isOpen: boolean
@@ -22,7 +23,39 @@ const TABS = [
 
 export function NotificationDrawer({ isOpen, onClose }: NotificationDrawerProps) {
     const [activeTab, setActiveTab] = useState<typeof TABS[number]['id']>('all')
-    const [notifications, setNotifications] = useState(NOTIFICATIONS)
+    const [notifications, setNotifications] = useState<Notification[]>([])
+    const [isLoading, setIsLoading] = useState(false)
+
+    // Fetch Notifications
+    const fetchNotifications = async () => {
+        setIsLoading(true)
+        try {
+            const res = await fetch('/api/v1/notifications?t=' + Date.now()) // bust cache
+            if (res.ok) {
+                const data = await res.json()
+                const formatted = data.map((n: any) => ({
+                    id: n.id,
+                    type: n.type,
+                    title: n.title,
+                    message: n.message,
+                    time: n.created_at ? formatDistanceToNow(new Date(n.created_at), { addSuffix: true }) : 'Just now',
+                    isRead: n.is_read,
+                    deepLink: n.deep_link
+                }))
+                setNotifications(formatted)
+            }
+        } catch (error) {
+            console.error('Failed to fetch notifications', error)
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    useEffect(() => {
+        if (isOpen) {
+            fetchNotifications()
+        }
+    }, [isOpen])
 
     const filteredNotifications = useMemo(() => {
         return notifications.filter(n => {
@@ -32,16 +65,28 @@ export function NotificationDrawer({ isOpen, onClose }: NotificationDrawerProps)
         })
     }, [notifications, activeTab])
 
-    const markAllRead = () => {
+    const markAllRead = async () => {
+        // Optimistic UI
         setNotifications(prev => prev.map(n => ({ ...n, isRead: true })))
+        await fetch('/api/v1/notifications', {
+            method: 'PATCH',
+            body: JSON.stringify({ markAll: true })
+        })
     }
 
-    const markRead = (id: string) => {
+    const markRead = async (id: string) => {
         setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n))
+        await fetch('/api/v1/notifications', {
+            method: 'PATCH',
+            body: JSON.stringify({ id })
+        })
     }
 
-    const deleteNotification = (id: string) => {
+    const deleteNotification = async (id: string) => {
         setNotifications(prev => prev.filter(n => n.id !== id))
+        await fetch(`/api/v1/notifications?id=${id}`, {
+            method: 'DELETE'
+        })
     }
 
     const [mounted, setMounted] = useState(false)

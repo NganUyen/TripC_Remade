@@ -7,8 +7,10 @@ import type {
   DiningMenu,
   DiningMenuItem,
   DiningReservation,
+  DiningAppointment,
   CreateVenueRequest,
   CreateReservationRequest,
+  CreateDiningAppointmentRequest,
   VenueSearchParams,
   VenueListResponse,
 } from './types'
@@ -128,6 +130,40 @@ export const diningApi = {
       guest_count: String(guestCount),
     })
     const response = await api.get(`/dining/reservations/check?${queryParams.toString()}`)
+    return response.data
+  },
+
+  // Appointments (new booking flow)
+  createAppointment: async (data: CreateDiningAppointmentRequest): Promise<DiningAppointment> => {
+    const response = await api.post('/dining/appointments', data)
+    return response.data
+  },
+
+  getAppointment: async (id: string): Promise<DiningAppointment> => {
+    const response = await api.get(`/dining/appointments/${id}`)
+    return response.data
+  },
+
+  getUserAppointments: async (userId: string): Promise<DiningAppointment[]> => {
+    const response = await api.get(`/dining/appointments?user_id=${userId}`)
+    return response.data
+  },
+
+  cancelAppointment: async (id: string, reason?: string): Promise<void> => {
+    const url = reason ? `/dining/appointments/${id}?reason=${encodeURIComponent(reason)}` : `/dining/appointments/${id}`
+    await api.delete(url)
+  },
+
+  getAvailableTimes: async (
+    venueId: string,
+    date: string,
+    guestCount: number
+  ): Promise<{ times: string[]; reason?: string }> => {
+    const queryParams = new URLSearchParams({
+      date,
+      guest_count: String(guestCount),
+    })
+    const response = await api.get(`/dining/venues/${venueId}/available-times?${queryParams.toString()}`)
     return response.data
   },
 }
