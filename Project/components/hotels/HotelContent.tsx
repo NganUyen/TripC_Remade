@@ -3,10 +3,30 @@
 import { motion } from 'framer-motion'
 import { Sparkles, Sun, CloudRain, Briefcase, Wifi, Waves, Wind, Utensils, Coffee, Gamepad2, Star } from 'lucide-react'
 import Link from 'next/link'
+import { WeatherForecast } from './WeatherForecast'
 
-export function HotelContent() {
+interface HotelContentProps {
+    hotel: any
+}
+
+export function HotelContent({ hotel }: HotelContentProps) {
     return (
         <div className="space-y-12">
+            {/* Hotel Description */}
+            {hotel?.description && (
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    className="bg-white dark:bg-slate-900 rounded-[2rem] p-6 shadow-sm border border-slate-100 dark:border-slate-800"
+                >
+                    <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">About This Property</h3>
+                    <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                        {hotel.description}
+                    </p>
+                </motion.div>
+            )}
+
             {/* AI Insight Magic Card */}
             <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
@@ -38,32 +58,10 @@ export function HotelContent() {
             {/* Widgets Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Weather */}
-                <div className="bg-blue-50 dark:bg-blue-900/10 rounded-[2rem] p-6 border border-blue-100 dark:border-blue-800/30">
-                    <div className="flex items-center justify-between mb-4">
-                        <h4 className="font-bold text-blue-900 dark:text-blue-300 flex items-center gap-2">
-                            <Sun className="w-5 h-5 text-orange-500" />
-                            Weather Forecast
-                        </h4>
-                        <span className="text-xs font-bold bg-white dark:bg-blue-900/50 px-2 py-1 rounded-md text-blue-600 dark:text-blue-300">May 12-15</span>
-                    </div>
-                    <div className="flex justify-between items-center bg-white/60 dark:bg-black/20 rounded-xl p-4">
-                        <div className="text-center">
-                            <p className="text-xs text-slate-500 font-bold mb-1">Fri</p>
-                            <Sun className="w-6 h-6 text-orange-400 mx-auto mb-1" />
-                            <p className="font-bold text-slate-900 dark:text-white">28°</p>
-                        </div>
-                        <div className="text-center">
-                            <p className="text-xs text-slate-500 font-bold mb-1">Sat</p>
-                            <Sun className="w-6 h-6 text-orange-400 mx-auto mb-1" />
-                            <p className="font-bold text-slate-900 dark:text-white">29°</p>
-                        </div>
-                        <div className="text-center">
-                            <p className="text-xs text-slate-500 font-bold mb-1">Sun</p>
-                            <CloudRain className="w-6 h-6 text-blue-400 mx-auto mb-1" />
-                            <p className="font-bold text-slate-900 dark:text-white">26°</p>
-                        </div>
-                    </div>
-                </div>
+                <WeatherForecast 
+                    latitude={hotel.address?.lat || 10.8231} 
+                    longitude={hotel.address?.lng || 106.6297} 
+                />
 
                 {/* Packing List */}
                 <div className="bg-orange-50 dark:bg-orange-900/10 rounded-[2rem] p-6 border border-orange-100 dark:border-orange-800/30">
@@ -88,24 +86,36 @@ export function HotelContent() {
             </div>
 
             {/* Amenities */}
-            <div>
-                <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-6">Amenity Highlights</h3>
-                <div className="flex flex-wrap gap-3">
-                    {[
-                        { icon: <Wifi className="w-4 h-4 text-slate-900 dark:text-white" />, label: "High-Speed Wifi" },
-                        { icon: <Waves className="w-4 h-4 text-blue-500" />, label: "Infinity Pool" },
-                        { icon: <Utensils className="w-4 h-4 text-orange-500" />, label: "Gourmet Dining" },
-                        { icon: <Wind className="w-4 h-4 text-green-500" />, label: "Luxury Spa" },
-                        { icon: <Coffee className="w-4 h-4 text-amber-700" />, label: "24/7 Cafe" },
-                        { icon: <Gamepad2 className="w-4 h-4 text-purple-500" />, label: "Kids Club" },
-                    ].map((item, i) => (
-                        <div key={i} className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-700 transition-colors cursor-default">
-                            {item.icon}
-                            <span className="font-bold text-sm text-slate-700 dark:text-slate-200">{item.label}</span>
-                        </div>
-                    ))}
+            {hotel?.amenities && hotel.amenities.length > 0 && (
+                <div>
+                    <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-6">Amenity Highlights</h3>
+                    <div className="flex flex-wrap gap-3">
+                        {hotel.amenities.slice(0, 12).map((amenity: string, index: number) => {
+                            // Map amenity strings to icons
+                            const getAmenityIcon = (amenityName: string) => {
+                                const name = amenityName.toLowerCase()
+                                if (name.includes('wifi') || name.includes('internet')) return <Wifi className="w-4 h-4" />
+                                if (name.includes('pool')) return <Waves className="w-4 h-4 text-blue-500" />
+                                if (name.includes('restaurant') || name.includes('dining')) return <Utensils className="w-4 h-4 text-orange-500" />
+                                if (name.includes('spa')) return <Wind className="w-4 h-4 text-green-500" />
+                                if (name.includes('coffee') || name.includes('cafe')) return <Coffee className="w-4 h-4 text-amber-700" />
+                                if (name.includes('kid') || name.includes('child')) return <Gamepad2 className="w-4 h-4 text-purple-500" />
+                                return <Star className="w-4 h-4 text-slate-500" />
+                            }
+                            
+                            return (
+                                <div
+                                    key={index}
+                                    className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full text-sm font-medium text-slate-700 dark:text-slate-300"
+                                >
+                                    {getAmenityIcon(amenity)}
+                                    {amenity}
+                                </div>
+                            )
+                        })}
+                    </div>
                 </div>
-            </div>
+            )}
 
             {/* Reviews */}
             <div>
