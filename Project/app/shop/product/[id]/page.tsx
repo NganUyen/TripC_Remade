@@ -8,10 +8,11 @@ import { ProductReviews } from "@/components/shop/product/ProductReviews"
 import { Footer } from "@/components/Footer"
 import { ProductCard } from "@/components/shop/ProductCard"
 import Link from "next/link"
-import { ArrowLeft, Star, Loader2 } from "lucide-react"
+import { ArrowLeft, Star } from "lucide-react"
 import { useEffect } from "react"
 import { useParams } from "next/navigation"
 import { useProduct, useProducts, formatPriceSimple } from "@/lib/hooks/useShopAPI"
+import { ProductSkeleton } from "@/components/shop/product/ProductSkeleton"
 
 export default function ProductDetailsPage() {
     // Use useParams hook instead of use(params) for client components
@@ -27,14 +28,7 @@ export default function ProductDetailsPage() {
 
     // Loading state
     if (loading) {
-        return (
-            <main className="min-h-screen bg-[#fcfaf8] dark:bg-[#0a0a0a] flex items-center justify-center">
-                <div className="flex flex-col items-center gap-4">
-                    <Loader2 className="w-8 h-8 animate-spin text-[#FF5E1F]" />
-                    <p className="text-slate-500">Loading product...</p>
-                </div>
-            </main>
-        )
+        return <ProductSkeleton />
     }
 
     // Error state

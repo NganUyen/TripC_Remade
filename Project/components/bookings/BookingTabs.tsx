@@ -11,10 +11,11 @@ interface BookingTabsProps {
 export default function BookingTabs({ activeTab, onTabChange }: BookingTabsProps) {
     const tabs = [
         { id: 'all', label: 'Tất cả', icon: 'apps' },
+        { id: 'transport', label: 'Di chuyển', icon: 'directions_car' },
         { id: 'hotel', label: 'Khách sạn', icon: 'hotel' },
         { id: 'flight', label: 'Vé máy bay', icon: 'flight' },
         { id: 'shop', label: 'Mua sắm', icon: 'shopping_bag' },
-        { id: 'events', label: 'Sự kiện', icon: 'event' },
+        { id: 'activity', label: 'Sự kiện', icon: 'event' }, // Changed 'events' to 'activity'
     ];
 
     return (

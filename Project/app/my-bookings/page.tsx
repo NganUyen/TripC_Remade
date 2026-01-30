@@ -9,10 +9,11 @@ import { Footer } from '@/components/Footer';
 import BookingTabs from '@/components/bookings/BookingTabs'
 import InspirationCard from '@/components/bookings/InspirationCard'
 import QuickAccessLinks from '@/components/bookings/QuickAccessLinks'
-import { Loader2, Ticket } from 'lucide-react'
+import { Ticket } from 'lucide-react'
 import UpcomingBookingCard from '@/components/bookings/cards/UpcomingBookingCard'
 import PendingBookingCard from '@/components/bookings/cards/PendingBookingCard'
 import CancelledBookingCard from '@/components/bookings/cards/CancelledBookingCard'
+import { BookingListSkeleton } from '@/components/bookings/BookingListSkeleton'
 import { motion, AnimatePresence } from 'framer-motion'
 
 export default function MyBookingsPage() {
@@ -150,7 +151,7 @@ export default function MyBookingsPage() {
 
   const filteredBookings = bookings.filter((booking: any) => {
     if (activeTab === 'all') return true;
-    return booking.booking_type === activeTab;
+    return booking.category === activeTab;
   });
 
   const renderBookingCard = (booking: any) => {
@@ -197,12 +198,7 @@ export default function MyBookingsPage() {
           <BookingTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
           {isLoading || isSyncing ? (
-            <div className="flex flex-col items-center justify-center py-40 gap-4">
-              <Loader2 className="size-12 animate-spin text-primary" />
-              <p className="text-slate-400 font-bold animate-pulse uppercase tracking-[0.2em] text-xs">
-                {isSyncing ? 'Đang xác minh thanh toán...' : 'Đang tải hành trình...'}
-              </p>
-            </div>
+            <BookingListSkeleton />
           ) : filteredBookings.length === 0 ? (
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}

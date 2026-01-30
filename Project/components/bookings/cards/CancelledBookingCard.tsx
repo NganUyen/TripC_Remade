@@ -12,60 +12,42 @@ export default function CancelledBookingCard({ booking }: CancelledBookingCardPr
     const isFlight = booking.category === 'flight';
     const isHotel = booking.category === 'hotel';
 
-    const bookingCode = booking.booking_code || booking.metadata?.booking_code || `#${booking.id.slice(0, 6).toUpperCase()}`;
     const Icon = isFlight ? Plane : isHotel ? Hotel : Ticket;
+    const reason = booking.metadata?.cancellation_reason || 'Expired';
 
     return (
         <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             whileHover={{ y: -4 }}
-            className="group relative card-compact flex flex-col h-full bg-white dark:bg-zinc-900 border border-slate-100 dark:border-white/5 shadow-sm hover:shadow-xl transition-all duration-300 opacity-60 hover:opacity-100"
+            className="group relative flex flex-col h-full bg-slate-50 dark:bg-white/5 rounded-[2rem] p-6 border border-transparent dark:border-white/5 opacity-80 hover:opacity-100 transition-all duration-300"
         >
-            <div className="flex justify-between items-start mb-5">
-                <div className="flex items-center gap-3">
-                    <div className="size-11 rounded-xl bg-slate-50 dark:bg-white/5 flex items-center justify-center text-slate-300 group-hover:text-slate-400 transition-colors">
-                        <Icon size={22} strokeWidth={1.5} />
-                    </div>
-                    <div>
-                        <div className="flex items-center gap-1.5 text-[9px] font-bold tracking-wider text-slate-300 uppercase">
-                            <span>{isFlight ? 'VÉ MÁY BAY' : isHotel ? 'KHÁCH SẠN' : 'DỊCH VỤ'}</span>
-                            <span className="w-0.5 h-0.5 rounded-full bg-slate-200 dark:bg-slate-800"></span>
-                            <span>ĐÃ HỦY</span>
-                        </div>
-                        <h3 className="text-base font-bold text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white line-clamp-1 transition-colors">
-                            {booking.title}
-                        </h3>
-                    </div>
+            {/* Header */}
+            <div className="flex justify-between items-start mb-6">
+                <div className="p-3 rounded-2xl bg-slate-200 dark:bg-white/10 text-slate-500 dark:text-slate-400 grayscale">
+                    <Icon size={24} strokeWidth={1.5} />
                 </div>
-                <div className="p-1.5 rounded-lg bg-slate-50 dark:bg-white/5 text-slate-200 group-hover:text-slate-400 transition-colors">
-                    <XCircle size={16} strokeWidth={1.5} />
+                <div className="px-3 py-1 rounded-full bg-slate-200 dark:bg-white/10 text-slate-500 dark:text-slate-400 text-[11px] font-bold tracking-wide uppercase flex items-center gap-1.5">
+                    <XCircle size={12} strokeWidth={2} />
+                    Cancelled
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 py-3 border-t border-slate-100 dark:border-white/5 border-dashed mb-4">
-                <div>
-                    <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest mb-0.5">MÃ ĐẶT CHỖ</p>
-                    <p className="font-bold text-slate-300 line-through text-xs">{bookingCode}</p>
-                </div>
-                <div>
-                    <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest mb-0.5 text-right">LÝ DO HỦY</p>
-                    <p className="text-[10px] font-bold text-slate-300 text-right uppercase truncate">
-                        {booking.metadata?.cancellation_reason || 'Hết hạn'}
-                    </p>
-                </div>
+            {/* Content */}
+            <div className="mb-6 space-y-2">
+                <h3 className="text-xl font-bold text-slate-400 dark:text-slate-500 line-through decoration-2 decoration-slate-300 dark:decoration-slate-600 line-clamp-2">
+                    {booking.title}
+                </h3>
+                <p className="text-sm text-slate-400 dark:text-slate-500 font-medium">
+                    Reason: {reason}
+                </p>
             </div>
 
-            <div className="mt-auto pt-3 border-t border-slate-100 dark:border-white/5 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-1.5 text-slate-300">
-                    <MapPin size={12} strokeWidth={1.5} />
-                    <span className="text-[10px] font-medium truncate max-w-[100px]">
-                        {booking.location_summary || 'Đã hủy'}
-                    </span>
-                </div>
-                <button className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-slate-50 dark:bg-white/5 hover:bg-slate-900 dark:hover:bg-white text-slate-300 hover:text-white dark:hover:text-slate-900 text-[11px] font-bold transition-all group/btn">
-                    Đặt lại
-                    <RefreshCw size={12} strokeWidth={1.5} className="group-hover/btn:rotate-180 transition-transform duration-500" />
+            {/* Footer */}
+            <div className="mt-auto pt-6 border-t border-slate-200 dark:border-white/5">
+                <button className="w-full py-3 rounded-xl border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 font-bold text-sm hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition-all flex items-center justify-center gap-2">
+                    <RefreshCw size={14} strokeWidth={2} />
+                    Book Again
                 </button>
             </div>
         </motion.div>

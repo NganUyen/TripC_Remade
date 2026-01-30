@@ -19,6 +19,7 @@ export default function TransportResultsPage() {
     // Filter states
     const [vehicleTypeFilter, setVehicleTypeFilter] = useState<string | null>(null);
     const [priceRange, setPriceRange] = useState<[number, number]>([0, 5000000]); // Max 5m VND
+    const [sortBy, setSortBy] = useState<string>('recommended');
 
     useEffect(() => {
         const fetchRoutes = async () => {
@@ -73,6 +74,19 @@ export default function TransportResultsPage() {
         setSelectedVehicle(null);
     };
 
+    const sortedVehicles = [...vehicles].sort((a, b) => {
+        switch (sortBy) {
+            case 'price_asc': return a.price - b.price;
+            case 'price_desc': return b.price - a.price;
+            case 'departure_asc': return new Date(a.departure_time).getTime() - new Date(b.departure_time).getTime();
+            case 'duration_asc':
+                const durA = new Date(a.arrival_time).getTime() - new Date(a.departure_time).getTime();
+                const durB = new Date(b.arrival_time).getTime() - new Date(b.departure_time).getTime();
+                return durA - durB;
+            default: return 0;
+        }
+    });
+
     return (
         <div className="bg-background-light dark:bg-background-dark min-h-screen pb-32">
             <ResultsHeader
@@ -94,6 +108,31 @@ export default function TransportResultsPage() {
                 <div className="flex-1 flex flex-col overflow-hidden">
                     <DateSelector startDate={startDate} selectedDate={selectedDate} onDateChange={handleDateChange} />
 
+                    {/* Sort Options */}
+                    {!loading && vehicles.length > 0 && (
+                        <div className="flex items-center gap-2 py-4 overflow-x-auto no-scrollbar mask-gradient-right">
+                            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider whitespace-nowrap mr-2">Sort by:</span>
+                            {[
+                                { id: 'recommended', label: 'Recommended' },
+                                { id: 'price_asc', label: 'Cheapest' },
+                                { id: 'price_desc', label: 'Luxurious' },
+                                { id: 'departure_asc', label: 'Earliest' },
+                                { id: 'duration_asc', label: 'Fastest' },
+                            ].map(opt => (
+                                <button
+                                    key={opt.id}
+                                    onClick={() => setSortBy(opt.id)}
+                                    className={`px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-all ${sortBy === opt.id
+                                            ? 'bg-slate-900 text-white dark:bg-white dark:text-black shadow-md'
+                                            : 'bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300'
+                                        }`}
+                                >
+                                    {opt.label}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
                     {loading ? (
                         <div className="flex items-center justify-center py-20">
                             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -106,7 +145,7 @@ export default function TransportResultsPage() {
                         </div>
                     ) : (
                         <VehicleGrid
-                            vehicles={vehicles}
+                            vehicles={sortedVehicles}
                             selectedId={selectedVehicle?.id}
                             onSelect={setSelectedVehicle}
                         />
