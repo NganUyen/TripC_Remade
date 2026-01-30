@@ -114,6 +114,10 @@ To implement Flight and Hotel checkouts efficiently, follow **Pattern A (Unified
     *   **Backend:** `PayPalProvider` now automatically divides VND by 25,450.
     *   **Frontend:** `CurrencyGuardModal` warns user before redirecting.
 
+### 🔴 Variable Naming Collisions (Syntax Error)
+*   **Cause:** When manually patching pages (like Transport) to add API fetches, it's common to copy-paste `const res = await fetch(...)` into a block where `res` already exists.
+*   **Fix:** Always use specific variable names for API responses (e.g., `bookingRes`, `paymentRes`) instead of generic `res`.
+
 ### 🔴 "PaymentSection" Duplicate
 *   **Cause:** `transport/checkout` had its own old copy.
 *   **Fix:** Always import from `@/components/payment/PaymentSection`.
