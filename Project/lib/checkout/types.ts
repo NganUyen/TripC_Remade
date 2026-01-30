@@ -36,6 +36,8 @@ export interface ShopCheckoutDetails {
     shippingAddressId: string;
     shippingMethodId: string;
     cartId?: string;
+    couponCode?: string;
+    discountAmount?: number;
 }
 
 export interface HotelCheckoutDetails {

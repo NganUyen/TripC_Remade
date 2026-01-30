@@ -16,7 +16,7 @@ export const ShopCheckoutForm = ({ initialData, onSubmit }: ShopCheckoutFormProp
     const items = initialData?.items || [];
     const subtotal = items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
     const shippingCost = 0; // Free for now
-    const discount = 0;
+    const discount = initialData?.discountAmount || 0;
     const total = subtotal + shippingCost - discount;
 
     const handleSubmit = () => {
@@ -24,7 +24,9 @@ export const ShopCheckoutForm = ({ initialData, onSubmit }: ShopCheckoutFormProp
             items: items,
             shippingAddressId,
             shippingMethodId,
-            cartId: initialData?.cartId
+            cartId: initialData?.cartId,
+            couponCode: initialData?.couponCode,
+            discountAmount: initialData?.discountAmount
         };
         onSubmit(payload);
     };
