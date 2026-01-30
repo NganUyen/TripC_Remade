@@ -16,14 +16,24 @@ export const dynamic = "force-dynamic";
 
 // City name mapping (Vietnamese ↔ English)
 const CITY_NAME_MAP: Record<string, string[]> = {
-  'hanoi': ['Hanoi', 'Hà Nội', 'Ha Noi'],
-  'ho chi minh city': ['Ho Chi Minh City', 'Thành phố Hồ Chí Minh', 'TP. Hồ Chí Minh', 'TP.Hồ Chí Minh', 'TP Hồ Chí Minh', 'Saigon', 'Sài Gòn', 'Sai Gon', 'HCMC'],
-  'da nang': ['Da Nang', 'Đà Nẵng'],
-  'nha trang': ['Nha Trang'],
-  'hoi an': ['Hoi An', 'Hội An'],
-  'phu quoc': ['Phu Quoc', 'Phú Quốc'],
-  'da lat': ['Da Lat', 'Đà Lạt', 'Dalat'],
-  'vung tau': ['Vung Tau', 'Vũng Tàu']
+  hanoi: ["Hanoi", "Hà Nội", "Ha Noi"],
+  "ho chi minh city": [
+    "Ho Chi Minh City",
+    "Thành phố Hồ Chí Minh",
+    "TP. Hồ Chí Minh",
+    "TP.Hồ Chí Minh",
+    "TP Hồ Chí Minh",
+    "Saigon",
+    "Sài Gòn",
+    "Sai Gon",
+    "HCMC",
+  ],
+  "da nang": ["Da Nang", "Đà Nẵng"],
+  "nha trang": ["Nha Trang"],
+  "hoi an": ["Hoi An", "Hội An"],
+  "phu quoc": ["Phu Quoc", "Phú Quốc"],
+  "da lat": ["Da Lat", "Đà Lạt", "Dalat"],
+  "vung tau": ["Vung Tau", "Vũng Tàu"],
 };
 
 // Normalize city name to find all variants
@@ -32,24 +42,26 @@ function normalizeCityName(city: string): string[] {
   const cleanedCity = city
     .toLowerCase()
     .trim()
-    .replace(/^tp\.\s*/i, '')  // Remove "TP." prefix
-    .replace(/^tp\s*/i, '')     // Remove "TP" prefix
-    .replace(/^thành phố\s*/i, ''); // Remove "Thành phố" prefix
-  
+    .replace(/^tp\.\s*/i, "") // Remove "TP." prefix
+    .replace(/^tp\s*/i, "") // Remove "TP" prefix
+    .replace(/^thành phố\s*/i, ""); // Remove "Thành phố" prefix
+
   // Find matching variants
   for (const [key, variants] of Object.entries(CITY_NAME_MAP)) {
-    if (variants.some(v => {
-      const cleanedVariant = v
-        .toLowerCase()
-        .replace(/^tp\.\s*/i, '')
-        .replace(/^tp\s*/i, '')
-        .replace(/^thành phố\s*/i, '');
-      return cleanedVariant === cleanedCity;
-    })) {
+    if (
+      variants.some((v) => {
+        const cleanedVariant = v
+          .toLowerCase()
+          .replace(/^tp\.\s*/i, "")
+          .replace(/^tp\s*/i, "")
+          .replace(/^thành phố\s*/i, "");
+        return cleanedVariant === cleanedCity;
+      })
+    ) {
       return variants;
     }
   }
-  
+
   // If no match found, return original
   return [city];
 }
@@ -86,15 +98,15 @@ export async function GET(request: NextRequest) {
     if (city) {
       // Get all city name variants
       const cityVariants = normalizeCityName(city);
-      
+
       // Build OR query for all variants
       if (cityVariants.length === 1) {
         query = query.ilike("address->>city", `%${cityVariants[0]}%`);
       } else {
         // Use OR condition for multiple variants
         const orConditions = cityVariants
-          .map(variant => `address->>city.ilike.%${variant}%`)
-          .join(',');
+          .map((variant) => `address->>city.ilike.%${variant}%`)
+          .join(",");
         query = query.or(orConditions);
       }
     }
@@ -108,7 +120,10 @@ export async function GET(request: NextRequest) {
 
     // Filter by star rating (exact match for selected ratings)
     if (stars) {
-      const starArray = stars.split(',').map(s => parseInt(s)).filter(s => !isNaN(s));
+      const starArray = stars
+        .split(",")
+        .map((s) => parseInt(s))
+        .filter((s) => !isNaN(s));
       if (starArray.length > 0) {
         query = query.in("star_rating", starArray);
       }
@@ -125,7 +140,7 @@ export async function GET(request: NextRequest) {
 
     // Filter by amenities (contains all selected amenities)
     if (amenities) {
-      const amenityArray = amenities.split(',');
+      const amenityArray = amenities.split(",");
       for (const amenity of amenityArray) {
         query = query.contains("amenities", [amenity]);
       }
@@ -139,18 +154,20 @@ export async function GET(request: NextRequest) {
     if (error) {
       console.error("Database error:", error);
       return NextResponse.json(
-        { 
+        {
           success: false,
-          error: "Failed to fetch hotels", 
+          error: "Failed to fetch hotels",
           message: error.message,
-          details: { city, q, minRating }
+          details: { city, q, minRating },
         },
         { status: 500 },
       );
     }
 
     // Log successful query for debugging
-    console.log(`[Hotels API] Found ${hotels?.length || 0} hotels (city: ${city || 'all'}, stars: ${stars || 'all'}, maxPrice: ${maxPrice || 'any'}, total: ${count})`);
+    console.log(
+      `[Hotels API] Found ${hotels?.length || 0} hotels (city: ${city || "all"}, stars: ${stars || "all"}, maxPrice: ${maxPrice || "any"}, total: ${count})`,
+    );
 
     return NextResponse.json({
       success: true,
@@ -167,8 +184,8 @@ export async function GET(request: NextRequest) {
         minRating: minRating || null,
         stars: stars || null,
         maxPrice: maxPrice || null,
-        amenities: amenities || null
-      }
+        amenities: amenities || null,
+      },
     });
   } catch (error) {
     console.error("Hotels list error:", error);

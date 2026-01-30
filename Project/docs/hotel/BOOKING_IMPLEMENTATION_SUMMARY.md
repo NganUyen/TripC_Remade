@@ -11,12 +11,14 @@ Implementation completed on December 2024. The hotel booking system is now fully
 ### 1. **Backend API** - `/app/api/bookings/route.ts`
 
 #### POST /api/bookings
+
 Creates a new hotel booking with complete validation and database persistence.
 
 **Key Features:**
+
 - ✅ **Authentication**: Clerk user authentication required
 - ✅ **Availability Checking**: SQL query to verify room availability for date range
-- ✅ **Price Calculation**: 
+- ✅ **Price Calculation**:
   - Base room price × nights
   - Tax (10%)
   - Service fee (5%)
@@ -28,6 +30,7 @@ Creates a new hotel booking with complete validation and database persistence.
 - ✅ **Error Handling**: Comprehensive validation and user-friendly errors
 
 **Request Body:**
+
 ```json
 {
   "hotel_id": "uuid",
@@ -50,6 +53,7 @@ Creates a new hotel booking with complete validation and database persistence.
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -60,13 +64,13 @@ Creates a new hotel booking with complete validation and database persistence.
     "check_in_date": "2024-05-12",
     "check_out_date": "2024-05-15",
     "nights_count": 3,
-    "total_amount": 2898.00,
+    "total_amount": 2898.0,
     "currency": "USD",
     "tcent_earned": 290,
     "breakdown": {
-      "room_total": 2520.00,
-      "tax": 252.00,
-      "service_fee": 126.00,
+      "room_total": 2520.0,
+      "tax": 252.0,
+      "service_fee": 126.0,
       "discounts": 0
     }
   }
@@ -74,6 +78,7 @@ Creates a new hotel booking with complete validation and database persistence.
 ```
 
 **Error Codes:**
+
 - `UNAUTHORIZED`: User not signed in
 - `INVALID_REQUEST`: Missing required fields
 - `INVALID_DATES`: Check-in/out dates invalid
@@ -85,14 +90,15 @@ Creates a new hotel booking with complete validation and database persistence.
 ### 2. **Frontend Component** - `/components/hotels/BookingSidebar.tsx`
 
 #### Complete Booking Widget
+
 Fully functional sidebar widget with state management and user interaction.
 
 **Features Implemented:**
-- ✅ **Date Pickers**: 
+
+- ✅ **Date Pickers**:
   - HTML5 date inputs with min/max validation
   - Check-in minimum: tomorrow
   - Check-out minimum: day after check-in
-  
 - ✅ **Guest Selector**:
   - Interactive dropdown with +/- buttons
   - Adults: 1-10
@@ -126,17 +132,18 @@ Fully functional sidebar widget with state management and user interaction.
   - Specific error messages (dates, auth, availability)
 
 **State Management:**
+
 ```typescript
-const [checkInDate, setCheckInDate] = useState<string>("")
-const [checkOutDate, setCheckOutDate] = useState<string>("")
-const [adults, setAdults] = useState<number>(2)
-const [children, setChildren] = useState<number>(0)
-const [selectedRoomId, setSelectedRoomId] = useState<string>("")
-const [isBooking, setIsBooking] = useState<boolean>(false)
-const [error, setError] = useState<string>("")
-const [showSuccess, setShowSuccess] = useState<boolean>(false)
-const [confirmationCode, setConfirmationCode] = useState<string>("")
-const [showGuestDropdown, setShowGuestDropdown] = useState<boolean>(false)
+const [checkInDate, setCheckInDate] = useState<string>("");
+const [checkOutDate, setCheckOutDate] = useState<string>("");
+const [adults, setAdults] = useState<number>(2);
+const [children, setChildren] = useState<number>(0);
+const [selectedRoomId, setSelectedRoomId] = useState<string>("");
+const [isBooking, setIsBooking] = useState<boolean>(false);
+const [error, setError] = useState<string>("");
+const [showSuccess, setShowSuccess] = useState<boolean>(false);
+const [confirmationCode, setConfirmationCode] = useState<string>("");
+const [showGuestDropdown, setShowGuestDropdown] = useState<boolean>(false);
 ```
 
 ---
@@ -144,6 +151,7 @@ const [showGuestDropdown, setShowGuestDropdown] = useState<boolean>(false)
 ## User Flow
 
 ### Happy Path
+
 1. User navigates to hotel detail page
 2. Selects check-in/check-out dates using date pickers
 3. Clicks guest selector, adjusts adults/children count
@@ -162,19 +170,23 @@ const [showGuestDropdown, setShowGuestDropdown] = useState<boolean>(false)
 ### Error Scenarios
 
 **Not Signed In:**
+
 - Action: Automatically redirect to `/sign-in`
 - User signs in → returns to hotel page
 
 **Invalid Dates:**
+
 - Error: "Please select check-in and check-out dates"
 - Error: "Check-out must be at least 1 day after check-in"
 - Error: "Check-in date must be today or in the future"
 
 **Room Not Available:**
+
 - Error: "This room is not available for the selected dates"
 - Suggestion: User selects different dates or room type
 
 **Network/Server Error:**
+
 - Error: "Failed to create booking. Please try again."
 - User can retry immediately
 
@@ -192,18 +204,18 @@ CREATE TABLE hotel_bookings (
   room_id uuid REFERENCES hotel_rooms(id),
   partner_id uuid REFERENCES hotel_partners(id),
   confirmation_code text UNIQUE NOT NULL,
-  
+
   -- Dates
   check_in_date date NOT NULL,
   check_out_date date NOT NULL,
-  
+
   -- Guest Information
   guest_name text NOT NULL,
   guest_email text NOT NULL,
   guest_phone text NOT NULL,
   guest_count jsonb NOT NULL,  -- {adults, children, infants}
   special_requests text,
-  
+
   -- Pricing (in cents)
   total_cents integer NOT NULL,
   nightly_rate_cents integer NOT NULL,
@@ -211,22 +223,22 @@ CREATE TABLE hotel_bookings (
   fees_cents integer NOT NULL,
   discount_cents integer DEFAULT 0,
   currency text DEFAULT 'USD',
-  
+
   -- Partner & Commission
   commission_cents integer DEFAULT 0,
   commission_rate numeric(5,4) DEFAULT 0,
-  
+
   -- Loyalty & Discounts
   tcent_used integer DEFAULT 0,
   tcent_earned integer DEFAULT 0,
   tcent_earn_rate numeric(5,4) DEFAULT 0,
   working_pass_applied boolean DEFAULT false,
   working_pass_discount_cents integer DEFAULT 0,
-  
+
   -- Status
   status text DEFAULT 'pending',
   payment_status text DEFAULT 'pending',
-  
+
   -- Timestamps
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
@@ -234,6 +246,7 @@ CREATE TABLE hotel_bookings (
 ```
 
 **Status Values:**
+
 - `pending`: Booking created, awaiting confirmation
 - `confirmed`: Booking confirmed
 - `checked_in`: Guest has checked in
@@ -243,6 +256,7 @@ CREATE TABLE hotel_bookings (
 - `modified`: Booking has been modified
 
 **Payment Status Values:**
+
 - `pending`: Payment not yet processed
 - `paid`: Payment successful
 - `refunded`: Full refund issued
@@ -266,6 +280,7 @@ Grand Total = Room Total + Tax + Service Fee - TCent Discount - Working Pass Dis
 ```
 
 **Example:**
+
 - Base Price: $840/night
 - Nights: 3
 - Room Total: $2,520
@@ -276,27 +291,32 @@ Grand Total = Room Total + Tax + Service Fee - TCent Discount - Working Pass Dis
 ### TCent Rewards
 
 **Earning Rate:**
+
 - Direct Booking: 10% of grand total
 - Partner Booking: 5% of grand total
 
 **Example:**
+
 - Grand Total: $2,898
 - TCent Earned (Direct): 290 TCent ($2.90 value)
 - TCent Earned (Partner): 145 TCent ($1.45 value)
 
 **Usage:**
+
 - 1 TCent = $0.01 discount
 - Can be applied during booking via `tcent_used` parameter
 
 ### Confirmation Code Generation
 
 **Format:** `ABC12345`
+
 - 3 uppercase letters (A-Z)
 - 5 digits (0-9)
 - Must be unique (checked against existing bookings)
 - Maximum 10 generation attempts
 
 **Examples:**
+
 - `TRP45789`
 - `SAN92341`
 - `BEA67890`
@@ -308,34 +328,40 @@ Grand Total = Room Total + Tax + Service Fee - TCent Discount - Working Pass Dis
 ### Manual Testing Checklist
 
 **Authentication:**
+
 - [ ] Clicking "Reserve" when not logged in redirects to sign-in
 - [ ] After sign-in, user returns to hotel page
 - [ ] Booking succeeds when user is authenticated
 
 **Date Selection:**
+
 - [ ] Cannot select past dates for check-in
 - [ ] Check-out date minimum is day after check-in
 - [ ] Price updates when dates change
 - [ ] Nights count displays correctly
 
 **Guest Selection:**
+
 - [ ] Guest dropdown opens on click
 - [ ] Can increment/decrement adults (1-10)
 - [ ] Can increment/decrement children (0-5)
 - [ ] Display updates: "X Adults, Y Children, 1 Room"
 
 **Room Selection:**
+
 - [ ] Room types display (first 3)
 - [ ] Clicking room selects it (orange border)
 - [ ] Only one room can be selected at a time
 
 **Price Breakdown:**
+
 - [ ] Displays when dates selected (nights > 0)
 - [ ] Shows: Base × Nights, Tax, Service Fee, Total
 - [ ] Calculates correctly (Tax=10%, Fee=5%)
 - [ ] Updates in real-time
 
 **Booking Submission:**
+
 - [ ] Button disabled when dates empty
 - [ ] Button disabled when nights < 1
 - [ ] Shows loading spinner during booking
@@ -344,6 +370,7 @@ Grand Total = Room Total + Tax + Service Fee - TCent Discount - Working Pass Dis
 - [ ] Confirmation code displays correctly
 
 **Error Handling:**
+
 - [ ] Invalid dates show error
 - [ ] Room unavailable shows error
 - [ ] Network errors show error
@@ -354,16 +381,19 @@ Grand Total = Room Total + Tax + Service Fee - TCent Discount - Working Pass Dis
 ## Integration Points
 
 ### Clerk Authentication
+
 - **Import:** `import { useUser } from '@clerk/nextjs'`
 - **Server:** `import { currentUser } from '@clerk/nextjs/server'`
 - **Usage:** Get user ID, name, email, phone
 
 ### Supabase Database
+
 - **Import:** `import { supabaseServerClient } from '@/lib/hotel/supabaseServerClient'`
 - **Tables:** `hotel_bookings`, `hotel_rooms`, `hotel_rates`, `hotel_partners`
 - **Operations:** Insert, Select, Update
 
 ### Navigation
+
 - **Router:** `import { useRouter } from 'next/navigation'`
 - **Redirect:** `/sign-in`, `/my-bookings`
 
@@ -372,6 +402,7 @@ Grand Total = Room Total + Tax + Service Fee - TCent Discount - Working Pass Dis
 ## Future Enhancements
 
 ### Phase 2 (Planned)
+
 - [ ] Payment gateway integration (Stripe)
 - [ ] Email confirmation sending
 - [ ] SMS notifications
@@ -381,6 +412,7 @@ Grand Total = Room Total + Tax + Service Fee - TCent Discount - Working Pass Dis
 - [ ] Installment payment plans
 
 ### Phase 3 (Long-term)
+
 - [ ] Dynamic pricing based on demand
 - [ ] Real-time availability updates
 - [ ] Booking modification flow
@@ -395,24 +427,28 @@ Grand Total = Room Total + Tax + Service Fee - TCent Discount - Working Pass Dis
 Before deploying to production:
 
 **Environment Variables:**
+
 - [ ] `NEXT_PUBLIC_SUPABASE_URL` set
 - [ ] `SUPABASE_SERVICE_ROLE_KEY` set (NEVER commit to repo)
 - [ ] `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` set
 - [ ] `CLERK_SECRET_KEY` set
 
 **Database:**
+
 - [ ] `hotel_bookings` table created
 - [ ] Indexes on `user_id`, `hotel_id`, `room_id`, `confirmation_code`
 - [ ] Foreign key constraints enabled
 - [ ] RLS (Row Level Security) configured if needed
 
 **Testing:**
+
 - [ ] End-to-end booking flow tested
 - [ ] Error scenarios tested
 - [ ] Mobile responsive layout verified
 - [ ] Cross-browser compatibility checked
 
 **Monitoring:**
+
 - [ ] Console logs for booking creation
 - [ ] Error tracking (Sentry, etc.)
 - [ ] Database query performance monitoring
@@ -423,11 +459,13 @@ Before deploying to production:
 ## Files Modified/Created
 
 ### Created
+
 1. ✅ `/app/api/bookings/route.ts` - Booking API endpoint (221 lines)
 2. ✅ `/docs/hotel/BOOKING_FLOW_ANALYSIS.md` - Full specification (350+ lines)
 3. ✅ `/docs/hotel/BOOKING_IMPLEMENTATION_SUMMARY.md` - This document
 
 ### Modified
+
 1. ✅ `/components/hotels/BookingSidebar.tsx` - Added state management, validation, API integration
 
 ---
@@ -435,11 +473,13 @@ Before deploying to production:
 ## Quick Reference
 
 ### API Endpoint
+
 ```
 POST /api/bookings
 ```
 
 ### Success Response
+
 ```json
 {
   "success": true,
@@ -447,13 +487,14 @@ POST /api/bookings
     "booking_id": "uuid",
     "confirmation_code": "ABC12345",
     "status": "confirmed",
-    "total_amount": 2898.00,
+    "total_amount": 2898.0,
     "tcent_earned": 290
   }
 }
 ```
 
 ### Error Response
+
 ```json
 {
   "success": false,
@@ -490,6 +531,7 @@ POST /api/bookings
 ## Contact
 
 For questions or issues with the booking system:
+
 - Check documentation: `/docs/hotel/BOOKING_FLOW_ANALYSIS.md`
 - Review code: `/app/api/bookings/route.ts`
 - Test component: `/components/hotels/BookingSidebar.tsx`

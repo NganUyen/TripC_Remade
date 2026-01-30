@@ -45,27 +45,28 @@ interface TransformedHotel {
  * Extract image URL from various formats
  */
 export function extractHotelImage(images: any): string {
-  const fallbackImage = 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800';
-  
+  const fallbackImage =
+    "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800";
+
   if (!images) return fallbackImage;
-  
+
   // Handle array of strings
   if (Array.isArray(images)) {
     if (images.length === 0) return fallbackImage;
-    
+
     const firstImage = images[0];
-    
+
     // If it's a string, return it
-    if (typeof firstImage === 'string') {
+    if (typeof firstImage === "string") {
       return firstImage;
     }
-    
+
     // If it's an object with url property
-    if (firstImage && typeof firstImage === 'object' && 'url' in firstImage) {
+    if (firstImage && typeof firstImage === "object" && "url" in firstImage) {
       return firstImage.url || fallbackImage;
     }
   }
-  
+
   return fallbackImage;
 }
 
@@ -73,36 +74,39 @@ export function extractHotelImage(images: any): string {
  * Calculate hotel price based on star rating and room type
  * This is a temporary solution until we fetch actual rates from the API
  */
-export function calculateHotelPrice(starRating: number = 3, city?: string): { price: number; originalPrice: number } {
+export function calculateHotelPrice(
+  starRating: number = 3,
+  city?: string,
+): { price: number; originalPrice: number } {
   // Base prices by star rating (in USD)
   const basePrices: Record<number, number> = {
     5: 200,
     4: 120,
     3: 80,
     2: 50,
-    1: 30
+    1: 30,
   };
-  
+
   const basePrice = basePrices[Math.floor(starRating)] || basePrices[3];
-  
+
   // Add city multiplier
   const cityMultipliers: Record<string, number> = {
-    'Hanoi': 1.0,
-    'Ho Chi Minh City': 1.1,
-    'Da Nang': 0.9,
-    'Nha Trang': 0.85,
-    'Hoi An': 0.95,
-    'Phu Quoc': 1.15,
-    'Da Lat': 0.8
+    Hanoi: 1.0,
+    "Ho Chi Minh City": 1.1,
+    "Da Nang": 0.9,
+    "Nha Trang": 0.85,
+    "Hoi An": 0.95,
+    "Phu Quoc": 1.15,
+    "Da Lat": 0.8,
   };
-  
-  const multiplier = city ? (cityMultipliers[city] || 1.0) : 1.0;
+
+  const multiplier = city ? cityMultipliers[city] || 1.0 : 1.0;
   const price = Math.round(basePrice * multiplier);
-  
+
   // Original price is 15-25% higher
   const discountPercent = 15 + Math.random() * 10;
   const originalPrice = Math.round(price / (1 - discountPercent / 100));
-  
+
   return { price, originalPrice };
 }
 
@@ -116,9 +120,9 @@ export function generateReviewCount(starRating: number = 3): number {
     4: [800, 2000],
     3: [400, 1200],
     2: [200, 600],
-    1: [50, 200]
+    1: [50, 200],
   };
-  
+
   const [min, max] = baseReviews[Math.floor(starRating)] || baseReviews[3];
   return Math.floor(Math.random() * (max - min)) + min;
 }
@@ -126,17 +130,21 @@ export function generateReviewCount(starRating: number = 3): number {
 /**
  * Determine badge based on hotel properties and index
  */
-export function determineBadge(index: number, starRating?: number, city?: string): string | null {
-  if (index === 0) return 'Flash Sale';
-  if (index === 1 && starRating === 5) return 'Top Rated';
-  if (index === 2) return 'Best Value';
-  
+export function determineBadge(
+  index: number,
+  starRating?: number,
+  city?: string,
+): string | null {
+  if (index === 0) return "Flash Sale";
+  if (index === 1 && starRating === 5) return "Top Rated";
+  if (index === 2) return "Best Value";
+
   // Random badges for some hotels
   if (Math.random() > 0.8) {
-    const badges = ['Limited Time', 'Popular', 'Recommended', 'New'];
+    const badges = ["Limited Time", "Popular", "Recommended", "New"];
     return badges[Math.floor(Math.random() * badges.length)];
   }
-  
+
   return null;
 }
 
@@ -145,13 +153,13 @@ export function determineBadge(index: number, starRating?: number, city?: string
  */
 export function transformHotelData(
   hotels: HotelAPIResponse[],
-  destinationCity?: string
+  destinationCity?: string,
 ): TransformedHotel[] {
   return hotels.map((hotel, index) => {
-    const city = hotel.address?.city || destinationCity || 'Vietnam';
+    const city = hotel.address?.city || destinationCity || "Vietnam";
     const starRating = hotel.star_rating || 4;
     const { price, originalPrice } = calculateHotelPrice(starRating, city);
-    
+
     return {
       id: hotel.id || index + 1, // Use actual hotel ID if available
       slug: hotel.slug,
@@ -166,7 +174,7 @@ export function transformHotelData(
       price,
       amenities: Array.isArray(hotel.amenities) ? hotel.amenities : [],
       description: hotel.description,
-      badge: determineBadge(index, starRating, city)
+      badge: determineBadge(index, starRating, city),
     };
   });
 }
@@ -174,22 +182,22 @@ export function transformHotelData(
 /**
  * Format price for display
  */
-export function formatPrice(cents: number, currency: string = 'USD'): string {
+export function formatPrice(cents: number, currency: string = "USD"): string {
   const symbols: Record<string, string> = {
-    'USD': '$',
-    'VND': '₫',
-    'EUR': '€',
-    'GBP': '£'
+    USD: "$",
+    VND: "₫",
+    EUR: "€",
+    GBP: "£",
   };
-  
+
   const symbol = symbols[currency] || currency;
   const amount = cents / 100;
-  
-  if (currency === 'VND') {
+
+  if (currency === "VND") {
     // Vietnamese Dong doesn't use decimals
-    return `${amount.toLocaleString('vi-VN')}${symbol}`;
+    return `${amount.toLocaleString("vi-VN")}${symbol}`;
   }
-  
+
   return `${symbol}${amount.toFixed(2)}`;
 }
 
@@ -200,22 +208,22 @@ export function validateHotelData(hotel: HotelAPIResponse): {
   isValid: boolean;
   missingFields: string[];
 } {
-  const required = ['slug', 'name', 'address'];
+  const required = ["slug", "name", "address"];
   const missingFields: string[] = [];
-  
+
   for (const field of required) {
     if (!(field in hotel) || !hotel[field as keyof HotelAPIResponse]) {
       missingFields.push(field);
     }
   }
-  
+
   // Check if address has city
   if (hotel.address && !hotel.address.city) {
-    missingFields.push('address.city');
+    missingFields.push("address.city");
   }
-  
+
   return {
     isValid: missingFields.length === 0,
-    missingFields
+    missingFields,
   };
 }

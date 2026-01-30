@@ -91,9 +91,14 @@ export function HotelList() {
         }
 
         // Use the data utility function to transform hotels
-        const transformedHotels = transformHotelData(result.data, destination || 'Vietnam');
-        
-        console.log(`Fetched ${transformedHotels.length} hotels${destination ? ' for ' + destination : ''}`);
+        const transformedHotels = transformHotelData(
+          result.data,
+          destination || "Vietnam",
+        );
+
+        console.log(
+          `Fetched ${transformedHotels.length} hotels${destination ? " for " + destination : ""}`,
+        );
         setHotels(transformedHotels);
         setTotalCount(transformedHotels.length);
         setDisplayCount(10); // Reset to show first 10 on new search
@@ -397,8 +402,10 @@ export function HotelList() {
       })}
 
       {displayCount < totalCount && (
-        <button 
-          onClick={() => setDisplayCount(prev => Math.min(prev + 10, totalCount))}
+        <button
+          onClick={() =>
+            setDisplayCount((prev) => Math.min(prev + 10, totalCount))
+          }
           className="w-full py-4 text-center text-slate-500 dark:text-slate-400 font-semibold hover:text-orange-500 transition-colors"
         >
           Show more results... ({displayCount} of {totalCount})

@@ -5,6 +5,7 @@
 ### 1. **Hotel Detail Pages** (`/hotels/[id]`)
 
 Individual pages for each hotel in the database, displaying:
+
 - Hero image gallery with parallax scrolling
 - Hotel name, location, star rating, and reviews
 - Full hotel description
@@ -14,6 +15,7 @@ Individual pages for each hotel in the database, displaying:
 - Weather and packing recommendations
 
 **Files Created/Modified:**
+
 - ✅ `app/hotels/[id]/page.tsx` - Main hotel detail page (server component)
 - ✅ `app/hotels/[id]/not-found.tsx` - 404 page for non-existent hotels
 - ✅ `components/hotels/HotelDetailHero.tsx` - Hero section with image gallery
@@ -23,12 +25,14 @@ Individual pages for each hotel in the database, displaying:
 ### 2. **Functional Filters** (`/hotels`)
 
 Real-time filtering system that updates URL parameters:
+
 - ✅ Price range slider ($50 - $1000+)
 - ✅ Star rating checkboxes (3★, 4★, 5★)
 - ✅ Amenity filters (breakfast, pool, spa, wifi, beach)
 - ✅ Reset filters button
 
 **Files Modified:**
+
 - ✅ `components/hotels/HotelFilters.tsx` - Connected to URL search params
 - ✅ `app/api/hotels/route.ts` - Added filter parameters to API
 
@@ -39,6 +43,7 @@ Real-time filtering system that updates URL parameters:
 - ✅ Data transformation utilities preserve hotel ID and slug
 
 **Files Modified:**
+
 - ✅ `components/hotels/HotelList.tsx` - Links use hotel slug
 - ✅ `lib/hotel/dataUtils.ts` - Preserves hotel ID and slug
 
@@ -159,6 +164,7 @@ Results update in real-time
 ### **Test Hotel Detail Pages**
 
 1. **Navigate to hotel list:**
+
    ```
    http://localhost:3001/hotels?destination=Hanoi
    ```
@@ -169,6 +175,7 @@ Results update in real-time
    - Images should load (or show fallbacks)
 
 3. **Test with different hotels:**
+
    ```
    /hotels/grand-saigon-hotel
    /hotels/hanoi-pearl-resort
@@ -179,6 +186,7 @@ Results update in real-time
    ```
    /hotels/non-existent-hotel
    ```
+
    - Should show "Hotel Not Found" page
    - Should have links to browse hotels or go home
 
@@ -213,11 +221,13 @@ Results update in real-time
 Fetch individual hotel details.
 
 **Example:**
+
 ```bash
 curl http://localhost:3001/api/hotels/grand-saigon-hotel
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -251,6 +261,7 @@ curl http://localhost:3001/api/hotels/grand-saigon-hotel
 List hotels with filter parameters.
 
 **Parameters:**
+
 - `city` - Filter by city (ILIKE)
 - `maxPrice` - Maximum price in dollars
 - `stars` - Star ratings (comma-separated)
@@ -259,6 +270,7 @@ List hotels with filter parameters.
 - `offset` - Pagination offset
 
 **Example:**
+
 ```bash
 curl "http://localhost:3001/api/hotels?city=Hanoi&maxPrice=500&stars=4,5&amenities=pool,wifi"
 ```
@@ -272,6 +284,7 @@ curl "http://localhost:3001/api/hotels?city=Hanoi&maxPrice=500&stars=4,5&ameniti
 **Issue:** Hotel detail page shows no images
 
 **Solution:**
+
 1. Check if hotel has images in database:
    ```sql
    SELECT name, images FROM hotels WHERE slug = 'grand-saigon-hotel';
@@ -284,6 +297,7 @@ curl "http://localhost:3001/api/hotels?city=Hanoi&maxPrice=500&stars=4,5&ameniti
 **Issue:** Hotel detail page shows "Hotel Not Found"
 
 **Solution:**
+
 1. Verify hotel exists in database:
    ```sql
    SELECT slug, name FROM hotels WHERE status = 'active';
@@ -299,6 +313,7 @@ curl "http://localhost:3001/api/hotels?city=Hanoi&maxPrice=500&stars=4,5&ameniti
 **Issue:** Adjusting filters doesn't update results
 
 **Solution:**
+
 1. Check URL parameters are updating
 2. Open browser DevTools → Network tab
 3. Watch API call when filter changes
@@ -310,6 +325,7 @@ curl "http://localhost:3001/api/hotels?city=Hanoi&maxPrice=500&stars=4,5&ameniti
 **Issue:** Booking sidebar shows incorrect pricing
 
 **Solution:**
+
 1. Check if hotel has `best_price` in database
 2. Verify `best_price` is in cents (not dollars)
 3. Check console for transformation errors

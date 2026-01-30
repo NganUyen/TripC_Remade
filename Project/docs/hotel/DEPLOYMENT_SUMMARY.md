@@ -3,12 +3,14 @@
 ## ✅ Completed Work
 
 ### 1. **Database Seed Script Created**
+
 - **File**: `docs/hotel/migrations/002_add_more_hotels.sql`
 - **Contents**: 22 premium hotels across 7 Vietnamese cities
 - **Cities**: Hanoi (5), Ho Chi Minh City (5), Da Nang (4), Nha Trang (3), Hoi An (2), Phu Quoc (2), Da Lat (2)
 - **Total Records**: 88 rooms, 110 partner listings, 26,400 rate records
 
 ### 2. **Data Transformation Utilities**
+
 - **File**: `lib/hotel/dataUtils.ts`
 - **Features**:
   - Image extraction from various formats
@@ -18,6 +20,7 @@
   - Complete hotel data transformation
 
 ### 3. **Frontend Components Updated**
+
 - **HotelList.tsx**: Integrated transformHotelData utility, added console logging
 - **HotelFilters.tsx**: Made fully functional with URL parameter management
   - Price range filter (updates URL)
@@ -26,6 +29,7 @@
   - Reset functionality
 
 ### 4. **API Enhancements**
+
 - **File**: `app/api/hotels/route.ts`
 - **New Filters**:
   - `maxPrice` - Filter by maximum price in dollars
@@ -34,6 +38,7 @@
 - **Enhanced Logging**: Shows found count, filters applied, total in database
 
 ### 5. **Documentation**
+
 - **SEED_INSTRUCTIONS.md**: Step-by-step deployment guide
 - **test_hotels.sql**: 10 verification queries
 - **DEPLOYMENT_SUMMARY.md**: This file
@@ -81,6 +86,7 @@
 ### Step 2: Test the Frontend
 
 1. **Start your development server** (if not running):
+
    ```bash
    cd Project
    npm run dev
@@ -136,10 +142,13 @@ http://localhost:3000/api/hotels?city=Ho%20Chi%20Minh%20City&stars=5&maxPrice=30
 ```
 
 **Expected Response Format**:
+
 ```json
 {
   "success": true,
-  "data": [ /* array of hotels */ ],
+  "data": [
+    /* array of hotels */
+  ],
   "pagination": {
     "total": 25,
     "limit": 20,
@@ -166,6 +175,7 @@ http://localhost:3000/api/hotels?city=Ho%20Chi%20Minh%20City&stars=5&maxPrice=30
 **Cause**: Seed script not run or failed
 
 **Solution**:
+
 1. Check if seed script executed successfully
 2. Run test query in Supabase: `SELECT COUNT(*) FROM hotels;`
 3. Expected: Should return 25 (3 original + 22 new)
@@ -176,6 +186,7 @@ http://localhost:3000/api/hotels?city=Ho%20Chi%20Minh%20City&stars=5&maxPrice=30
 **Cause**: City name mismatch or search parameters not working
 
 **Solution**:
+
 1. Check browser console for errors
 2. Look for API log: `[Hotels API] Found X hotels`
 3. If X = 0 but database has hotels, check city spelling
@@ -187,6 +198,7 @@ http://localhost:3000/api/hotels?city=Ho%20Chi%20Minh%20City&stars=5&maxPrice=30
 **Cause**: URL parameters not updating or API not receiving them
 
 **Solution**:
+
 1. Open browser DevTools → Network tab
 2. Filter for "hotels" requests
 3. Click on request, check "Query String Parameters"
@@ -198,6 +210,7 @@ http://localhost:3000/api/hotels?city=Ho%20Chi%20Minh%20City&stars=5&maxPrice=30
 **Cause**: Invalid image URLs in database or CDN issues
 
 **Solution**:
+
 1. Check hotel object in console: `console.log(hotel.images)`
 2. Verify images array exists and has valid URLs
 3. dataUtils.ts has fallback image for missing images
@@ -208,6 +221,7 @@ http://localhost:3000/api/hotels?city=Ho%20Chi%20Minh%20City&stars=5&maxPrice=30
 **Cause**: best_price field not set or null
 
 **Solution**:
+
 1. Seed script includes price calculation UPDATE
 2. Verify prices in database: `SELECT name, best_price FROM hotels LIMIT 5;`
 3. Should show prices in cents (e.g., 15000 = $150)
@@ -220,8 +234,9 @@ http://localhost:3000/api/hotels?city=Ho%20Chi%20Minh%20City&stars=5&maxPrice=30
 After running the seed script, verify using these queries:
 
 ### 1. Total Counts
+
 ```sql
-SELECT 
+SELECT
   (SELECT COUNT(*) FROM hotels) as hotels,
   (SELECT COUNT(*) FROM hotel_rooms) as rooms,
   (SELECT COUNT(*) FROM hotel_partner_listings) as listings,
@@ -229,38 +244,42 @@ SELECT
 ```
 
 **Expected**:
+
 - Hotels: 25
 - Rooms: 100
 - Listings: 125
 - Rates: 30,000
 
 ### 2. City Distribution
+
 ```sql
-SELECT 
-  address->>'city' as city, 
+SELECT
+  address->>'city' as city,
   COUNT(*) as hotel_count,
   AVG(star_rating)::numeric(3,1) as avg_stars
-FROM hotels 
-GROUP BY address->>'city' 
+FROM hotels
+GROUP BY address->>'city'
 ORDER BY hotel_count DESC;
 ```
 
 ### 3. Sample Hotel Details
+
 ```sql
-SELECT 
-  name, 
+SELECT
+  name,
   address->>'city' as city,
   star_rating,
   best_price / 100.0 as price_usd,
   array_length(amenities, 1) as amenity_count
-FROM hotels 
-ORDER BY best_price DESC 
+FROM hotels
+ORDER BY best_price DESC
 LIMIT 10;
 ```
 
 ### 4. Verify Rates Exist
+
 ```sql
-SELECT 
+SELECT
   h.name,
   COUNT(DISTINCT hr.id) as room_types,
   COUNT(DISTINCT hpl.id) as partners,
@@ -297,12 +316,14 @@ Your hotel system is working correctly when:
 ## 📝 What Was Fixed
 
 ### Previous Issues:
+
 1. **"0 Properties Found"**: Only 3 hotels in database, insufficient for testing
 2. **Static Filters**: Checkboxes didn't do anything
 3. **No Price Filter**: Couldn't filter by budget
 4. **Manual Data Transformation**: Code duplication in components
 
 ### Solutions Implemented:
+
 1. **22 New Hotels**: Comprehensive inventory across 7 cities
 2. **Functional Filters**: URL-based filter management
 3. **Price & Amenity Filters**: API supports maxPrice and amenities parameters
@@ -316,12 +337,14 @@ Your hotel system is working correctly when:
 ### Filter Implementation
 
 **Frontend (HotelFilters.tsx)**:
+
 - Uses `useSearchParams()` to read current URL
 - Updates URL when filters change
 - Preserves search parameters (destination, dates, guests)
 - Resets filters while keeping search context
 
 **API (route.ts)**:
+
 - Parses filter parameters from URL
 - Applies Supabase query filters:
   - `stars`: `.in("star_rating", [5, 4])`
@@ -330,8 +353,9 @@ Your hotel system is working correctly when:
 - Returns filtered results with query echo
 
 **Data Flow**:
+
 ```
-User Clicks Filter 
+User Clicks Filter
   → URL Updates (?stars=5&maxPrice=200)
   → HotelList Detects URL Change
   → Fetches from API with Parameters
@@ -343,11 +367,13 @@ User Clicks Filter
 ### Price Calculation
 
 Hotels have `best_price` stored in cents (database) and displayed in dollars (frontend):
+
 - **5-Star**: $180-$400 (base $200)
 - **4-Star**: $100-$200 (base $120)
 - **3-Star**: $70-$120 (base $80)
 
 City multipliers:
+
 - **Ho Chi Minh City**: 1.1x
 - **Phu Quoc**: 1.15x (resort island premium)
 - **Other Cities**: 1.0x
@@ -359,23 +385,27 @@ Discounts: 15-25% random discount applied to some hotels for "deals"
 ## 📱 Frontend Components
 
 ### HotelHero
+
 - **Purpose**: Search widget with destination, dates, guests
 - **Output**: Generates URL like `/hotels?destination=Hanoi&checkIn=2024-01-15...`
 - **Status**: ✅ Already functional
 
 ### HotelList
+
 - **Purpose**: Display search results
 - **Features**: Loading state, error handling, empty state
 - **Data**: Fetches from `/api/hotels` with URL parameters
 - **Status**: ✅ Updated to use transformHotelData utility
 
 ### HotelFilters
+
 - **Purpose**: Filter search results
 - **Features**: Price slider, star checkboxes, amenity checkboxes, reset
 - **Behavior**: Updates URL parameters on change
 - **Status**: ✅ Now fully functional
 
 ### HotelCard (via transformHotelData)
+
 - **Purpose**: Individual hotel display
 - **Features**: Image, name, location, price, rating, amenities, badges
 - **Status**: ✅ Receives transformed data from utility
@@ -423,6 +453,7 @@ If you encounter issues:
 ## ✨ Summary
 
 You now have a **fully functional hotel search system** with:
+
 - 25 hotels across 7 Vietnamese cities
 - Working search by destination
 - Functional filters (price, stars, amenities)
