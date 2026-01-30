@@ -6,7 +6,7 @@ import { UserProfileMenu } from "./UserProfileMenu";
 import { BellButton } from "./notifications/BellButton";
 import { SignInButton, SignedIn, SignedOut, useUser } from "@clerk/nextjs";
 import { CartIcon } from "@/components/shop/cart/CartIcon";
-import { Globe, Search } from "lucide-react";
+import { Globe } from "lucide-react";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 
 export function Header() {
@@ -29,18 +29,6 @@ export function Header() {
                 TripC Pro
               </h2>
             </Link>
-            <div className="hidden md:flex flex-1 max-w-md">
-              <div className="relative w-full group">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Search className="w-5 h-5 text-slate-400" />
-                </div>
-                <input
-                  type="text"
-                  className="block w-full pl-10 pr-3 py-2.5 border-none rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
-                  placeholder="Search destinations, hotels, flights..."
-                />
-              </div>
-            </div>
           </div>
           <div className="flex items-center gap-6">
             <nav className="hidden lg:flex items-center gap-6">

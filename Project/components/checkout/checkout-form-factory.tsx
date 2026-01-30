@@ -1,6 +1,5 @@
 import { ServiceType } from '@/lib/checkout/types';
 import { ShopCheckoutForm } from './forms/shop-checkout-form';
-import { TransportCheckoutForm } from './forms/transport-checkout-form';
 
 interface Props {
     serviceType: ServiceType;

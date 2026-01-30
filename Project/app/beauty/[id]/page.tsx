@@ -1,10 +1,59 @@
 "use client"
 
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
+import { useRouter, useParams } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { beautyApi } from '@/lib/beauty/api'
+import type { BeautyService, BeautyVenue } from '@/lib/beauty/types'
+
+const FALLBACK_HERO = {
+    title: 'Radiance Renewal Facial',
+    description: 'Transform your skin with our signature luxury ritual, designed for immediate luminosity and deep restoration.',
+    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD69V78Zoy-Xc0l_UHWAJ5LFipbj1SKZqa5c5L3kHbUrs2hNoFj24NIJKKIkonNnoGzxRSE8b1q78fZwPh5uf3GzoStSk6ObLa0OvE5F_pKEAklgpLeguvclP_q9BTb7ijUfiuDMchFndHGV6Smgy1j_dCXt1mdQVkJ366WFeBJfK0PMJtFRccq4sgZU47ApRqHNBQZOJnRJNnnxLgn_2NVGhyJ_qAIoy0RoE82WtQCO9QFH1-9OPE8DC8JG3cZNOiiY5FjesaWi48',
+}
+const FALLBACK_VENUE = { name: 'Aura Wellness Spa', address: '124 Avenue des Champs-Élysées, 75008 Paris, France', distance: '1.2 km away' }
+const FALLBACK_PRICE = 120
+const FALLBACK_DURATION = 90
 
 export default function BeautyDetailPage() {
     const router = useRouter()
+    const params = useParams()
+    const id = typeof params?.id === 'string' ? params.id : null
+    const [service, setService] = useState<BeautyService | null>(null)
+    const [venue, setVenue] = useState<BeautyVenue | null>(null)
+    const [loading, setLoading] = useState(!!id)
+
+    useEffect(() => {
+        if (!id) {
+            setLoading(false)
+            return
+        }
+        beautyApi
+            .getServiceById(id)
+            .then((s) => {
+                setService(s)
+                return s.venue_id ? beautyApi.getVenueById(s.venue_id) : null
+            })
+            .then((v) => v && setVenue(v))
+            .catch(() => {})
+            .finally(() => setLoading(false))
+    }, [id])
+
+    const title = service?.name ?? FALLBACK_HERO.title
+    const description = service?.description ?? FALLBACK_HERO.description
+    const heroImage = service?.image_url ?? FALLBACK_HERO.image
+    const price = service?.price ?? FALLBACK_PRICE
+    const duration = service?.duration_minutes ?? FALLBACK_DURATION
+    const venueName = venue?.name ?? FALLBACK_VENUE.name
+    const venueAddress = venue?.address ?? venue?.location_summary ?? FALLBACK_VENUE.address
+    const venueDistance = venue?.location_summary ?? FALLBACK_VENUE.distance
+
+    if (loading) {
+        return (
+            <div className="bg-background-light dark:bg-background-dark min-h-screen flex items-center justify-center">
+                <div className="animate-pulse text-zinc-500 font-medium">Loading...</div>
+            </div>
+        )
+    }
 
     return (
         <div className="bg-background-light dark:bg-background-dark text-[#181210] dark:text-[#f5f1f0] min-h-screen">
@@ -20,12 +69,12 @@ export default function BeautyDetailPage() {
             <section className="relative w-full h-[600px] overflow-hidden rounded-b-[3rem] shadow-2xl">
                 <div
                     className="absolute inset-0 w-full h-full bg-center bg-no-repeat bg-cover"
-                    style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuD69V78Zoy-Xc0l_UHWAJ5LFipbj1SKZqa5c5L3kHbUrs2hNoFj24NIJKKIkonNnoGzxRSE8b1q78fZwPh5uf3GzoStSk6ObLa0OvE5F_pKEAklgpLeguvclP_q9BTb7ijUfiuDMchFndHGV6Smgy1j_dCXt1mdQVkJ366WFeBJfK0PMJtFRccq4sgZU47ApRqHNBQZOJnRJNnnxLgn_2NVGhyJ_qAIoy0RoE82WtQCO9QFH1-9OPE8DC8JG3cZNOiiY5FjesaWi48")' }}
-                ></div>
-                <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/40"></div>
+                    style={{ backgroundImage: `url("${heroImage}")` }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/40" />
                 <div className="absolute bottom-12 left-12 md:left-40 max-w-2xl">
-                    <h1 className="font-display text-5xl md:text-7xl font-black text-white leading-tight tracking-tight">Radiance Renewal Facial</h1>
-                    <p className="text-white/90 text-lg md:text-xl mt-4 font-light max-w-lg">Transform your skin with our signature luxury ritual, designed for immediate luminosity and deep restoration.</p>
+                    <h1 className="font-display text-5xl md:text-7xl font-black text-white leading-tight tracking-tight">{title}</h1>
+                    <p className="text-white/90 text-lg md:text-xl mt-4 font-light max-w-lg">{description}</p>
                 </div>
             </section>
 
@@ -128,11 +177,11 @@ export default function BeautyDetailPage() {
                             <div className="flex justify-between items-center mb-8">
                                 <div>
                                     <p className="text-sm text-zinc-500 uppercase tracking-widest font-bold">Price</p>
-                                    <p className="text-4xl font-display font-black">$120</p>
+                                    <p className="text-4xl font-display font-black">${price}</p>
                                 </div>
                                 <div className="text-right">
                                     <p className="text-sm text-zinc-500 uppercase tracking-widest font-bold">Time</p>
-                                    <p className="text-xl font-bold">90 mins</p>
+                                    <p className="text-xl font-bold">{duration} mins</p>
                                 </div>
                             </div>
                             <div className="space-y-4 mb-8">
@@ -181,12 +230,12 @@ export default function BeautyDetailPage() {
                                 <span className="w-2 h-2 rounded-full bg-green-500"></span>
                                 <span className="text-[10px] font-bold uppercase tracking-wider text-green-600 dark:text-green-400">Open Now</span>
                             </div>
-                            <h3 className="font-display text-xl font-bold mb-1 text-slate-900 dark:text-white">Aura Wellness Spa</h3>
-                            <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed mb-4">124 Avenue des Champs-Élysées, 75008 Paris, France</p>
+                            <h3 className="font-display text-xl font-bold mb-1 text-slate-900 dark:text-white">{venueName}</h3>
+                            <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed mb-4">{venueAddress}</p>
                             <div className="flex items-center justify-between mb-6">
                                 <div className="flex items-center gap-2 text-zinc-500">
                                     <span className="material-symbols-outlined text-sm">near_me</span>
-                                    <span className="text-xs font-semibold">1.2 km away</span>
+                                    <span className="text-xs font-semibold">{venueDistance}</span>
                                 </div>
                             </div>
                             <button className="w-full py-3 bg-primary hover:bg-primary/90 text-white rounded-full font-bold text-sm shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2">

@@ -104,13 +104,9 @@ To implement Flight and Hotel checkouts efficiently, follow **Pattern A (Unified
 
 ## 6. Common Gotchas & Fixes
 
-### 🔴 "Booking Not Found" / 403 Forbidden / Not Acceptable (PGRST116)
-*   **Cause:**
-    1.  API comparing Clerk ID (String) vs Booking User ID (UUID).
-    2.  Frontend Client trying to `supabase.from('bookings').select()` directly. **This fails RLS** because `auth.uid()` is a Clerk ID, but `bookings.user_id` is a UUID.
-*   **Fix:**
-    *   **NEVER** use direct Supabase calls to fetch recent bookings in the client.
-    *   **ALWAYS** use `fetch('/api/bookings/' + bookingId)`. The API route runs on the server and handles the ID translation securely. (Patched in Transport Checkout).
+### 🔴 "Booking Not Found" / 403 Forbidden
+*   **Cause:** API comparing Clerk ID (String) vs Booking User ID (UUID).
+*   **Fix:** Ensure API resolves Clerk ID -> UUID before comparison (Fixed in `api/bookings/[id]`).
 
 ### 🔴 PayPal Currency Error (VND vs USD)
 *   **Cause:** PayPal API rejects VND.
