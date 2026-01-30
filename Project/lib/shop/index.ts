@@ -1,101 +1,107 @@
 /**
  * Shop Module Exports
- * 
+ *
  * Central export point for shop module utilities and types.
  * Use this for clean imports across the application.
- * 
+ *
  * @example
  * ```ts
  * import { Product, successResponse, getProducts } from '@/lib/shop';
  * ```
  */
 
+// Supabase Client
+export {
+  supabaseServerClient,
+  testDatabaseConnection,
+} from "./supabaseServerClient";
+
 // Types
 export type {
-    Money,
-    Product,
-    Variant,
-    VariantOption,
-    Category,
-    Brand,
-    ProductImage,
-    ShippingMethod,
-    Coupon,
-    VoucherTemplate,
-    CartItem,
-    Cart,
-    Order,
-    Address,
-    UserVoucher,
-    Review,
-    ReviewSummary,
-    ShopMockData,
-} from './types';
+  Money,
+  Product,
+  Variant,
+  VariantOption,
+  Category,
+  Brand,
+  ProductImage,
+  ShippingMethod,
+  Coupon,
+  VoucherTemplate,
+  CartItem,
+  Cart,
+  Order,
+  Address,
+  UserVoucher,
+  Review,
+  ReviewSummary,
+  ShopMockData,
+} from "./types";
 
 // Utilities (response helpers, auth, etc.)
 export {
-    generateRequestId,
-    money,
-    successResponse,
-    paginatedResponse,
-    errorResponse,
-} from './utils';
+  generateRequestId,
+  money,
+  successResponse,
+  paginatedResponse,
+  errorResponse,
+} from "./utils";
 
-export { getDbUserId } from './queries';
+export { getDbUserId } from "./queries";
 
 // Database Queries (interface layer - mock now, Supabase later)
 export {
-    // Products
-    getProducts,
-    getProductBySlug,
-    getProductById,
-    searchProducts,
-    getVariantsByProductId,
-    getVariantById,
-    getProductImages,
+  // Products
+  getProducts,
+  getProductBySlug,
+  getProductById,
+  searchProducts,
+  getVariantsByProductId,
+  getVariantById,
+  getProductImages,
 
-    // Categories & Brands
-    getCategories,
-    getCategoryTree,
-    getBrands,
+  // Categories & Brands
+  getCategories,
+  getCategoryTree,
+  getBrands,
 
-    // Cart
-    getCart,
-    getOrCreateCart,
-    addCartItem,
-    updateCartItem,
-    removeCartItem,
-    applyCouponToCart,
+  // Cart
+  getCart,
+  getOrCreateCart,
+  addCartItem,
+  updateCartItem,
+  removeCartItem,
+  applyCouponToCart,
 
-    // Shipping
-    getShippingMethods,
+  // Shipping
+  getShippingMethods,
 
-    // Addresses
-    getUserAddresses,
+  // Addresses
+  getUserAddresses,
 
-    // Orders
-    createOrder,
-    getOrders,
-    getOrderByNumber,
-    cancelOrder,
-    getOrderHistory,
+  // Orders
+  createOrder,
+  getOrders,
+  getOrderByNumber,
+  cancelOrder,
+  getOrderHistory,
 
-    // Vouchers
-    getAvailableVouchers,
-    getUserVouchers,
-    redeemVoucher,
+  // Vouchers
+  getAvailableVouchers,
+  getUserVouchers,
+  redeemVoucher,
 
-    // Wishlist
-    getWishlist,
-    addToWishlist,
-    removeFromWishlist,
+  // Wishlist
+  getWishlist,
+  addToWishlist,
+  removeFromWishlist,
 
-    // Reviews
-    getReviewsByProductId,
-    getReviews,
-    getReviewsSummary,
-    createReview,
+  // Reviews
+  getReviewsByProductId,
+  getReviews,
+  getReviewsSummary,
+  createReview,
 
-    // Addresses
-    createAddress,
-} from './queries';
+  // Addresses
+  createAddress,
+} from "./queries";

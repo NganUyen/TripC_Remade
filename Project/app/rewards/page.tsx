@@ -15,6 +15,26 @@ import { staggerContainer, Voucher } from '@/components/rewards/shared'
 
 export default function RewardsPage() {
     const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(null)
+    const [userData, setUserData] = useState<{
+        tcent_balance: number
+        membership_tier: 'BRONZE' | 'SILVER' | 'GOLD' | 'PLATINUM'
+        tcent_pending: number
+    } | null>(null)
+
+    React.useEffect(() => {
+        const fetchUserData = async () => {
+            try {
+                const res = await fetch('/api/v1/user/status')
+                if (res.ok) {
+                    const data = await res.json()
+                    setUserData(data)
+                }
+            } catch (error) {
+                console.error('Failed to fetch user status', error)
+            }
+        }
+        fetchUserData()
+    }, [])
 
     return (
         <main className="min-h-screen bg-[#fcfaf8] dark:bg-[#0a0a0a] pb-20">
@@ -29,7 +49,11 @@ export default function RewardsPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                     {/* Left Main Content */}
                     <div className="lg:col-span-8">
-                        <BalanceHeader />
+                        <BalanceHeader
+                            tcent_balance={userData?.tcent_balance ?? 0}
+                            membership_tier={userData?.membership_tier ?? 'BRONZE'}
+                            tcent_pending={userData?.tcent_pending ?? 0}
+                        />
                         <PromoBanners />
                         <QuestCard />
                         <StartEarningBar />

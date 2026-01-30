@@ -19,7 +19,7 @@ A modern, full-stack travel booking platform built with Next.js 14, featuring re
 - **User Bookings**: Track reservations across all services
 - **Wishlist System**: Save favorite destinations and experiences
 - **Rewards Program**: Built-in loyalty points system
-- **AI Chat Assistant**: Intelligent travel planning assistant
+- **🤖 AI Chat Assistant**: Intelligent travel planning assistant powered by Deepseek AI with 40+ tools
 - **Partner Portal**: Separate interface for business owners
 
 ### 🎨 Design
@@ -113,12 +113,39 @@ We've created comprehensive documentation to help you:
 | **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** | Common issues & solutions       | When stuck              |
 | **[SUMMARY.md](SUMMARY.md)**                 | What was configured             | Overview                |
 
+### 🤖 AI Chatbot Documentation
+
+Complete documentation for the AI-powered chatbot system:
+
+| Document                                                               | Description                      |
+| ---------------------------------------------------------------------- | -------------------------------- |
+| **[docs/chatbot/INDEX.md](docs/chatbot/INDEX.md)**                     | Documentation index & navigation |
+| **[docs/chatbot/QUICK_REFERENCE.md](docs/chatbot/QUICK_REFERENCE.md)** | One-page quick reference         |
+| **[docs/chatbot/INSTALLATION.md](docs/chatbot/INSTALLATION.md)**       | Installation & setup guide       |
+| **[docs/chatbot/README.md](docs/chatbot/README.md)**                   | Chatbot overview & features      |
+| **[docs/chatbot/ARCHITECTURE.md](docs/chatbot/ARCHITECTURE.md)**       | System architecture              |
+| **[docs/chatbot/TOOLS_REFERENCE.md](docs/chatbot/TOOLS_REFERENCE.md)** | All 40+ tools documented         |
+| **[docs/chatbot/API_REFERENCE.md](docs/chatbot/API_REFERENCE.md)**     | Chat API documentation           |
+
+**Quick Setup:**
+
+```bash
+# Windows
+.\setup-chatbot.bat
+
+# Linux/Mac
+./setup-chatbot.sh
+```
+
+See [docs/chatbot/INSTALLATION.md](docs/chatbot/INSTALLATION.md) for complete setup instructions.
+
 ### Quick Links
 
 - 📋 [Setup Checklist](CHECKLIST.md) - Complete setup walkthrough
 - 🚀 [Quick Start Guide](QUICKSTART.md) - Code examples and usage
 - 🏗️ [Architecture Overview](ARCHITECTURE.md) - System design
 - 🔧 [Troubleshooting](TROUBLESHOOTING.md) - Problem solving
+- 🤖 [AI Chatbot Docs](docs/chatbot/INDEX.md) - Chatbot documentation
 
 ## 🗄️ Database Schema
 

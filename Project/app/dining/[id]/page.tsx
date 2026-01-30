@@ -7,11 +7,12 @@ import { RestaurantContent } from '@/components/dining/RestaurantContent'
 import { Footer } from '@/components/Footer'
 
 export default function RestaurantDetailPage({ params }: { params: { id: string } }) {
+    const venueId = params.id
     return (
         <main className="min-h-screen bg-[#fcfaf8] dark:bg-[#0a0a0a] font-display text-[#1c140d] dark:text-white">
 
             {/* 1. HERO - Immersive Image + Floating Info */}
-            <RestaurantHero />
+            <RestaurantHero venueId={venueId} />
 
             {/* 2. MAIN LAYOUT - 2 Cols (Content + Sidebar) */}
             <div className="max-w-[1200px] mx-auto px-4 lg:px-8 mb-24">
@@ -24,7 +25,7 @@ export default function RestaurantDetailPage({ params }: { params: { id: string 
 
                     {/* Right Sidebar (Sticky) */}
                     <div className="lg:col-span-1">
-                        <ReservationSidebar />
+                        <ReservationSidebar venueId={venueId} />
                     </div>
 
                 </div>

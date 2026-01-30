@@ -4,9 +4,14 @@ import React, { useState } from 'react'
 import { Search, ShoppingBag, Gift } from 'lucide-react'
 import { motion } from 'framer-motion'
 
-export function VoucherHero() {
+interface VoucherHeroProps {
+    activeView: 'buy' | 'wallet'
+    onViewChange: (view: 'buy' | 'wallet') => void
+}
+
+export function VoucherHero({ activeView, onViewChange }: VoucherHeroProps) {
     const [activeType, setActiveType] = useState('All')
-    const [mode, setMode] = useState<'buy' | 'redeem'>('buy')
+    // const [mode, setMode] = useState<'buy' | 'redeem'>('buy') // Lifted up
 
     const categories = ['All', 'Hotels', 'Dining', 'Activities', 'Shopping', 'Travel']
 
@@ -56,21 +61,21 @@ export function VoucherHero() {
                             />
                         </div>
 
-                        {/* Mode Toggle (Buy / Redeem) */}
+                        {/* Mode Toggle (Buy / Wallet) */}
                         <div className="bg-slate-100 dark:bg-zinc-800 p-1.5 rounded-full border border-slate-200 dark:border-zinc-700 flex shrink-0">
                             <button
-                                onClick={() => setMode('buy')}
-                                className={`px-6 py-2.5 rounded-full text-sm font-bold flex items-center gap-2 transition-all ${mode === 'buy' ? 'bg-[#FF5E1F] text-white shadow-md' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
+                                onClick={() => onViewChange('buy')}
+                                className={`px-6 py-2.5 rounded-full text-sm font-bold flex items-center gap-2 transition-all ${activeView === 'buy' ? 'bg-[#FF5E1F] text-white shadow-md' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
                             >
                                 <ShoppingBag className="w-4 h-4" />
                                 Buy Vouchers
                             </button>
                             <button
-                                onClick={() => setMode('redeem')}
-                                className={`px-6 py-2.5 rounded-full text-sm font-bold flex items-center gap-2 transition-all ${mode === 'redeem' ? 'bg-[#FF5E1F] text-white shadow-md' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
+                                onClick={() => onViewChange('wallet')}
+                                className={`px-6 py-2.5 rounded-full text-sm font-bold flex items-center gap-2 transition-all ${activeView === 'wallet' ? 'bg-[#FF5E1F] text-white shadow-md' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
                             >
                                 <Gift className="w-4 h-4" />
-                                Redeem
+                                My Vouchers
                             </button>
                         </div>
                     </motion.div>

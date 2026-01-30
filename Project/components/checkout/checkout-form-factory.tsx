@@ -1,5 +1,6 @@
 import { ServiceType } from '@/lib/checkout/types';
 import { ShopCheckoutForm } from './forms/shop-checkout-form';
+import { TransportCheckoutForm } from './forms/transport-checkout-form';
 
 interface Props {
     serviceType: ServiceType;
@@ -21,7 +22,7 @@ export const CheckoutFormFactory = ({ serviceType, initialData, onSubmit }: Prop
             return <div className="p-4 bg-gray-100 rounded">Flight Checkout Form Coming Soon</div>;
 
         case 'transport':
-            return <div className="p-4 bg-gray-100 rounded">Transport Checkout Form Coming Soon</div>;
+            return <TransportCheckoutForm initialData={initialData} onSubmit={onSubmit} />;
 
         default:
             return <div className="text-red-500">Service type not supported: {serviceType}</div>;
