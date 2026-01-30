@@ -14,6 +14,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServerClient } from "@/lib/hotel/supabaseServerClient";
 import { currentUser } from "@clerk/nextjs/server";
+import { sendBookingConfirmationEmail } from "@/lib/email/booking-confirmation";
 
 export const dynamic = "force-dynamic";
 
@@ -323,6 +324,36 @@ export async function POST(request: NextRequest) {
     console.log(
       `[Booking Created] Confirmation: ${confirmationCode}, User: ${user.id}, Hotel: ${hotel_id}`,
     );
+
+    // Fetch hotel and room details for email
+    const { data: hotelData } = await supabaseServerClient
+      .from("hotels")
+      .select("name")
+      .eq("id", hotel_id)
+      .single();
+
+    const { data: roomData } = await supabaseServerClient
+      .from("hotel_rooms")
+      .select("title")
+      .eq("id", room_id)
+      .single();
+
+    // Send confirmation email (async, don't block response)
+    sendBookingConfirmationEmail({
+      guest_name: guest.name,
+      guest_email: guest.email,
+      confirmation_code: confirmationCode,
+      hotel_name: hotelData?.name || "Hotel",
+      room_type: roomData?.title || "Room",
+      check_in_date: check_in_date,
+      check_out_date: check_out_date,
+      nights_count: nights,
+      total_amount: grandTotalCents / 100,
+      currency: "USD",
+    }).catch((error) => {
+      // Log error but don't fail the booking
+      console.error("[Email Send Failed]", error);
+    });
 
     // Return success response
     return NextResponse.json({

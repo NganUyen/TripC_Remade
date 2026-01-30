@@ -1,11 +1,13 @@
 # Entertainment Service API Documentation
 
 ## Base URL
+
 ```
 http://localhost:3000/api/entertainment
 ```
 
 ## Authentication
+
 Write operations (POST, PUT, DELETE) require authentication via Clerk. Include the Clerk session token in your requests.
 
 ## Endpoints
@@ -18,13 +20,13 @@ Retrieve a list of entertainment items with optional filtering and search.
 
 #### Query Parameters
 
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `q` | string | No | - | Search query (searches title, subtitle, description) |
-| `type` | string | No | - | Filter by entertainment type (tour, show, activity, etc.) |
-| `available` | boolean | No | - | Filter by availability (true/false) |
-| `limit` | number | No | 50 | Maximum results per page (max 100) |
-| `offset` | number | No | 0 | Pagination offset |
+| Parameter   | Type    | Required | Default | Description                                               |
+| ----------- | ------- | -------- | ------- | --------------------------------------------------------- |
+| `q`         | string  | No       | -       | Search query (searches title, subtitle, description)      |
+| `type`      | string  | No       | -       | Filter by entertainment type (tour, show, activity, etc.) |
+| `available` | boolean | No       | -       | Filter by availability (true/false)                       |
+| `limit`     | number  | No       | 50      | Maximum results per page (max 100)                        |
+| `offset`    | number  | No       | 0       | Pagination offset                                         |
 
 #### Response
 
@@ -38,7 +40,7 @@ Retrieve a list of entertainment items with optional filtering and search.
       "description": "A magical 2-hour bus tour...",
       "type": "tour",
       "provider": "Paris Tours Inc",
-      "price": 45.00,
+      "price": 45.0,
       "currency": "EUR",
       "available": true,
       "location": {
@@ -91,9 +93,9 @@ Retrieve a single entertainment item by its ID.
 
 #### Path Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | uuid | Yes | Entertainment item UUID |
+| Parameter | Type | Required | Description             |
+| --------- | ---- | -------- | ----------------------- |
+| `id`      | uuid | Yes      | Entertainment item UUID |
 
 #### Response
 
@@ -106,7 +108,7 @@ Retrieve a single entertainment item by its ID.
     "description": "A magical 2-hour bus tour...",
     "type": "tour",
     "provider": "Paris Tours Inc",
-    "price": 45.00,
+    "price": 45.0,
     "currency": "EUR",
     "available": true,
     "location": {
@@ -167,7 +169,7 @@ Content-Type: application/json
   "description": "Soar above the majestic Grand Canyon...",
   "type": "activity",
   "provider": "Canyon Tours",
-  "price": 299.00,
+  "price": 299.0,
   "currency": "USD",
   "available": true,
   "location": {
@@ -203,7 +205,7 @@ Content-Type: application/json
     "description": "Soar above the majestic Grand Canyon...",
     "type": "activity",
     "provider": "Canyon Tours",
-    "price": 299.00,
+    "price": 299.0,
     "currency": "USD",
     "available": true,
     "location": { "city": "Las Vegas", "country": "USA" },
@@ -217,6 +219,7 @@ Content-Type: application/json
 #### Error Responses
 
 **401 Unauthorized**
+
 ```json
 {
   "error": "Unauthorized - Authentication required"
@@ -224,6 +227,7 @@ Content-Type: application/json
 ```
 
 **400 Bad Request**
+
 ```json
 {
   "error": "Missing required fields: title and type are required"
@@ -254,9 +258,9 @@ Update an existing entertainment item. Requires authentication.
 
 #### Path Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | uuid | Yes | Entertainment item UUID |
+| Parameter | Type | Required | Description             |
+| --------- | ---- | -------- | ----------------------- |
+| `id`      | uuid | Yes      | Entertainment item UUID |
 
 #### Headers
 
@@ -271,7 +275,7 @@ Partial update supported. Only include fields you want to update:
 
 ```json
 {
-  "price": 55.00,
+  "price": 55.0,
   "available": false,
   "metadata": {
     "rating": 4.9,
@@ -287,7 +291,7 @@ Partial update supported. Only include fields you want to update:
   "data": {
     "id": "123e4567-e89b-12d3-a456-426614174000",
     "title": "Paris Night Bus Tour",
-    "price": 55.00,
+    "price": 55.0,
     "available": false,
     "metadata": {
       "rating": 4.9,
@@ -301,6 +305,7 @@ Partial update supported. Only include fields you want to update:
 #### Error Responses
 
 **401 Unauthorized**
+
 ```json
 {
   "error": "Unauthorized - Authentication required"
@@ -308,6 +313,7 @@ Partial update supported. Only include fields you want to update:
 ```
 
 **404 Not Found**
+
 ```json
 {
   "error": "Entertainment item not found"
@@ -315,6 +321,7 @@ Partial update supported. Only include fields you want to update:
 ```
 
 **400 Bad Request**
+
 ```json
 {
   "error": "No valid fields to update"
@@ -343,9 +350,9 @@ Delete an entertainment item. Requires authentication.
 
 #### Path Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | uuid | Yes | Entertainment item UUID |
+| Parameter | Type | Required | Description             |
+| --------- | ---- | -------- | ----------------------- |
+| `id`      | uuid | Yes      | Entertainment item UUID |
 
 #### Headers
 
@@ -364,6 +371,7 @@ Authorization: Bearer <clerk_token>
 #### Error Responses
 
 **401 Unauthorized**
+
 ```json
 {
   "error": "Unauthorized - Authentication required"
@@ -371,6 +379,7 @@ Authorization: Bearer <clerk_token>
 ```
 
 **500 Internal Server Error**
+
 ```json
 {
   "error": "Failed to delete entertainment item",
@@ -410,21 +419,25 @@ All endpoints follow a consistent error response format:
 ## Testing with cURL
 
 ### List all tours
+
 ```bash
 curl "http://localhost:3000/api/entertainment?type=tour"
 ```
 
 ### Search for entertainment in Paris
+
 ```bash
 curl "http://localhost:3000/api/entertainment?q=Paris"
 ```
 
 ### Get single item
+
 ```bash
 curl http://localhost:3000/api/entertainment/{id}
 ```
 
 ### Create new item (requires auth)
+
 ```bash
 curl -X POST http://localhost:3000/api/entertainment \
   -H "Content-Type: application/json" \
