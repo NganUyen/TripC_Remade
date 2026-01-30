@@ -8,9 +8,20 @@ import { cn } from "@/lib/utils";
 
 interface SearchHistoryItem {
     id: string;
-    origin: string;
-    destination: string;
-    search_date: string;
+    category: string;
+    search_params: {
+        query?: string;
+        origin?: string;
+        destination?: string;
+        date?: string;
+        time?: string;
+        serviceType?: string;
+        passengers?: number;
+        luggage?: number;
+        duration?: string;
+        timestamp?: string;
+    };
+    created_at: string;
 }
 
 interface SearchHistoryDropdownProps {
@@ -27,7 +38,7 @@ export function SearchHistoryDropdown({ onSelect, className }: SearchHistoryDrop
         if (!isSignedIn) return;
         setLoading(true);
         try {
-            const res = await fetch("/api/user/history");
+            const res = await fetch("/api/user/history?category=transport");
             if (res.ok) {
                 const data = await res.json();
                 setHistory(Array.isArray(data) ? data : []);
@@ -88,7 +99,7 @@ export function SearchHistoryDropdown({ onSelect, className }: SearchHistoryDrop
                 {history.map((item) => (
                     <div
                         key={item.id}
-                        onClick={() => onSelect(item.origin, item.destination)}
+                        onClick={() => onSelect(item.search_params?.origin || '', item.search_params?.destination || '')}
                         className="group flex items-center justify-between px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer border-b border-slate-50 dark:border-slate-800/50 last:border-0 transition-colors"
                     >
                         <div className="flex items-center gap-3">
@@ -97,7 +108,7 @@ export function SearchHistoryDropdown({ onSelect, className }: SearchHistoryDrop
                             </div>
                             <div className="flex flex-col">
                                 <span className="text-sm font-medium text-slate-700 dark:text-slate-200 group-hover:text-primary transition-colors">
-                                    {item.origin} <span className="text-slate-300 mx-1">→</span> {item.destination}
+                                    {item.search_params?.query || `${item.search_params?.origin || ''} → ${item.search_params?.destination || ''}`}
                                 </span>
                             </div>
                         </div>

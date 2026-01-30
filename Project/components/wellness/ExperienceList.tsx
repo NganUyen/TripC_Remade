@@ -3,9 +3,13 @@
 import { motion } from 'framer-motion'
 import { Star, Heart, MapPin, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
-import { wellnessExperiences } from '@/data/wellness'
+import { WellnessExperience } from '@/types'
 
-export function ExperienceList() {
+interface ExperienceListProps {
+    experiences: WellnessExperience[]
+}
+
+export function ExperienceList({ experiences }: ExperienceListProps) {
     return (
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mb-20">
             <div className="flex items-center justify-between mb-8">
@@ -19,7 +23,7 @@ export function ExperienceList() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {wellnessExperiences.map((item, index) => (
+                {experiences.map((item, index) => (
                     <motion.div
                         key={item.id}
                         initial={{ opacity: 0, y: 20 }}
@@ -30,7 +34,7 @@ export function ExperienceList() {
                     >
                         {/* Image */}
                         <img
-                            src={item.image}
+                            src={item.image_url}
                             alt={item.title}
                             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                         />
@@ -66,7 +70,7 @@ export function ExperienceList() {
                                 <div className="flex items-center gap-1.5">
                                     <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
                                     <span className="text-yellow-400 font-bold text-sm">{item.rating}</span>
-                                    <span className="text-white/60 text-xs">({item.reviews})</span>
+                                    <span className="text-white/60 text-xs">({item.reviews_count})</span>
                                 </div>
                                 <span className="text-xs text-white/70 bg-white/20 px-2 py-1 rounded-md backdrop-blur-sm">{item.duration}</span>
                             </div>
@@ -89,3 +93,4 @@ export function ExperienceList() {
         </section>
     )
 }
+

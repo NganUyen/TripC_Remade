@@ -12,17 +12,35 @@ import { createClient } from "@supabase/supabase-js";
  * Uses service role key - bypasses RLS for admin operations
  */
 export function createServiceSupabaseClient() {
-    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-        throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY environment variable");
-    }
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_KEY;
 
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-        throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL environment variable");
+    if (!key) {
+        throw new Error("Missing Supabase API Key (SUPABASE_SERVICE_ROLE_KEY or NEXT_PUBLIC_SUPABASE_KEY)");
     }
 
     return createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL,
-        process.env.SUPABASE_SERVICE_ROLE_KEY,
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        key,
+        {
+            auth: {
+                autoRefreshToken: false,
+                persistSession: false,
+            },
+        },
+    );
+}
+
+/**
+ * Standard server-side Supabase client using public anon key
+ */
+export function createServerSupabaseClient() {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_KEY) {
+        throw new Error("Missing NEXT_PUBLIC_SUPABASE_KEY environment variable");
+    }
+
+    return createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_KEY!,
         {
             auth: {
                 autoRefreshToken: false,

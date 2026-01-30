@@ -10,13 +10,13 @@ import { toast } from "sonner"
 export function StepSeats() {
     const { setStep, selectSeat, seats, trip, passengers } = useBookingStore()
     const [activeTab, setActiveTab] = useState<'outbound' | 'return'>('outbound')
+    const [activePassengerIdx, setActivePassengerIdx] = useState(0)
     const [hoveredSeat, setHoveredSeat] = useState<string | null>(null)
+
+    const activePassenger = passengers[activePassengerIdx]
 
     // Derived passenger count
     const totalPassengers = passengers.length > 0 ? passengers.length : (trip.passengersCount || 1)
-
-    // Calculate selected seats for current leg
-    const currentLegSeats = Object.keys(seats).filter(k => k.startsWith(activeTab))
 
     // Mock Seat Map Configuration
     const ROWS = 12
@@ -41,49 +41,34 @@ export function StepSeats() {
         return (r * c.charCodeAt(0)) % 7 === 0
     }
 
-    const handleSeatClick = (seatId: string, seatLabel: string, isOccupied: boolean) => {
+    const handleSeatClick = (seatLabel: string, isOccupied: boolean) => {
         if (isOccupied) {
             toast.error("This seat is already taken.")
             return
         }
 
-        const isSelected = !!seats[seatId]
+        const seatIdKey = `${activeTab}_${activePassenger.id}`
+        const isSelectedByThisPassenger = seats[seatIdKey] === seatLabel
 
-        if (!isSelected) {
-            // Check limit
-            if (currentLegSeats.length >= totalPassengers) {
-                toast.error(`You can only select ${totalPassengers} seat${totalPassengers > 1 ? 's' : ''} for this flight.`)
+        if (isSelectedByThisPassenger) {
+            selectSeat(seatIdKey, '') // Deselect
+        } else {
+            // Check if this seat is taken by ANOTHER passenger on the same leg
+            const isTakenByOther = Object.entries(seats).some(([key, val]) =>
+                key.startsWith(activeTab) && val === seatLabel && !key.endsWith(activePassenger.id)
+            )
+
+            if (isTakenByOther) {
+                toast.error("This seat is already selected by another passenger.")
                 return
             }
-        }
 
-        // Toggle selection (if we had toggle logic in store, selectSeat usually just sets it. 
-        // Need to check if selectSeat toggles or just sets. Assuming set. 
-        // If we want toggle, we might need a removeSeat or handle it in store.
-        // For now, let's assume selecting a new seat overrides or adds. 
-        // Ideally we should be able to deselect.
-        // Assuming selectSeat(id, null) or similar removes it if we passed null, but standard stores usually set.
-        // I'll toggle based on current state check if valid.
+            selectSeat(seatIdKey, seatLabel)
 
-        if (isSelected) {
-            // If store supports removal, do it. If not, we might re-select same seat which is fine.
-            // Actually, usually you click to Select, click to Deselect.
-            // If store.selectSeat doesn't suppress, we can't deselect easily without a remove action.
-            // I'll assume for this task just adding validation is enough, user can switch seats by clicking another if limit reached? No, they need to deselect first if limit reached.
-            // Since I can't see store implementation fully (it was concise), I'll just allow selection if under limit.
-            // Wait, if I'm at limit, I can't select another. I must be able to deselect.
-            // If I click a SELECTED seat, I should probably deselect it.
-            // I'll try calling selectSeat with empty string or handle it if store allows.
-            // Store signature: selectSeat: (key: string, seat: string) => void.
-            // I'll assume passing empty string removes it, OR I need to add removeSeat to store.
-            // Let's just block over-selection for now.
-
-            // UPDATE: To make it robust without changing store interface too much:
-            // If already selected, I'll advise user to select another? No, that's bad UX.
-            // I'll try: selectSeat(seatId, '') to clear it?
-            selectSeat(seatId, '') // Toggle attempt
-        } else {
-            selectSeat(seatId, seatLabel)
+            // Auto-advance to next passenger if available
+            if (activePassengerIdx < passengers.length - 1) {
+                setTimeout(() => setActivePassengerIdx(prev => prev + 1), 300)
+            }
         }
     }
 
@@ -92,6 +77,20 @@ export function StepSeats() {
 
             <FlightDetailsSummary />
 
+            {/* Passenger Selection */}
+            <div className="flex flex-wrap gap-2 mb-4">
+                {passengers.map((p, idx) => (
+                    <button
+                        key={p.id}
+                        onClick={() => setActivePassengerIdx(idx)}
+                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${activePassengerIdx === idx ? 'bg-[#FF5E1F] border-[#FF5E1F] text-white' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500'}`}
+                    >
+                        {p.firstName || `Passenger ${idx + 1}`}
+                        {seats[`${activeTab}_${p.id}`] ? ` (${seats[`${activeTab}_${p.id}`]})` : ''}
+                    </button>
+                ))}
+            </div>
+
             <div className="bg-white dark:bg-slate-900 rounded-[2rem] p-6 md:p-8 border border-slate-100 dark:border-slate-800 shadow-sm relative overflow-hidden">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 relative z-10">
                     <div className="flex items-center gap-3">
@@ -99,9 +98,9 @@ export function StepSeats() {
                             <Armchair className="w-5 h-5 text-[#FF5E1F]" />
                         </div>
                         <div>
-                            <h3 className="font-bold text-lg text-slate-900 dark:text-white">Select Your Seats</h3>
+                            <h3 className="font-bold text-lg text-slate-900 dark:text-white">Select Seat for {activePassenger?.firstName || `Passenger ${activePassengerIdx + 1}`}</h3>
                             <p className="text-sm text-slate-500 dark:text-slate-400">
-                                {currentLegSeats.length} / {totalPassengers} seats selected
+                                {activeTab === 'outbound' ? 'Outbound' : 'Return'} Flight
                             </p>
                         </div>
                     </div>
@@ -169,23 +168,26 @@ export function StepSeats() {
                                 return SEAT_LETTERS.map((colChar, colIndex) => {
                                     if (!colChar) return <div key={`${rowIndex}-aisle`} className="flex items-center justify-center text-[9px] font-bold text-slate-200">{rowNum}</div>
 
-                                    const seatId = `${activeTab}_${rowNum}${colChar}`
-                                    const seatValue = seats[seatId] // returns label if selected
-                                    const isSelected = !!seatValue && seatValue !== ''
-                                    const isOccupied = isSeatOccupied(rowNum, colChar)
+                                    const seatIdKey = `${activeTab}_${activePassenger?.id}`
+                                    const isSelectedByActive = seats[seatIdKey] === `${rowNum}${colChar}`
+                                    const isTakenByOther = Object.entries(seats).some(([key, val]) =>
+                                        key.startsWith(activeTab) && val === `${rowNum}${colChar}` && !key.endsWith(activePassenger?.id)
+                                    )
+                                    const isOccupied = isSeatOccupied(rowNum, colChar) || isTakenByOther
                                     const { price, type } = getSeatInfo(rowNum, colChar)
 
                                     let bgClass = "bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600"
-                                    if (isOccupied) bgClass = "bg-slate-100 dark:bg-slate-800 border-transparent opacity-40 cursor-not-allowed"
-                                    else if (isSelected) bgClass = "bg-[#FF5E1F] border-[#FF5E1F] text-white shadow-md shadow-orange-500/30 ring-1 ring-[#FF5E1F]"
+                                    if (isOccupied && !isTakenByOther) bgClass = "bg-slate-100 dark:bg-slate-800 border-transparent opacity-40 cursor-not-allowed"
+                                    else if (isTakenByOther) bgClass = "bg-slate-200 dark:bg-slate-800 border-dashed border-slate-400 opacity-60 cursor-not-allowed"
+                                    else if (isSelectedByActive) bgClass = "bg-[#FF5E1F] border-[#FF5E1F] text-white shadow-md shadow-orange-500/30 ring-1 ring-[#FF5E1F]"
                                     else if (type === 'Exit Row') bgClass = "bg-emerald-50 border-emerald-200 hover:border-emerald-400 text-emerald-700"
                                     else if (type !== 'Standard') bgClass = "bg-blue-50 border-blue-200 hover:border-blue-400 text-blue-700"
                                     else bgClass = "hover:border-[#FF5E1F] hover:shadow-sm"
 
                                     return (
-                                        <div key={seatId} className="relative group flex justify-center">
+                                        <div key={`${rowNum}${colChar}`} className="relative group flex justify-center">
                                             <button
-                                                onClick={() => handleSeatClick(seatId, `${rowNum}${colChar}`, isOccupied)}
+                                                onClick={() => handleSeatClick(`${rowNum}${colChar}`, isOccupied)}
                                                 disabled={isOccupied}
                                                 className={`
                                                     w-6 h-7 md:w-7 md:h-8 rounded-t-lg rounded-b-md border transition-all duration-200
@@ -193,7 +195,7 @@ export function StepSeats() {
                                                     flex items-center justify-center
                                                 `}
                                             >
-                                                {isSelected && <span className="text-[8px] font-bold">{rowNum}{colChar}</span>}
+                                                {isSelectedByActive && <span className="text-[8px] font-bold">{rowNum}{colChar}</span>}
                                                 {isOccupied && <span className="text-[8px]">✕</span>}
                                             </button>
 

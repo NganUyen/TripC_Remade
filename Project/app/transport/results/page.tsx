@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 import { ResultsHeader } from "@/components/transport/results/ResultsHeader";
 import { FiltersSidebar } from "@/components/transport/results/FiltersSidebar";
@@ -36,6 +37,12 @@ export default function TransportResultsPage() {
                 if (!res.ok) throw new Error('Failed to fetch');
                 const data = await res.json();
                 setVehicles(data);
+
+                if (data.length === 0) {
+                    toast.info("Không tìm thấy kết quả", {
+                        description: "Thử tìm kiếm với địa điểm hoặc ngày khác."
+                    });
+                }
             } catch (error) {
                 console.error(error);
                 // toast.error("Có lỗi xảy ra khi tải dữ liệu");
