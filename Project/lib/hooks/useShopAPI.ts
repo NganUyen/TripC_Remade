@@ -476,13 +476,13 @@ export function useReviewsSummary(slug: string) {
 // ============================================================================
 
 export function formatPrice(money: Money): string {
-    const amount = money.amount / 100;
+    const amount = money.amount;
     return new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: money.currency,
     }).format(amount);
 }
 
-export function formatPriceSimple(cents: number): number {
-    return cents / 100;
+export function formatPriceSimple(amount: number): number {
+    return amount;
 }

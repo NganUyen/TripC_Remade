@@ -8,10 +8,11 @@ import { ProductReviews } from "@/components/shop/product/ProductReviews"
 import { Footer } from "@/components/Footer"
 import { ProductCard } from "@/components/shop/ProductCard"
 import Link from "next/link"
-import { ArrowLeft, Star, Loader2 } from "lucide-react"
+import { ArrowLeft, Star } from "lucide-react"
 import { useEffect } from "react"
 import { useParams } from "next/navigation"
 import { useProduct, useProducts, formatPriceSimple } from "@/lib/hooks/useShopAPI"
+import { ProductSkeleton } from "@/components/shop/product/ProductSkeleton"
 
 export default function ProductDetailsPage() {
     // Use useParams hook instead of use(params) for client components
@@ -27,14 +28,7 @@ export default function ProductDetailsPage() {
 
     // Loading state
     if (loading) {
-        return (
-            <main className="min-h-screen bg-[#fcfaf8] dark:bg-[#0a0a0a] flex items-center justify-center">
-                <div className="flex flex-col items-center gap-4">
-                    <Loader2 className="w-8 h-8 animate-spin text-[#FF5E1F]" />
-                    <p className="text-slate-500">Loading product...</p>
-                </div>
-            </main>
-        )
+        return <ProductSkeleton />
     }
 
     // Error state
@@ -62,9 +56,9 @@ export default function ProductDetailsPage() {
         sku: product.variants[0]?.sku || "N/A",
         rating: String(product.rating_avg),
         reviews: String(product.review_count),
-        price: String(formatPriceSimple(product.variants[0]?.price.amount || 0)),
+        price: String(product.variants[0]?.price.amount || 0),
         oldPrice: product.variants[0]?.compare_at_price
-            ? String(formatPriceSimple(product.variants[0].compare_at_price.amount))
+            ? String(product.variants[0].compare_at_price.amount)
             : undefined,
         stock: product.variants[0]?.stock_on_hand || 0,
         description: product.description,
@@ -87,12 +81,14 @@ export default function ProductDetailsPage() {
                 options: product.variants.map(v => ({
                     id: v.id,
                     name: v.title,
-                    price: formatPriceSimple(v.price.amount),
+                    price: v.price.amount,
                     stock: v.stock_on_hand
                 }))
             }
         ],
     };
+
+    console.log('DEBUG: productData:', JSON.stringify(productData, null, 2));
 
     return (
         <main className="min-h-screen bg-[#fcfaf8] dark:bg-[#0a0a0a] pb-20">
@@ -167,7 +163,7 @@ export default function ProductDetailsPage() {
                                                 id={p.id}
                                                 slug={p.slug}
                                                 title={p.title}
-                                                price={formatPriceSimple(p.price_from.amount)}
+                                                price={p.price_from.amount}
                                                 rating={p.rating_avg}
                                                 reviews={p.review_count}
                                                 image={p.image_url || "https://via.placeholder.com/400"}

@@ -1,0 +1,18 @@
+
+Time: 2026-01-29T03:54:07.493Z
+Supabase URL: https://dkviqhhjmdtqkfljhhuk.supabase.co
+Variants: [
+  {
+    "id": "aaf9716c-68f9-45dd-8894-4693318cb521",
+    "product_id": "5fa32982-2331-4b15-843e-43ac0a2bd03a",
+    "sku": "SAMSUNG-SSD",
+    "title": "Standard",
+    "price": 15900,
+    "compare_at_price": null,
+    "currency": "USD",
+    "stock_on_hand": 50,
+    "is_active": true,
+    "options": []
+  }
+]
+            
