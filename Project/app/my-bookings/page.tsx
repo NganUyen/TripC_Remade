@@ -9,19 +9,32 @@ import { Footer } from '@/components/Footer';
 import BookingTabs from '@/components/bookings/BookingTabs'
 import InspirationCard from '@/components/bookings/InspirationCard'
 import QuickAccessLinks from '@/components/bookings/QuickAccessLinks'
-import { Ticket } from 'lucide-react'
+import { Ticket, CheckCircle2, Clock, XCircle } from 'lucide-react'
 import UpcomingBookingCard from '@/components/bookings/cards/UpcomingBookingCard'
 import PendingBookingCard from '@/components/bookings/cards/PendingBookingCard'
 import CancelledBookingCard from '@/components/bookings/cards/CancelledBookingCard'
+import TransportBookingCard from '@/components/bookings/cards/TransportBookingCard'
+import ShopBookingCard from '@/components/bookings/cards/ShopBookingCard'
 import { BookingListSkeleton } from '@/components/bookings/BookingListSkeleton'
 import { motion, AnimatePresence } from 'framer-motion'
+import { cn } from '@/lib/utils'
 
 export default function MyBookingsPage() {
   const searchParams = useSearchParams();
   const [bookings, setBookings] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [activeTab, setActiveTab] = useState<string>('all');
+
+  // Filtering State
+  const [activeCategory, setActiveCategory] = useState<string>('all');
+  const [activeStatus, setActiveStatus] = useState<string>(searchParams.get('tab') || 'booked'); // 'booked' | 'awaiting' | 'cancelled'
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab && ['booked', 'awaiting', 'cancelled'].includes(tab)) {
+      setActiveStatus(tab);
+    }
+  }, [searchParams]);
 
   // Ref to prevent double-processing (MoMo, PayPal, Success Toast)
   const processedRef = useRef<boolean>(false);
@@ -31,108 +44,84 @@ export default function MyBookingsPage() {
     // 1. Handle MoMo
     const momoOrderId = searchParams.get('orderId');
     const momoResultCode = searchParams.get('resultCode');
-    const momoMessage = searchParams.get('message');
-    const momoSignature = searchParams.get('signature');
 
     if (momoOrderId && momoResultCode !== null) {
       if (processedRef.current) return;
       processedRef.current = true;
-      setIsSyncing(true); // BLOCK UI to prevent showing 'unpaid'
+      setIsSyncing(true);
 
       const verifyMomo = async () => {
         try {
           const res = await fetch('/api/payments/momo/verify-redirect', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               orderId: momoOrderId,
               resultCode: momoResultCode,
-              message: momoMessage,
-              signature: momoSignature,
+              message: searchParams.get('message'),
+              signature: searchParams.get('signature'),
             }),
           });
-
           const data = await res.json();
-
           if (data.ok && data.status === 'success') {
-            window.location.href = '/my-bookings?success=true';
-          } else if (data.status === 'failed') {
-            toast.error("Thanh toán thất bại", {
-              description: momoMessage || "Vui lòng thử lại."
-            });
-            setTimeout(() => window.location.href = '/my-bookings', 2000);
+            window.location.href = '/my-bookings?tab=booked&success=true';
+          } else {
+            toast.error("Thanh toán thất bại");
+            setTimeout(() => window.location.href = '/my-bookings?tab=cancelled', 2000);
           }
         } catch (error) {
-          console.error('[MOMO_REDIRECT_VERIFY_ERROR]', error);
-          toast.error("Không thể xác minh thanh toán");
+          toast.error("Lỗi xác minh thanh toán");
           setIsSyncing(false);
+          setTimeout(() => window.location.href = '/my-bookings?tab=cancelled', 2000);
         }
       };
-
       verifyMomo();
       return;
     }
 
-    // 2. Handle PayPal (Sync)
+    // 2. Handle PayPal
     const paypalToken = searchParams.get('token');
     const paypalPayerId = searchParams.get('PayerID');
 
     if (paypalToken && paypalPayerId) {
       if (processedRef.current) return;
       processedRef.current = true;
-      setIsSyncing(true); // BLOCK UI
+      setIsSyncing(true);
 
       const syncPayPal = async () => {
         try {
-          toast.loading("Đang xác minh thanh toán PayPal...", { id: 'paypal-sync' });
           const res = await fetch('/api/payments/sync', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              provider: 'paypal',
-              token: paypalToken,
-              payerId: paypalPayerId
-            })
+            body: JSON.stringify({ provider: 'paypal', token: paypalToken, payerId: paypalPayerId })
           });
-
           const data = await res.json();
-
           if (data.ok) {
-            toast.success("Thanh toán thành công!", { id: 'paypal-sync' });
-            setTimeout(() => {
-              window.location.href = '/my-bookings?success=true';
-            }, 1000);
+            window.location.href = '/my-bookings?tab=booked&success=true';
           } else {
-            toast.error(`Lỗi xác minh: ${data.error}`, { id: 'paypal-sync' });
+            toast.error("Lỗi xác minh PayPal");
             setIsSyncing(false);
+            setTimeout(() => window.location.href = '/my-bookings?tab=cancelled', 2000);
           }
         } catch (err) {
-          console.error('PayPal sync failed', err);
-          toast.error("Không thể kết nối máy chủ", { id: 'paypal-sync' });
+          toast.error("Lỗi kết nối");
           setIsSyncing(false);
+          setTimeout(() => window.location.href = '/my-bookings?tab=cancelled', 2000);
         }
       };
-
       syncPayPal();
       return;
     }
 
     // 3. Handle Regular Success
-    if (searchParams.get('success') === 'true') {
-      if (!processedRef.current) {
-        processedRef.current = true;
-        toast.success("Thanh toán thành công!", {
-          description: "Đặt chỗ của bạn đã được xác nhận."
-        });
-      }
+    if (searchParams.get('success') === 'true' && !processedRef.current) {
+      processedRef.current = true;
+      toast.success("Thanh toán thành công!", { description: "Đặt chỗ của bạn đã được xác nhận." });
     }
-
   }, [searchParams]);
 
   useEffect(() => {
     async function fetchBookings() {
-      if (isSyncing) return; // Don't fetch while verifying
-
+      if (isSyncing) return;
       setIsLoading(true);
       try {
         const res = await fetch('/api/bookings/user');
@@ -140,7 +129,6 @@ export default function MyBookingsPage() {
         const data = await res.json();
         setBookings(data);
       } catch (error) {
-        console.error('Error fetching bookings:', error);
         toast.error("Không thể tải danh sách đặt chỗ");
       } finally {
         setIsLoading(false);
@@ -149,38 +137,57 @@ export default function MyBookingsPage() {
     fetchBookings();
   }, [isSyncing]);
 
-  const filteredBookings = bookings.filter((booking: any) => {
-    if (activeTab === 'all') return true;
-    return booking.category === activeTab;
+  // --- FILTERING LOGIC ---
+  const getStatusGroup = (status: string, paymentStatus: string) => {
+    const s = status?.toLowerCase();
+    const p = paymentStatus?.toLowerCase();
+
+    if (['cancelled', 'expired', 'failed'].includes(s)) return 'cancelled';
+    if (['confirmed', 'paid', 'ticketed', 'completed', 'success'].includes(s)) return 'booked';
+    // Fallback logic mostly for 'pending' or 'held'
+    if (p === 'paid' || p === 'success') return 'booked';
+
+    return 'awaiting'; // Default for pending/held/unpaid
+  };
+
+  const filteredBookings = bookings.filter((booking) => {
+    // 1. Filter by Category
+    if (activeCategory !== 'all') {
+      // Handle 'other' if needed, or strict match
+      if (booking.category !== activeCategory) return false;
+    }
+
+    // 2. Filter by Status
+    const group = getStatusGroup(booking.status, booking.payment_status);
+    return group === activeStatus;
   });
 
   const renderBookingCard = (booking: any) => {
-    if (booking.status === 'pending_payment' || booking.status === 'unpaid' || booking.payment_status === 'unpaid' || booking.status === 'held') {
+    const group = getStatusGroup(booking.status, booking.payment_status);
+
+    if (group === 'awaiting') {
       return <PendingBookingCard key={booking.id} booking={booking} />;
     }
-    if (booking.status === 'cancelled') {
+    if (group === 'cancelled') {
       return <CancelledBookingCard key={booking.id} booking={booking} />;
     }
+
+    // Specific cards for confirmed/booked items
+    if (booking.category === 'transport') {
+      return <TransportBookingCard key={booking.id} booking={booking} />;
+    }
+    if (booking.category === 'shop') {
+      return <ShopBookingCard key={booking.id} booking={booking} />;
+    }
+
     return <UpcomingBookingCard key={booking.id} booking={booking} />;
   };
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1
-    }
-  };
+  const statusTabs = [
+    { id: 'booked', label: 'Đã đặt', icon: CheckCircle2 },
+    { id: 'awaiting', label: 'Chờ thanh toán', icon: Clock },
+    { id: 'cancelled', label: 'Đã hủy', icon: XCircle },
+  ];
 
   return (
     <>
@@ -195,42 +202,69 @@ export default function MyBookingsPage() {
         </div>
 
         <section className="mb-16">
-          <BookingTabs activeTab={activeTab} onTabChange={setActiveTab} />
+          {/* CATEGORY TABS */}
+          <BookingTabs activeTab={activeCategory} onTabChange={setActiveCategory} />
 
+          {/* STATUS FILTER TABS */}
+          <div className="flex items-center gap-4 mb-8 border-b border-slate-200 dark:border-white/10 pb-1 overflow-x-auto">
+            {statusTabs.map((tab) => {
+              const isActive = activeStatus === tab.id;
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveStatus(tab.id)}
+                  className={cn(
+                    "flex items-center gap-2 px-4 py-3 text-sm font-bold relative transition-colors whitespace-nowrap",
+                    isActive
+                      ? "text-[#FF5E1F]"
+                      : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                  )}
+                >
+                  <Icon className="w-4 h-4" />
+                  {tab.label}
+                  {isActive && (
+                    <motion.div
+                      layoutId="activeStatusLine"
+                      className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#FF5E1F]"
+                    />
+                  )}
+                </button>
+              )
+            })}
+          </div>
+
+          {/* LIST */}
           {isLoading || isSyncing ? (
             <BookingListSkeleton />
           ) : filteredBookings.length === 0 ? (
             <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
+              initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="flex flex-col items-center justify-center py-24 text-center bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-[2rem] border border-slate-100 dark:border-white/5 shadow-xl shadow-slate-200/50 dark:shadow-none"
+              className="flex flex-col items-center justify-center py-24 text-center bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-[2rem] border border-slate-100 dark:border-white/5 shadow-sm"
             >
-              <div className="size-20 bg-slate-50 dark:bg-white/5 rounded-full flex items-center justify-center mb-6 shadow-inner">
-                <Ticket className="size-8 text-slate-300 dark:text-slate-700" />
+              <div className="size-16 bg-slate-50 dark:bg-white/5 rounded-full flex items-center justify-center mb-4">
+                <Ticket className="size-8 text-slate-300 dark:text-slate-600" />
               </div>
-              <h3 className="text-2xl font-black mb-3 text-slate-900 dark:text-white">Sẵn sàng cho chuyến đi mới?</h3>
-              <p className="text-slate-500 dark:text-slate-400 text-sm max-w-sm leading-relaxed mb-8">
-                {activeTab === 'all'
-                  ? 'Bạn chưa có đặt chỗ nào. Bắt đầu khám phá và lên kế hoạch cho hành trình tiếp theo ngay hôm nay!'
-                  : `Không tìm thấy đặt chỗ nào trong mục ${activeTab}. Hãy thử kiểm tra các danh mục khác nhé.`}
+              <h3 className="text-xl font-bold mb-2 text-slate-900 dark:text-white">Không có đặt chỗ nào</h3>
+              <p className="text-slate-500 text-sm">
+                Không tìm thấy vé nào trong mục <span className="font-bold">{activeStatus === 'booked' ? 'Đã đặt' : activeStatus === 'awaiting' ? 'Chờ thanh toán' : 'Đã hủy'}</span>
               </p>
-              <button className="px-8 py-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-full font-black text-sm hover:scale-105 active:scale-95 transition-all shadow-lg">
-                Khám phá ngay
-              </button>
             </motion.div>
           ) : (
             <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-              className="grid gap-8 grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-3"
+              className="grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3"
+              layout
             >
               <AnimatePresence mode="popLayout">
                 {filteredBookings.map((booking) => (
                   <motion.div
                     key={booking.id}
-                    variants={itemVariants}
                     layout
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ duration: 0.2 }}
                   >
                     {renderBookingCard(booking)}
                   </motion.div>

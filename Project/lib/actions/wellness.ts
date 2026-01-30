@@ -74,7 +74,7 @@ export async function createWellnessBooking(data: {
                 guests: data.booking_details.guests
             },
             guest_details: data.guest_details,
-            currency: 'VND'
+            currency: 'USD'
         })
         .select('id')
         .single()

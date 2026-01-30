@@ -11,9 +11,22 @@ interface CancelledBookingCardProps {
 export default function CancelledBookingCard({ booking }: CancelledBookingCardProps) {
     const isFlight = booking.category === 'flight';
     const isHotel = booking.category === 'hotel';
+    const router = require('next/navigation').useRouter();
 
     const Icon = isFlight ? Plane : isHotel ? Hotel : Ticket;
-    const reason = booking.metadata?.cancellation_reason || 'Expired';
+    const reason = booking.metadata?.cancellation_reason || 'Hết hạn';
+
+    const handleRebook = () => {
+        // Construct detail URL
+        let url = '/';
+        if (isFlight) url = '/flights'; // Search page for flights
+        else if (isHotel) url = `/hotels/${booking.metadata?.hotel_id || ''}`;
+        else if (booking.category === 'activity') url = `/activities/${booking.metadata?.activity_id || ''}`;
+        else if (booking.category === 'wellness') url = `/wellness/${booking.metadata?.experience_id || ''}`;
+        else if (booking.category === 'transport') url = `/transport`;
+
+        router.push(url);
+    };
 
     return (
         <motion.div
@@ -29,7 +42,7 @@ export default function CancelledBookingCard({ booking }: CancelledBookingCardPr
                 </div>
                 <div className="px-3 py-1 rounded-full bg-slate-200 dark:bg-white/10 text-slate-500 dark:text-slate-400 text-[11px] font-bold tracking-wide uppercase flex items-center gap-1.5">
                     <XCircle size={12} strokeWidth={2} />
-                    Cancelled
+                    Đã hủy
                 </div>
             </div>
 
@@ -39,15 +52,18 @@ export default function CancelledBookingCard({ booking }: CancelledBookingCardPr
                     {booking.title}
                 </h3>
                 <p className="text-sm text-slate-400 dark:text-slate-500 font-medium">
-                    Reason: {reason}
+                    Lý do: {reason}
                 </p>
             </div>
 
             {/* Footer */}
             <div className="mt-auto pt-6 border-t border-slate-200 dark:border-white/5">
-                <button className="w-full py-3 rounded-xl border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 font-bold text-sm hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition-all flex items-center justify-center gap-2">
+                <button
+                    onClick={handleRebook}
+                    className="w-full py-3 rounded-xl border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 font-bold text-sm hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition-all flex items-center justify-center gap-2"
+                >
                     <RefreshCw size={14} strokeWidth={2} />
-                    Book Again
+                    Đặt lại
                 </button>
             </div>
         </motion.div>

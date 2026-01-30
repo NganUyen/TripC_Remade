@@ -65,6 +65,7 @@ export async function POST(request: NextRequest) {
                 start_date: startDate,
                 end_date: endDate,
                 total_amount: totalAmount,
+                currency: body.currency || 'USD',
                 status: "pending", // Correct Ledger status (allowed value)
                 payment_status: "unpaid",
                 booking_code: bookingCode,

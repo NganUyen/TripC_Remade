@@ -44,6 +44,7 @@ export function StepReview() {
                 startDate: outboundFlight?.rawDepartureAt || trip.date,
                 endDate: returnFlight?.rawDepartureAt || returnFlight?.rawArrivalAt || trip.returnDate || trip.date,
                 totalAmount: total,
+                currency: 'USD',
                 guestDetails: {
                     contact,
                     passengers: passengers.map(p => ({

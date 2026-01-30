@@ -15,23 +15,12 @@ export async function GET(request: NextRequest) {
 
 
 
-        // 1. Resolve Clerk ID to Internal UUID
-        const { data: dbUser } = await supabase
-            .from('users')
-            .select('id')
-            .eq('clerk_id', user.id)
-            .single();
-
-        if (!dbUser) {
-            console.warn('User not synced to DB', user.id);
-            return NextResponse.json([]); // Return empty if user doesn't exist in our DB yet
-        }
-
-        // 2. Fetch current bookings
+        // 2. Fetch current bookings using Clerk ID directly
+        // The 'bookings' table uses text user_id which stores the Clerk ID
         const { data: bookings, error } = await supabase
             .from("bookings")
             .select("*")
-            .eq("user_id", dbUser.id)
+            .eq("user_id", user.id)
             .order("created_at", { ascending: false });
 
         if (error) {

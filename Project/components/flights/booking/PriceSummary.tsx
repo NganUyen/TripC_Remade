@@ -7,9 +7,11 @@ export function PriceSummary() {
     const { trip, seats, extras, insurance, useTcent, selectedFlights } = useBookingStore()
 
     // Price Calculation
+    // Price Calculation
     const totalFlightPrice = selectedFlights.reduce((acc, f) => acc + (f.price || 0), 0)
-    const basePrice = (totalFlightPrice || 450) * trip.passengersCount
-    const taxes = 125 * trip.passengersCount
+    const basePrice = (totalFlightPrice) * trip.passengersCount
+    // Taxes: 15% of base price to be realistic
+    const taxes = basePrice * 0.15
 
     // Accurate Seat Cost
     const seatCost = Object.values(seats).filter(s => s !== '').length * 15
@@ -43,41 +45,41 @@ export function PriceSummary() {
             <div className="space-y-4 mb-6">
                 <div className="flex justify-between text-sm text-slate-600 dark:text-slate-400">
                     <span>Flights (x{trip.passengersCount})</span>
-                    <span className="font-medium">${basePrice.toFixed(2)}</span>
+                    <span className="font-medium">{basePrice.toFixed(2)}$</span>
                 </div>
                 <div className="flex justify-between text-sm text-slate-600 dark:text-slate-400">
                     <span>Taxes & Fees</span>
-                    <span className="font-medium">${taxes.toFixed(2)}</span>
+                    <span className="font-medium">{taxes.toFixed(2)}$</span>
                 </div>
 
                 {seatCost > 0 && (
                     <div className="flex justify-between text-sm text-slate-600 dark:text-slate-400">
                         <span>Seat Selection</span>
-                        <span className="font-medium text-emerald-600">+${seatCost}</span>
+                        <span className="font-medium text-emerald-600">+{seatCost}$</span>
                     </div>
                 )}
                 {baggageCost > 0 && (
                     <div className="flex justify-between text-sm text-slate-600 dark:text-slate-400">
                         <span>Baggage</span>
-                        <span className="font-medium text-emerald-600">+${baggageCost}</span>
+                        <span className="font-medium text-emerald-600">+{baggageCost}$</span>
                     </div>
                 )}
                 {mealCost > 0 && (
                     <div className="flex justify-between text-sm text-slate-600 dark:text-slate-400">
                         <span>Meals</span>
-                        <span className="font-medium text-emerald-600">+${mealCost}</span>
+                        <span className="font-medium text-emerald-600">+{mealCost}$</span>
                     </div>
                 )}
                 {insuranceCost > 0 && (
                     <div className="flex justify-between text-sm text-slate-600 dark:text-slate-400">
                         <span>Insurance ({insurance})</span>
-                        <span className="font-medium text-emerald-600">+${insuranceCost}</span>
+                        <span className="font-medium text-emerald-600">+{insuranceCost}$</span>
                     </div>
                 )}
                 {useTcent && (
                     <div className="flex justify-between text-sm text-[#FF5E1F] font-bold">
                         <span>TCent Discount</span>
-                        <span>-$50.00</span>
+                        <span>-50.00$</span>
                     </div>
                 )}
 
@@ -85,7 +87,7 @@ export function PriceSummary() {
 
                 <div className="flex justify-between items-end">
                     <span className="font-bold text-slate-900 dark:text-white text-lg">Total</span>
-                    <span className="font-black text-3xl text-[#FF5E1F]">${total.toFixed(2)}</span>
+                    <span className="font-black text-3xl text-[#FF5E1F]">{total.toFixed(2)}$</span>
                 </div>
                 <p className="text-right text-xs text-slate-400">Includes all taxes and surcharges</p>
             </div>

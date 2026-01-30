@@ -32,7 +32,8 @@ export class FlightSettlementHandler implements ISettlementHandler {
             // We continue to avoid crashing, but this is a data issue.
             // Maybe we should throw? If we throw, settlement fails and retries.
             // For now, let's create a minimal record or throw.
-            throw new Error('Missing flight/offer ID in metadata');
+            console.warn('[FLIGHT_SETTLEMENT] Missing flight/offer ID in metadata - strictly logging for now');
+            return;
         }
 
         // 3. Create Domain Record

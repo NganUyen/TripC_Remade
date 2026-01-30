@@ -26,7 +26,7 @@ export function ReservationSidebar({ venueId }: ReservationSidebarProps) {
         try {
             // Check availability first
             const availability = await diningApi.checkAvailability(venueId, date, time, guests)
-            
+
             if (!availability.available) {
                 alert(availability.reason || 'This time slot is not available')
                 setLoading(false)
