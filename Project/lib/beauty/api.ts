@@ -45,6 +45,12 @@ export const beautyApi = {
     return response.data;
   },
 
+  /** Distinct categories from DB (venues + services). */
+  getCategories: async (): Promise<{ id: string; label: string }[]> => {
+    const response = await api.get("/beauty/categories");
+    return Array.isArray(response?.data) ? response.data : [];
+  },
+
   createVenue: async (venueData: CreateVenueRequest): Promise<BeautyVenue> => {
     const response = await api.post("/beauty/venues", venueData);
     return response.data;
