@@ -2,8 +2,9 @@
 
 import { useRouter, useParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { useUser } from '@clerk/nextjs'
 import { beautyApi } from '@/lib/beauty/api'
-import type { BeautyService, BeautyVenue } from '@/lib/beauty/types'
+import type { BeautyService, BeautyVenue, BeautyAppointment } from '@/lib/beauty/types'
 
 const FALLBACK_HERO = {
     title: 'Radiance Renewal Facial',
@@ -14,13 +15,23 @@ const FALLBACK_VENUE = { name: 'Aura Wellness Spa', address: '124 Avenue des Cha
 const FALLBACK_PRICE = 120
 const FALLBACK_DURATION = 90
 
+function formatDate(d: Date): string {
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${y}-${m}-${day}`
+}
+
 export default function BeautyDetailPage() {
     const router = useRouter()
     const params = useParams()
+    const { user } = useUser()
     const id = typeof params?.id === 'string' ? params.id : null
     const [service, setService] = useState<BeautyService | null>(null)
     const [venue, setVenue] = useState<BeautyVenue | null>(null)
     const [loading, setLoading] = useState(!!id)
+    const [bookingLoading, setBookingLoading] = useState(false)
+    const [bookingMessage, setBookingMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
     useEffect(() => {
         if (!id) {
@@ -37,6 +48,43 @@ export default function BeautyDetailPage() {
             .catch(() => {})
             .finally(() => setLoading(false))
     }, [id])
+
+    async function handleBookAppointment() {
+        setBookingMessage(null)
+        const venueId = service?.venue_id ?? venue?.id
+        if (!venueId) {
+            setBookingMessage({ type: 'error', text: 'Cannot book: venue not found.' })
+            return
+        }
+        const guestName = user?.fullName ?? user?.firstName ?? 'Guest'
+        setBookingLoading(true)
+        try {
+            const tomorrow = new Date()
+            tomorrow.setDate(tomorrow.getDate() + 1)
+            const dateStr = formatDate(tomorrow)
+            const appointment: BeautyAppointment = await beautyApi.createAppointment(
+                {
+                    venue_id: venueId,
+                    service_id: service?.id ?? undefined,
+                    appointment_date: dateStr,
+                    appointment_time: '10:00',
+                    guest_name: guestName.trim() || 'Guest',
+                    guest_email: user?.primaryEmailAddress?.emailAddress,
+                },
+                { headers: { 'x-user-id': user?.id ?? 'anonymous' } },
+            )
+            const code = appointment.appointment_code
+            setBookingMessage({
+                type: 'success',
+                text: code ? `Booked! Your code: ${code}.` : "Booked successfully!",
+            })
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'Booking failed. Please try again.'
+            setBookingMessage({ type: 'error', text: message })
+        } finally {
+            setBookingLoading(false)
+        }
+    }
 
     const title = service?.name ?? FALLBACK_HERO.title
     const description = service?.description ?? FALLBACK_HERO.description
@@ -194,8 +242,23 @@ export default function BeautyDetailPage() {
                                     <span className="text-sm">Health & Safety protocols active</span>
                                 </div>
                             </div>
-                            <button className="w-full py-5 bg-primary hover:bg-primary/90 text-white rounded-2xl font-bold text-lg shadow-lg shadow-primary/20 transition-all active:scale-[0.98]">
-                                Book Appointment
+                            {bookingMessage && (
+                                <div
+                                    className={`mb-4 p-4 rounded-xl text-sm font-medium ${
+                                        bookingMessage.type === 'success'
+                                            ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200'
+                                            : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200'
+                                    }`}
+                                >
+                                    {bookingMessage.text}
+                                </div>
+                            )}
+                            <button
+                                onClick={handleBookAppointment}
+                                disabled={bookingLoading}
+                                className="w-full py-5 bg-primary hover:bg-primary/90 disabled:opacity-70 disabled:cursor-not-allowed text-white rounded-2xl font-bold text-lg shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
+                            >
+                                {bookingLoading ? 'Booking...' : 'Book Appointment'}
                             </button>
 
                             <div className="mt-8 pt-8 border-t border-zinc-100 dark:border-zinc-800">

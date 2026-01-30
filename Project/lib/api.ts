@@ -4,21 +4,22 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/a
 
 export async function fetchAPI(endpoint: string, options?: RequestInit) {
   const url = `${API_BASE_URL}${endpoint}`
-  
+
   try {
     const response = await fetch(url, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
-        ...options?.headers,
+        ...(options?.headers as Record<string, string>),
       },
     })
-    
+
+    const body = await response.json().catch(() => ({}))
     if (!response.ok) {
-      throw new Error(`API error: ${response.status}`)
+      const message = (body as { error?: string })?.error ?? `API error: ${response.status}`
+      throw new Error(message)
     }
-    
-    return await response.json()
+    return body
   } catch (error) {
     console.error('API fetch error:', error)
     throw error
@@ -26,11 +27,12 @@ export async function fetchAPI(endpoint: string, options?: RequestInit) {
 }
 
 export const api = {
-  get: (endpoint: string) => fetchAPI(endpoint, { method: 'GET' }),
-  post: (endpoint: string, data: any) => 
-    fetchAPI(endpoint, { method: 'POST', body: JSON.stringify(data) }),
-  put: (endpoint: string, data: any) => 
-    fetchAPI(endpoint, { method: 'PUT', body: JSON.stringify(data) }),
-  delete: (endpoint: string) => 
-    fetchAPI(endpoint, { method: 'DELETE' }),
+  get: (endpoint: string, init?: RequestInit) =>
+    fetchAPI(endpoint, { ...init, method: 'GET' }),
+  post: (endpoint: string, data: any, init?: RequestInit) =>
+    fetchAPI(endpoint, { ...init, method: 'POST', body: JSON.stringify(data) }),
+  put: (endpoint: string, data: any, init?: RequestInit) =>
+    fetchAPI(endpoint, { ...init, method: 'PUT', body: JSON.stringify(data) }),
+  delete: (endpoint: string, init?: RequestInit) =>
+    fetchAPI(endpoint, { ...init, method: 'DELETE' }),
 }

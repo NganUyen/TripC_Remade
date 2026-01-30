@@ -117,8 +117,13 @@ export const beautyApi = {
 
   createAppointment: async (
     appointmentData: CreateAppointmentRequest,
+    options?: { headers?: Record<string, string> },
   ): Promise<BeautyAppointment> => {
-    const response = await api.post("/beauty/appointments", appointmentData);
+    const response = await api.post(
+      "/beauty/appointments",
+      appointmentData,
+      options?.headers ? { headers: options.headers } : undefined,
+    );
     return response.data;
   },
 
