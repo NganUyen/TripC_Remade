@@ -165,12 +165,46 @@ export class ShopSettlementHandler implements ISettlementHandler {
 
         if (clearCartError) {
             console.error('[SHOP_SETTLEMENT_HANDLER] Failed to clear cart', clearCartError);
-            // Non-critical, but annoying.
         } else {
             console.log('[SHOP_SETTLEMENT_HANDLER] Cart Cleared');
         }
 
-        // 7. Success
+        // 7. Consume Voucher (if any)
+        const couponCode = booking.metadata?.couponCode;
+        if (couponCode) {
+            console.log('[SHOP_SETTLEMENT_HANDLER] Consuming voucher:', couponCode);
+            try {
+                // Find voucher ID
+                const { data: voucher } = await this.supabase
+                    .from('vouchers')
+                    .select('id')
+                    .eq('code', couponCode)
+                    .single();
+
+                if (voucher) {
+                    // Mark as used
+                    const { error: voucherError } = await this.supabase
+                        .from('user_vouchers')
+                        .update({
+                            status: 'used',
+                            used_at: new Date().toISOString()
+                        })
+                        .eq('user_id', booking.user_id)
+                        .eq('voucher_id', voucher.id)
+                        .eq('status', 'active'); // Safety check
+
+                    if (voucherError) {
+                        console.error('[SHOP_SETTLEMENT_HANDLER] Failed to mark voucher used', voucherError);
+                    } else {
+                        console.log('[SHOP_SETTLEMENT_HANDLER] Voucher marked as used');
+                    }
+                }
+            } catch (err) {
+                console.error('[SHOP_SETTLEMENT_HANDLER] Voucher consumption error', err);
+            }
+        }
+
+        // 8. Success
         console.log('[SHOP_SETTLEMENT_HANDLER] Detailed settlement complete');
     }
 }
