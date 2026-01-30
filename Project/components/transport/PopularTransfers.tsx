@@ -1,7 +1,6 @@
 "use client"
 import Link from "next/link"
 import { useEffect, useState } from "react"
-import { Loader2 } from "lucide-react"
 
 interface TransferRoute {
     from: string
@@ -33,8 +32,13 @@ export function PopularTransfers() {
 
     if (isLoading) {
         return (
-            <section className="py-16 px-4 lg:px-12 max-w-[1440px] mx-auto flex justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <section className="py-16 px-4 lg:px-12 max-w-[1440px] mx-auto">
+                <div className="h-10 w-64 bg-slate-100 dark:bg-slate-800 rounded-lg animate-pulse mb-8" />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {[1, 2, 3].map((i) => (
+                        <div key={i} className="h-64 rounded-[2rem] bg-slate-100 dark:bg-slate-800 animate-pulse" />
+                    ))}
+                </div>
             </section>
         )
     }

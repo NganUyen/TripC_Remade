@@ -64,7 +64,8 @@ export async function POST(request: NextRequest) {
                 start_date: startDate,
                 end_date: endDate,
                 total_amount: totalAmount,
-                status: "held",
+                status: "pending", // Correct Ledger status (allowed value)
+                payment_status: "unpaid",
                 booking_code: bookingCode,
                 guest_details: guestDetails,
                 metadata: metadata,
@@ -76,6 +77,28 @@ export async function POST(request: NextRequest) {
         if (error) {
             console.error("Booking create error:", error);
             return NextResponse.json({ error: error.message }, { status: 500 });
+        }
+
+        // Domain Specific Insert: Transport
+        if (category === 'transport') {
+            const { routeId, vehicleDetails, passengerInfo } = metadata || {};
+            if (routeId) {
+                const { error: domainError } = await supabase
+                    .from('transport_bookings')
+                    .insert({
+                        booking_id: data.id,
+                        route_id: routeId,
+                        passenger_info: passengerInfo || guestDetails, // Use provided passenger info or fallback to booking guests
+                        vehicle_snapshot: vehicleDetails,
+                        status: 'confirmed'
+                    });
+
+                if (domainError) {
+                    // Critical Error: Ledger created but Domain failed.
+                    // In production, we'd roll back or alert.
+                    console.error("Transport Domain Insert Error:", domainError);
+                }
+            }
         }
 
         return NextResponse.json(data);

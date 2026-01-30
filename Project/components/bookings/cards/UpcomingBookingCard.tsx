@@ -1,8 +1,10 @@
+"use client";
 
 import React from 'react';
-import { Plane, Hotel, MapPin, Calendar, QrCode, Receipt, Ticket } from 'lucide-react';
+import { Plane, Hotel, MapPin, ArrowUpRight, Ticket, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import { motion } from 'framer-motion';
 
 interface UpcomingBookingCardProps {
     booking: any;
@@ -12,72 +14,50 @@ export default function UpcomingBookingCard({ booking }: UpcomingBookingCardProp
     const isFlight = booking.category === 'flight';
     const isHotel = booking.category === 'hotel';
 
-    // Mock data derivation or extraction from metadata if available
-    const bookingCode = booking.booking_code || booking.metadata?.booking_code || `#${booking.id.slice(0, 6).toUpperCase()}`;
-    const subTitle = isFlight ? 'HẠNG THƯƠNG GIA' : isHotel ? '5 SAO' : 'TIÊU CHUẨN';
-
     const Icon = isFlight ? Plane : isHotel ? Hotel : Ticket;
-
-    const iconBgColor = isFlight ? 'bg-blue-50 text-blue-600' : isHotel ? 'bg-orange-50 text-orange-600' : 'bg-slate-50 text-slate-600';
+    const bookingDate = new Date(booking.start_date || new Date());
 
     return (
-        <div className="bg-white dark:bg-slate-900 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
+        <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            whileHover={{ y: -4 }}
+            className="group relative flex flex-col h-full bg-white dark:bg-zinc-900 rounded-[2rem] p-6 shadow-[0_2px_20px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] transition-all duration-500 border border-transparent dark:border-white/5"
+        >
+            {/* Header: Icon & Category */}
             <div className="flex justify-between items-start mb-6">
-                <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${iconBgColor}`}>
-                        <Icon size={24} />
-                    </div>
-                    <div>
-                        <div className="flex items-center gap-2 text-[10px] font-bold tracking-widest text-slate-400 uppercase mb-1">
-                            <span>{isFlight ? 'VÉ MÁY BAY' : isHotel ? 'KHÁCH SẠN' : 'DỊCH VỤ'}</span>
-                            <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                            <span className="text-primary">{subTitle}</span>
-                        </div>
-                        <h3 className="text-lg font-bold text-slate-900 dark:text-white line-clamp-1">
-                            {booking.title}
-                        </h3>
-                    </div>
+                <div className="p-3 rounded-2xl bg-slate-50 dark:bg-white/5 text-slate-900 dark:text-white group-hover:scale-110 transition-transform duration-500">
+                    <Icon size={24} strokeWidth={1.5} />
                 </div>
-                <div className="flex items-center gap-2">
-                    <button className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors rounded-full hover:bg-slate-50 dark:hover:bg-slate-800">
-                        <MapPin size={20} />
-                    </button>
-                    <button className="p-2 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-colors shadow-lg shadow-slate-900/20">
-                        <QrCode size={20} />
-                    </button>
+                <div className="px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-900/10 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold tracking-wide uppercase">
+                    Confirmed
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-8 py-6 border-t border-slate-100 dark:border-slate-800 border-dashed">
-                <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
-                        {isHotel ? 'NHẬN PHÒNG' : 'KHỞI HÀNH'}
-                    </p>
-                    <p className="font-bold text-slate-900 dark:text-white">
-                        {format(new Date(booking.start_date), "dd 'Thg' MM, yyyy", { locale: vi })}
-                    </p>
-                    <p className="text-sm text-slate-500 font-medium">
-                        {format(new Date(booking.start_date || new Date()), 'hh:mm a')}
-                    </p>
+            {/* Content: Date & Title */}
+            <div className="mb-6 space-y-2">
+                <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase tracking-wider">
+                    <Calendar size={12} />
+                    {format(bookingDate, "EEEE, dd 'Thg' MM", { locale: vi })}
                 </div>
-                <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
-                        MÃ ĐẶT CHỖ
-                    </p>
-                    <p className="font-bold text-slate-900 dark:text-white tracking-wide">
-                        {bookingCode}
-                    </p>
-                </div>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white leading-tight group-hover:text-primary transition-colors duration-300 line-clamp-2">
+                    {booking.title}
+                </h3>
             </div>
 
-            <div className="flex gap-3 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
-                <div className="mr-auto flex gap-2">
-                    {/* Optional extra slot for small icons/badges if needed */}
+            {/* Footer: Location & Action */}
+            <div className="mt-auto flex items-end justify-between pt-6">
+                <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-300 transition-colors">
+                    <MapPin size={16} strokeWidth={1.5} className="flex-shrink-0" />
+                    <span className="text-sm font-medium truncate max-w-[160px]">
+                        {booking.location_summary || 'Xem bản đồ'}
+                    </span>
                 </div>
-                <button className="px-6 py-2.5 rounded-full border border-slate-200 dark:border-slate-700 text-sm font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                    Quản lý đặt chỗ
+
+                <button className="flex items-center justify-center w-10 h-10 rounded-full bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white group-hover:bg-slate-900 group-hover:text-white dark:group-hover:bg-white dark:group-hover:text-black transition-all duration-300">
+                    <ArrowUpRight size={20} strokeWidth={1.5} />
                 </button>
             </div>
-        </div>
+        </motion.div>
     );
 }

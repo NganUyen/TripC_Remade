@@ -1,51 +1,110 @@
 "use client";
 
+import { PaymentMethodSelector } from "@/components/checkout/payment-method-selector";
 import { useState } from "react";
 import { toast } from "sonner";
+import { CurrencyGuardModal } from "@/components/checkout/currency-guard-modal";
 
 interface PaymentSectionProps {
     bookingId: string;
     amount: number;
     category?: string; // To conditionally show policies
+    currency?: string;
 }
 
-export function PaymentSection({ bookingId, amount, category = 'transport' }: PaymentSectionProps) {
+export function PaymentSection({ bookingId, amount, category = 'transport', currency = 'VND' }: PaymentSectionProps) {
     const [method, setMethod] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
 
-    const handlePayment = async () => {
+    // Currency Guard State
+    const [showGuard, setShowGuard] = useState(false);
+    const [pendingMethod, setPendingMethod] = useState<string | null>(null);
+
+    const executePayment = async (selectedMethod: string) => {
+        setLoading(true);
+        try {
+            // Must use the standardized plural endpoint which supports PayPal & MoMo via PaymentService
+            const res = await fetch('/api/payments/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    bookingId,
+                    provider: method, // 'momo', 'paypal', 'vnpay'
+                    returnUrl: `${window.location.origin}/my-bookings`
+                })
+            });
+
+            const responseData = await res.json();
+
+            if (!res.ok) {
+                throw new Error(responseData.error || "Payment init failed");
+            }
+
+            toast.success(`Đang chuyển đến trang thanh toán ${method.toUpperCase()}...`);
+
+            const { data } = responseData;
+
+            if (data?.paymentUrl) {
+                window.location.href = data.paymentUrl;
+            } else if (data?.mockSuccessUrl) {
+                setTimeout(() => {
+                    window.location.href = data.mockSuccessUrl;
+                }, 1500);
+            } else {
+                throw new Error("No payment URL returned");
+            }
+
+        } catch (error: any) {
+            console.error("Payment Error:", error);
+            toast.error("Lỗi khởi tạo thanh toán: " + error.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handlePaymentClick = () => {
         if (!method) {
             toast.error("Vui lòng chọn phương thức thanh toán!");
             return;
         }
 
-        setLoading(true);
-        try {
-            const res = await fetch('/api/payment/create-url', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ bookingId, paymentMethod: method })
-            });
-
-            const data = await res.json();
-
-            if (!res.ok) {
-                throw new Error(data.error || "Payment init failed");
-            }
-
-            toast.success(`Đang chuyển đến trang thanh toán ${method.toUpperCase()}...`);
-
-            // Use mockSuccessUrl for demo, paymentUrl for production
-            setTimeout(() => {
-                window.location.href = data.mockSuccessUrl;
-            }, 1500);
-
-        } catch (error: any) {
-            console.error(error);
-            toast.error("Lỗi khởi tạo thanh toán: " + error.message);
-        } finally {
-            setLoading(false);
+        // Currency Guard Logic
+        // If Currency is VND and Method is PayPal -> SHOW GUARD
+        if (currency === 'VND' && method === 'paypal') {
+            setPendingMethod(method);
+            setShowGuard(true);
+            return;
         }
+
+        // If Currency is USD and Method is MoMo/VNPAY -> SHOW GUARD
+        if (currency === 'USD' && (method === 'momo' || method === 'vnpay')) {
+            setPendingMethod(method);
+            setShowGuard(true);
+            return;
+        }
+
+        // Otherwise proceed directly
+        executePayment(method);
+    };
+
+    const handleGuardConfirm = () => {
+        if (pendingMethod) {
+            executePayment(pendingMethod);
+            setShowGuard(false);
+            setPendingMethod(null);
+        }
+    };
+
+    const handleGuardClose = () => {
+        setShowGuard(false);
+        setPendingMethod(null);
+    };
+
+    const handleGuardSwitch = (provider: string) => {
+        setShowGuard(false);
+        setMethod(provider);
+        setPendingMethod(null);
+        // Optional: auto-execute after switch? No, let user confirm.
     };
 
 
@@ -111,39 +170,32 @@ export function PaymentSection({ bookingId, amount, category = 'transport' }: Pa
                 </label>
             </div>
 
-            <div className={`grid grid-cols-1 gap-4 mb-8 transition-all duration-500 ${!agreed ? 'opacity-40 grayscale pointer-events-none' : 'opacity-100'}`}>
-                <div
-                    onClick={() => setMethod('momo')}
-                    className={`p-6 rounded-2xl border-2 flex items-center gap-4 cursor-pointer transition-all ${method === 'momo' ? 'border-primary bg-primary/5' : 'border-border-subtle dark:border-white/10 hover:border-primary/50'}`}
-                >
-                    <div className="size-12 rounded-xl bg-[#A50064] flex items-center justify-center text-white font-bold">MoMo</div>
-                    <div>
-                        <h4 className="font-bold text-lg">MoMo E-Wallet</h4>
-                        <p className="text-sm text-muted-foreground">Scan QR Code</p>
-                    </div>
-                    {method === 'momo' && <span className="material-symbols-outlined text-primary ml-auto">check_circle</span>}
-                </div>
 
-                <div
-                    onClick={() => setMethod('vnpay')}
-                    className={`p-6 rounded-2xl border-2 flex items-center gap-4 cursor-pointer transition-all ${method === 'vnpay' ? 'border-primary bg-primary/5' : 'border-border-subtle dark:border-white/10 hover:border-primary/50'}`}
-                >
-                    <div className="size-12 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold">VNPAY</div>
-                    <div>
-                        <h4 className="font-bold text-lg">VNPAY QR</h4>
-                        <p className="text-sm text-muted-foreground">Local Bank Cards</p>
-                    </div>
-                    {method === 'vnpay' && <span className="material-symbols-outlined text-primary ml-auto">check_circle</span>}
-                </div>
+
+            <div className={`mb-8 transition-all duration-500 ${!agreed ? 'opacity-40 grayscale pointer-events-none' : 'opacity-100'}`}>
+                <PaymentMethodSelector
+                    onSelect={setMethod}
+                    disabled={!agreed}
+                    defaultValue={method}
+                />
             </div>
 
             <button
-                onClick={handlePayment}
+                onClick={handlePaymentClick}
                 disabled={loading || !agreed || !method}
                 className="w-full bg-primary text-white py-5 rounded-pill font-extrabold text-lg shadow-xl shadow-primary/25 hover:shadow-2xl hover:translate-y-[-2px] transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed disabled:translate-y-0"
             >
                 {loading ? "Processing..." : `Thanh toán ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount)}`}
             </button>
+            <CurrencyGuardModal
+                isOpen={showGuard}
+                onClose={handleGuardClose}
+                onConfirm={handleGuardConfirm}
+                onSwitchProvider={handleGuardSwitch}
+                amount={amount}
+                currency={currency}
+                targetProvider={pendingMethod || method || ''}
+            />
         </div>
     );
 }
