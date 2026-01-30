@@ -1,11 +1,40 @@
 "use client"
 
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { MapPin, ArrowRight, Star } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { beautyApi } from '@/lib/beauty/api'
+import type { BeautyVenue } from '@/lib/beauty/types'
+
+const FALLBACK_VENUES: { id: string; name: string; distance: string; image: string; rating: number }[] = [
+    { id: '1', name: 'Elite Salon', distance: '0.2 km', image: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=200&auto=format&fit=crop', rating: 4.8 },
+    { id: '2', name: 'Pure Skin Clinic', distance: '0.5 km', image: 'https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?q=80&w=200&auto=format&fit=crop', rating: 4.8 },
+    { id: '3', name: 'The Hair Loft', distance: '0.8 km', image: 'https://images.unsplash.com/photo-1595476108010-b4d1f102b1b1?q=80&w=200&auto=format&fit=crop', rating: 4.8 },
+]
 
 export function BeautyNearYou() {
     const router = useRouter()
+    const [venues, setVenues] = useState<BeautyVenue[]>([])
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        beautyApi
+            .getFeaturedVenues(3)
+            .then((data) => setVenues(data))
+            .catch(() => setVenues([]))
+            .finally(() => setLoading(false))
+    }, [])
+
+    const spots = venues.length > 0
+        ? venues.map((v) => ({
+            id: v.id,
+            name: v.name,
+            distance: v.location_summary ?? v.district ?? v.city ?? '—',
+            image: v.cover_image_url ?? FALLBACK_VENUES[0]!.image,
+            rating: v.average_rating,
+        }))
+        : FALLBACK_VENUES
+
     return (
         <section className="bg-white dark:bg-[#18181b] rounded-[3rem] p-8 md:p-12 border border-slate-100 dark:border-zinc-800 shadow-sm">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-10 gap-4">
@@ -24,40 +53,51 @@ export function BeautyNearYou() {
                 </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[
-                    { id: 1, name: "Elite Salon", distance: "0.2 km", image: "https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=200&auto=format&fit=crop" },
-                    { id: 2, name: "Pure Skin Clinic", distance: "0.5 km", image: "https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?q=80&w=200&auto=format&fit=crop" },
-                    { id: 3, name: "The Hair Loft", distance: "0.8 km", image: "https://images.unsplash.com/photo-1595476108010-b4d1f102b1b1?q=80&w=200&auto=format&fit=crop" }
-                ].map((spot, i) => (
-                    <div
-                        key={i}
-                        className="flex gap-5 p-4 rounded-[2rem] bg-slate-50 dark:bg-zinc-800/50 hover:bg-white hover:shadow-xl dark:hover:bg-zinc-800 transition-all cursor-pointer group border border-transparent hover:border-slate-100 dark:hover:border-zinc-700"
-                        onClick={() => router.push(`/beauty/${spot.id}`)}
-                    >
-                        <div className="w-28 h-28 rounded-2xl overflow-hidden bg-slate-200 shrink-0 shadow-sm">
-                            <img src={spot.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="Salon" />
+            {loading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {[1, 2, 3].map((i) => (
+                        <div key={i} className="flex gap-5 p-4 rounded-[2rem] bg-slate-50 dark:bg-zinc-800/50 animate-pulse">
+                            <div className="w-28 h-28 rounded-2xl bg-slate-200 dark:bg-zinc-700 shrink-0" />
+                            <div className="flex-1 space-y-2">
+                                <div className="h-5 bg-slate-200 dark:bg-zinc-700 rounded w-3/4" />
+                                <div className="h-4 bg-slate-200 dark:bg-zinc-700 rounded w-1/2" />
+                                <div className="h-4 bg-slate-200 dark:bg-zinc-700 rounded w-1/3" />
+                            </div>
                         </div>
-                        <div className="flex flex-col justify-center py-1">
-                            <h4 className="font-bold text-slate-900 dark:text-white text-lg mb-1 group-hover:text-[#FF5E1F] transition-colors">{spot.name}</h4>
-                            <p className="text-sm text-slate-500 mb-3 font-medium flex items-center gap-1">
-                                <MapPin className="w-3.5 h-3.5" /> {spot.distance} away
-                            </p>
-                            <div className="flex items-center gap-2">
-                                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30 px-2.5 py-1 rounded-full w-fit tracking-wide uppercase">Open Now</span>
-                                <div className="flex items-center gap-1">
-                                    <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
-                                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">4.8</span>
+                    ))}
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {spots.map((spot) => (
+                        <div
+                            key={spot.id}
+                            className="flex gap-5 p-4 rounded-[2rem] bg-slate-50 dark:bg-zinc-800/50 hover:bg-white hover:shadow-xl dark:hover:bg-zinc-800 transition-all cursor-pointer group border border-transparent hover:border-slate-100 dark:hover:border-zinc-700"
+                            onClick={() => router.push(`/beauty/venue/${spot.id}`)}
+                        >
+                            <div className="w-28 h-28 rounded-2xl overflow-hidden bg-slate-200 shrink-0 shadow-sm">
+                                <img src={spot.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt={spot.name} />
+                            </div>
+                            <div className="flex flex-col justify-center py-1">
+                                <h4 className="font-bold text-slate-900 dark:text-white text-lg mb-1 group-hover:text-[#FF5E1F] transition-colors">{spot.name}</h4>
+                                <p className="text-sm text-slate-500 mb-3 font-medium flex items-center gap-1">
+                                    <MapPin className="w-3.5 h-3.5" /> {spot.distance}
+                                </p>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[10px] font-bold text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30 px-2.5 py-1 rounded-full w-fit tracking-wide uppercase">Open Now</span>
+                                    <div className="flex items-center gap-1">
+                                        <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
+                                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{spot.rating.toFixed(1)}</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                ))}
-            </div>
+                    ))}
+                </div>
+            )}
 
             <button className="w-full md:hidden mt-8 flex items-center justify-center gap-2 px-6 py-4 rounded-full border border-slate-200 dark:border-zinc-700 text-sm font-bold bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors shadow-sm">
                 View on Map <ArrowRight className="w-4 h-4" />
             </button>
-        </section >
+        </section>
     )
 }

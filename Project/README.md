@@ -139,6 +139,17 @@ Complete documentation for the AI-powered chatbot system:
 
 See [docs/chatbot/INSTALLATION.md](docs/chatbot/INSTALLATION.md) for complete setup instructions.
 
+### Backend Modules (Supabase)
+
+Modular backends for specific domains (loose coupling, merge-friendly):
+
+| Document | Description |
+| -------- | ----------- |
+| **[lib/dining/README.md](lib/dining/README.md)** | Dining module: venues, menus, reservations |
+| **[lib/dining/OVERVIEW.md](lib/dining/OVERVIEW.md)** | Dining architecture overview |
+| **[lib/beauty/README.md](lib/beauty/README.md)** | Beauty module: venues, services, appointments |
+| **[lib/beauty/OVERVIEW.md](lib/beauty/OVERVIEW.md)** | Beauty architecture overview |
+
 ### Quick Links
 
 - 📋 [Setup Checklist](CHECKLIST.md) - Complete setup walkthrough
@@ -149,7 +160,9 @@ See [docs/chatbot/INSTALLATION.md](docs/chatbot/INSTALLATION.md) for complete se
 
 ## 🗄️ Database Schema
 
-The app uses Convex with these tables:
+The app uses **Convex** for core data (users, bookings, wishlist, reviews). **Supabase** is used for modular backends: **Dining** (venues, menus, reservations) and **Beauty** (venues, services, appointments). See `lib/dining/README.md` and `lib/beauty/README.md` for schema and API details.
+
+Convex tables:
 
 | Table        | Purpose                                  |
 | ------------ | ---------------------------------------- |
@@ -254,7 +267,7 @@ import { WishlistButton } from '@/components/WishlistButton'
 ### Backend & Services
 
 - **Authentication**: Clerk
-- **Database**: Convex
+- **Database**: Convex (core), Supabase (Dining & Beauty modules)
 - **Deployment**: Vercel (recommended)
 - **Real-time**: Convex subscriptions
 

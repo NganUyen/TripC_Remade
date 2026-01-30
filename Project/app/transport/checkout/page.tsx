@@ -9,6 +9,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { useSupabaseClient } from "@/lib/supabase"; // Client side
 import { useClerk, useUser } from "@clerk/nextjs";
+import { UnifiedCheckoutContainer } from '@/components/checkout/unified-checkout-container';
 
 export default function TransportCheckoutPage() {
     const searchParams = useSearchParams();
@@ -26,26 +27,58 @@ export default function TransportCheckoutPage() {
     // State
     const [route, setRoute] = useState<any>(null);
     const [loading, setLoading] = useState(true);
-    // const [step, setStep] = useState<'details' | 'payment'>('details'); // No longer needed
-    const [booking, setBooking] = useState<any>(null);
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [initialBooking, setInitialBooking] = useState<any>(null);
 
-    // Initial Load
+    // Initial Load - Fetch Data for Props
     useEffect(() => {
         const init = async () => {
             setLoading(true);
 
             // CASE 1: RESUME BOOKING -> Redirect to Global Checkout directly
             if (resumeBookingId) {
-                router.push(`/checkout?bookingId=${resumeBookingId}`);
+                // Fetch safely via API if we wanted to be consistent, but for 'initialData' loading
+                // we might just let the container handle it? 
+                // Actually UnifiedContainer expects 'initialData' to be the *Product* details for the form,
+                // OR if it's a resume, it might expect the Booking itself.
+
+                // For now, let's stick to the Route logic which populates the FORM.
+                // If resuming a booking that is already created (step 2), 
+                // The UnifiedContainer usually handles "Step 2" if we pass a bookingId?
+                // Looking at UnifiedContainer: 
+                // const [step, setStep] = useState<'details' | 'payment'>('details');
+                // if (bookingId) ... setStep('payment').
+
+                // So if we have resumeBookingId, we should fetch it to verify, then pass it?
+                // Or simply let the user re-enter details if it's 'details' step?
+                // The prompt says "Redirect to Unified Payment Page" for step 2.
+                // So this page is primarily STEP 1 (Details).
+                // If resumeBookingId exists (Step 2), we should probably redirect to /payment?bookingId=... 
+                // to use the CENTRAL payment page, matching our "Pattern B" discussion?
+                // OR we render UnifiedContainer in "payment" mode?
+
+                // Let's redirect to central payment if resuming, to keep it simple as per previous cleanup.
+                router.push(`/payment?bookingId=${resumeBookingId}`);
                 return;
             }
 
-            // CASE 2: NEW BOOKING
+            // CASE 2: NEW BOOKING - Fetch Route
             if (routeId) {
-                await fetchRouteDetails(routeId);
-                setLoading(false);
+                const { data, error } = await supabase
+                    .from('transport_routes')
+                    .select(`
+                        *,
+                        transport_providers (name, logo_url, rating)
+                    `)
+                    .eq('id', routeId)
+                    .single();
+
+                if (error) {
+                    toast.error("Không tìm thấy thông tin chuyến đi");
+                } else {
+                    setRoute(data);
+                }
             }
+            setLoading(false);
         };
 
         init();
@@ -215,7 +248,7 @@ export default function TransportCheckoutPage() {
         );
     }
 
-    if (!route && !booking) {
+    if (!route && !resumeBookingId) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center bg-background-light dark:bg-background-dark gap-4">
                 <h2 className="text-xl font-bold">Trip not found</h2>
@@ -246,6 +279,18 @@ export default function TransportCheckoutPage() {
                     <Link href="#" className="text-[11px] font-bold text-muted hover:text-primary transition-colors uppercase tracking-widest">Privacy Policy</Link>
                 </div>
             </div>
+
+            <UnifiedCheckoutContainer
+                serviceType="transport"
+                initialData={{
+                    route,
+                    passengers,
+                    date
+                }}
+            />
         </div>
     );
 }
+
+
+
