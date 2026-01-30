@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
 
         // Fetch payment record
         const { data: payment, error: paymentError } = await supabase
-            .from("payments")
+            .from("payment_transactions")
             .select("*, bookings(*)")
             .eq("id", paymentId)
             .single();
@@ -32,10 +32,9 @@ export async function GET(request: NextRequest) {
         // Update payment status
         const paymentStatus = status === "success" ? "success" : "failed";
         await supabase
-            .from("payments")
+            .from("payment_transactions")
             .update({
-                status: paymentStatus,
-                paid_at: status === "success" ? new Date().toISOString() : null
+                status: paymentStatus
             })
             .eq("id", paymentId);
 
@@ -80,14 +79,13 @@ export async function POST(request: NextRequest) {
         const supabase = createServiceSupabaseClient();
 
         // Verify and update payment
-        const paymentStatus = status === "success" || status === "00" ? "paid" : "failed";
+        const paymentStatus = status === "success" || status === "00" ? "success" : "failed";
 
         const { error: updateError } = await supabase
-            .from("payments")
+            .from("payment_transactions")
             .update({
                 status: paymentStatus,
-                transaction_id: transactionId || undefined,
-                paid_at: paymentStatus === "paid" ? new Date().toISOString() : null
+                provider_transaction_id: transactionId || undefined
             })
             .eq("id", paymentId);
 
@@ -97,12 +95,12 @@ export async function POST(request: NextRequest) {
 
         // Get booking and update if paid
         const { data: payment } = await supabase
-            .from("payments")
+            .from("payment_transactions")
             .select("booking_id")
             .eq("id", paymentId)
             .single();
 
-        if (payment && paymentStatus === "paid") {
+        if (payment && paymentStatus === "success") {
             await supabase
                 .from("bookings")
                 .update({ status: "confirmed" })

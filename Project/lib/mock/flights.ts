@@ -14,15 +14,42 @@ export const generateFlights = (from: string, to: string, date: string, count = 
     return Array.from({ length: count }).map((_, i) => {
         const airline = AIRLINES[Math.floor(Math.random() * AIRLINES.length)]
         const hour = Math.floor(Math.random() * 24)
-        const minute = Math.floor(Math.random() * 60).toString().padStart(2, '0')
-        const durationHours = 2 + Math.floor(Math.random() * 12)
-        const durationMinutes = Math.floor(Math.random() * 60)
+        const minute = Math.floor(Math.random() * 60)
 
-        // Simple arrival calc
-        let arrHour = (hour + durationHours) % 24
-        const arrMinute = (parseInt(minute) + durationMinutes) % 60
+        // Major Vietnam airports
+        const vnAirports = ['HAN', 'SGN', 'DAD', 'PQC', 'CXR', 'HPH', 'VII', 'VCL']
+        const isVN = vnAirports.includes(from) && vnAirports.includes(to)
+
+        // Refined duration logic
+        let durationHours = 1
+        let durationMinutes = Math.floor(Math.random() * 60)
+
+        if (isVN) {
+            // Domestic VN: 1-2 hours
+            const longHaulVN = (from === 'HAN' && (to === 'SGN' || to === 'PQC' || to === 'VCL')) ||
+                (to === 'HAN' && (from === 'SGN' || from === 'PQC' || from === 'VCL'))
+            durationHours = longHaulVN ? 2 : 1
+            if (!longHaulVN) durationMinutes = 5 + Math.floor(Math.random() * 25) // 1h 05m to 1h 30m
+            else durationMinutes = Math.floor(Math.random() * 20) // 2h 00m to 2h 20m
+        } else {
+            // International or fallback
+            durationHours = 2 + Math.floor(Math.random() * 10)
+            durationMinutes = Math.floor(Math.random() * 60)
+        }
+
+        // Correct arrival calc handling minute overflow
+        const totalMinutes = minute + durationMinutes
+        const extraHours = Math.floor(totalMinutes / 60)
+        const arrMinute = totalMinutes % 60
+        const totalHours = hour + durationHours + extraHours
+        const arrHour = totalHours % 24
+        const daysAdded = Math.floor(totalHours / 24)
 
         const priceBase = 150 + Math.floor(Math.random() * 500)
+
+        const depDateObj = new Date(date)
+        const arrDateObj = new Date(date)
+        if (daysAdded > 0) arrDateObj.setDate(arrDateObj.getDate() + daysAdded)
 
         return {
             id: `${airline.code}-${from}-${to}-${1000 + i}`,
@@ -30,8 +57,19 @@ export const generateFlights = (from: string, to: string, date: string, count = 
             airlineCode: airline.code,
             airlineColor: airline.color,
             flightNumber: `${airline.code} ${100 + i}`,
-            departure: { time: `${hour.toString().padStart(2, '0')}:${minute}`, airport: from },
-            arrival: { time: `${arrHour.toString().padStart(2, '0')}:${arrMinute.toString().padStart(2, '0')}`, airport: to },
+            departure: {
+                time: `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`,
+                airport: from,
+                date: depDateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+            },
+            arrival: {
+                time: `${arrHour.toString().padStart(2, '0')}:${arrMinute.toString().padStart(2, '0')}`,
+                airport: to,
+                date: arrDateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+                daysAdded
+            },
+            rawDepartureAt: new Date(depDateObj.setHours(hour, minute, 0, 0)).toISOString(),
+            rawArrivalAt: new Date(arrDateObj.setHours(arrHour, arrMinute, 0, 0)).toISOString(),
             duration: `${durationHours}h ${durationMinutes}m`,
             stops: Math.random() > 0.7 ? 1 : 0,
             price: priceBase,

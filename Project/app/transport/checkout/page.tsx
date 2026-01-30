@@ -5,7 +5,6 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { CheckoutHeader } from "@/components/transport/checkout/CheckoutHeader";
 import { PassengerDetailsForm } from "@/components/transport/checkout/PassengerDetailsForm";
 import { CheckoutBookingSummary } from "@/components/transport/checkout/CheckoutBookingSummary";
-import { PaymentSection } from "@/components/transport/checkout/PaymentSection";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useSupabaseClient } from "@/lib/supabase"; // Client side
@@ -27,7 +26,7 @@ export default function TransportCheckoutPage() {
     // State
     const [route, setRoute] = useState<any>(null);
     const [loading, setLoading] = useState(true);
-    const [step, setStep] = useState<'details' | 'payment'>('details');
+    // const [step, setStep] = useState<'details' | 'payment'>('details'); // No longer needed
     const [booking, setBooking] = useState<any>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -36,36 +35,9 @@ export default function TransportCheckoutPage() {
         const init = async () => {
             setLoading(true);
 
-            // CASE 1: RESUME BOOKING
+            // CASE 1: RESUME BOOKING -> Redirect to Global Checkout directly
             if (resumeBookingId) {
-                const { data: bookingData, error } = await supabase
-                    .from('bookings')
-                    .select('*')
-                    .eq('id', resumeBookingId)
-                    .single();
-
-                if (error || !bookingData) {
-                    toast.error("Không tìm thấy đơn hàng hoặc đã hết hạn");
-                    router.push('/transport');
-                    return;
-                }
-
-                // Check expiry
-                if (bookingData.status === 'held' && new Date(bookingData.expires_at) < new Date()) {
-                    toast.error("Đơn hàng đã hết thời gian giữ chỗ. Vui lòng đặt lại.");
-                    // Optional: auto-cancel logic here or just redirect
-                    router.push('/transport');
-                    return;
-                }
-
-                setBooking(bookingData);
-                // Fetch associated route from metadata or separate table join if needed
-                // Assuming metadata has routeId to refetch details
-                if (bookingData.metadata?.routeId) {
-                    await fetchRouteDetails(bookingData.metadata.routeId);
-                }
-                setStep('payment');
-                setLoading(false);
+                router.push(`/checkout?bookingId=${resumeBookingId}`);
                 return;
             }
 
@@ -173,22 +145,29 @@ export default function TransportCheckoutPage() {
             }
 
             const newBooking = await res.json();
+            console.log("Booking created successfully:", newBooking);
+
+            if (!newBooking || !newBooking.id) {
+                throw new Error("API did not return a valid booking ID");
+            }
+
             setBooking(newBooking);
 
             // Save ID to local storage just in case of reload
             localStorage.setItem('pendingBookingId', newBooking.id);
 
-            setStep('payment');
             toast.success("Đặt chỗ thành công!", {
-                description: "Vui lòng hoàn tất thanh toán trong 8 phút."
+                description: "Đang chuyển đến trang thanh toán..."
             });
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            // REDIRECT TO GLOBAL CHECKOUT
+            console.log("Redirecting to:", `/checkout?bookingId=${newBooking.id}`);
+            router.push(`/checkout?bookingId=${newBooking.id}`);
 
         } catch (error: any) {
             console.error(error);
             toast.error("Lỗi đặt chỗ: " + error.message);
-        } finally {
-            setIsSubmitting(false);
+            setIsSubmitting(false); // Only stop loading on error
         }
     };
 
@@ -212,17 +191,11 @@ export default function TransportCheckoutPage() {
     return (
         <div className="min-h-screen items-center justify-center p-6 md:p-12 bg-background-light dark:bg-background-dark">
             <div className="max-w-7xl w-full mx-auto space-y-8">
-                <CheckoutHeader currentStep={step === 'payment' ? 2 : 1} />
+                <CheckoutHeader currentStep={1} />
 
                 <div className="flex flex-col lg:flex-row items-stretch gap-16 min-h-[700px]">
-                    {step === 'details' ? (
-                        <PassengerDetailsForm onSubmit={handleBookingCreation} isSubmitting={isSubmitting} />
-                    ) : (
-                        <PaymentSection
-                            bookingId={booking?.id}
-                            amount={booking?.total_amount} // Use stored amount
-                        />
-                    )}
+
+                    <PassengerDetailsForm onSubmit={handleBookingCreation} isSubmitting={isSubmitting} />
 
                     <CheckoutBookingSummary
                         route={route}

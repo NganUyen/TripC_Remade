@@ -39,9 +39,10 @@ export async function POST(request: NextRequest) {
         const now = new Date();
         const diffMinutes = (start.getTime() - now.getTime()) / (1000 * 60);
 
-        if (diffMinutes < 60) {
+        // Allow booking as long as it's not more than 24 hours in the past (for demo flexibility)
+        if (diffMinutes < -1440) {
             return NextResponse.json(
-                { error: "Invalid booking time. Must be at least 1 hour in advance." },
+                { error: "Invalid booking time. You cannot book a flight that departed more than 24 hours ago." },
                 { status: 400 }
             );
         }

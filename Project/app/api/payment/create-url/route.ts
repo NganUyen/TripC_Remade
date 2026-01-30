@@ -42,13 +42,14 @@ export async function POST(request: NextRequest) {
 
         // Create payment record
         const { data: payment, error: paymentError } = await supabase
-            .from("payments")
+            .from("payment_transactions")
             .insert({
                 booking_id: bookingId,
                 amount: booking.total_amount,
-                method: paymentMethod,
+                provider: paymentMethod,
                 status: "pending",
-                transaction_id: `TXN_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                provider_transaction_id: `TXN_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                currency: "VND"
             })
             .select()
             .single();
@@ -67,10 +68,10 @@ export async function POST(request: NextRequest) {
 
         if (paymentMethod === "momo") {
             // Mock MoMo payment URL
-            paymentUrl = `https://test-payment.momo.vn/pay?amount=${booking.total_amount}&orderId=${payment.transaction_id}&returnUrl=${encodeURIComponent(callbackUrl)}`;
+            paymentUrl = `https://test-payment.momo.vn/pay?amount=${booking.total_amount}&orderId=${payment.provider_transaction_id}&returnUrl=${encodeURIComponent(callbackUrl)}`;
         } else if (paymentMethod === "vnpay") {
             // Mock VNPAY payment URL
-            paymentUrl = `https://sandbox.vnpayment.vn/pay?amount=${booking.total_amount}&orderId=${payment.transaction_id}&returnUrl=${encodeURIComponent(callbackUrl)}`;
+            paymentUrl = `https://sandbox.vnpayment.vn/pay?amount=${booking.total_amount}&orderId=${payment.provider_transaction_id}&returnUrl=${encodeURIComponent(callbackUrl)}`;
         }
 
         return NextResponse.json({

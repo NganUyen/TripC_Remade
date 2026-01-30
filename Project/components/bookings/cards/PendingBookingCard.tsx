@@ -11,10 +11,12 @@ interface PendingBookingCardProps {
 export default function PendingBookingCard({ booking }: PendingBookingCardProps) {
     const isFlight = booking.category === 'flight';
     const isHotel = booking.category === 'hotel';
+    const isActivity = booking.category === 'activity';
+    const isWellness = booking.category === 'wellness';
 
     const bookingCode = booking.booking_code || booking.metadata?.booking_code || `ORD-${booking.id.slice(0, 8).toUpperCase()}`;
 
-    const Icon = isFlight ? Plane : isHotel ? Hotel : Ticket;
+    const Icon = isFlight ? Plane : isHotel ? Hotel : isActivity ? Ticket : isWellness ? Ticket : Ticket;
 
 
     // Calculate remaining time
@@ -58,7 +60,7 @@ export default function PendingBookingCard({ booking }: PendingBookingCardProps)
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                         <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider line-clamp-1 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-nowrap">
-                            {isFlight ? `VÉ MÁY BAY GIÁ TRỊ CAO` : isHotel ? `ĐẶT PHÒNG KHÁCH SẠN` : `DỊCH VỤ`}
+                            {isFlight ? `VÉ MÁY BAY GIÁ TRỊ CAO` : isHotel ? `ĐẶT PHÒNG KHÁCH SẠN` : isActivity ? `HOẠT ĐỘNG & TRẢI NGHIỆM` : isWellness ? `Nghỉ dưỡng & Retreat` : `DỊCH VỤ`}
                         </span>
                         <span className="text-[10px] font-bold text-white bg-red-500 px-2 py-0.5 rounded uppercase tracking-wider text-nowrap">
                             SẮP HẾT HẠN

@@ -6,43 +6,74 @@ import { Briefcase, Utensils, CheckCircle2 } from "lucide-react"
 import { useState } from "react"
 
 export function StepExtras() {
-    const { setStep } = useBookingStore()
-    const [selectedBag, setSelectedBag] = useState('cabin')
-    const [selectedMeal, setSelectedMeal] = useState('no-meal')
+    const { setStep, passengers, extras, selectBaggage, selectMeal } = useBookingStore()
+    const [activePassengerIdx, setActivePassengerIdx] = useState(0)
+
+    const activePassenger = passengers[activePassengerIdx]
+    const activePassengerId = activePassenger?.id || '1'
+
+    // Baggage & Meal Options (mock)
+    const baggageOptions = [
+        { id: 'cabin', name: 'Cabin Bag Only', desc: 'Personal item + 7kg cabin bag included', price: 0, tag: 'Included' },
+        { id: '15kg', name: 'Checked Bag 15kg', desc: 'One checked bag up to 15kg', price: 25, tag: '15kg' },
+        { id: '23kg', name: 'Checked Bag 23kg', desc: 'One checked bag up to 23kg', price: 40, tag: '23kg' },
+        { id: '32kg', name: 'Checked Bag 32kg', desc: 'One checked bag up to 32kg', price: 60, tag: '32kg' },
+        { id: 'extra', name: 'Extra Checked Bag', desc: 'Two checked bags up to 23kg each', price: 75, tag: '2 x 23kg' },
+    ]
+
+    const mealOptions = [
+        { id: 'no-meal', name: 'No Meal', desc: 'Standard complimentary snack only', price: 0, tag: 'Included' },
+        { id: 'standard', name: 'Standard Meal', desc: 'Chef prepared hot meal with dessert', price: 15 },
+        { id: 'veg', name: 'Vegetarian Meal', desc: 'Delicious meat-free hot meal', price: 18, tag: 'Vegetarian' },
+        { id: 'vegan', name: 'Vegan Meal', desc: 'Plant-based gourmet meal', price: 18, tag: 'Vegan', tagColor: 'bg-green-600 text-white' },
+        { id: 'halal', name: 'Halal Meal', desc: 'Halal certified hot meal', price: 18, tag: 'Halal', tagColor: 'bg-orange-600 text-white' },
+        { id: 'gluten', name: 'Gluten-Free Meal', desc: 'Gluten-free hot meal option', price: 18, tag: 'Gluten-Free', tagColor: 'bg-amber-600 text-white' },
+        { id: 'premium', name: 'Premium Meal', desc: 'Three course gourmet meal with wine', price: 35, tag: 'Premium', tagColor: 'bg-purple-600 text-white' },
+    ]
+
+    const currentBag = extras.baggage[activePassengerId] || 'cabin'
+    const currentMeal = extras.meals[activePassengerId] || 'no-meal'
 
     return (
         <div className="space-y-8 animate-fadeIn">
 
             <FlightDetailsSummary />
 
+            {/* Passenger Selection */}
+            <div className="flex flex-wrap gap-2 mb-4">
+                {passengers.map((p, idx) => (
+                    <button
+                        key={p.id}
+                        onClick={() => setActivePassengerIdx(idx)}
+                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${activePassengerIdx === idx ? 'bg-[#FF5E1F] border-[#FF5E1F] text-white' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500'}`}
+                    >
+                        {p.firstName || `Passenger ${idx + 1}`}
+                    </button>
+                ))}
+            </div>
+
             <div className="flex items-center gap-3">
                 <Briefcase className="w-5 h-5 text-slate-900 dark:text-white" />
-                <h3 className="font-bold text-lg text-slate-900 dark:text-white">Baggage & Meals</h3>
+                <h3 className="font-bold text-lg text-slate-900 dark:text-white">Baggage & Meals for {activePassenger?.firstName || `Passenger ${activePassengerIdx + 1}`}</h3>
             </div>
 
             {/* Baggage Section */}
             <div className="bg-white dark:bg-slate-900 rounded-[2rem] p-6 md:p-8 border border-slate-100 dark:border-slate-800 shadow-sm">
                 <div className="flex items-center gap-3 mb-6">
                     <div className="px-2 py-1 bg-slate-900 text-white rounded text-xs font-bold">Baggage</div>
-                    <span className="text-xs text-[#FF5E1F] font-bold bg-orange-50 px-2 py-1 rounded">No selection</span>
+                    <span className="text-xs text-[#FF5E1F] font-bold bg-orange-50 px-2 py-1 rounded">Selected: {baggageOptions.find(b => b.id === currentBag)?.tag}</span>
                 </div>
 
                 <div className="space-y-3">
-                    {[
-                        { id: 'cabin', name: 'Cabin Bag Only', desc: 'Personal item + 7kg cabin bag included', price: 0, tag: 'Included' },
-                        { id: '15kg', name: 'Checked Bag 15kg', desc: 'One checked bag up to 15kg', price: 25, tag: '15kg' },
-                        { id: '23kg', name: 'Checked Bag 23kg', desc: 'One checked bag up to 23kg', price: 40, tag: '23kg' },
-                        { id: '32kg', name: 'Checked Bag 32kg', desc: 'One checked bag up to 32kg', price: 60, tag: '32kg' },
-                        { id: 'extra', name: 'Extra Checked Bag', desc: 'Two checked bags up to 23kg each', price: 75, tag: '2 x 23kg' },
-                    ].map((bag) => (
+                    {baggageOptions.map((bag) => (
                         <div
                             key={bag.id}
-                            onClick={() => setSelectedBag(bag.id)}
-                            className={`group cursor-pointer rounded-xl border p-4 flex items-center justify-between transition-all ${selectedBag === bag.id ? 'border-[#FF5E1F] bg-orange-50/50 dark:bg-orange-900/10 shadow-sm' : 'border-slate-200 dark:border-slate-700 hover:border-[#FF5E1F]/50'}`}
+                            onClick={() => selectBaggage(activePassengerId, bag.id)}
+                            className={`group cursor-pointer rounded-xl border p-4 flex items-center justify-between transition-all ${currentBag === bag.id ? 'border-[#FF5E1F] bg-orange-50/50 dark:bg-orange-900/10 shadow-sm' : 'border-slate-200 dark:border-slate-700 hover:border-[#FF5E1F]/50'}`}
                         >
                             <div className="flex items-center gap-4">
-                                <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${selectedBag === bag.id ? 'border-[#FF5E1F] bg-[#FF5E1F]' : 'border-slate-300'}`}>
-                                    {selectedBag === bag.id && <div className="w-2 h-2 rounded-full bg-white"></div>}
+                                <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${currentBag === bag.id ? 'border-[#FF5E1F] bg-[#FF5E1F]' : 'border-slate-300'}`}>
+                                    {currentBag === bag.id && <div className="w-2 h-2 rounded-full bg-white"></div>}
                                 </div>
                                 <div>
                                     <div className="font-bold text-slate-900 dark:text-white">{bag.name}</div>
@@ -68,27 +99,19 @@ export function StepExtras() {
             <div className="bg-white dark:bg-slate-900 rounded-[2rem] p-6 md:p-8 border border-slate-100 dark:border-slate-800 shadow-sm">
                 <div className="flex items-center gap-3 mb-6">
                     <div className="px-2 py-1 bg-slate-900 text-white rounded text-xs font-bold">In-Flight Meal</div>
-                    <span className="text-xs text-[#FF5E1F] font-bold bg-orange-50 px-2 py-1 rounded">Our flight</span>
+                    <span className="text-xs text-[#FF5E1F] font-bold bg-orange-50 px-2 py-1 rounded">Currently: {mealOptions.find(m => m.id === currentMeal)?.name}</span>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {[
-                        { id: 'no-meal', name: 'No Meal', desc: 'Standard complimentary snack only', price: 0, tag: 'Included' },
-                        { id: 'standard', name: 'Standard Meal', desc: 'Chef prepared hot meal with dessert', price: 15 },
-                        { id: 'veg', name: 'Vegetarian Meal', desc: 'Delicious meat-free hot meal', price: 18, tag: 'Vegetarian' },
-                        { id: 'vegan', name: 'Vegan Meal', desc: 'Plant-based gourmet meal', price: 18, tag: 'Vegan', tagColor: 'bg-green-600 text-white' },
-                        { id: 'halal', name: 'Halal Meal', desc: 'Halal certified hot meal', price: 18, tag: 'Halal', tagColor: 'bg-orange-600 text-white' },
-                        { id: 'gluten', name: 'Gluten-Free Meal', desc: 'Gluten-free hot meal option', price: 18, tag: 'Gluten-Free', tagColor: 'bg-amber-600 text-white' },
-                        { id: 'premium', name: 'Premium Meal', desc: 'Three course gourmet meal with wine', price: 35, tag: 'Premium', tagColor: 'bg-purple-600 text-white' },
-                    ].map((meal) => (
+                    {mealOptions.map((meal) => (
                         <div
                             key={meal.id}
-                            onClick={() => setSelectedMeal(meal.id)}
-                            className={`cursor-pointer rounded-xl border p-4 transition-all relative overflow-hidden ${selectedMeal === meal.id ? 'border-[#FF5E1F] bg-orange-50/50 dark:bg-orange-900/10 shadow-sm' : 'border-slate-200 dark:border-slate-700 hover:border-[#FF5E1F]/50'}`}
+                            onClick={() => selectMeal(activePassengerId, meal.id)}
+                            className={`cursor-pointer rounded-xl border p-4 transition-all relative overflow-hidden ${currentMeal === meal.id ? 'border-[#FF5E1F] bg-orange-50/50 dark:bg-orange-900/10 shadow-sm' : 'border-slate-200 dark:border-slate-700 hover:border-[#FF5E1F]/50'}`}
                         >
                             <div className="flex justify-between items-start mb-2">
-                                <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 mt-0.5 ${selectedMeal === meal.id ? 'border-[#FF5E1F] bg-[#FF5E1F]' : 'border-slate-300'}`}>
-                                    {selectedMeal === meal.id && <div className="w-2 h-2 rounded-full bg-white"></div>}
+                                <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 mt-0.5 ${currentMeal === meal.id ? 'border-[#FF5E1F] bg-[#FF5E1F]' : 'border-slate-300'}`}>
+                                    {currentMeal === meal.id && <div className="w-2 h-2 rounded-full bg-white"></div>}
                                 </div>
                                 <div className="font-bold text-slate-900 dark:text-white text-sm">
                                     {meal.price === 0 ? 'Included' : `+$${meal.price}`}
@@ -108,12 +131,23 @@ export function StepExtras() {
 
             <div className="flex justify-between pt-4">
                 <button onClick={() => setStep(2)} className="px-6 py-3 rounded-xl border border-slate-200 dark:border-slate-700 font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Back</button>
-                <button
-                    onClick={() => setStep(4)}
-                    className="flex-1 ml-4 py-4 bg-[#FF5E1F] hover:bg-orange-600 rounded-xl text-white font-bold text-sm uppercase tracking-wider shadow-lg shadow-orange-500/20 transition-all hover:scale-[1.005] active:scale-[0.99]"
-                >
-                    Continue to Insurance
-                </button>
+                <div className="flex gap-4 flex-1 ml-4 text-center">
+                    {activePassengerIdx < passengers.length - 1 ? (
+                        <button
+                            onClick={() => setActivePassengerIdx(prev => prev + 1)}
+                            className="flex-1 py-4 bg-slate-900 dark:bg-slate-700 hover:bg-black rounded-xl text-white font-bold text-sm uppercase tracking-wider"
+                        >
+                            Next Passenger
+                        </button>
+                    ) : (
+                        <button
+                            onClick={() => setStep(4)}
+                            className="flex-1 py-4 bg-[#FF5E1F] hover:bg-orange-600 rounded-xl text-white font-bold text-sm uppercase tracking-wider shadow-lg shadow-orange-500/20 transition-all hover:scale-[1.005] active:scale-[0.99]"
+                        >
+                            Continue to Insurance
+                        </button>
+                    )}
+                </div>
             </div>
         </div>
     )

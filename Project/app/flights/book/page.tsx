@@ -13,31 +13,50 @@ import { StepReview } from '@/components/flights/booking/steps/StepReview'
 import { StepPayment } from '@/components/flights/booking/steps/StepPayment'
 import { Footer } from '@/components/Footer'
 
+import { getFlightById } from '@/lib/actions/flights'
+
 function BookingContent() {
     const router = useRouter()
     const searchParams = useSearchParams()
-    const { step, setTrip } = useBookingStore()
+    const { step, setTrip, setSelectedFlights } = useBookingStore()
 
     // Initialize from URL
     useEffect(() => {
         const from = searchParams.get("from")
         const to = searchParams.get("to")
-        const date = searchParams.get("date") || searchParams.get("departure") // support both
+        const date = searchParams.get("date") || searchParams.get("departure") || searchParams.get("depart")
+        const returnDate = searchParams.get("returnDate") || searchParams.get("return")
 
-        if (!from || !to || !date) {
-            // Redirect if critical info missing
-            // router.push("/flights/search") 
-            // Commented out for dev/testing ease, but logic is here
+        const flightIdOutbound = searchParams.get("flightIdOutbound")
+        const flightIdReturn = searchParams.get("flightIdReturn")
+
+        async function initBooking() {
+            setTrip({
+                from: from || "",
+                to: to || "",
+                date: date || "",
+                returnDate: returnDate || undefined,
+                passengersCount: parseInt(searchParams.get("passengers") || "1"),
+                class: searchParams.get("class") || "Economy"
+            })
+
+            const flights = []
+            if (flightIdOutbound) {
+                const f = await getFlightById(flightIdOutbound)
+                if (f) flights.push(f)
+            }
+            if (flightIdReturn) {
+                const f = await getFlightById(flightIdReturn)
+                if (f) flights.push(f)
+            }
+
+            if (flights.length > 0) {
+                setSelectedFlights(flights)
+            }
         }
 
-        setTrip({
-            from: from || "",
-            to: to || "",
-            date: date || "",
-            passengersCount: parseInt(searchParams.get("passengers") || "1"),
-            class: searchParams.get("class") || "Economy"
-        })
-    }, [searchParams, setTrip, router])
+        initBooking()
+    }, [searchParams, setTrip, setSelectedFlights])
 
     const renderStep = () => {
         switch (step) {

@@ -42,6 +42,9 @@ export interface BookingState {
     useTcent: boolean
     paymentMethod: string
 
+    // Selected Flight Details
+    selectedFlights: any[]
+
     // Actions
     setStep: (step: number) => void
     setTrip: (trip: BookingState['trip']) => void
@@ -54,6 +57,7 @@ export interface BookingState {
     setPromoCode: (code: string) => void
     toggleTcent: () => void
     setPaymentMethod: (method: string) => void
+    setSelectedFlights: (flights: any[]) => void
 }
 
 export const useBookingStore = create<BookingState>((set) => ({
@@ -70,6 +74,7 @@ export const useBookingStore = create<BookingState>((set) => ({
     promoCode: '',
     useTcent: false,
     paymentMethod: 'payos',
+    selectedFlights: [],
 
     setStep: (step) => set({ step }),
     setTrip: (trip) => set((state) => ({
@@ -90,4 +95,5 @@ export const useBookingStore = create<BookingState>((set) => ({
     setPromoCode: (code) => set({ promoCode: code }),
     toggleTcent: () => set((state) => ({ useTcent: !state.useTcent })),
     setPaymentMethod: (method) => set({ paymentMethod: method }),
+    setSelectedFlights: (flights) => set({ selectedFlights: flights }),
 }))

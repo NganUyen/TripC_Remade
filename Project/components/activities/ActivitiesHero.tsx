@@ -1,11 +1,35 @@
 "use client"
 
 import React from 'react'
-import { Search } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { SearchWithHistoryInput } from '@/components/common/SearchWithHistoryInput'
+import { Activity } from '@/types'
+import { useRouter, useSearchParams } from 'next/navigation'
 
-export function ActivitiesHero() {
-    const categories = ['All', 'Theme Parks', 'Water Parks', 'Museums', 'Nature', 'Tours', 'Extreme Sports']
+interface ActivitiesHeroProps {
+    allActivities: Activity[]
+}
+
+export function ActivitiesHero({ allActivities }: ActivitiesHeroProps) {
+    const router = useRouter()
+    const searchParams = useSearchParams()
+    const currentCategory = searchParams.get('category') || 'All'
+
+    const categories = ['All', 'Theme Parks', 'Water Parks', 'Museums', 'Tours', 'Workshops']
+
+    const handleSelectActivity = (activity: Activity) => {
+        router.push(`/activities/${activity.id}`)
+    }
+
+    const handleCategoryClick = (category: string) => {
+        const params = new URLSearchParams(searchParams.toString())
+        if (category === 'All') {
+            params.delete('category')
+        } else {
+            params.set('category', category)
+        }
+        router.push(`/activities?${params.toString()}`)
+    }
 
     return (
         <section className="relative min-h-[550px] w-full flex flex-col items-center justify-center p-4">
@@ -36,13 +60,23 @@ export function ActivitiesHero() {
 
                     {/* Search Bar */}
                     <div className="w-full max-w-xl relative">
-                        <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-500">
-                            <Search className="w-5 h-5" />
-                        </div>
-                        <input
-                            type="text"
+                        <SearchWithHistoryInput<Activity>
+                            data={allActivities}
+                            searchKeys={['title', 'location']}
+                            category="activities"
                             placeholder="Search experiences, tours, and activities..."
-                            className="w-full h-14 pl-12 pr-6 rounded-full bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border border-white/20 shadow-xl text-lg outline-none focus:ring-2 focus:ring-[#FF5E1F] transition-all placeholder:text-slate-400"
+                            onSelect={handleSelectActivity}
+                            getDisplayValue={(item) => item.title}
+                            renderResult={(item) => (
+                                <div className="flex items-center gap-3">
+                                    <img src={item.image_url} alt={item.title} className="w-10 h-10 rounded-lg object-cover" />
+                                    <div>
+                                        <div className="font-bold text-slate-800 dark:text-white">{item.title}</div>
+                                        <div className="text-xs text-slate-500">{item.location}</div>
+                                    </div>
+                                </div>
+                            )}
+                            className="shadow-xl"
                         />
                     </div>
 
@@ -55,7 +89,11 @@ export function ActivitiesHero() {
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: 0.2 + (i * 0.05) }}
-                                    className="whitespace-nowrap px-6 py-2.5 bg-white/10 border border-white/20 rounded-full text-white text-sm font-bold hover:bg-[#FF5E1F] hover:border-[#FF5E1F] backdrop-blur-sm transition-all shadow-sm"
+                                    onClick={() => handleCategoryClick(cat)}
+                                    className={`whitespace-nowrap px-6 py-2.5 border rounded-full text-sm font-bold backdrop-blur-sm transition-all shadow-sm ${currentCategory === cat
+                                            ? 'bg-[#FF5E1F] border-[#FF5E1F] text-white'
+                                            : 'bg-white/10 border-white/20 text-white hover:bg-[#FF5E1F] hover:border-[#FF5E1F]'
+                                        }`}
                                 >
                                     {cat}
                                 </motion.button>
