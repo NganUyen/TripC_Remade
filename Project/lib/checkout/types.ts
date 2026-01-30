@@ -32,6 +32,8 @@ export interface ShopCheckoutDetails {
         variantId: string;
         quantity: number;
         price: number;
+        name?: string;
+        image?: string | null;
     }[];
     shippingAddressId: string;
     shippingMethodId: string;

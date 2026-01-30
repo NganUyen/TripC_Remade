@@ -149,7 +149,19 @@ export const UnifiedCheckoutContainer = ({ serviceType, initialData }: Props) =>
     return (
         <div className="max-w-4xl mx-auto px-4 md:px-0 pb-12">
 
-            {serviceType === 'shop' && <CheckoutSteps currentStep={getCurrentStep()} className="mb-4" />}
+            {(serviceType === 'shop' || serviceType === 'transport') && (
+                <CheckoutSteps
+                    currentStep={getCurrentStep()}
+                    className="mb-8"
+                    steps={serviceType === 'transport'
+                        ? [
+                            { id: 'details', label: 'Info' },
+                            { id: 'payment', label: 'Payment' }
+                        ]
+                        : undefined // Default for Shop (Cart > Info > Payment)
+                    }
+                />
+            )}
 
             {/* Step Title for Payment */}
             {step === 'payment' && (

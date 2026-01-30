@@ -8,13 +8,19 @@ interface CheckoutStepsProps {
     className?: string;
 }
 
-const steps = [
+export const DEFAULT_STEPS = [
     { id: 'cart', label: 'Cart' },
     { id: 'details', label: 'Info' },
     { id: 'payment', label: 'Payment' },
 ] as const;
 
-export const CheckoutSteps = ({ currentStep, className }: CheckoutStepsProps) => {
+interface CheckoutStepsProps {
+    currentStep: 'cart' | 'details' | 'payment' | 'complete';
+    className?: string;
+    steps?: typeof DEFAULT_STEPS | { id: string; label: string }[];
+}
+
+export const CheckoutSteps = ({ currentStep, className, steps = DEFAULT_STEPS }: CheckoutStepsProps) => {
     const getCurrentIndex = () => steps.findIndex(s => s.id === currentStep);
     const currentIndex = getCurrentIndex();
 

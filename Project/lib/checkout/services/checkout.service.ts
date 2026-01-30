@@ -41,7 +41,13 @@ export class CheckoutService {
 
         if (payload.serviceType === 'shop') {
             totalAmount = payload.items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
-            title = `Shop Order (${payload.items.length} items)`;
+
+            const firstItemName = payload.items[0]?.name || 'Unknown Item';
+            if (payload.items.length === 1) {
+                title = `Shop Order: ${firstItemName}`;
+            } else {
+                title = `Shop Order: ${firstItemName} + ${payload.items.length - 1} more`;
+            }
         } else if (payload.serviceType === 'transport') {
             // Basic fallback total calculation if not provided (though route logic usually sends it)
             // But payload from transport checkout usually relies on `items` price logic?

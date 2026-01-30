@@ -2,9 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { CheckoutHeader } from "@/components/transport/checkout/CheckoutHeader";
-import { PassengerDetailsForm } from "@/components/transport/checkout/PassengerDetailsForm";
-import { CheckoutBookingSummary } from "@/components/transport/checkout/CheckoutBookingSummary";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useSupabaseClient } from "@/lib/supabase"; // Client side
