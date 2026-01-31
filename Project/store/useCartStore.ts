@@ -14,6 +14,7 @@ interface CartState {
     addItem: (variantId: string, qty: number, itemDetails?: any) => Promise<void>;
     updateItem: (itemId: string, qty: number) => Promise<void>;
     removeItem: (itemId: string) => Promise<void>;
+    applyVoucher: (code: string) => Promise<void>;
 }
 
 export const useCartStore = create<CartState>((set, get) => ({
@@ -37,8 +38,6 @@ export const useCartStore = create<CartState>((set, get) => ({
             set({ isLoading: false });
         }
     },
-
-    // startMerge removed - cart is auth-required (no guest cart)
 
     addItem: async (variantId, qty, itemDetails) => {
         const { cart } = get();
@@ -107,8 +106,6 @@ export const useCartStore = create<CartState>((set, get) => ({
                 toast.success('Added to cart');
             } else {
                 // Revert or show error
-                // Ideally revert logic here, but simply re-fetching or undoing optimistic is hard without previous state copy.
-                // For now, simpler error handling:
                 if (res.status === 409) {
                     toast.error(body.error?.message || 'Out of stock');
                 } else {
@@ -223,6 +220,47 @@ export const useCartStore = create<CartState>((set, get) => ({
             set({ cart });
         } finally {
             set(state => ({ pendingItemIds: state.pendingItemIds.filter(id => id !== itemId) }));
+        }
+    },
+
+    applyVoucher: async (code: string) => {
+        const { cart } = get();
+        if (!cart) return;
+        set({ isLoading: true });
+
+        try {
+            const res = await fetch('/api/v1/vouchers/validate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    code,
+                    cartTotal: cart.subtotal.amount
+                })
+            });
+
+            const data = await res.json();
+
+            if (res.ok && data.valid) {
+                const discountAmount = data.discountAmount;
+                const newGrandTotal = Math.max(0, cart.subtotal.amount - discountAmount);
+                set({
+                    cart: {
+                        ...cart,
+                        coupon_code: code,
+                        discount_total: { ...cart.discount_total, amount: discountAmount },
+                        grand_total: { ...cart.grand_total, amount: newGrandTotal }
+                    }
+                });
+                toast.success(data.message);
+            } else {
+                toast.error(data.error || 'Failed to apply voucher');
+                set({ error: data.error });
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error('Failed to apply voucher');
+        } finally {
+            set({ isLoading: false });
         }
     }
 }));

@@ -38,18 +38,25 @@ export interface ShopCheckoutDetails {
     shippingAddressId: string;
     shippingMethodId: string;
     cartId?: string;
+    couponCode?: string;
+    discountAmount?: number;
 }
 
 export interface HotelCheckoutDetails {
     hotelId: string;
     roomId: string; // or roomTypeId
-    checkInDate: string;
-    checkOutDate: string;
+    checkInDate?: string; // Legacy?
+    checkOutDate?: string; // Legacy?
+    dates: {
+        start: string;
+        end: string;
+    };
     guests: {
         adults: number;
         children: number;
         ages?: number[];
     };
+    rate: number;
 }
 
 export interface FlightCheckoutDetails {

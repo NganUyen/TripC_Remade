@@ -126,6 +126,3 @@ export default function TransportCheckoutPage() {
         </div>
     );
 }
-
-
-

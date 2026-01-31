@@ -4,7 +4,7 @@
  * GET /api/ping
  *
  * Returns system health status including API availability, database connectivity,
- * and uptime information. Tests Flight, Hotel, Voucher, Transport, Dining, and Shop service databases.
+ * and uptime information. Tests Flight, Hotel, Voucher, Transport, Dining, Shop, and Entertainment service databases.
  *
  * @returns {JSON} Health status
  */
@@ -42,6 +42,7 @@ interface HealthStatus {
     transport_db: "ok" | "error";
     dining_db: "ok" | "error";
     shop_db: "ok" | "error";
+    entertainment_db: "ok" | "error";
   };
   performance: {
     api_response_time_ms: number;
@@ -51,6 +52,7 @@ interface HealthStatus {
     transport_db_response_time_ms: number;
     dining_db_response_time_ms: number;
     shop_db_response_time_ms: number;
+    entertainment_db_response_time_ms: number;
   };
   version: string;
   environment: string;
@@ -163,6 +165,35 @@ export async function GET(request: NextRequest) {
       console.error("Shop DB health check failed:", err);
     }
 
+    // Test Entertainment database
+    let entertainmentDbStatus: "ok" | "error" = "error";
+    let entertainmentDbTime = 0;
+    let entertainmentDbError = "";
+    try {
+      const dbStart = Date.now();
+      const supabase = createServiceSupabaseClient();
+      const { data, error } = await supabase
+        .from("entertainment_items")
+        .select("id")
+        .limit(1);
+      entertainmentDbTime = Date.now() - dbStart;
+      if (error) {
+        console.error("Entertainment DB query error:", error);
+        entertainmentDbError = error.message;
+        entertainmentDbStatus = "error";
+      } else {
+        entertainmentDbStatus = "ok";
+        console.log(
+          "Entertainment DB check successful, found",
+          data?.length || 0,
+          "items",
+        );
+      }
+    } catch (err) {
+      console.error("Entertainment DB health check failed:", err);
+      entertainmentDbError = err instanceof Error ? err.message : "Unknown error";
+    }
+
     const uptime = process.uptime ? process.uptime() : 0;
     const overallStatus =
       flightDbStatus === "ok" &&
@@ -170,7 +201,8 @@ export async function GET(request: NextRequest) {
       voucherDbStatus === "ok" &&
       transportDbStatus === "ok" &&
       diningDbStatus === "ok" &&
-      shopDbStatus === "ok"
+      shopDbStatus === "ok" &&
+      entertainmentDbStatus === "ok"
         ? "ok"
         : "degraded";
 
@@ -186,6 +218,7 @@ export async function GET(request: NextRequest) {
         transport_db: transportDbStatus,
         dining_db: diningDbStatus,
         shop_db: shopDbStatus,
+        entertainment_db: entertainmentDbStatus,
       },
       performance: {
         api_response_time_ms: Date.now() - startTime,
@@ -195,11 +228,12 @@ export async function GET(request: NextRequest) {
         transport_db_response_time_ms: transportDbTime,
         dining_db_response_time_ms: diningDbTime,
         shop_db_response_time_ms: shopDbTime,
+        entertainment_db_response_time_ms: entertainmentDbTime,
       },
       version: "1.0.0",
       environment: process.env.NODE_ENV || "development",
       uptime_seconds: Math.floor(uptime),
-      error: hotelDbError || voucherDbError || undefined,
+      error: hotelDbError || voucherDbError || entertainmentDbError || undefined,
     };
 
     const statusCode = overallStatus === "ok" ? 200 : 503;
@@ -219,6 +253,7 @@ export async function GET(request: NextRequest) {
         transport_db: "error",
         dining_db: "error",
         shop_db: "error",
+        entertainment_db: "error",
       },
       performance: {
         api_response_time_ms: Date.now() - startTime,
@@ -228,6 +263,7 @@ export async function GET(request: NextRequest) {
         transport_db_response_time_ms: 0,
         dining_db_response_time_ms: 0,
         shop_db_response_time_ms: 0,
+        entertainment_db_response_time_ms: 0,
       },
       version: "1.0.0",
       environment: process.env.NODE_ENV || "development",

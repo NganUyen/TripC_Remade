@@ -60,6 +60,7 @@ export const UnifiedCheckoutContainer = ({ serviceType, initialData }: Props) =>
         if (result) {
             setBookingId(result.bookingId);
             // Use the amount returned from the backend/hook result
+            console.log('[UnifiedCheckout] Setting Booking Amount:', result.totalAmount);
             if (result.totalAmount) {
                 setBookingAmount(Number(result.totalAmount));
             }

@@ -7,7 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/flight/supabaseServerClient";
+import { supabaseServerClient } from "@/lib/flight/supabaseServerClient";
 import { verifyClerkAuth } from "@/lib/flight/clerkAuth";
 
 interface HoldBookingRequest {

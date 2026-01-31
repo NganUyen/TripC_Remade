@@ -42,85 +42,6 @@ CREATE TABLE public.addresses (
   CONSTRAINT addresses_pkey PRIMARY KEY (id),
   CONSTRAINT addresses_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
 );
-CREATE TABLE public.beauty_appointments (
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  booking_id uuid UNIQUE,
-  user_id text NOT NULL,
-  venue_id uuid NOT NULL,
-  service_id uuid,
-  appointment_code text UNIQUE,
-  appointment_date date NOT NULL,
-  appointment_time time without time zone NOT NULL,
-  duration_minutes integer DEFAULT 60,
-  guest_name text NOT NULL,
-  guest_phone text,
-  guest_email text,
-  special_requests text,
-  status text DEFAULT 'pending'::text CHECK (status = ANY (ARRAY['pending'::text, 'confirmed'::text, 'in_progress'::text, 'completed'::text, 'cancelled'::text, 'no_show'::text])),
-  confirmed_at timestamp with time zone,
-  completed_at timestamp with time zone,
-  cancelled_at timestamp with time zone,
-  cancellation_reason text,
-  metadata jsonb DEFAULT '{}'::jsonb,
-  created_at timestamp with time zone DEFAULT now(),
-  updated_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT beauty_appointments_pkey PRIMARY KEY (id),
-  CONSTRAINT beauty_appointments_venue_id_fkey FOREIGN KEY (venue_id) REFERENCES public.beauty_venues(id),
-  CONSTRAINT beauty_appointments_service_id_fkey FOREIGN KEY (service_id) REFERENCES public.beauty_services(id)
-);
-CREATE TABLE public.beauty_services (
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  venue_id uuid NOT NULL,
-  name text NOT NULL,
-  description text,
-  category text,
-  duration_minutes integer DEFAULT 60 CHECK (duration_minutes > 0),
-  price numeric NOT NULL CHECK (price >= 0::numeric),
-  currency text DEFAULT 'USD'::text,
-  image_url text,
-  badge text,
-  is_active boolean DEFAULT true,
-  is_featured boolean DEFAULT false,
-  display_order integer DEFAULT 0,
-  metadata jsonb DEFAULT '{}'::jsonb,
-  created_at timestamp with time zone DEFAULT now(),
-  updated_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT beauty_services_pkey PRIMARY KEY (id),
-  CONSTRAINT beauty_services_venue_id_fkey FOREIGN KEY (venue_id) REFERENCES public.beauty_venues(id)
-);
-CREATE TABLE public.beauty_venues (
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  name text NOT NULL,
-  slug text UNIQUE,
-  description text,
-  address text,
-  city text,
-  district text,
-  ward text,
-  latitude numeric,
-  longitude numeric,
-  location_summary text,
-  phone text,
-  email text,
-  website text,
-  categories ARRAY,
-  price_range text CHECK (price_range = ANY (ARRAY['budget'::text, 'moderate'::text, 'premium'::text, 'luxury'::text])),
-  average_rating numeric DEFAULT 0 CHECK (average_rating >= 0::numeric AND average_rating <= 5::numeric),
-  review_count integer DEFAULT 0 CHECK (review_count >= 0),
-  cover_image_url text,
-  images ARRAY,
-  operating_hours jsonb DEFAULT '{}'::jsonb,
-  is_active boolean DEFAULT true,
-  is_verified boolean DEFAULT false,
-  is_featured boolean DEFAULT false,
-  owner_user_id text,
-  amenities ARRAY,
-  tags ARRAY,
-  metadata jsonb DEFAULT '{}'::jsonb,
-  created_at timestamp with time zone DEFAULT now(),
-  updated_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT beauty_venues_pkey PRIMARY KEY (id)
-);
 CREATE TABLE public.booking_discounts (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   booking_id uuid NOT NULL,
@@ -1049,18 +970,6 @@ CREATE TABLE public.loyalty_transactions (
   CONSTRAINT loyalty_transactions_booking_id_fkey FOREIGN KEY (booking_id) REFERENCES public.bookings(id),
   CONSTRAINT loyalty_transactions_user_uuid_fkey FOREIGN KEY (user_uuid) REFERENCES public.users(id)
 );
-CREATE TABLE public.notifications (
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL,
-  type character varying NOT NULL CHECK (type::text = ANY (ARRAY['reward'::character varying, 'booking'::character varying, 'system'::character varying]::text[])),
-  title text NOT NULL,
-  message text NOT NULL,
-  is_read boolean DEFAULT false,
-  deep_link text,
-  created_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT notifications_pkey PRIMARY KEY (id),
-  CONSTRAINT notifications_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
-);
 CREATE TABLE public.order_items (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   order_id uuid NOT NULL,
@@ -1408,15 +1317,6 @@ CREATE TABLE public.user_search_history (
   user_id uuid NOT NULL,
   CONSTRAINT user_search_history_pkey PRIMARY KEY (id),
   CONSTRAINT user_search_history_user_uuid_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
-);
-CREATE TABLE public.user_streaks (
-  user_id uuid NOT NULL,
-  current_streak integer DEFAULT 0,
-  longest_streak integer DEFAULT 0,
-  last_claim_at timestamp with time zone,
-  daily_actions_completed jsonb DEFAULT '{}'::jsonb,
-  CONSTRAINT user_streaks_pkey PRIMARY KEY (user_id),
-  CONSTRAINT user_streaks_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
 );
 CREATE TABLE public.user_vouchers (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
