@@ -1,30 +1,32 @@
 # Entertainment Service - Database Schema
 
 ## Overview
+
 The Entertainment service uses a single primary table `entertainment_items` to store all entertainment-related data including tours, shows, activities, attractions, and concerts.
 
 ## Table: `entertainment_items`
 
 ### Description
+
 Stores entertainment items with flexible metadata structure to accommodate various types of entertainment offerings.
 
 ### Columns
 
-| Column | Type | Nullable | Default | Description |
-|--------|------|----------|---------|-------------|
-| `id` | uuid | NO | uuid_generate_v4() | Primary key, auto-generated UUID |
-| `title` | text | NO | - | Main title/name of the entertainment item |
-| `subtitle` | text | YES | NULL | Secondary title or tagline |
-| `description` | text | YES | NULL | Full description of the entertainment item |
-| `type` | text | NO | - | Type of entertainment (tour, show, activity, attraction, concert) |
-| `provider` | text | YES | NULL | Name of the provider/operator |
-| `price` | numeric(10,2) | YES | NULL | Base price for the item |
-| `currency` | varchar(3) | YES | 'USD' | Currency code (ISO 4217) |
-| `available` | boolean | YES | true | Availability status |
-| `location` | jsonb | YES | NULL | Location information (see structure below) |
-| `metadata` | jsonb | YES | '{}'::jsonb | Flexible metadata (see structure below) |
-| `created_at` | timestamptz | NO | now() | Record creation timestamp |
-| `updated_at` | timestamptz | NO | now() | Record last update timestamp |
+| Column        | Type          | Nullable | Default            | Description                                                       |
+| ------------- | ------------- | -------- | ------------------ | ----------------------------------------------------------------- |
+| `id`          | uuid          | NO       | uuid_generate_v4() | Primary key, auto-generated UUID                                  |
+| `title`       | text          | NO       | -                  | Main title/name of the entertainment item                         |
+| `subtitle`    | text          | YES      | NULL               | Secondary title or tagline                                        |
+| `description` | text          | YES      | NULL               | Full description of the entertainment item                        |
+| `type`        | text          | NO       | -                  | Type of entertainment (tour, show, activity, attraction, concert) |
+| `provider`    | text          | YES      | NULL               | Name of the provider/operator                                     |
+| `price`       | numeric(10,2) | YES      | NULL               | Base price for the item                                           |
+| `currency`    | varchar(3)    | YES      | 'USD'              | Currency code (ISO 4217)                                          |
+| `available`   | boolean       | YES      | true               | Availability status                                               |
+| `location`    | jsonb         | YES      | NULL               | Location information (see structure below)                        |
+| `metadata`    | jsonb         | YES      | '{}'::jsonb        | Flexible metadata (see structure below)                           |
+| `created_at`  | timestamptz   | NO       | now()              | Record creation timestamp                                         |
+| `updated_at`  | timestamptz   | NO       | now()              | Record last update timestamp                                      |
 
 ### Indexes
 
@@ -50,6 +52,7 @@ The table has RLS enabled with the following policies:
 ## JSONB Structures
 
 ### `location` (JSONB)
+
 ```json
 {
   "city": "Paris",
@@ -61,6 +64,7 @@ The table has RLS enabled with the following policies:
 ```
 
 ### `metadata` (JSONB)
+
 ```json
 {
   "images": ["image1.jpg", "image2.jpg"],
@@ -80,6 +84,7 @@ The table has RLS enabled with the following policies:
 ## Entertainment Types
 
 Common values for the `type` column:
+
 - `tour` - Guided tours (walking, bus, boat, etc.)
 - `show` - Theater, performances, concerts
 - `activity` - Interactive experiences (classes, workshops, adventures)
@@ -90,6 +95,7 @@ Common values for the `type` column:
 ## Example Queries
 
 ### Get all available tours
+
 ```sql
 SELECT * FROM entertainment_items
 WHERE type = 'tour' AND available = true
@@ -97,6 +103,7 @@ ORDER BY created_at DESC;
 ```
 
 ### Search by text
+
 ```sql
 SELECT * FROM entertainment_items
 WHERE to_tsvector('english', coalesce(title, '') || ' ' || coalesce(subtitle, '') || ' ' || coalesce(description, ''))
@@ -105,6 +112,7 @@ ORDER BY created_at DESC;
 ```
 
 ### Get items by location (city)
+
 ```sql
 SELECT * FROM entertainment_items
 WHERE location->>'city' = 'Paris'
@@ -112,6 +120,7 @@ AND available = true;
 ```
 
 ### Get items with rating above 4.5
+
 ```sql
 SELECT * FROM entertainment_items
 WHERE (metadata->>'rating')::numeric > 4.5
@@ -125,6 +134,7 @@ The full migration script is available in [migrations.sql](./migrations.sql)
 ## Future Enhancements
 
 Potential schema improvements for future iterations:
+
 - Separate `entertainment_bookings` table for reservation management
 - `entertainment_reviews` table for user reviews and ratings
 - `entertainment_availability` table for time-slot based availability

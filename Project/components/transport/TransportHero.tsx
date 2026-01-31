@@ -1,7 +1,9 @@
 "use client"
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { SearchHistoryDropdown } from './SearchHistoryDropdown'
+import { ArrowRight } from "lucide-react"
+import { SearchWithHistoryInput, SearchHistoryItem } from '../common/SearchWithHistoryInput'
+import { popularLocations, type PopularLocation } from '@/lib/data/popularLocations'
 
 import { useState, useEffect, useMemo } from 'react'
 import { SelectPopup } from '../ui/SelectPopup'
@@ -16,7 +18,6 @@ export function TransportHero() {
     const [bookingMode, setBookingMode] = useState('address') // 'address' | 'map'
     const [duration, setDuration] = useState('4h')
     const [date, setDate] = useState<Date | null>(null)
-    const [showHistory, setShowHistory] = useState(false)
 
     // Set default time to 2 hours from now
     const getDefaultTime = () => {
@@ -143,16 +144,32 @@ export function TransportHero() {
 
         // Save History (Fire & Forget)
         if (userId) {
-            fetch('/api/user/history', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    origin: pickup,
-                    destination: dropoff,
-                    searchDate: new Date().toISOString()
-                })
-            });
+            try {
+                await fetch('/api/user/history', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        category: 'transport',
+                        searchParams: {
+                            query: `${pickup} → ${dropoff || 'Hourly Charter'}`,
+                            origin: pickup,
+                            destination: dropoff,
+                            type: 'transport_route', // Explicit route type
+                            date: date ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}` : null,
+                            time: time,
+                            serviceType: serviceType,
+                            passengers: passengers.adults + passengers.children,
+                            luggage: passengers.luggage,
+                            duration: serviceType === 'hourly' ? duration : null,
+                            timestamp: new Date().toISOString()
+                        }
+                    })
+                });
+            } catch (err) {
+                console.error('Failed to save transport history:', err);
+            }
         }
+
 
         const params = new URLSearchParams();
         params.set('origin', pickup);
@@ -169,6 +186,32 @@ export function TransportHero() {
         }
 
         router.push(`/transport/results?${params.toString()}`);
+    }
+
+    const handleRouteSelect = (item: SearchHistoryItem) => {
+        const params = item.search_params;
+        if (params.origin) setPickup(params.origin);
+        if (params.destination) setDropoff(params.destination);
+    }
+
+    const renderRouteHistory = (item: SearchHistoryItem) => {
+        const params = item.search_params;
+        if (params.origin) {
+            return (
+                <div className="flex flex-col">
+                    <div className="flex items-center gap-2 text-sm font-medium">
+                        <span className="text-slate-900 dark:text-white">{params.origin}</span>
+                        {params.destination && (
+                            <>
+                                <ArrowRight className="w-3 h-3 text-slate-400" />
+                                <span className="text-slate-900 dark:text-white">{params.destination}</span>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )
+        }
+        return <span>{params.query}</span>;
     }
 
     return (
@@ -250,27 +293,31 @@ export function TransportHero() {
 
                                     {/* PICKUP (5 Cols) */}
                                     <div className="w-full md:col-span-5 relative">
-                                        <div className="h-[64px] bg-white/50 dark:bg-white/5 rounded-xl px-4 flex flex-col justify-center transition-all hover:bg-white/80 dark:hover:bg-white/10 focus-within:ring-2 focus-within:ring-primary/50 group">
-                                            <label className="text-[10px] uppercase tracking-widest text-slate-500 dark:text-white/40 font-bold mb-0.5">Pickup Location</label>
-                                            <input
-                                                type="text"
-                                                value={pickup}
-                                                onChange={(e) => setPickup(e.target.value)}
-                                                onFocus={() => setShowHistory(true)}
-                                                onBlur={() => setTimeout(() => setShowHistory(false), 200)}
-                                                className="bg-transparent border-none outline-none p-0 text-slate-900 dark:text-white font-bold text-lg focus:ring-0 w-full truncate placeholder:text-slate-400/80 dark:placeholder:text-white/30"
-                                                placeholder="Enter pickup address"
-                                            />
-                                        </div>
-                                        {showHistory && (
-                                            <SearchHistoryDropdown
-                                                onSelect={(o, d) => {
-                                                    setPickup(o);
-                                                    setDropoff(d);
-                                                    setShowHistory(false);
-                                                }}
-                                            />
-                                        )}
+                                        <SearchWithHistoryInput<PopularLocation>
+                                            data={popularLocations}
+                                            searchKeys={['name', 'city', 'address', 'type']}
+                                            placeholder="Enter pickup address"
+                                            onSelect={(location) => setPickup(location.name)}
+                                            onChange={(val) => setPickup(val)}
+                                            category="transport"
+                                            historyType="transport_route"
+                                            label="Pickup Location"
+                                            value={pickup}
+                                            getDisplayValue={(location) => location.name}
+                                            onHistorySelect={handleRouteSelect}
+                                            renderHistoryItem={renderRouteHistory}
+                                            disableLocalSave={true}
+                                            renderResult={(location) => (
+                                                <div className="flex flex-col">
+                                                    <span className="font-semibold text-slate-900 dark:text-white">
+                                                        {location.name}
+                                                    </span>
+                                                    <span className="text-xs text-slate-500 dark:text-slate-400">
+                                                        {location.address || `${location.city}, ${location.country}`}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        />
                                     </div>
 
                                     {/* SWAP / SEPARATOR */}
@@ -288,21 +335,32 @@ export function TransportHero() {
                                     </div>
 
                                     {/* DROPOFF or DURATION (5 Cols) */}
-                                    <div className="w-full md:col-span-5 h-[64px] bg-white/50 dark:bg-white/5 rounded-xl px-4 flex flex-col justify-center transition-all hover:bg-white/80 dark:hover:bg-white/10 focus-within:ring-2 focus-within:ring-primary/50 group relative">
+                                    <div className="w-full md:col-span-5 relative">
                                         {serviceType === 'one-way' ? (
-                                            <>
-                                                <label className="text-[10px] uppercase tracking-widest text-slate-500 dark:text-white/40 font-bold mb-0.5">Dropoff Location</label>
-                                                <input
-                                                    type="text"
-                                                    value={dropoff}
-                                                    onChange={(e) => setDropoff(e.target.value)}
-                                                    onFocus={(e) => e.target.select()}
-                                                    className="bg-transparent border-none outline-none p-0 text-slate-900 dark:text-white font-bold text-lg focus:ring-0 w-full truncate placeholder:text-slate-400/80 dark:placeholder:text-white/30"
-                                                    placeholder="Enter destination"
-                                                />
-                                            </>
+                                            <SearchWithHistoryInput<PopularLocation>
+                                                data={popularLocations}
+                                                searchKeys={['name', 'city', 'address', 'type']}
+                                                placeholder="Enter destination"
+                                                onSelect={(location) => setDropoff(location.name)}
+                                                onChange={(val) => setDropoff(val)}
+                                                category="transport"
+                                                label="Dropoff Location"
+                                                value={dropoff}
+                                                getDisplayValue={(location) => location.name}
+                                                disableLocalSave={true}
+                                                renderResult={(location) => (
+                                                    <div className="flex flex-col">
+                                                        <span className="font-semibold text-slate-900 dark:text-white">
+                                                            {location.name}
+                                                        </span>
+                                                        <span className="text-xs text-slate-500 dark:text-slate-400">
+                                                            {location.address || `${location.city}, ${location.country}`}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            />
                                         ) : (
-                                            <>
+                                            <div className="h-[64px] bg-white/50 dark:bg-white/5 rounded-xl px-4 flex flex-col justify-center transition-all hover:bg-white/80 dark:hover:bg-white/10 focus-within:ring-2 focus-within:ring-primary/50 group relative">
                                                 <label className="text-[10px] uppercase tracking-widest text-slate-500 dark:text-white/40 font-bold mb-0.5">Duration</label>
                                                 <select
                                                     value={duration}
@@ -316,7 +374,7 @@ export function TransportHero() {
                                                     <option value="24h">Full Day</option>
                                                 </select>
                                                 <span className="material-symbols-outlined absolute right-4 text-slate-400 dark:text-white/40 pointer-events-none">expand_more</span>
-                                            </>
+                                            </div>
                                         )}
                                     </div>
                                 </div>

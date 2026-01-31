@@ -75,19 +75,27 @@ export async function GET(request: NextRequest) {
     const city = searchParams.get("city") || "";
     const minRating = searchParams.get("min_rating");
     const maxPrice = searchParams.get("maxPrice");
+    const minPrice = searchParams.get("minPrice");
     const stars = searchParams.get("stars");
     const amenities = searchParams.get("amenities");
     const limit = Math.min(
-      Math.max(1, parseInt(searchParams.get("limit") || "20")),
+      Math.max(1, parseInt(searchParams.get("limit") || "100")),
       100,
     );
     const offset = Math.max(0, parseInt(searchParams.get("offset") || "0"));
+
+    console.log("[Hotels API] Filter params:", {
+      city,
+      maxPrice,
+      minPrice,
+      stars,
+      amenities: amenities?.split(","),
+    });
 
     // Build query
     let query = supabaseServerClient
       .from("hotels")
       .select("*", { count: "exact" })
-      .eq("status", "active")
       .order("created_at", { ascending: false });
 
     // Apply filters
@@ -123,66 +131,86 @@ export async function GET(request: NextRequest) {
       const starArray = stars
         .split(",")
         .map((s) => parseInt(s))
-        .filter((s) => !isNaN(s));
+        .filter((s) => !isNaN(s) && s >= 1 && s <= 5);
       if (starArray.length > 0) {
         query = query.in("star_rating", starArray);
       }
     }
 
-    // Filter by price (best_price <= maxPrice)
+    // Filter by price range
     if (maxPrice) {
-      const price = parseInt(maxPrice);
+      const price = parseFloat(maxPrice);
       if (!isNaN(price)) {
         // Convert dollars to cents for comparison
-        query = query.lte("best_price", price * 100);
+        query = query.lte("best_price", Math.round(price * 100));
       }
     }
 
-    // Filter by amenities (contains all selected amenities)
-    if (amenities) {
-      const amenityArray = amenities.split(",");
-      for (const amenity of amenityArray) {
-        query = query.contains("amenities", [amenity]);
+    if (minPrice) {
+      const price = parseFloat(minPrice);
+      if (!isNaN(price)) {
+        // Convert dollars to cents for comparison
+        query = query.gte("best_price", Math.round(price * 100));
       }
     }
 
-    // Apply pagination
-    query = query.range(offset, offset + limit - 1);
-
-    const { data: hotels, error, count } = await query;
+    // Fetch data first to apply amenity filtering in JS (PostgreSQL contains is AND-based)
+    const { data: rawData, error, count } = await query;
 
     if (error) {
-      console.error("Database error:", error);
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Failed to fetch hotels",
-          message: error.message,
-          details: { city, q, minRating },
-        },
-        { status: 500 },
-      );
+      console.error("Error fetching hotels:", error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    // Filter by amenities in JavaScript for more flexible matching
+    let filteredData = rawData || [];
+    if (amenities) {
+      const amenityArray = amenities.split(",").filter((a) => a.trim());
+      console.log("[Hotels API] Filtering amenities:", amenityArray);
+
+      filteredData = filteredData.filter((hotel: any) => {
+        if (!hotel.amenities || !Array.isArray(hotel.amenities)) {
+          return false;
+        }
+        // Hotel must have ALL selected amenities
+        return amenityArray.every((requestedAmenity) =>
+          hotel.amenities.some(
+            (hotelAmenity: string) =>
+              hotelAmenity
+                .toLowerCase()
+                .includes(requestedAmenity.toLowerCase()) ||
+              requestedAmenity
+                .toLowerCase()
+                .includes(hotelAmenity.toLowerCase()),
+          ),
+        );
+      });
+
+      console.log("[Hotels API] After amenity filter:", filteredData.length);
+    }
+
+    const finalCount = filteredData.length;
 
     // Log successful query for debugging
     console.log(
-      `[Hotels API] Found ${hotels?.length || 0} hotels (city: ${city || "all"}, stars: ${stars || "all"}, maxPrice: ${maxPrice || "any"}, total: ${count})`,
+      `[Hotels API] Found ${filteredData.length} hotels after filters (city: ${city || "all"}, stars: ${stars || "all"}, minPrice: ${minPrice || "any"}, maxPrice: ${maxPrice || "any"}, amenities: ${amenities || "none"}, total before filters: ${count})`,
     );
 
     return NextResponse.json({
       success: true,
-      data: hotels,
+      data: filteredData,
       pagination: {
-        total: count || 0,
+        total: finalCount,
         limit,
         offset,
-        returned: hotels?.length || 0,
+        returned: filteredData.length,
       },
       query: {
         city: city || null,
         search: q || null,
         minRating: minRating || null,
         stars: stars || null,
+        minPrice: minPrice || null,
         maxPrice: maxPrice || null,
         amenities: amenities || null,
       },

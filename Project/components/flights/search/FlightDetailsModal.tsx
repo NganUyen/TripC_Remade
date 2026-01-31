@@ -59,7 +59,7 @@ export function FlightDetailsModal({ flight, isOpen, onClose, onConfirm }: Fligh
                                             <span className="font-bold text-slate-900 dark:text-white">{flight.departure.time}</span>
                                             <span className="text-sm font-bold text-slate-900 dark:text-white">• {flight.departure.airport}</span>
                                         </div>
-                                        <div className="text-sm text-slate-500">Thu, Jan 22</div>
+                                        <div className="text-sm text-slate-500">{flight.departure.date}</div>
                                     </div>
 
                                     <div>
@@ -67,7 +67,7 @@ export function FlightDetailsModal({ flight, isOpen, onClose, onConfirm }: Fligh
                                             <span className="font-bold text-slate-900 dark:text-white">{flight.arrival.time}</span>
                                             <span className="text-sm font-bold text-slate-900 dark:text-white">• {flight.arrival.airport}</span>
                                         </div>
-                                        <div className="text-sm text-slate-500">Thu, Jan 22</div>
+                                        <div className="text-sm text-slate-500">{flight.arrival.date}</div>
                                     </div>
                                 </div>
 

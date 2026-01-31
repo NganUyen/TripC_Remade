@@ -20,15 +20,18 @@ Complete API reference for the TripC Entertainment Ticketing Platform - a full-f
 ## Discovery & Browse
 
 ### List Categories
+
 ```
 GET /api/entertainment/categories
 ```
 
 **Query Parameters:**
+
 - `parent_id` (optional): Filter by parent category
 - `include_children` (boolean): Include subcategories
 
 **Response:**
+
 ```json
 {
   "categories": [
@@ -50,16 +53,19 @@ GET /api/entertainment/categories
 ---
 
 ### Get Category Details
+
 ```
 GET /api/entertainment/categories/:slug
 ```
 
 **Query Parameters:**
+
 - `limit` (default: 20, max: 100)
 - `offset` (default: 0)
 - `sort` (default: created_at): Options: rating, popular, price_low, price_high
 
 **Response:**
+
 ```json
 {
   "category": {
@@ -81,15 +87,18 @@ GET /api/entertainment/categories/:slug
 ---
 
 ### Trending Items
+
 ```
 GET /api/entertainment/trending
 ```
 
 **Query Parameters:**
+
 - `limit` (default: 10, max: 50)
 - `category` (optional): Filter by category slug
 
 **Response:**
+
 ```json
 {
   "trending": [
@@ -110,11 +119,13 @@ GET /api/entertainment/trending
 ---
 
 ### Advanced Search
+
 ```
 GET /api/entertainment/search
 ```
 
 **Query Parameters:**
+
 - `q` (required): Search query
 - `category` (optional): Category slug
 - `location` (optional): City or venue
@@ -129,6 +140,7 @@ GET /api/entertainment/search
 - `offset` (default: 0)
 
 **Response:**
+
 ```json
 {
   "results": [],
@@ -150,11 +162,13 @@ GET /api/entertainment/search
 ---
 
 ### List Items
+
 ```
 GET /api/entertainment/items
 ```
 
 **Query Parameters:**
+
 - `category` (optional): Category ID
 - `location` (optional): Location filter
 - `organizer` (optional): Organizer ID
@@ -164,6 +178,7 @@ GET /api/entertainment/items
 - `offset` (default: 0)
 
 **Response:**
+
 ```json
 {
   "items": [],
@@ -174,11 +189,13 @@ GET /api/entertainment/items
 ---
 
 ### Get Item Detail
+
 ```
 GET /api/entertainment/items/:id
 ```
 
 **Response:**
+
 ```json
 {
   "item": {
@@ -234,15 +251,18 @@ GET /api/entertainment/items/:id
 ## Session & Ticket Management
 
 ### Get Item Sessions
+
 ```
 GET /api/entertainment/items/:itemId/sessions
 ```
 
 **Query Parameters:**
+
 - `date` (optional): Filter by date (YYYY-MM-DD)
 - `available_only` (boolean): Only show sessions with availability
 
 **Response:**
+
 ```json
 {
   "sessions": {
@@ -264,11 +284,13 @@ GET /api/entertainment/items/:itemId/sessions
 ---
 
 ### Get Ticket Types
+
 ```
 GET /api/entertainment/items/:itemId/ticket-types
 ```
 
 **Response:**
+
 ```json
 {
   "ticket_types": [
@@ -296,11 +318,13 @@ GET /api/entertainment/items/:itemId/ticket-types
 ## Cart Management
 
 ### View Cart
+
 ```
 GET /api/entertainment/cart
 ```
 
 **Response:**
+
 ```json
 {
   "cart": {
@@ -325,7 +349,7 @@ GET /api/entertainment/cart
     ],
     "summary": {
       "subtotal": 179.98,
-      "tax": 14.40,
+      "tax": 14.4,
       "total": 194.38,
       "currency": "USD",
       "total_items": 2
@@ -337,11 +361,13 @@ GET /api/entertainment/cart
 ---
 
 ### Add to Cart
+
 ```
 POST /api/entertainment/cart
 ```
 
 **Request Body:**
+
 ```json
 {
   "item_id": "uuid",
@@ -352,6 +378,7 @@ POST /api/entertainment/cart
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -363,11 +390,13 @@ POST /api/entertainment/cart
 ---
 
 ### Update Cart Item
+
 ```
 PUT /api/entertainment/cart/:itemId
 ```
 
 **Request Body:**
+
 ```json
 {
   "quantity": 3
@@ -377,6 +406,7 @@ PUT /api/entertainment/cart/:itemId
 ---
 
 ### Remove from Cart
+
 ```
 DELETE /api/entertainment/cart/:itemId
 ```
@@ -384,6 +414,7 @@ DELETE /api/entertainment/cart/:itemId
 ---
 
 ### Clear Cart
+
 ```
 DELETE /api/entertainment/cart
 ```
@@ -393,11 +424,13 @@ DELETE /api/entertainment/cart
 ## Booking & Checkout
 
 ### Create Booking (Checkout)
+
 ```
 POST /api/entertainment/bookings
 ```
 
 **Request Body:**
+
 ```json
 {
   "customer_name": "John Doe",
@@ -409,6 +442,7 @@ POST /api/entertainment/bookings
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -429,16 +463,19 @@ POST /api/entertainment/bookings
 ---
 
 ### Get User Bookings
+
 ```
 GET /api/entertainment/bookings
 ```
 
 **Query Parameters:**
+
 - `status` (optional): confirmed, cancelled, completed
 - `limit` (default: 50, max: 100)
 - `offset` (default: 0)
 
 **Response:**
+
 ```json
 {
   "bookings": [],
@@ -449,11 +486,13 @@ GET /api/entertainment/bookings
 ---
 
 ### Get Booking Details
+
 ```
 GET /api/entertainment/bookings/:reference
 ```
 
 **Response:**
+
 ```json
 {
   "booking": {
@@ -482,11 +521,13 @@ GET /api/entertainment/bookings/:reference
 ---
 
 ### Cancel Booking
+
 ```
 PUT /api/entertainment/bookings/:reference
 ```
 
 **Request Body:**
+
 ```json
 {
   "action": "cancel",
@@ -497,11 +538,13 @@ PUT /api/entertainment/bookings/:reference
 ---
 
 ### Request Refund
+
 ```
 PUT /api/entertainment/bookings/:reference
 ```
 
 **Request Body:**
+
 ```json
 {
   "action": "request_refund",
@@ -514,11 +557,13 @@ PUT /api/entertainment/bookings/:reference
 ## Wishlist
 
 ### Get Wishlist
+
 ```
 GET /api/entertainment/wishlist
 ```
 
 **Response:**
+
 ```json
 {
   "wishlist": [
@@ -538,11 +583,13 @@ GET /api/entertainment/wishlist
 ---
 
 ### Add to Wishlist
+
 ```
 POST /api/entertainment/wishlist
 ```
 
 **Request Body:**
+
 ```json
 {
   "item_id": "uuid",
@@ -554,6 +601,7 @@ POST /api/entertainment/wishlist
 ---
 
 ### Remove from Wishlist
+
 ```
 DELETE /api/entertainment/wishlist/:itemId
 ```
@@ -563,11 +611,13 @@ DELETE /api/entertainment/wishlist/:itemId
 ## Social & Engagement
 
 ### Check Follow Status
+
 ```
 GET /api/entertainment/organizers/:organizerId/follow
 ```
 
 **Response:**
+
 ```json
 {
   "is_following": true,
@@ -578,11 +628,13 @@ GET /api/entertainment/organizers/:organizerId/follow
 ---
 
 ### Follow Organizer
+
 ```
 POST /api/entertainment/organizers/:organizerId/follow
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -594,6 +646,7 @@ POST /api/entertainment/organizers/:organizerId/follow
 ---
 
 ### Unfollow Organizer
+
 ```
 DELETE /api/entertainment/organizers/:organizerId/follow
 ```
@@ -603,17 +656,20 @@ DELETE /api/entertainment/organizers/:organizerId/follow
 ## Notifications
 
 ### Get Notifications
+
 ```
 GET /api/entertainment/notifications
 ```
 
 **Query Parameters:**
+
 - `unread_only` (boolean): Only unread notifications
 - `type` (optional): booking_confirmed, price_drop, event_reminder, etc.
 - `limit` (default: 50, max: 100)
 - `offset` (default: 0)
 
 **Response:**
+
 ```json
 {
   "notifications": [
@@ -636,6 +692,7 @@ GET /api/entertainment/notifications
 ---
 
 ### Mark Notification as Read
+
 ```
 PUT /api/entertainment/notifications/:id
 ```
@@ -643,6 +700,7 @@ PUT /api/entertainment/notifications/:id
 ---
 
 ### Mark All as Read
+
 ```
 PUT /api/entertainment/notifications/read-all
 ```
@@ -650,6 +708,7 @@ PUT /api/entertainment/notifications/read-all
 ---
 
 ### Delete Notification
+
 ```
 DELETE /api/entertainment/notifications/:id
 ```
@@ -659,11 +718,13 @@ DELETE /api/entertainment/notifications/:id
 ## Reviews
 
 ### Get Reviews
+
 ```
 GET /api/entertainment/reviews?item_id=xxx
 ```
 
 **Query Parameters:**
+
 - `item_id` (required)
 - `rating` (optional): Filter by rating (1-5)
 - `sort` (default: recent): Options: helpful, rating
@@ -671,6 +732,7 @@ GET /api/entertainment/reviews?item_id=xxx
 - `offset` (default: 0)
 
 **Response:**
+
 ```json
 {
   "reviews": [
@@ -699,11 +761,13 @@ GET /api/entertainment/reviews?item_id=xxx
 ---
 
 ### Create Review
+
 ```
 POST /api/entertainment/reviews
 ```
 
 **Request Body:**
+
 ```json
 {
   "item_id": "uuid",
@@ -718,11 +782,13 @@ POST /api/entertainment/reviews
 ---
 
 ### Update Review
+
 ```
 PUT /api/entertainment/reviews/:id
 ```
 
 **Request Body:**
+
 ```json
 {
   "rating": 4,
@@ -733,6 +799,7 @@ PUT /api/entertainment/reviews/:id
 ---
 
 ### Delete Review
+
 ```
 DELETE /api/entertainment/reviews/:id
 ```
@@ -742,11 +809,13 @@ DELETE /api/entertainment/reviews/:id
 ## Urgency Signals
 
 ### Get Urgency Signals
+
 ```
 GET /api/entertainment/urgency/:itemId
 ```
 
 **Response:**
+
 ```json
 {
   "urgency": {
@@ -764,6 +833,7 @@ GET /api/entertainment/urgency/:itemId
 ```
 
 **Urgency Badge Types:**
+
 - **Selling Fast**: < 30% availability remaining
 - **Limited Seats**: < 10 tickets left
 - **Happening Soon**: Next session within 48 hours
@@ -773,16 +843,19 @@ GET /api/entertainment/urgency/:itemId
 ---
 
 ### Calculate Urgency (Cron Job)
+
 ```
 POST /api/entertainment/urgency/calculate
 ```
 
 **Headers:**
+
 ```
 x-api-key: YOUR_CRON_API_KEY
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -796,11 +869,13 @@ x-api-key: YOUR_CRON_API_KEY
 ## Waitlist
 
 ### Get User Waitlist
+
 ```
 GET /api/entertainment/waitlist
 ```
 
 **Response:**
+
 ```json
 {
   "waitlist": [
@@ -823,11 +898,13 @@ GET /api/entertainment/waitlist
 ---
 
 ### Join Waitlist
+
 ```
 POST /api/entertainment/waitlist
 ```
 
 **Request Body:**
+
 ```json
 {
   "item_id": "uuid",
@@ -841,6 +918,7 @@ POST /api/entertainment/waitlist
 ---
 
 ### Leave Waitlist
+
 ```
 DELETE /api/entertainment/waitlist/:itemId
 ```
@@ -852,11 +930,13 @@ DELETE /api/entertainment/waitlist/:itemId
 All endpoints (except public discovery endpoints like search, categories, trending) require Clerk authentication.
 
 **Headers:**
+
 ```
 Authorization: Bearer <clerk_session_token>
 ```
 
 **Error Responses:**
+
 ```json
 {
   "error": "Unauthorized - Authentication required"
@@ -876,6 +956,7 @@ Authorization: Bearer <clerk_session_token>
 ## Error Handling
 
 **Standard Error Response:**
+
 ```json
 {
   "error": "Error message",
@@ -884,6 +965,7 @@ Authorization: Bearer <clerk_session_token>
 ```
 
 **HTTP Status Codes:**
+
 - `200` - Success
 - `201` - Created
 - `400` - Bad Request
@@ -897,6 +979,7 @@ Authorization: Bearer <clerk_session_token>
 ## Database Schema
 
 The entertainment service uses 16 tables:
+
 1. `entertainment_categories` - Hierarchical categories
 2. `entertainment_organizers` - Event organizers
 3. `entertainment_items` - Events/attractions

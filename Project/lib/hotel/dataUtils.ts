@@ -21,6 +21,7 @@ interface HotelAPIResponse {
   images?: string[] | { url: string; caption?: string; is_primary?: boolean }[];
   amenities?: string[];
   policies?: any;
+  best_price?: number; // Price in cents
   created_at?: string;
 }
 
@@ -34,6 +35,8 @@ interface TransformedHotel {
   stars: number;
   reviews: number;
   image: string;
+  priceOld?: number;
+  priceNew: number;
   originalPrice: number;
   price: number;
   amenities: string[];
@@ -158,10 +161,25 @@ export function transformHotelData(
   return hotels.map((hotel, index) => {
     const city = hotel.address?.city || destinationCity || "Vietnam";
     const starRating = hotel.star_rating || 4;
-    const { price, originalPrice } = calculateHotelPrice(starRating, city);
+
+    // Use best_price from database if available, otherwise calculate
+    let priceNew: number;
+    let priceOld: number | undefined;
+
+    if (hotel.best_price && hotel.best_price > 0) {
+      // Convert cents to dollars
+      priceNew = Math.round(hotel.best_price / 100);
+      // Add 30% markup for "old price" to show discount
+      priceOld = Math.round(priceNew * 1.3);
+    } else {
+      // Fallback to calculated prices
+      const { price, originalPrice } = calculateHotelPrice(starRating, city);
+      priceNew = price;
+      priceOld = originalPrice;
+    }
 
     return {
-      id: hotel.id || index + 1, // Use actual hotel ID if available
+      id: hotel.id || index + 1,
       slug: hotel.slug,
       name: hotel.name,
       location: city,
@@ -170,8 +188,10 @@ export function transformHotelData(
       stars: starRating,
       reviews: generateReviewCount(starRating),
       image: extractHotelImage(hotel.images),
-      originalPrice,
-      price,
+      priceOld,
+      priceNew,
+      originalPrice: priceOld,
+      price: priceNew,
       amenities: Array.isArray(hotel.amenities) ? hotel.amenities : [],
       description: hotel.description,
       badge: determineBadge(index, starRating, city),

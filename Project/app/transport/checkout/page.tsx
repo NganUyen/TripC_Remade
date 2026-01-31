@@ -31,7 +31,7 @@ export default function TransportCheckoutPage() {
         const init = async () => {
             setLoading(true);
 
-            // CASE 1: RESUME BOOKING
+            // CASE 1: RESUME BOOKING -> Redirect to Global Checkout directly
             if (resumeBookingId) {
                 // Fetch safely via API if we wanted to be consistent, but for 'initialData' loading
                 // we might just let the container handle it? 
@@ -80,7 +80,6 @@ export default function TransportCheckoutPage() {
 
         init();
     }, [routeId, resumeBookingId, supabase, router]);
-
 
     if (loading) {
         return (

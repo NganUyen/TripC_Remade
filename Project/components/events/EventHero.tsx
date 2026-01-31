@@ -18,13 +18,13 @@ export function EventHero() {
                     className="w-full h-full"
                 >
                     <img
-                        src="https://images.unsplash.com/photo-1459749411177-712002f28c99?q=80&w=2670&auto=format&fit=crop"
+                        src="https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?q=80&w=2670&auto=format&fit=crop"
                         alt="Concert Events"
                         className="w-full h-full object-cover"
                     />
                 </motion.div>
                 {/* Studio Vignette Gradient for readability */}
-                <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/20 via-50% to-[#fcfaf8] dark:to-[#0a0a0a]"></div>
+                <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/10 via-50% to-[#fcfaf8] dark:to-[#0a0a0a]"></div>
             </div>
 
             {/* Hero Content */}

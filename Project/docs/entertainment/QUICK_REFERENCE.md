@@ -3,12 +3,14 @@
 ## 🚀 Quick Start (5 Minutes)
 
 ### 1. Run the Migration (2 min)
+
 1. Go to https://supabase.com/dashboard
 2. Select your project → SQL Editor → New query
 3. Copy/paste from `docs/entertainment/migrations.sql`
 4. Click Run
 
 ### 2. Test the API (3 min)
+
 ```bash
 # Health check
 curl http://localhost:3000/api/ping
@@ -23,6 +25,7 @@ curl "http://localhost:3000/api/entertainment?q=Paris"
 ## 📋 Common Tasks
 
 ### List Entertainment Items
+
 ```bash
 # All items
 GET /api/entertainment
@@ -38,11 +41,13 @@ GET /api/entertainment?limit=10&offset=0
 ```
 
 ### Get Single Item
+
 ```bash
 GET /api/entertainment/{id}
 ```
 
 ### Create Item (Auth Required)
+
 ```bash
 POST /api/entertainment
 Content-Type: application/json
@@ -56,6 +61,7 @@ Authorization: Bearer {clerk_token}
 ```
 
 ### Update Item (Auth Required)
+
 ```bash
 PUT /api/entertainment/{id}
 Authorization: Bearer {clerk_token}
@@ -67,6 +73,7 @@ Authorization: Bearer {clerk_token}
 ```
 
 ### Delete Item (Auth Required)
+
 ```bash
 DELETE /api/entertainment/{id}
 Authorization: Bearer {clerk_token}
@@ -75,6 +82,7 @@ Authorization: Bearer {clerk_token}
 ## 🔑 Authentication
 
 ### Get Clerk Token
+
 1. Sign in at `/sign-in`
 2. DevTools → Application → Cookies → `__session`
 3. Use as Bearer token
@@ -82,6 +90,7 @@ Authorization: Bearer {clerk_token}
 ## 🗄️ Database
 
 ### Table Structure
+
 ```sql
 entertainment_items (
   id uuid PRIMARY KEY,
@@ -95,16 +104,17 @@ entertainment_items (
 ```
 
 ### Common Queries
+
 ```sql
 -- Get all tours
 SELECT * FROM entertainment_items WHERE type = 'tour';
 
 -- Search by city
-SELECT * FROM entertainment_items 
+SELECT * FROM entertainment_items
 WHERE location->>'city' = 'Paris';
 
 -- Get highly rated items
-SELECT * FROM entertainment_items 
+SELECT * FROM entertainment_items
 WHERE (metadata->>'rating')::numeric > 4.5;
 ```
 
@@ -122,16 +132,19 @@ WHERE (metadata->>'rating')::numeric > 4.5;
 ## 🔧 Troubleshooting
 
 ### "Failed to fetch entertainment items"
+
 → Check Supabase URL/keys in `.env.local`
 → Run migration in Supabase SQL Editor
 → Check table exists: `SELECT * FROM entertainment_items`
 
 ### "Unauthorized"
+
 → Check Clerk keys in `.env.local`
 → Sign in and get fresh token
 → Format: `Authorization: Bearer {token}`
 
 ### CORS Errors
+
 → Add CORS headers in `next.config.js`
 
 ## 📁 File Locations
@@ -155,14 +168,14 @@ Project/
 
 ## 🌐 Endpoints Summary
 
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/api/entertainment` | No | List items |
-| GET | `/api/entertainment/:id` | No | Get single |
-| POST | `/api/entertainment` | Yes | Create |
-| PUT | `/api/entertainment/:id` | Yes | Update |
-| DELETE | `/api/entertainment/:id` | Yes | Delete |
-| GET | `/api/ping` | No | Health check |
+| Method | Endpoint                 | Auth | Description  |
+| ------ | ------------------------ | ---- | ------------ |
+| GET    | `/api/entertainment`     | No   | List items   |
+| GET    | `/api/entertainment/:id` | No   | Get single   |
+| POST   | `/api/entertainment`     | Yes  | Create       |
+| PUT    | `/api/entertainment/:id` | Yes  | Update       |
+| DELETE | `/api/entertainment/:id` | Yes  | Delete       |
+| GET    | `/api/ping`              | No   | Health check |
 
 ## 💡 Tips
 
@@ -183,6 +196,7 @@ Project/
 ## 📊 Sample Data
 
 Migration includes 5 sample items:
+
 1. Paris Night Bus Tour
 2. Broadway Show: Hamilton
 3. Tokyo Robot Restaurant
