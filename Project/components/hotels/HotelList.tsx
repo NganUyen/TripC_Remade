@@ -57,9 +57,17 @@ export function HotelList() {
   const checkOut = searchParams.get("checkOut");
   const adults = searchParams.get("adults");
   const children = searchParams.get("children");
+  const minPrice = searchParams.get("minPrice");
   const maxPrice = searchParams.get("maxPrice");
   const stars = searchParams.get("stars");
   const amenities = searchParams.get("amenities");
+
+  // Count active filters
+  const activeFilterCount =
+    (minPrice ? 1 : 0) +
+    (maxPrice ? 1 : 0) +
+    (stars ? stars.split(",").length : 0) +
+    (amenities ? amenities.split(",").length : 0);
 
   // Fetch hotels based on search params
   useEffect(() => {
@@ -73,9 +81,12 @@ export function HotelList() {
         if (destination) params.set("city", destination);
         if (checkIn) params.set("checkIn", checkIn);
         if (checkOut) params.set("checkOut", checkOut);
+        if (minPrice) params.set("minPrice", minPrice);
         if (maxPrice) params.set("maxPrice", maxPrice);
         if (stars) params.set("stars", stars);
         if (amenities) params.set("amenities", amenities);
+
+        console.log("[HotelList] Fetching with params:", params.toString());
 
         const response = await fetch(`/api/hotels?${params.toString()}`);
 
@@ -112,7 +123,7 @@ export function HotelList() {
     };
 
     fetchHotels();
-  }, [destination, checkIn, checkOut, maxPrice, stars, amenities]);
+  }, [destination, checkIn, checkOut, minPrice, maxPrice, stars, amenities]);
 
   // Handle outside click for share popover
   useEffect(() => {
@@ -162,10 +173,17 @@ export function HotelList() {
             "Searching..."
           ) : (
             <>
-              {hotels.length} Properties Found{" "}
+              {hotels.length} {hotels.length === 1 ? "Property" : "Properties"}{" "}
+              Found{" "}
               {destination && (
                 <span className="text-slate-400 font-normal text-base ml-2">
                   in {destination}
+                </span>
+              )}
+              {activeFilterCount > 0 && (
+                <span className="text-orange-500 font-normal text-base ml-2">
+                  • {activeFilterCount} filter{activeFilterCount > 1 ? "s" : ""}{" "}
+                  applied
                 </span>
               )}
             </>
@@ -195,10 +213,45 @@ export function HotelList() {
       )}
 
       {!loading && hotels.length === 0 && (
-        <div className="text-center py-20">
-          <p className="text-slate-600 dark:text-slate-400 text-lg">
-            No hotels found. Try adjusting your search.
+        <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-orange-100 dark:bg-orange-900/20 rounded-full mb-4">
+            <svg
+              className="w-8 h-8 text-orange-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+          </div>
+          <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+            No hotels found
+          </h3>
+          <p className="text-slate-600 dark:text-slate-400 mb-6 max-w-md mx-auto">
+            {activeFilterCount > 0
+              ? "Try adjusting your filters to see more results"
+              : "Try adjusting your search criteria"}
           </p>
+          {activeFilterCount > 0 && (
+            <button
+              onClick={() => {
+                const params = new URLSearchParams(searchParams.toString());
+                params.delete("minPrice");
+                params.delete("maxPrice");
+                params.delete("stars");
+                params.delete("amenities");
+                window.location.href = `/hotels?${params.toString()}`;
+              }}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-full transition-colors"
+            >
+              Clear Filters
+            </button>
+          )}
         </div>
       )}
 

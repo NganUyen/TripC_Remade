@@ -1,12 +1,12 @@
 /**
  * Urgency Signals API - Display scarcity badges and urgency indicators
- * 
+ *
  * GET /api/entertainment/urgency/:itemId - Get urgency signals for an item
  * POST /api/entertainment/urgency/calculate - Calculate urgency for all items (cron job)
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { createServiceSupabaseClient } from '@/lib/supabase-server';
+import { NextRequest, NextResponse } from "next/server";
+import { createServiceSupabaseClient } from "@/lib/supabase-server";
 
 /**
  * GET /api/entertainment/urgency/:itemId
@@ -14,7 +14,7 @@ import { createServiceSupabaseClient } from '@/lib/supabase-server';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { itemId: string } }
+  { params }: { params: { itemId: string } },
 ) {
   try {
     const supabase = createServiceSupabaseClient();
@@ -22,32 +22,34 @@ export async function GET(
 
     // Get urgency signals from cache
     const { data: signals, error } = await supabase
-      .from('entertainment_urgency_signals')
-      .select('*')
-      .eq('item_id', itemId)
+      .from("entertainment_urgency_signals")
+      .select("*")
+      .eq("item_id", itemId)
       .single();
 
-    if (error && error.code !== 'PGRST116') {
-      console.error('Urgency signals query error:', error);
+    if (error && error.code !== "PGRST116") {
+      console.error("Urgency signals query error:", error);
       return NextResponse.json(
-        { error: 'Failed to fetch urgency signals', details: error.message },
-        { status: 500 }
+        { error: "Failed to fetch urgency signals", details: error.message },
+        { status: 500 },
       );
     }
 
     // If no cached signals or stale (> 1 hour), calculate fresh
-    if (!signals || new Date(signals.last_calculated).getTime() < Date.now() - 3600000) {
+    if (
+      !signals ||
+      new Date(signals.last_calculated).getTime() < Date.now() - 3600000
+    ) {
       const freshSignals = await calculateUrgencyForItem(itemId);
       return NextResponse.json({ urgency: freshSignals });
     }
 
     return NextResponse.json({ urgency: signals });
-
   } catch (error: any) {
-    console.error('Urgency GET error:', error);
+    console.error("Urgency GET error:", error);
     return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
-      { status: 500 }
+      { error: "Internal server error", details: error.message },
+      { status: 500 },
     );
   }
 }
@@ -57,23 +59,23 @@ export async function GET(
  */
 async function calculateUrgencyForItem(itemId: string) {
   const supabase = createServiceSupabaseClient();
-  
+
   // Get item details
   const { data: item } = await supabase
-    .from('entertainment_items')
-    .select('*')
-    .eq('id', itemId)
+    .from("entertainment_items")
+    .select("*")
+    .eq("id", itemId)
     .single();
 
   if (!item) return null;
 
   // Get sessions for this item
   const { data: sessions } = await supabase
-    .from('entertainment_sessions')
-    .select('*')
-    .eq('item_id', itemId)
-    .gte('start_time', new Date().toISOString())
-    .order('start_time', { ascending: true });
+    .from("entertainment_sessions")
+    .select("*")
+    .eq("item_id", itemId)
+    .gte("start_time", new Date().toISOString())
+    .order("start_time", { ascending: true });
 
   // Calculate signals
   const signals: any = {
@@ -92,7 +94,8 @@ async function calculateUrgencyForItem(itemId: string) {
     // Check availability across sessions
     const totalCapacity = sessions.reduce((sum, s) => sum + s.capacity, 0);
     const totalBooked = sessions.reduce((sum, s) => sum + s.booked_count, 0);
-    const availabilityPercent = ((totalCapacity - totalBooked) / totalCapacity) * 100;
+    const availabilityPercent =
+      ((totalCapacity - totalBooked) / totalCapacity) * 100;
 
     // Selling fast: < 30% availability
     if (availabilityPercent < 30 && availabilityPercent > 0) {
@@ -113,7 +116,9 @@ async function calculateUrgencyForItem(itemId: string) {
 
     // Happening soon: next session within 48 hours
     const nextSession = sessions[0];
-    const hoursUntil = (new Date(nextSession.start_time).getTime() - Date.now()) / (1000 * 60 * 60);
+    const hoursUntil =
+      (new Date(nextSession.start_time).getTime() - Date.now()) /
+      (1000 * 60 * 60);
     if (hoursUntil <= 48) {
       signals.show_happening_soon = true;
       signals.hours_until_start = Math.round(hoursUntil);
@@ -127,8 +132,8 @@ async function calculateUrgencyForItem(itemId: string) {
 
   // Upsert signals
   await supabase
-    .from('entertainment_urgency_signals')
-    .upsert([signals], { onConflict: 'item_id' });
+    .from("entertainment_urgency_signals")
+    .upsert([signals], { onConflict: "item_id" });
 
   return signals;
 }
@@ -140,11 +145,11 @@ async function calculateUrgencyForItem(itemId: string) {
 export async function POST(request: NextRequest) {
   try {
     // Verify API key for cron job
-    const apiKey = request.headers.get('x-api-key');
+    const apiKey = request.headers.get("x-api-key");
     if (apiKey !== process.env.CRON_API_KEY) {
       return NextResponse.json(
-        { error: 'Unauthorized - Invalid API key' },
-        { status: 401 }
+        { error: "Unauthorized - Invalid API key" },
+        { status: 401 },
       );
     }
 
@@ -152,12 +157,12 @@ export async function POST(request: NextRequest) {
 
     // Get all active items
     const { data: items } = await supabase
-      .from('entertainment_items')
-      .select('id')
-      .eq('status', 'active');
+      .from("entertainment_items")
+      .select("id")
+      .eq("status", "active");
 
     if (!items) {
-      return NextResponse.json({ error: 'No items found' }, { status: 404 });
+      return NextResponse.json({ error: "No items found" }, { status: 404 });
     }
 
     // Calculate urgency for each item
@@ -172,12 +177,11 @@ export async function POST(request: NextRequest) {
       message: `Urgency calculated for ${items.length} items`,
       results,
     });
-
   } catch (error: any) {
-    console.error('Urgency calculation error:', error);
+    console.error("Urgency calculation error:", error);
     return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
-      { status: 500 }
+      { error: "Internal server error", details: error.message },
+      { status: 500 },
     );
   }
 }

@@ -1,6 +1,6 @@
 /**
  * Entertainment Service - TypeScript Types
- * 
+ *
  * Type definitions for entertainment items and API responses
  */
 
@@ -22,13 +22,13 @@ export interface EntertainmentItem {
 }
 
 // Entertainment types
-export type EntertainmentType = 
-  | 'tour' 
-  | 'show' 
-  | 'activity' 
-  | 'attraction' 
-  | 'concert'
-  | 'sport'
+export type EntertainmentType =
+  | "tour"
+  | "show"
+  | "activity"
+  | "attraction"
+  | "concert"
+  | "sport"
   | string; // Allow custom types
 
 // Location structure
@@ -53,7 +53,7 @@ export interface EntertainmentMetadata {
   includes?: string[];
   excludes?: string[];
   languages?: string[];
-  difficulty_level?: 'easy' | 'moderate' | 'challenging' | 'expert';
+  difficulty_level?: "easy" | "moderate" | "challenging" | "expert";
   cancellation_policy?: string;
   meeting_point?: string;
   [key: string]: any; // Allow additional custom fields
@@ -131,14 +131,14 @@ export interface EntertainmentFilters {
 }
 
 // Sort options
-export type EntertainmentSortField = 
-  | 'created_at'
-  | 'updated_at'
-  | 'title'
-  | 'price'
-  | 'rating';
+export type EntertainmentSortField =
+  | "created_at"
+  | "updated_at"
+  | "title"
+  | "price"
+  | "rating";
 
-export type EntertainmentSortOrder = 'asc' | 'desc';
+export type EntertainmentSortOrder = "asc" | "desc";
 
 export interface EntertainmentSort {
   field: EntertainmentSortField;
@@ -148,45 +148,57 @@ export interface EntertainmentSort {
 // Type guards
 export function isEntertainmentItem(obj: any): obj is EntertainmentItem {
   return (
-    typeof obj === 'object' &&
+    typeof obj === "object" &&
     obj !== null &&
-    typeof obj.id === 'string' &&
-    typeof obj.title === 'string' &&
-    typeof obj.type === 'string'
+    typeof obj.id === "string" &&
+    typeof obj.title === "string" &&
+    typeof obj.type === "string"
   );
 }
 
-export function isValidEntertainmentType(type: string): type is EntertainmentType {
-  const validTypes = ['tour', 'show', 'activity', 'attraction', 'concert', 'sport'];
+export function isValidEntertainmentType(
+  type: string,
+): type is EntertainmentType {
+  const validTypes = [
+    "tour",
+    "show",
+    "activity",
+    "attraction",
+    "concert",
+    "sport",
+  ];
   return validTypes.includes(type);
 }
 
 // Helper functions
 export function validateCreateRequest(
-  data: any
+  data: any,
 ): data is CreateEntertainmentItemRequest {
   return (
-    typeof data === 'object' &&
+    typeof data === "object" &&
     data !== null &&
-    typeof data.title === 'string' &&
+    typeof data.title === "string" &&
     data.title.length > 0 &&
-    typeof data.type === 'string' &&
+    typeof data.type === "string" &&
     data.type.length > 0
   );
 }
 
 export function validateUpdateRequest(
-  data: any
+  data: any,
 ): data is UpdateEntertainmentItemRequest {
-  return typeof data === 'object' && data !== null;
+  return typeof data === "object" && data !== null;
 }
 
 // Price formatting helper
-export function formatPrice(price: number | null, currency: string = 'USD'): string {
-  if (price === null) return 'Price on request';
-  
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
+export function formatPrice(
+  price: number | null,
+  currency: string = "USD",
+): string {
+  if (price === null) return "Price on request";
+
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
     currency,
   }).format(price);
 }
@@ -194,19 +206,19 @@ export function formatPrice(price: number | null, currency: string = 'USD'): str
 // Duration parsing helper
 export function parseDuration(duration: string | undefined): number | null {
   if (!duration) return null;
-  
+
   const hourMatch = duration.match(/(\d+)\s*hour/i);
   const minuteMatch = duration.match(/(\d+)\s*minute/i);
-  
+
   const hours = hourMatch ? parseInt(hourMatch[1]) : 0;
   const minutes = minuteMatch ? parseInt(minuteMatch[1]) : 0;
-  
+
   return hours * 60 + minutes; // Return total minutes
 }
 
 // Rating display helper
 export function formatRating(rating: number | undefined): string {
-  if (!rating) return 'No rating';
+  if (!rating) return "No rating";
   return `${rating.toFixed(1)} ⭐`;
 }
 

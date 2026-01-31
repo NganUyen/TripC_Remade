@@ -15,6 +15,10 @@ export {
   reservationService,
   ReservationService,
 } from "./services/reservationService";
+export {
+  appointmentService,
+  AppointmentService,
+} from "./services/appointmentService";
 export { reviewService, ReviewService } from "./services/reviewService";
 export { cartService, CartService } from "./services/cartService";
 
@@ -25,10 +29,12 @@ export type {
   DiningMenuItem,
   DiningTable,
   DiningReservation,
+  DiningAppointment,
   DiningTimeSlot,
   DiningBlockedDate,
   CreateVenueRequest,
   CreateReservationRequest,
+  CreateDiningAppointmentRequest,
   VenueSearchParams,
   VenueListResponse,
 } from "./types";

@@ -1,35 +1,37 @@
 /**
  * Trending API - Get trending entertainment items
- * 
+ *
  * GET /api/entertainment/trending - List trending items
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { createServiceSupabaseClient } from '@/lib/supabase-server';
+import { NextRequest, NextResponse } from "next/server";
+import { createServiceSupabaseClient } from "@/lib/supabase-server";
 
 export async function GET(request: NextRequest) {
   try {
     const supabase = createServiceSupabaseClient();
     const { searchParams } = new URL(request.url);
-    
-    const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 50);
-    const category_id = searchParams.get('category_id');
+
+    const limit = Math.min(parseInt(searchParams.get("limit") || "20"), 50);
+    const category_id = searchParams.get("category_id");
 
     // Try to get from cache first
     let query = supabase
-      .from('entertainment_trending_cache')
-      .select(`
+      .from("entertainment_trending_cache")
+      .select(
+        `
         *,
         item:entertainment_items(*)
-      `)
-      .gt('expires_at', new Date().toISOString())
-      .order('trending_rank', { ascending: true })
+      `,
+      )
+      .gt("expires_at", new Date().toISOString())
+      .order("trending_rank", { ascending: true })
       .limit(limit);
 
     const { data: cachedTrending, error: cacheError } = await query;
 
     if (cacheError) {
-      console.error('Trending cache query error:', cacheError);
+      console.error("Trending cache query error:", cacheError);
       // Fall back to direct query
       return await getTrendingDirect(supabase, limit, category_id);
     }
@@ -41,12 +43,12 @@ export async function GET(request: NextRequest) {
 
     // Extract items from cache
     const items = cachedTrending
-      .map(t => t.item)
-      .filter(item => item && item.status === 'published' && item.available);
+      .map((t) => t.item)
+      .filter((item) => item && item.status === "published" && item.available);
 
     // Filter by category if requested
-    const filteredItems = category_id 
-      ? items.filter(item => item.category_id === category_id)
+    const filteredItems = category_id
+      ? items.filter((item) => item.category_id === category_id)
       : items;
 
     return NextResponse.json({
@@ -54,14 +56,13 @@ export async function GET(request: NextRequest) {
       meta: {
         is_cached: true,
         calculated_at: cachedTrending[0]?.calculated_at,
-      }
+      },
     });
-
   } catch (error: any) {
-    console.error('Trending GET error:', error);
+    console.error("Trending GET error:", error);
     return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
-      { status: 500 }
+      { error: "Internal server error", details: error.message },
+      { status: 500 },
     );
   }
 }
@@ -69,21 +70,25 @@ export async function GET(request: NextRequest) {
 /**
  * Get trending items directly from database (no cache)
  */
-async function getTrendingDirect(supabase: any, limit: number, category_id: string | null) {
+async function getTrendingDirect(
+  supabase: any,
+  limit: number,
+  category_id: string | null,
+) {
   try {
     // Calculate trending score based on views, bookings, and wishlist
     // Score = (views * 0.3) + (bookings * 0.5) + (wishlist * 0.2)
     let query = supabase
-      .from('entertainment_items')
-      .select('*')
-      .eq('status', 'published')
-      .eq('available', true)
-      .eq('is_trending', true)
-      .order('total_bookings', { ascending: false })
+      .from("entertainment_items")
+      .select("*")
+      .eq("status", "published")
+      .eq("available", true)
+      .eq("is_trending", true)
+      .order("total_bookings", { ascending: false })
       .limit(limit);
 
     if (category_id) {
-      query = query.eq('category_id', category_id);
+      query = query.eq("category_id", category_id);
     }
 
     const { data, error } = await query;
@@ -93,26 +98,28 @@ async function getTrendingDirect(supabase: any, limit: number, category_id: stri
     }
 
     // Calculate and sort by trending score
-    const itemsWithScore = data?.map(item => ({
-      ...item,
-      trending_score: (item.total_views || 0) * 0.3 + 
-                     (item.total_bookings || 0) * 0.5 + 
-                     (item.total_wishlist || 0) * 0.2
-    })).sort((a, b) => b.trending_score - a.trending_score);
+    const itemsWithScore = data
+      ?.map((item) => ({
+        ...item,
+        trending_score:
+          (item.total_views || 0) * 0.3 +
+          (item.total_bookings || 0) * 0.5 +
+          (item.total_wishlist || 0) * 0.2,
+      }))
+      .sort((a, b) => b.trending_score - a.trending_score);
 
     return NextResponse.json({
       data: itemsWithScore,
       meta: {
         is_cached: false,
         calculated_at: new Date().toISOString(),
-      }
+      },
     });
-
   } catch (error: any) {
-    console.error('Direct trending query error:', error);
+    console.error("Direct trending query error:", error);
     return NextResponse.json(
-      { error: 'Failed to fetch trending items', details: error.message },
-      { status: 500 }
+      { error: "Failed to fetch trending items", details: error.message },
+      { status: 500 },
     );
   }
 }

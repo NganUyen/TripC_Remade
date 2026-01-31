@@ -83,12 +83,14 @@ NEXT_PUBLIC_CONVEX_URL=https://your-deployment.convex.cloud
 ### Getting Your Keys
 
 **Supabase:**
+
 1. Go to [Supabase Dashboard](https://supabase.com/dashboard)
 2. Select your project
 3. Go to Settings → API
 4. Copy `URL`, `anon/public` key, and `service_role` key
 
 **Clerk:**
+
 1. Go to [Clerk Dashboard](https://dashboard.clerk.com)
 2. Select your application
 3. Go to API Keys
@@ -116,6 +118,7 @@ Navigate to your Supabase project:
 7. Click "Run" or press Ctrl+Enter
 
 The migration will:
+
 - Create the `entertainment_items` table
 - Add indexes for performance
 - Set up Row Level Security (RLS)
@@ -154,6 +157,7 @@ curl http://localhost:3000/api/ping
 ```
 
 Expected response:
+
 ```json
 {
   "status": "ok",
@@ -262,7 +266,7 @@ For testing authenticated endpoints:
 ### Programmatic Access
 
 ```typescript
-import { auth } from '@clerk/nextjs/server';
+import { auth } from "@clerk/nextjs/server";
 
 // In an API route or server component
 const { userId } = await auth();
@@ -276,6 +280,7 @@ if (!userId) {
 Full API documentation is available in [api.md](./api.md)
 
 Key endpoints:
+
 - `GET /api/entertainment` - List items with search/filter
 - `GET /api/entertainment/:id` - Get single item
 - `POST /api/entertainment` - Create item (auth required)
@@ -288,6 +293,7 @@ Key endpoints:
 Full schema documentation is available in [schema.md](./schema.md)
 
 Main table: `entertainment_items`
+
 - UUID primary key
 - Title, subtitle, description
 - Type (tour, show, activity, attraction, concert)
@@ -304,6 +310,7 @@ Main table: `entertainment_items`
 **Error**: "Failed to fetch entertainment items"
 
 **Solutions**:
+
 1. Check your Supabase URL and keys in `.env.local`
 2. Verify the table exists: Run `SELECT * FROM entertainment_items LIMIT 1;` in Supabase SQL Editor
 3. Check RLS policies are correctly set up
@@ -314,6 +321,7 @@ Main table: `entertainment_items`
 **Error**: "Unauthorized - Authentication required"
 
 **Solutions**:
+
 1. Verify Clerk keys in `.env.local`
 2. Ensure you're signed in and have a valid session
 3. Check the Bearer token is correctly formatted: `Authorization: Bearer <token>`
@@ -324,15 +332,19 @@ Main table: `entertainment_items`
 If you get CORS errors when testing from a different origin:
 
 Update `next.config.js`:
+
 ```javascript
 module.exports = {
   async headers() {
     return [
       {
-        source: '/api/:path*',
+        source: "/api/:path*",
         headers: [
-          { key: 'Access-Control-Allow-Origin', value: '*' },
-          { key: 'Access-Control-Allow-Methods', value: 'GET,POST,PUT,DELETE,OPTIONS' },
+          { key: "Access-Control-Allow-Origin", value: "*" },
+          {
+            key: "Access-Control-Allow-Methods",
+            value: "GET,POST,PUT,DELETE,OPTIONS",
+          },
         ],
       },
     ];
@@ -353,17 +365,22 @@ DROP TABLE IF EXISTS entertainment_items CASCADE;
 ## Performance Optimization
 
 ### Indexes
+
 The migration includes optimized indexes:
+
 - B-tree indexes on `type` and `available`
 - GIN index for full-text search
 
 ### Query Optimization Tips
+
 - Use `limit` parameter for pagination
 - Filter by `type` when possible
 - Use `available=true` for public queries
 
 ### Caching (Future)
+
 Consider implementing:
+
 - Redis for frequently accessed items
 - Next.js edge caching
 - CDN for static content
@@ -371,12 +388,14 @@ Consider implementing:
 ## Security Best Practices
 
 ✅ **Implemented**:
+
 - Row Level Security (RLS) in Supabase
 - Authentication via Clerk
 - Service role key stored server-side only
 - Parameterized queries (SQL injection protection)
 
 🔒 **Recommended for Production**:
+
 - Rate limiting (using middleware or services like Upstash)
 - Input validation (Zod or Yup)
 - API key rotation
@@ -396,14 +415,14 @@ Consider adding:
 
 ```typescript
 // __tests__/api/entertainment.test.ts
-import { GET, POST } from '@/app/api/entertainment/route';
+import { GET, POST } from "@/app/api/entertainment/route";
 
-describe('Entertainment API', () => {
-  it('should list entertainment items', async () => {
-    const request = new Request('http://localhost:3000/api/entertainment');
+describe("Entertainment API", () => {
+  it("should list entertainment items", async () => {
+    const request = new Request("http://localhost:3000/api/entertainment");
     const response = await GET(request);
     const data = await response.json();
-    
+
     expect(response.status).toBe(200);
     expect(data.data).toBeDefined();
   });
@@ -411,6 +430,7 @@ describe('Entertainment API', () => {
 ```
 
 Run tests with:
+
 ```bash
 npm test
 # or
@@ -429,6 +449,7 @@ npm run test:watch
 ### Other Platforms
 
 Works with:
+
 - Netlify
 - Railway
 - Render
@@ -440,6 +461,7 @@ Ensure environment variables are configured on your platform.
 ## Monitoring & Logging
 
 Consider adding:
+
 - [Sentry](https://sentry.io) for error tracking
 - [LogRocket](https://logrocket.com) for session replay
 - [Datadog](https://datadoghq.com) for APM
@@ -448,12 +470,14 @@ Consider adding:
 ## Next Steps
 
 ### Immediate
+
 - [ ] Run database migration
 - [ ] Test all endpoints
 - [ ] Review security settings
 - [ ] Add your own entertainment items
 
 ### Future Enhancements
+
 - [ ] Add booking functionality
 - [ ] Implement reviews/ratings system
 - [ ] Add availability calendar
@@ -475,6 +499,7 @@ Consider adding:
 ## Contributing
 
 When adding new features:
+
 1. Update the migration SQL if schema changes
 2. Update API documentation
 3. Add TypeScript types

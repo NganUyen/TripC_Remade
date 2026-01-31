@@ -9,6 +9,9 @@ export function HotelFilters() {
   const searchParams = useSearchParams();
 
   // State from URL params
+  const [priceMin, setPriceMin] = useState(
+    Number(searchParams.get("minPrice")) || 50,
+  );
   const [priceMax, setPriceMax] = useState(
     Number(searchParams.get("maxPrice")) || 1000,
   );
@@ -20,6 +23,13 @@ export function HotelFilters() {
     const amenities = searchParams.get("amenities");
     return amenities ? amenities.split(",") : [];
   });
+
+  // Active filters count
+  const activeFilters =
+    (priceMin !== 50 ? 1 : 0) +
+    (priceMax !== 1000 ? 1 : 0) +
+    selectedStars.length +
+    selectedAmenities.length;
 
   // Update URL when filters change
   const updateFilters = (updates: Record<string, string | null>) => {
@@ -36,9 +46,18 @@ export function HotelFilters() {
     router.push(`/hotels?${params.toString()}`);
   };
 
-  const handlePriceChange = (value: number) => {
-    setPriceMax(value);
-    updateFilters({ maxPrice: value.toString() });
+  const handlePriceMinChange = (value: number) => {
+    // Ensure min doesn't exceed max
+    const newMin = Math.min(value, priceMax - 50);
+    setPriceMin(newMin);
+    updateFilters({ minPrice: newMin !== 50 ? newMin.toString() : null });
+  };
+
+  const handlePriceMaxChange = (value: number) => {
+    // Ensure max doesn't go below min
+    const newMax = Math.max(value, priceMin + 50);
+    setPriceMax(newMax);
+    updateFilters({ maxPrice: newMax !== 1000 ? newMax.toString() : null });
   };
 
   const toggleStar = (stars: number) => {
@@ -62,6 +81,7 @@ export function HotelFilters() {
   };
 
   const resetFilters = () => {
+    setPriceMin(50);
     setPriceMax(1000);
     setSelectedStars([]);
     setSelectedAmenities([]);
@@ -91,10 +111,16 @@ export function HotelFilters() {
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-bold text-slate-900 dark:text-white">
             Filters
+            {activeFilters > 0 && (
+              <span className="ml-2 text-xs font-semibold bg-orange-500 text-white px-2 py-0.5 rounded-full">
+                {activeFilters}
+              </span>
+            )}
           </h3>
           <button
             onClick={resetFilters}
-            className="text-sm font-semibold text-orange-500 hover:text-orange-600"
+            disabled={activeFilters === 0}
+            className="text-sm font-semibold text-orange-500 hover:text-orange-600 disabled:text-slate-400 disabled:cursor-not-allowed transition-colors"
           >
             Reset
           </button>
@@ -105,21 +131,48 @@ export function HotelFilters() {
           <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-4">
             Price Range
           </h4>
-          <div className="px-1">
-            <input
-              type="range"
-              min="50"
-              max="1000"
-              value={priceMax}
-              onChange={(e) => handlePriceChange(Number(e.target.value))}
-              className="w-full h-1 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-orange-500"
-            />
-            <div className="flex items-center justify-between mt-3 text-sm font-medium text-slate-600 dark:text-slate-400">
-              <span>$50</span>
-              <span>
-                ${priceMax}
-                {priceMax >= 1000 ? "+" : ""}
-              </span>
+          <div className="space-y-4 px-1">
+            {/* Min Price */}
+            <div>
+              <label className="text-xs text-slate-600 dark:text-slate-400 mb-2 block">
+                Minimum
+              </label>
+              <input
+                type="range"
+                min="50"
+                max="950"
+                step="50"
+                value={priceMin}
+                onChange={(e) => handlePriceMinChange(Number(e.target.value))}
+                className="w-full h-1 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-orange-500"
+              />
+              <div className="flex items-center justify-between mt-2 text-sm font-medium text-slate-600 dark:text-slate-400">
+                <span className="text-orange-600 dark:text-orange-400">
+                  ${priceMin}
+                </span>
+              </div>
+            </div>
+
+            {/* Max Price */}
+            <div>
+              <label className="text-xs text-slate-600 dark:text-slate-400 mb-2 block">
+                Maximum
+              </label>
+              <input
+                type="range"
+                min="100"
+                max="1000"
+                step="50"
+                value={priceMax}
+                onChange={(e) => handlePriceMaxChange(Number(e.target.value))}
+                className="w-full h-1 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-orange-500"
+              />
+              <div className="flex items-center justify-between mt-2 text-sm font-medium text-slate-600 dark:text-slate-400">
+                <span className="text-orange-600 dark:text-orange-400">
+                  ${priceMax}
+                  {priceMax >= 1000 ? "+" : ""}
+                </span>
+              </div>
             </div>
           </div>
         </div>

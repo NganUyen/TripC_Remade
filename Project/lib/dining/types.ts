@@ -117,6 +117,38 @@ export interface DiningReservation {
   updated_at: string
 }
 
+// New: dining_appointment (booking flow uses this table on Confirm Booking)
+export interface DiningAppointment {
+  id: string
+  booking_id: string | null
+  user_id: string
+  venue_id: string
+  table_id: string | null
+  appointment_code: string
+  appointment_date: string
+  appointment_time: string
+  duration_minutes: number
+  guest_count: number
+  guest_name: string
+  guest_phone: string | null
+  guest_email: string | null
+  special_requests: string | null
+  occasion: string | null
+  dietary_restrictions: string[] | null
+  status: 'pending' | 'confirmed' | 'seated' | 'completed' | 'cancelled' | 'no_show'
+  confirmed_at: string | null
+  confirmed_by: string | null
+  seated_at: string | null
+  completed_at: string | null
+  cancelled_at: string | null
+  cancellation_reason: string | null
+  deposit_amount: number
+  deposit_paid: boolean
+  metadata: Record<string, any> | null
+  created_at: string
+  updated_at: string
+}
+
 export interface DiningTimeSlot {
   id: string
   venue_id: string
@@ -168,6 +200,21 @@ export interface CreateReservationRequest {
   venue_id: string
   reservation_date: string
   reservation_time: string
+  guest_count: number
+  guest_name: string
+  guest_phone?: string
+  guest_email?: string
+  special_requests?: string
+  occasion?: string
+  dietary_restrictions?: string[]
+  table_id?: string
+  duration_minutes?: number
+}
+
+export interface CreateDiningAppointmentRequest {
+  venue_id: string
+  appointment_date: string
+  appointment_time: string
   guest_count: number
   guest_name: string
   guest_phone?: string
