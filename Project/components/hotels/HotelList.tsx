@@ -293,11 +293,10 @@ export function HotelList() {
                 <div className="relative pointer-events-auto">
                   <button
                     onClick={(e) => toggleShare(hotel.id, e)}
-                    className={`size-10 rounded-xl backdrop-blur-md border border-white/30 flex items-center justify-center transition-all ${
-                      isShareOpen
+                    className={`size-10 rounded-xl backdrop-blur-md border border-white/30 flex items-center justify-center transition-all ${isShareOpen
                         ? "bg-white text-slate-900"
                         : "bg-white/20 text-white hover:bg-white hover:text-slate-900"
-                    }`}
+                      }`}
                   >
                     <Share2 className="w-5 h-5" />
                   </button>
@@ -384,18 +383,16 @@ export function HotelList() {
                   {/* Compare Button */}
                   <button
                     onClick={() => toggleCompare(hotel.id)}
-                    className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-full text-xs font-bold transition-all shadow-sm ${
-                      isSelected
+                    className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-full text-xs font-bold transition-all shadow-sm ${isSelected
                         ? "bg-orange-50 text-[#FF5E1F] border border-orange-200 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/30"
                         : "bg-white text-slate-600 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700"
-                    }`}
+                      }`}
                   >
                     <div
-                      className={`size-4 rounded-full border flex items-center justify-center transition-colors ${
-                        isSelected
+                      className={`size-4 rounded-full border flex items-center justify-center transition-colors ${isSelected
                           ? "bg-[#FF5E1F] border-[#FF5E1F]"
                           : "border-slate-300 dark:border-slate-600 bg-transparent"
-                      }`}
+                        }`}
                     >
                       {isSelected && (
                         <Check className="w-2.5 h-2.5 text-white" />

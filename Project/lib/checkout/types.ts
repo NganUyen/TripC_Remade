@@ -32,6 +32,8 @@ export interface ShopCheckoutDetails {
         variantId: string;
         quantity: number;
         price: number;
+        name?: string;
+        image?: string | null;
     }[];
     shippingAddressId: string;
     shippingMethodId: string;
@@ -43,13 +45,18 @@ export interface ShopCheckoutDetails {
 export interface HotelCheckoutDetails {
     hotelId: string;
     roomId: string; // or roomTypeId
-    checkInDate: string;
-    checkOutDate: string;
+    checkInDate?: string; // Legacy?
+    checkOutDate?: string; // Legacy?
+    dates: {
+        start: string;
+        end: string;
+    };
     guests: {
         adults: number;
         children: number;
         ages?: number[];
     };
+    rate: number;
 }
 
 export interface FlightCheckoutDetails {

@@ -1,7 +1,7 @@
 import { ServiceType } from '@/lib/checkout/types';
 import { ShopCheckoutForm } from './forms/shop-checkout-form';
 import { TransportCheckoutForm } from './forms/transport-checkout-form';
-
+import { HotelCheckoutForm } from './forms/hotel-checkout-form';
 interface Props {
     serviceType: ServiceType;
     initialData?: any;
@@ -14,8 +14,8 @@ export const CheckoutFormFactory = ({ serviceType, initialData, onSubmit }: Prop
             return <ShopCheckoutForm initialData={initialData} onSubmit={onSubmit} />;
 
         case 'hotel':
-            // return <HotelCheckoutForm ... />
-            return <div className="p-4 bg-gray-100 rounded">Hotel Checkout Form Coming Soon</div>;
+            // @ts-ignore
+            return <HotelCheckoutForm initialData={initialData} onSubmit={onSubmit} />;
 
         case 'flight':
             // return <FlightCheckoutForm ... />

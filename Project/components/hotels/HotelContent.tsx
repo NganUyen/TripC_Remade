@@ -153,88 +153,70 @@ export function HotelContent({ hotel }: HotelContentProps) {
       )}
 
       {/* Reviews */}
-      <div>
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
-            Guest Reviews
-          </h3>
-          <Link href="#" className="font-bold text-orange-500 hover:underline">
-            View All
-          </Link>
-        </div>
-
-        <div className="flex items-center gap-8 mb-8">
-          <div className="text-center">
-            <div className="text-5xl font-black text-slate-900 dark:text-white mb-1">
-              4.8
-            </div>
-            <div className="flex items-center justify-center gap-1 mb-1">
-              {[1, 2, 3, 4, 5].map((s) => (
-                <Star
-                  key={s}
-                  className="w-4 h-4 text-yellow-400 fill-yellow-400"
-                />
-              ))}
-            </div>
-            <p className="text-xs font-bold text-slate-400">
-              based on 1,240 reviews
-            </p>
+      {hotel?.reviews?.items && hotel.reviews.items.length > 0 && (
+        <div id="reviews-section">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
+              Guest Reviews
+            </h3>
           </div>
 
-          <div className="flex-1 space-y-2 max-w-sm">
-            {[5, 4, 3, 2, 1].map((rating, i) => (
-              <div
-                key={rating}
-                className="flex items-center gap-3 text-xs font-bold text-slate-500"
-              >
-                <span className="w-3">{rating}</span>
-                <div className="flex-1 h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-orange-400 rounded-full"
-                    style={{ width: i === 0 ? "70%" : i === 1 ? "20%" : "5%" }}
+          <div className="flex items-center gap-8 mb-8">
+            <div className="text-center">
+              <div className="text-5xl font-black text-slate-900 dark:text-white mb-1">
+                {hotel.reviews.average_rating?.toFixed(1) || "4.8"}
+              </div>
+              <div className="flex items-center justify-center gap-1 mb-1">
+                {[1, 2, 3, 4, 5].map((s) => (
+                  <Star
+                    key={s}
+                    className={`w-4 h-4 ${s <= Math.round(hotel.reviews.average_rating || 5) ? "text-yellow-400 fill-yellow-400" : "text-slate-300 dark:text-slate-700"}`}
                   />
+                ))}
+              </div>
+              <p className="text-xs font-bold text-slate-400">
+                based on {hotel.reviews.count || 0} reviews
+              </p>
+            </div>
+          </div>
+
+          {/* Review Horizontal Scroll */}
+          <div className="flex gap-4 overflow-x-auto no-scrollbar pb-4 -mx-4 px-4">
+            {hotel.reviews.items.map((review: any) => (
+              <div
+                key={review.id}
+                className="min-w-[300px] max-w-[350px] p-6 bg-slate-50 dark:bg-slate-900/50 rounded-[2rem] border border-slate-100 dark:border-slate-800 flex-shrink-0"
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center font-bold text-slate-500">
+                    {review.user_uuid ? review.user_uuid.substring(0, 2).toUpperCase() : "G"}
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-900 dark:text-white">
+                      Guest
+                    </p>
+                    <p className="text-xs text-slate-400">
+                      {new Date(review.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div className="ml-auto flex bg-white dark:bg-black/20 px-2 py-1 rounded-lg">
+                    <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                    <span className="text-xs font-bold ml-1 text-slate-700 dark:text-slate-300">
+                      {review.overall_rating}
+                    </span>
+                  </div>
                 </div>
+                {review.title && (
+                  <h4 className="font-bold text-slate-900 dark:text-white text-sm mb-1">{review.title}</h4>
+                )}
+                <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed mb-3 line-clamp-4">
+                  "{review.comment}"
+                </p>
               </div>
             ))}
           </div>
         </div>
-
-        {/* Review Horizontal Scroll */}
-        <div className="flex gap-4 overflow-x-auto no-scrollbar pb-4 -mx-4 px-4">
-          {[1, 2, 3].map((r) => (
-            <div
-              key={r}
-              className="min-w-[300px] p-6 bg-slate-50 dark:bg-slate-900/50 rounded-[2rem] border border-slate-100 dark:border-slate-800"
-            >
-              <div className="flex items-center gap-3 mb-4">
-                <img
-                  src={`https://images.unsplash.com/photo-${r === 1 ? "1494790108377-be9c29b29330" : r === 2 ? "1534528741775-53994a69daeb" : "1507003211169-0a1dd7228f2d"}?q=80&w=150&auto=format&fit=crop`}
-                  alt="Reviewer"
-                  className="w-10 h-10 rounded-full object-cover"
-                />
-                <div>
-                  <p className="font-bold text-slate-900 dark:text-white">
-                    Sarah Jenkins
-                  </p>
-                  <p className="text-xs text-slate-400">
-                    May 2023 • Family Trip
-                  </p>
-                </div>
-                <div className="ml-auto flex bg-white dark:bg-black/20 px-2 py-1 rounded-lg">
-                  <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-                  <span className="text-xs font-bold ml-1 text-slate-700 dark:text-slate-300">
-                    5.0
-                  </span>
-                </div>
-              </div>
-              <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed mb-3">
-                "Absolutely stunning resort! The staff went above and beyond.
-                The kids loved the club and we loved the spa."
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
+      )}
     </div>
   );
 }

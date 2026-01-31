@@ -9,12 +9,12 @@ export class CheckoutService {
     }
 
     async createBooking(payload: CheckoutPayload): Promise<CheckoutResult> {
-        console.log('[CheckoutService] createBooking called with:', { userId: payload.userId, type: payload.serviceType });
+        console.log('[CheckoutService] createBooking called with keys:', Object.keys(payload));
+        console.log('[CheckoutService] Payload Details:', JSON.stringify(payload, null, 2));
 
         // 1. Resolve User ID (Handle Clerk vs Internal UUID)
         let userId = payload.userId;
 
-        // If the ID is a Clerk ID (e.g. user_2...), resolve to UUID
         if (userId.startsWith('user_')) {
             console.log('[CheckoutService] Resolving Clerk ID:', userId);
             const { data: user, error: userError } = await this.supabase
@@ -41,7 +41,13 @@ export class CheckoutService {
 
         if (payload.serviceType === 'shop') {
             totalAmount = payload.items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
-            title = `Shop Order (${payload.items.length} items)`;
+
+            const firstItemName = payload.items[0]?.name || 'Unknown Item';
+            if (payload.items.length === 1) {
+                title = `Shop Order: ${firstItemName}`;
+            } else {
+                title = `Shop Order: ${firstItemName} + ${payload.items.length - 1} more`;
+            }
         } else if (payload.serviceType === 'transport') {
             // Basic fallback total calculation if not provided (though route logic usually sends it)
             // But payload from transport checkout usually relies on `items` price logic?
@@ -58,6 +64,60 @@ export class CheckoutService {
                 console.log('[CheckoutService] Transport calculated amount:', totalAmount);
             }
             title = payload.items?.[0]?.name || 'Transport Booking';
+        } else if (payload.serviceType === 'hotel') {
+            const start = new Date(payload.dates.start);
+            const end = new Date(payload.dates.end);
+            const nights = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
+
+            // Fetch Hotel Details for Title, Location, and Price Authorization
+            const { data: hotel } = await this.supabase
+                .from('hotels')
+                .select('name, address, images, best_price, metadata')
+                .eq('id', payload.hotelId)
+                .single();
+
+            if (hotel) {
+                // 1. Determine Nightly Rate (Backend Authority)
+                // Logic mirrors BookingSidebar: best_price is in cents, fallback is 840 USD
+                let nightlyRate = 840;
+                if (hotel.best_price) {
+                    nightlyRate = Math.floor(hotel.best_price / 100);
+                } else if (hotel.metadata?.best_price) {
+                    nightlyRate = Math.floor(hotel.metadata.best_price / 100);
+                }
+
+                // 2. Calculate Subtotals
+                const roomTotal = nightlyRate * nights;
+                const tax = Math.round(roomTotal * 0.10 * 100) / 100;
+                const serviceFee = Math.round(roomTotal * 0.05 * 100) / 100;
+
+                // 3. Final Total
+                totalAmount = roomTotal + tax + serviceFee;
+
+                console.log(`[CheckoutService] Hotel Pricing: Rate=${nightlyRate}, Nights=${nights}, Room=${roomTotal}, Tax=${tax}, Service=${serviceFee}, Total=${totalAmount}`);
+
+                title = hotel.name;
+                // Prepare metadata for rendering
+                payload.hotelName = hotel.name;
+                payload.hotelImage = hotel.images?.[0];
+
+                // Format Address
+                let addressStr = 'Vietnam';
+                if (hotel.address) {
+                    if (typeof hotel.address === 'object') {
+                        // @ts-ignore
+                        const { line1, city, country } = hotel.address;
+                        addressStr = [line1, city, country].filter(Boolean).join(', ') || 'Vietnam';
+                    } else {
+                        addressStr = String(hotel.address);
+                    }
+                }
+                payload.address = addressStr;
+            } else {
+                title = `Hotel Stay (${nights} nights)`;
+                // Fallback validation if hotel fetch fails (shouldn't happen)
+                if (payload.rate) totalAmount = payload.rate * nights;
+            }
         }
 
         // ... other types
@@ -75,6 +135,8 @@ export class CheckoutService {
                 currency: payload.currency,
                 status: 'pending',
                 payment_status: 'unpaid',
+                location_summary: payload.address || payload.location_summary, // Map from payload (set in hotel block)
+                image_url: payload.hotelImage || payload.image_url,       // Map from payload (set in hotel block)
                 metadata: payload, // Save full payload for context/settlement
                 start_date: new Date().toISOString(), // Required field default
                 end_date: new Date().toISOString() // Required field default

@@ -231,6 +231,11 @@ export const shopApi = {
         return { data: json.data || [], error: null };
     },
 
+    async getVariants(slug: string): Promise<{ data: ProductVariant[]; error: string | null }> {
+        const result = await fetchApi<ProductVariant[]>(`/products/${slug}/variants`);
+        return { data: result.data || [], error: result.error };
+    },
+
     // Categories
     async getCategories(): Promise<{ data: Category[]; error: string | null }> {
         const result = await fetchApi<Category[]>('/categories');

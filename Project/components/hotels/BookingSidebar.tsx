@@ -63,20 +63,11 @@ export function BookingSidebar({ hotel }: BookingSidebarProps) {
   const grandTotal = roomTotal + tax + serviceFee;
 
   // Handle booking submission
+  // Handle booking submission
   const handleReserve = async () => {
     setError("");
 
     // Validation
-    if (!isLoaded) {
-      setError("Loading user information...");
-      return;
-    }
-
-    if (!user) {
-      router.push("/sign-in");
-      return;
-    }
-
     if (!checkInDate || !checkOutDate) {
       setError("Please select check-in and check-out dates");
       return;
@@ -97,53 +88,18 @@ export function BookingSidebar({ hotel }: BookingSidebarProps) {
       return;
     }
 
-    setIsBooking(true);
+    // Redirect to Unified Checkout
+    // Pass IDs and Intent as Query Params
+    const query = new URLSearchParams({
+      hotelId: hotel.id,
+      roomId: selectedRoomId,
+      checkIn: checkInDate,
+      checkOut: checkOutDate,
+      adults: adults.toString(),
+      children: children.toString()
+    });
 
-    try {
-      const response = await fetch("/api/bookings", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          hotel_id: hotel.id,
-          room_id: selectedRoomId,
-          partner_id: null,
-          check_in_date: checkInDate,
-          check_out_date: checkOutDate,
-          guest: {
-            name: user.fullName || `${user.firstName} ${user.lastName}`,
-            email: user.primaryEmailAddress?.emailAddress || "",
-            phone: user.primaryPhoneNumber?.phoneNumber || "",
-            adults: adults,
-            children: children,
-            infants: 0,
-          },
-          special_requests: "",
-          tcent_used: 0,
-          working_pass_applied: false,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok || !result.success) {
-        throw new Error(result.error?.message || "Booking failed");
-      }
-
-      // Success!
-      setConfirmationCode(result.data.confirmation_code);
-      setShowSuccess(true);
-    } catch (err) {
-      console.error("Booking error:", err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to create booking. Please try again.",
-      );
-    } finally {
-      setIsBooking(false);
-    }
+    router.push(`/hotel/checkout?${query.toString()}`);
   };
 
   return (
@@ -316,11 +272,10 @@ export function BookingSidebar({ hotel }: BookingSidebarProps) {
                 <button
                   key={room.id}
                   onClick={() => setSelectedRoomId(room.id)}
-                  className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-bold truncate transition-all ${
-                    selectedRoomId === room.id
-                      ? "border border-orange-500 bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400"
-                      : "border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:border-orange-500"
-                  }`}
+                  className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-bold truncate transition-all ${selectedRoomId === room.id
+                    ? "border border-orange-500 bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400"
+                    : "border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:border-orange-500"
+                    }`}
                 >
                   {room.room_type || "Standard"}
                 </button>

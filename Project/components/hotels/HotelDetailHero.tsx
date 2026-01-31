@@ -114,7 +114,7 @@ export function HotelDetailHero({ hotel }: HotelDetailHeroProps) {
 
         {/* Dots Indicator */}
         <div className="absolute bottom-16 left-0 right-0 z-20 flex justify-center gap-2 mb-8 pointer-events-none">
-          {HERO_IMAGES.map((_, idx) => (
+          {HERO_IMAGES.map((_: string, idx: number) => (
             <button
               key={idx}
               onClick={() => setCurrent(idx)}
@@ -127,11 +127,12 @@ export function HotelDetailHero({ hotel }: HotelDetailHeroProps) {
         <div className="absolute top-0 left-0 w-full p-4 sm:p-8 flex justify-between items-start z-30 pt-24 pointer-events-none">
           <Link
             href="/hotels"
-            className="pointer-events-auto w-12 h-12 rounded-full bg-white/20 backdrop-blur-md border border-white/20 flex items-center justify-center text-white hover:bg-white hover:text-slate-900 transition-all"
+            className="pointer-events-auto flex items-center gap-2 px-5 py-2.5 rounded-full bg-black/20 hover:bg-white/90 backdrop-blur-md border border-white/20 text-white hover:text-slate-900 transition-all font-medium text-sm group/back shadow-lg"
           >
-            <ChevronLeft className="w-6 h-6" />
+            <ChevronLeft className="w-4 h-4 group-hover/back:-translate-x-0.5 transition-transform" />
+            <span>Back</span>
           </Link>
-          <div className="flex gap-3 pointer-events-auto">
+          <div className="flex gap-3 pointer-events-auto ml-auto">
             <button className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md border border-white/20 flex items-center justify-center text-white hover:bg-white hover:text-slate-900 transition-all">
               <Share2 className="w-5 h-5" />
             </button>
@@ -139,6 +140,7 @@ export function HotelDetailHero({ hotel }: HotelDetailHeroProps) {
               <Heart className="w-5 h-5 fill-transparent hover:fill-red-500 transition-colors" />
             </button>
           </div>
+
         </div>
       </div>
 
