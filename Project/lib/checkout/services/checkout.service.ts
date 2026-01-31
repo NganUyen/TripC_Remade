@@ -1,5 +1,6 @@
 import { createServiceSupabaseClient } from '@/lib/supabase-server';
 import { CheckoutPayload, CheckoutResult } from '../types';
+import { generateBookingCode } from '@/utils/booking-codes';
 
 export class CheckoutService {
     private supabase;
@@ -64,17 +65,32 @@ export class CheckoutService {
 
         console.log('[CheckoutService] Inserting booking for user:', userId);
 
-        // 3. Insert Booking
+        // 3. Generate Booking Code
+        const bookingCode = generateBookingCode(payload.serviceType);
+
+        // 4. Extract Guest Details (if any)
+        // Many unified flows store this in metadata or payload directly
+        const guestDetails = (payload as any).guestDetails ||
+            (payload.metadata as any)?.passengerInfo ||
+            (payload.metadata as any)?.contactInfo ||
+            null;
+
+        console.log('[CheckoutService] Inserting booking with code:', bookingCode);
+
+        // 5. Insert Booking
         const { data: booking, error } = await this.supabase
             .from('bookings')
             .insert({
                 category: payload.serviceType, // Standardized: Ledger uses 'category'
-                user_id: userId, // Ensure this is UUID
+                user_id: userId, // Ensure this is UUID or 'GUEST'
                 title: title,
                 total_amount: totalAmount,
                 currency: payload.currency,
                 status: 'pending',
                 payment_status: 'unpaid',
+                booking_code: bookingCode,
+                guest_details: guestDetails,
+                guest_email: guestDetails?.email || (payload.metadata as any)?.contactInfo?.email || null,
                 metadata: payload, // Save full payload for context/settlement
                 start_date: new Date().toISOString(), // Required field default
                 end_date: new Date().toISOString() // Required field default

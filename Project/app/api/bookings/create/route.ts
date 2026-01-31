@@ -8,9 +8,8 @@ import { generateBookingCode } from "@/utils/booking-codes";
 export async function POST(request: NextRequest) {
     try {
         const user = await currentUser();
-        if (!user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
+        // Guest allowed: If no user, we continue as guest
+        const userId = user?.id || 'GUEST';
 
         const body = await request.json();
         const {
@@ -56,7 +55,7 @@ export async function POST(request: NextRequest) {
         const { data, error } = await supabase
             .from("bookings")
             .insert({
-                user_id: user.id,
+                user_id: userId,
                 category,
                 title,
                 description,

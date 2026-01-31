@@ -52,7 +52,7 @@ export const generateFlights = (from: string, to: string, date: string, count = 
         if (daysAdded > 0) arrDateObj.setDate(arrDateObj.getDate() + daysAdded)
 
         return {
-            id: `${airline.code}-${from}-${to}-${1000 + i}`,
+            id: `${airline.code}-${from}-${to}-${1000 + i}-${priceBase}`,
             airline: airline.name,
             airlineCode: airline.code,
             airlineColor: airline.color,

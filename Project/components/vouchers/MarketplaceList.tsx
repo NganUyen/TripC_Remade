@@ -42,7 +42,7 @@ export function MarketplaceList() {
     useEffect(() => {
         const fetchVouchers = async () => {
             try {
-                const res = await fetch('/api/v1/vouchers/marketplace')
+                const res = await fetch('/api/v1/vouchers/marketplace', { cache: 'no-store' })
                 if (res.ok) {
                     const data = await res.json()
                     setVouchers(data.vouchers || [])

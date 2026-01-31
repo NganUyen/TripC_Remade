@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { appointmentService } from "@/lib/beauty";
 import { validateCreateAppointment } from "@/lib/beauty/bookingLogic";
-import { isSlotAvailable } from "@/lib/beauty/services/availabilityService";
 import type { CreateAppointmentRequest } from "@/lib/beauty/types";
 
 export async function POST(request: NextRequest) {
@@ -18,19 +17,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { durationMinutes } = validation;
-    const available = await isSlotAvailable(
-      body.venue_id,
-      body.appointment_date,
-      body.appointment_time,
-      durationMinutes,
-    );
-    if (!available) {
-      return NextResponse.json(
-        { success: false, error: "Slot not available (already booked or outside operating hours)" },
-        { status: 409 },
-      );
-    }
-
+    // MVP: no slot-availability check; insert when validation passes
     const appointment = await appointmentService.createAppointment(
       { ...body, duration_minutes: durationMinutes },
       userId,

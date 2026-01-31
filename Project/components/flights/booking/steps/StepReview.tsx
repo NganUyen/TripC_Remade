@@ -64,7 +64,10 @@ export function StepReview() {
                     seats,
                     extras,
                     insurance,
-                    selectedFlights
+                    selectedFlights,
+                    flightId: outboundFlight?.id,
+                    offerId: outboundFlight?.id, // Use flight ID as offer ID in this mock
+                    contactInfo: contact
                 }
             }
 

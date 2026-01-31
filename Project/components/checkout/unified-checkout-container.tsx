@@ -69,14 +69,9 @@ export const UnifiedCheckoutContainer = ({
     const router = useRouter();
 
     const handleDetailsSubmit = async (details: any) => {
-        if (!user) {
-            toast.error('Please login to continue');
-            return;
-        }
-
         const payload: CheckoutPayload = {
             serviceType,
-            userId: user.id, // Clerk ID
+            userId: user?.id || 'GUEST', // Clerk ID or GUEST
             currency: 'USD', // Shop default to USD
             ...details
         };

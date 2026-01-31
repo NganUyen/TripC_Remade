@@ -44,7 +44,7 @@ export async function getActivityById(id: string): Promise<Activity | null> {
 }
 
 export async function createActivityBooking(data: {
-    user_id: string
+    user_id?: string
     activity_id: string
     total_amount: number
     booking_details: any
@@ -62,7 +62,7 @@ export async function createActivityBooking(data: {
     const { data: booking, error } = await supabase
         .from('bookings')
         .insert({
-            user_id: data.user_id,
+            user_id: data.user_id || 'GUEST',
             category: 'activity',
             title: data.title,
             image_url: data.image_url,

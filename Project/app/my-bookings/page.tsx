@@ -124,18 +124,25 @@ export default function MyBookingsPage() {
       if (isSyncing) return;
       setIsLoading(true);
       try {
-        const res = await fetch('/api/bookings/user');
+        const bId = searchParams.get('bookingId');
+        const url = bId ? `/api/bookings/user?bookingId=${bId}` : '/api/bookings/user';
+
+        const res = await fetch(url);
+        if (res.status === 401) {
+          setBookings([]);
+          return;
+        }
         if (!res.ok) throw new Error('Failed to fetch bookings');
         const data = await res.json();
         setBookings(data);
       } catch (error) {
-        toast.error("Không thể tải danh sách đặt chỗ");
+        // Silent error
       } finally {
         setIsLoading(false);
       }
     }
     fetchBookings();
-  }, [isSyncing]);
+  }, [isSyncing, searchParams]);
 
   // --- FILTERING LOGIC ---
   const getStatusGroup = (status: string, paymentStatus: string) => {

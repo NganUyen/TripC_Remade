@@ -1,5 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { ISettlementHandler } from '../types';
+import { resolveUserUuid } from '../utils';
 
 export class ShopSettlementHandler implements ISettlementHandler {
     constructor(private supabase: SupabaseClient) { }
@@ -21,11 +22,7 @@ export class ShopSettlementHandler implements ISettlementHandler {
             .maybeSingle();
 
         if (existingOrder) {
-            console.log('[SHOP_SETTLEMENT_HANDLER] Order already exists (Idempotent)', {
-                bookingId: booking.id,
-                orderId: existingOrder.id,
-                orderNumber: existingOrder.order_number
-            });
+            console.log('[SHOP_SETTLEMENT] Idempotent: Order already exists');
             return; // Already settled
         }
 
@@ -70,11 +67,15 @@ export class ShopSettlementHandler implements ISettlementHandler {
 
         // 3. Create Shop Order
         const orderNumber = `ORD-${Date.now()}`;
+        const userUuid = await resolveUserUuid(this.supabase, booking.user_id);
+
+        console.log('[SHOP_SETTLEMENT] Resolved internal UUID:', userUuid || 'GUEST');
+
         const { data: order, error: orderError } = await this.supabase
             .from('shop_orders')
             .insert({
                 order_number: orderNumber,
-                user_id: booking.user_id,
+                user_id: userUuid,
                 cart_id: cartId,
                 booking_id: booking.id,
                 subtotal: Math.floor(Number(booking.total_amount)),
@@ -165,12 +166,46 @@ export class ShopSettlementHandler implements ISettlementHandler {
 
         if (clearCartError) {
             console.error('[SHOP_SETTLEMENT_HANDLER] Failed to clear cart', clearCartError);
-            // Non-critical, but annoying.
         } else {
             console.log('[SHOP_SETTLEMENT_HANDLER] Cart Cleared');
         }
 
-        // 7. Success
-        console.log('[SHOP_SETTLEMENT_HANDLER] Detailed settlement complete');
+        // 7. Consume Voucher (if any)
+        const couponCode = booking.metadata?.couponCode;
+        if (couponCode) {
+            console.log('[SHOP_SETTLEMENT_HANDLER] Consuming voucher:', couponCode);
+            try {
+                // Find voucher ID
+                const { data: voucher } = await this.supabase
+                    .from('vouchers')
+                    .select('id')
+                    .eq('code', couponCode)
+                    .single();
+
+                if (voucher) {
+                    // Mark as used
+                    const { error: voucherError } = await this.supabase
+                        .from('user_vouchers')
+                        .update({
+                            status: 'used',
+                            used_at: new Date().toISOString()
+                        })
+                        .eq('user_id', booking.user_id)
+                        .eq('voucher_id', voucher.id)
+                        .eq('status', 'active'); // Safety check
+
+                    if (voucherError) {
+                        console.error('[SHOP_SETTLEMENT_HANDLER] Failed to mark voucher used', voucherError);
+                    } else {
+                        console.log('[SHOP_SETTLEMENT_HANDLER] Voucher marked as used');
+                    }
+                }
+            } catch (err) {
+                console.error('[SHOP_SETTLEMENT_HANDLER] Voucher consumption error', err);
+            }
+        }
+
+        // 8. Success
+        console.log('[SHOP_SETTLEMENT] Successfully completed shop settlement');
     }
 }

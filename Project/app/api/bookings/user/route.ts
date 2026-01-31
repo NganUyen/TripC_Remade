@@ -5,58 +5,135 @@ import { NextRequest, NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
-    try {
-        const user = await currentUser();
-        if (!user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
+  const searchParams = request.nextUrl.searchParams;
+  const bookingIdParam = searchParams.get('bookingId');
 
-        const supabase = createServiceSupabaseClient();
+  try {
+    const user = await currentUser();
+    const supabase = createServiceSupabaseClient();
 
+    // --- GUEST FETCH (Specific ID) ---
+    if (!user && bookingIdParam) {
+      console.log('[BOOKINGS_USER_API] Guest fetch for:', bookingIdParam);
+      const { data: booking, error } = await supabase
+        .from('bookings')
+        .select(`
+          *,
+          flight_bookings:flight_bookings!booking_id (*),
+          transport_bookings:transport_bookings!booking_id (*, transport_routes:route_id (*)),
+          shop_orders:shop_orders!booking_id (*)
+        `)
+        .eq('id', bookingIdParam)
+        .eq('user_id', 'GUEST')
+        .single();
 
+      if (error || !booking) return NextResponse.json([]);
 
-        // 2. Fetch current bookings using Clerk ID directly
-        // The 'bookings' table uses text user_id which stores the Clerk ID
-        const { data: bookings, error } = await supabase
-            .from("bookings")
-            .select("*")
-            .eq("user_id", user.id)
-            .order("created_at", { ascending: false });
-
-        if (error) {
-            console.error("Fetch bookings error:", error);
-            return NextResponse.json({ error: error.message }, { status: 500 });
-        }
-
-        // 2. Check for expired 'held' bookings and update them lazily
-        const now = new Date();
-        const updates = bookings
-            ?.filter((b: any) =>
-                (b.status === 'held' || b.status === 'pending') &&
-                b.expires_at &&
-                new Date(b.expires_at) < now
-            )
-            .map((b: any) =>
-                supabase.from('bookings').update({ status: 'cancelled' }).eq('id', b.id)
-            );
-
-        if (updates && updates.length > 0) {
-            await Promise.all(updates);
-            // Re-fetch or manually update local list to reflect changes
-            // For simplicity/accuracy, we mark them as cancelled in the returned array
-            bookings.forEach((b: any) => {
-                if ((b.status === 'held' || b.status === 'pending') && b.expires_at && new Date(b.expires_at) < now) {
-                    b.status = 'cancelled';
-                }
-            });
-        }
-
-        return NextResponse.json(bookings || []);
-    } catch (err: any) {
-        console.error("User bookings API error:", err);
-        return NextResponse.json(
-            { error: "Internal Server Error" },
-            { status: 500 }
-        );
+      return NextResponse.json([transformBooking(booking)]);
     }
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // 1. Resolve Clerk ID to Internal UUID
+    const { data: dbUser } = await supabase
+      .from("users")
+      .select("id")
+      .eq("clerk_id", user.id)
+      .single();
+
+    // 2. Fetch all bookings for the resolved Internal UUID or Clerk ID
+    // We join the relevant domain tables to get PNR, vehicle info, etc.
+    let query = supabase
+      .from("bookings")
+      .select(`
+        *,
+        flight_bookings:flight_bookings!booking_id (*),
+        transport_bookings:transport_bookings!booking_id (*, transport_routes:route_id (*)),
+        shop_orders:shop_orders!booking_id (*)
+      `);
+
+    if (dbUser) {
+      query = query.or(`user_id.eq.${user.id},user_id.eq.${dbUser.id}`);
+    } else {
+      query = query.eq("user_id", user.id);
+    }
+
+    const { data: bookings, error: bookingsError } = await query
+      .order("created_at", { ascending: false });
+
+    if (bookingsError) {
+      console.error("Fetch bookings error:", bookingsError);
+      return NextResponse.json({ error: bookingsError.message }, { status: 500 });
+    }
+
+    // 3. Keep existing legacy hotel fetch if needed, 
+    // but ideally hotels should also be in 'bookings' table for uniformity.
+    // For now, let's keep it to avoid breaking things.
+    const { data: hotelBookings } = await supabase
+      .from("hotel_bookings")
+      .select(`
+                *,
+                hotels:hotel_id (name, slug, address, images),
+                hotel_rooms:room_id (title, code)
+            `)
+      .eq("external_user_ref", user.id)
+      .order("created_at", { ascending: false });
+
+    // Combine and transform
+    const allBookings = [
+      ...(hotelBookings || []).map((b: any) => ({
+        ...b,
+        category: "hotel",
+        type: "hotel",
+        title: b.hotels?.name || "Hotel Booking",
+        subtitle: b.hotel_rooms?.title || "Room",
+        image: b.hotels?.images?.[0] || null,
+        location: b.hotels?.address?.city || "Vietnam",
+      })),
+      ...(bookings || []).map(transformBooking),
+    ];
+
+    // Check for expired 'held' bookings and update them
+    return NextResponse.json(await handleExpirations(allBookings, supabase));
+  } catch (err: any) {
+    console.error("User bookings API error:", err);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}
+
+function transformBooking(b: any) {
+  const flight = b.flight_bookings?.[0];
+  const transport = b.transport_bookings?.[0];
+  const shop = b.shop_orders?.[0];
+
+  return {
+    ...b,
+    category: b.category || b.booking_type || "other",
+    type: b.category || b.booking_type || "other",
+    // Enrich with domain details
+    pnr: flight?.pnr,
+    order_number: shop?.order_number,
+    vehicle_info: transport?.transport_routes,
+  };
+}
+
+async function handleExpirations(bookings: any[], supabase: any) {
+  const now = new Date();
+  const expired = bookings.filter(b =>
+    (b.status === 'held' || b.status === 'pending') &&
+    b.expires_at && new Date(b.expires_at) < now
+  );
+
+  if (expired.length > 0) {
+    await Promise.all([
+      ...expired.map(b => b.category === 'hotel'
+        ? supabase.from('hotel_bookings').update({ status: 'cancelled' }).eq('id', b.id)
+        : supabase.from('bookings').update({ status: 'cancelled' }).eq('id', b.id)
+      )
+    ]);
+    expired.forEach(b => b.status = 'cancelled');
+  }
+  return bookings;
 }
