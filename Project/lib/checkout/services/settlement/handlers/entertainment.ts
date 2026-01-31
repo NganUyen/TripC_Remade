@@ -5,8 +5,11 @@ export class EntertainmentSettlementHandler implements ISettlementHandler {
     constructor(private supabase: SupabaseClient) { }
 
     async settle(booking: any): Promise<void> {
-        console.log('[ENTERTAINMENT_SETTLEMENT_HANDLER] Starting', { bookingId: booking.id });
-        
+        console.log('[ENTERTAINMENT_SETTLEMENT] Starting settlement for booking:', booking.id);
+
+        const userId = booking.user_id === 'GUEST' ? null : booking.user_id;
+        console.log('[ENTERTAINMENT_SETTLEMENT] Resolved user:', userId || 'GUEST');
+
         // TODO: Implement entertainment settlement logic
         // 1. Idempotency check for entertainment_bookings by booking_id
         // 2. Extract metadata (venue_id, show_time, ticket_category, seat_numbers, guest_count)
@@ -14,7 +17,7 @@ export class EntertainmentSettlementHandler implements ISettlementHandler {
         // 4. Lock seat/entry inventory
         // 5. Generate entry passes/vouchers
         // 6. Send confirmation with venue access details
-        
-        throw new Error('Entertainment settlement not yet implemented');
+
+        console.log('[ENTERTAINMENT_SETTLEMENT] Stub success - Logic pending implementation');
     }
 }

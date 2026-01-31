@@ -90,8 +90,8 @@ export function FlightResultCard({ flight, onSelect, isSelected }: FlightResultC
                         <div className="flex flex-col items-end text-right">
                             <span className="text-xs text-slate-400 line-through font-medium">${flight.price + 45}</span>
                             <div className="flex items-baseline gap-0.5">
-                                <span className="text-sm font-bold text-[#FF5E1F]">$</span>
                                 <span className="text-3xl font-black text-[#FF5E1F] tracking-tight">{flight.price}</span>
+                                <span className="text-sm font-bold text-[#FF5E1F]">$</span>
                             </div>
                             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">/pax</span>
                         </div>

@@ -29,9 +29,18 @@ export default function BeautyDetailPage() {
     const id = typeof params?.id === 'string' ? params.id : null
     const [service, setService] = useState<BeautyService | null>(null)
     const [venue, setVenue] = useState<BeautyVenue | null>(null)
+    const [guestName, setGuestName] = useState('')
+    const [guestEmail, setGuestEmail] = useState('')
     const [loading, setLoading] = useState(!!id)
     const [bookingLoading, setBookingLoading] = useState(false)
     const [bookingMessage, setBookingMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+
+    useEffect(() => {
+        if (user) {
+            setGuestName(user.fullName || '')
+            setGuestEmail(user.primaryEmailAddress?.emailAddress || '')
+        }
+    }, [user])
 
     useEffect(() => {
         if (!id) {
@@ -45,18 +54,21 @@ export default function BeautyDetailPage() {
                 return s.venue_id ? beautyApi.getVenueById(s.venue_id) : null
             })
             .then((v) => v && setVenue(v))
-            .catch(() => {})
+            .catch(() => { })
             .finally(() => setLoading(false))
     }, [id])
 
     async function handleBookAppointment() {
         setBookingMessage(null)
+        if (!guestName || !guestEmail) {
+            setBookingMessage({ type: 'error', text: 'Please provide name and email.' })
+            return
+        }
         const venueId = service?.venue_id ?? venue?.id
         if (!venueId) {
             setBookingMessage({ type: 'error', text: 'Cannot book: venue not found.' })
             return
         }
-        const guestName = user?.fullName ?? user?.firstName ?? 'Guest'
         setBookingLoading(true)
         try {
             const tomorrow = new Date()
@@ -68,10 +80,10 @@ export default function BeautyDetailPage() {
                     service_id: service?.id ?? undefined,
                     appointment_date: dateStr,
                     appointment_time: '10:00',
-                    guest_name: guestName.trim() || 'Guest',
-                    guest_email: user?.primaryEmailAddress?.emailAddress,
+                    guest_name: guestName.trim(),
+                    guest_email: guestEmail,
                 },
-                { headers: { 'x-user-id': user?.id ?? 'anonymous' } },
+                { headers: { 'x-user-id': user?.id ?? '' } },
             )
             const code = appointment.appointment_code
             setBookingMessage({
@@ -242,13 +254,30 @@ export default function BeautyDetailPage() {
                                     <span className="text-sm">Health & Safety protocols active</span>
                                 </div>
                             </div>
+
+                            <div className="space-y-3 mb-6">
+                                <input
+                                    type="text"
+                                    placeholder="Full Name *"
+                                    value={guestName}
+                                    onChange={(e) => setGuestName(e.target.value)}
+                                    className="w-full bg-[#f5f1f0] dark:bg-zinc-800 border border-transparent focus:border-primary rounded-xl px-4 py-3 text-sm outline-none transition-all"
+                                />
+                                <input
+                                    type="email"
+                                    placeholder="Email Address *"
+                                    value={guestEmail}
+                                    onChange={(e) => setGuestEmail(e.target.value)}
+                                    className="w-full bg-[#f5f1f0] dark:bg-zinc-800 border border-transparent focus:border-primary rounded-xl px-4 py-3 text-sm outline-none transition-all"
+                                />
+                            </div>
+
                             {bookingMessage && (
                                 <div
-                                    className={`mb-4 p-4 rounded-xl text-sm font-medium ${
-                                        bookingMessage.type === 'success'
-                                            ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200'
-                                            : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200'
-                                    }`}
+                                    className={`mb-4 p-4 rounded-xl text-sm font-medium ${bookingMessage.type === 'success'
+                                        ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200'
+                                        : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200'
+                                        }`}
                                 >
                                     {bookingMessage.text}
                                 </div>

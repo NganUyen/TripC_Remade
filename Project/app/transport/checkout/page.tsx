@@ -5,14 +5,11 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useSupabaseClient } from "@/lib/supabase"; // Client side
-import { useClerk, useUser } from "@clerk/nextjs";
 import { UnifiedCheckoutContainer } from '@/components/checkout/unified-checkout-container';
 
 export default function TransportCheckoutPage() {
     const searchParams = useSearchParams();
     const router = useRouter();
-    const { user } = useUser();
-    const clerk = useClerk();
     const supabase = useSupabaseClient();
 
     // Params
@@ -24,36 +21,14 @@ export default function TransportCheckoutPage() {
     // State
     const [route, setRoute] = useState<any>(null);
     const [loading, setLoading] = useState(true);
-    const [initialBooking, setInitialBooking] = useState<any>(null);
 
-    // Initial Load - Fetch Data for Props
+    // Initial Load
     useEffect(() => {
         const init = async () => {
             setLoading(true);
 
-            // CASE 1: RESUME BOOKING -> Redirect to Global Checkout directly
+            // CASE 1: RESUME BOOKING -> Redirect to Global Checkout
             if (resumeBookingId) {
-                // Fetch safely via API if we wanted to be consistent, but for 'initialData' loading
-                // we might just let the container handle it? 
-                // Actually UnifiedContainer expects 'initialData' to be the *Product* details for the form,
-                // OR if it's a resume, it might expect the Booking itself.
-
-                // For now, let's stick to the Route logic which populates the FORM.
-                // If resuming a booking that is already created (step 2), 
-                // The UnifiedContainer usually handles "Step 2" if we pass a bookingId?
-                // Looking at UnifiedContainer: 
-                // const [step, setStep] = useState<'details' | 'payment'>('details');
-                // if (bookingId) ... setStep('payment').
-
-                // So if we have resumeBookingId, we should fetch it to verify, then pass it?
-                // Or simply let the user re-enter details if it's 'details' step?
-                // The prompt says "Redirect to Unified Payment Page" for step 2.
-                // So this page is primarily STEP 1 (Details).
-                // If resumeBookingId exists (Step 2), we should probably redirect to /payment?bookingId=... 
-                // to use the CENTRAL payment page, matching our "Pattern B" discussion?
-                // OR we render UnifiedContainer in "payment" mode?
-
-                // Let's redirect to central payment if resuming, to keep it simple as per previous cleanup.
                 router.push(`/payment?bookingId=${resumeBookingId}`);
                 return;
             }
@@ -99,29 +74,25 @@ export default function TransportCheckoutPage() {
     }
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pt-8 pb-20">
-            {/* Header is inside the Container or we keep it? 
-                 UnifiedContainer has "CheckoutSteps". 
-                 Transport had "CheckoutHeader". 
-                 Let's use UnifiedContainer. It renders CheckoutSteps if serviceType is 'shop'. 
-                 We might need to enable it for 'transport' too in UnifiedContainer or let it be.
-                 The user wants "Unified".
-             */}
+        <div className="min-h-screen items-center justify-center p-6 md:p-12 bg-background-light dark:bg-background-dark">
+            <div className="max-w-7xl w-full mx-auto space-y-8">
+                <CheckoutHeader currentStep={1} />
 
-            <div className="mb-4">
-                <Link href="/transport" className="container mx-auto px-4 flex items-center gap-2 text-slate-500 hover:text-slate-900 transition-colors mb-4">
-                    ← Back to Search
-                </Link>
+                <UnifiedCheckoutContainer
+                    serviceType="transport"
+                    initialData={{
+                        route,
+                        passengers,
+                        date
+                    }}
+                />
+
+                <div className="flex justify-center gap-8 pt-4">
+                    <Link href="#" className="text-[11px] font-bold text-muted hover:text-primary transition-colors uppercase tracking-widest">Help Center</Link>
+                    <Link href="#" className="text-[11px] font-bold text-muted hover:text-primary transition-colors uppercase tracking-widest">Terms of Service</Link>
+                    <Link href="#" className="text-[11px] font-bold text-muted hover:text-primary transition-colors uppercase tracking-widest">Privacy Policy</Link>
+                </div>
             </div>
-
-            <UnifiedCheckoutContainer
-                serviceType="transport"
-                initialData={{
-                    route,
-                    passengers,
-                    date
-                }}
-            />
         </div>
     );
 }

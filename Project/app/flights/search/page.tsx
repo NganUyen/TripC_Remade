@@ -123,7 +123,7 @@ function SearchContent() {
                             },
                             duration: `${durationHours}h ${durationMinutes}m`,
                             stops: 0,
-                            price: Number(f.base_price) / 25000,
+                            price: Number(f.base_price),
                             isBestValue: false
                         }
                     })

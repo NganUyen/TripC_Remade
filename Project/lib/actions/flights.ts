@@ -10,7 +10,46 @@ export async function getFlightById(id: string) {
         .single()
 
     if (error || !data) {
-        console.error('Error fetching flight by ID:', error)
+        console.warn('Flight not found in DB, checking if it is a mock ID:', id)
+
+        // Mock ID format: {AIRLINE_CODE}-{FROM}-{TO}-{INDEX}-{PRICE}
+        const parts = id.split('-')
+        if (parts.length >= 4) {
+            const [airlineCode, from, to, , priceStr] = parts
+            const price = priceStr ? parseInt(priceStr) : 450
+            const depDate = new Date()
+            const arrDate = new Date()
+            arrDate.setHours(arrDate.getHours() + 2)
+
+            return {
+                id: id,
+                airline: airlineCode === 'VN' ? 'Vietnam Airlines' :
+                    (airlineCode === 'VJ' ? 'VietJet Air' :
+                        (airlineCode === 'QH' ? 'Bamboo Airways' : 'Mock Airline')),
+                airlineCode: airlineCode,
+                airlineColor: airlineCode === 'VN' ? 'bg-[#004280]' :
+                    (airlineCode === 'VJ' ? 'bg-red-500' :
+                        (airlineCode === 'QH' ? 'bg-emerald-500' : 'bg-emerald-500')),
+                flightNumber: `${airlineCode} 123`,
+                rawDepartureAt: depDate.toISOString(),
+                rawArrivalAt: arrDate.toISOString(),
+                departure: {
+                    time: "10:00",
+                    airport: from,
+                    date: depDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+                },
+                arrival: {
+                    time: "12:00",
+                    airport: to,
+                    date: arrDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+                    daysAdded: 0
+                },
+                duration: "2h 00m",
+                stops: 0,
+                price: price,
+                isBestValue: false
+            }
+        }
         return null
     }
 

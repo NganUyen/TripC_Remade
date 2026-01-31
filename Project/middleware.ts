@@ -17,13 +17,13 @@ const isPublicRoute = createRouteMatcher([
   "/transport(.*)",
   "/vouchers(.*)",
   "/help-center(.*)",
+  "/my-bookings(.*)",
 ]);
 
 // Define protected routes that require authentication
 const isProtectedRoute = createRouteMatcher([
   "/profile(.*)",
   "/rewards(.*)",
-  "/my-bookings(.*)",
   "/wishlist(.*)",
 ]);
 

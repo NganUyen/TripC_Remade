@@ -84,19 +84,7 @@ export function ActivityBookingSidebar({ activity }: ActivityBookingSidebarProps
             return
         }
 
-        if (!isSignedIn) {
-            toast('Please sign in to book', {
-                action: {
-                    label: 'Sign In',
-                    onClick: () => openSignIn({ redirectUrl: window.location.href })
-                }
-            })
-            openSignIn({
-                afterSignInUrl: window.location.href,
-                afterSignUpUrl: window.location.href
-            })
-            return
-        }
+        // Guest booking is allowed, so we don't return if not signed in
 
         // Validate contact info
         if (!contact.name || !contact.email) {
@@ -118,7 +106,7 @@ export function ActivityBookingSidebar({ activity }: ActivityBookingSidebarProps
             }
 
             const result = await createActivityBooking({
-                user_id: user.id,
+                user_id: user?.id,
                 activity_id: activity.id,
                 total_amount: totalPrice,
                 booking_details: bookingData,
@@ -128,11 +116,12 @@ export function ActivityBookingSidebar({ activity }: ActivityBookingSidebarProps
                 guest_details: contact
             })
 
-            if (result.success) {
+            if (result.success && result.booking) {
                 toast.success("Booking created!")
                 // Redirect to Global Checkout
                 router.push(`/checkout?bookingId=${result.booking.id}`)
-            } else {
+            }
+            else {
                 toast.error("Booking failed: " + result.error)
             }
 

@@ -20,38 +20,58 @@ import { cn } from '@/lib/utils';
 interface Props {
     serviceType: ServiceType;
     initialData?: any;
+    initialStep?: 'details' | 'payment';
+    existingBooking?: any;
 }
 
-export const UnifiedCheckoutContainer = ({ serviceType, initialData }: Props) => {
+export const UnifiedCheckoutContainer = ({
+    serviceType,
+    initialData,
+    initialStep = 'details',
+    existingBooking
+}: Props) => {
     const { user } = useUser();
     const { initializeCheckout, initiatePayment, isLoading } = useUnifiedCheckout();
 
-    const [step, setStep] = useState<'details' | 'payment'>('details'); // TODO: Add 'cart' and 'complete' support if needed
+    // If existingBooking is provided, we start at 'payment' regardless of initialStep (safety check)
+    // or respect initialStep if it makes sense.
+    // Actually, if existingBooking is present, we likely skip details.
+    const [step, setStep] = useState<'details' | 'payment'>(
+        existingBooking ? 'payment' : initialStep
+    );
 
     // Derived state for Steps component
     const getCurrentStep = () => {
-        if (serviceType === 'shop' && !bookingId) return 'details'; // or 'cart' if we had previous step
+        if (serviceType === 'shop' && !bookingId) return 'details';
         if (step === 'payment') return 'payment';
         return 'details';
     };
-    const [bookingId, setBookingId] = useState<string | null>(null);
+
+    // Initialize state from existingBooking if avail
+    const [bookingId, setBookingId] = useState<string | null>(existingBooking?.id || null);
     const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
-    const [bookingAmount, setBookingAmount] = useState<number>(0);
-    const [bookingCurrency, setBookingCurrency] = useState<string>('USD'); // Default Shop is USD
+    const [bookingAmount, setBookingAmount] = useState<number>(existingBooking?.total_amount || 0);
+
+    // Determine currency. 
+    // Shop default is USD. Migration: existing bookings might be VND (e.g. Transport usually VND).
+    // Let's default to 'VND' if not specified for non-shop, or try to infer.
+    // Existing Supabase bookings for transport don't always have currency column, usually implied VND.
+    // Shop bookings might have it. 
+    // Let's assume 'VND' for non-shop/transport existing bookings unless overridden.
+    // If existingBooking has currency, use it.
+    const [bookingCurrency, setBookingCurrency] = useState<string>(
+        existingBooking?.currency || (serviceType === 'shop' ? 'USD' : 'VND')
+    );
+
     const [showCurrencyGuard, setShowCurrencyGuard] = useState(false);
     const [pendingMethod, setPendingMethod] = useState<string | null>(null);
     const [isTermsAccepted, setIsTermsAccepted] = useState(false);
     const router = useRouter();
 
     const handleDetailsSubmit = async (details: any) => {
-        if (!user) {
-            toast.error('Please login to continue');
-            return;
-        }
-
         const payload: CheckoutPayload = {
             serviceType,
-            userId: user.id, // Clerk ID
+            userId: user?.id || 'GUEST', // Clerk ID or GUEST
             currency: 'USD', // Shop default to USD
             ...details
         };
