@@ -47,11 +47,10 @@ export default function BookingTabs({
           <button
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
-            className={`relative flex items-center gap-2 whitespace-nowrap px-6 py-2 rounded-full text-sm font-bold transition-all duration-300 ${
-              activeTab === tab.id
+            className={`relative flex items-center gap-2 whitespace-nowrap px-6 py-2 rounded-full text-sm font-bold transition-all duration-300 ${activeTab === tab.id
                 ? "text-white"
                 : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
-            }`}
+              }`}
           >
             {activeTab === tab.id && (
               <motion.div

@@ -109,6 +109,8 @@ export function ActivitiesHero({ allActivities }: ActivitiesHeroProps) {
                     </div>
                 </div>
             </div>
+
         </section>
     )
+
 }

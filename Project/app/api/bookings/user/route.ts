@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 3. Fetch hotel bookings (legacy table)
-    const { data: hotelBookings } = await supabase
+    const { data: hotelBookings, error: hotelError } = await supabase
       .from("hotel_bookings")
       .select(
         `
@@ -86,8 +86,51 @@ export async function GET(request: NextRequest) {
       .eq("external_user_ref", user.id)
       .order("created_at", { ascending: false });
 
+    if (hotelError) {
+      console.error("Fetch hotel bookings error:", hotelError);
+      return NextResponse.json({ error: hotelError.message }, { status: 500 });
+    }
+
+    // 3. Fetch event bookings
+    let eventQuery = supabase
+      .from("event_bookings")
+      .select(
+        `
+                *,
+                events (
+                    title,
+                    slug,
+                    city,
+                    location_summary,
+                    cover_image_url
+                ),
+                event_sessions (
+                    name,
+                    session_date,
+                    start_time
+                ),
+                event_ticket_types (
+                    name
+                )
+            `,
+      );
+
+    if (dbUser) {
+      eventQuery = eventQuery.or(
+        `external_user_ref.eq.${user.id},external_user_ref.eq.${dbUser.id},user_uuid.eq.${dbUser.id}`
+      );
+    } else {
+      eventQuery = eventQuery.eq("external_user_ref", user.id);
+    }
+
+    const { data: eventBookings, error: eventError } = await eventQuery.order("created_at", { ascending: false });
+
+    if (eventError) {
+      console.error("Fetch event bookings error:", eventError);
+    }
+
     // 4. Fetch entertainment bookings
-    const { data: entertainmentBookings } = await supabase
+    const { data: entertainmentBookings, error: entertainmentError } = await supabase
       .from("entertainment_bookings")
       .select(
         `
@@ -99,6 +142,19 @@ export async function GET(request: NextRequest) {
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
 
+    if (entertainmentError) {
+      console.error("Fetch entertainment bookings error:", entertainmentError);
+    }
+
+    // Collect IDs of specialized bookings to exclude from general
+    // Note: hotel_bookings might not be linked to bookings table in older records, 
+    // but event_bookings are. We'll use booking_id to check.
+    const specializedBookingIds = new Set([
+      ...(hotelBookings || []).map((b: any) => b.booking_id).filter(Boolean),
+      ...(eventBookings || []).map((b: any) => b.booking_id).filter(Boolean)
+    ]);
+
+    // Combine and transform bookings
     // Combine and transform
     const allBookings = [
       ...(hotelBookings || []).map((b: any) => ({
@@ -109,6 +165,20 @@ export async function GET(request: NextRequest) {
         subtitle: b.hotel_rooms?.title || "Room",
         image: b.hotels?.images?.[0] || null,
         location: b.hotels?.address?.city || "Vietnam",
+        start_date: b.check_in_date,
+        end_date: b.check_out_date,
+      })),
+      ...(eventBookings || []).map((b: any) => ({
+        ...b,
+        category: "activity", // Match "activity" tab ID in BookingTabs.tsx
+        type: "event",
+        title: b.events?.title || "Event Booking",
+        subtitle: `${b.event_sessions?.name || 'Session'} - ${b.event_ticket_types?.name || 'Ticket'}`, // e.g. "Main Show - VIP"
+        image: b.events?.cover_image_url || null,
+        location: b.events?.location_summary || b.events?.city || "Vietnam",
+        start_date: b.event_sessions?.session_date,
+        // Calculate amount if not present directly (event_bookings has total_amount)
+        amount: b.total_amount,
       })),
       ...(entertainmentBookings || []).map((b: any) => ({
         ...b,
@@ -134,7 +204,7 @@ export async function GET(request: NextRequest) {
         customer_name: b.customer_name,
         customer_email: b.customer_email,
       })),
-      ...(bookings || []).map(transformBooking),
+      ...(bookings || []).filter((b: any) => !specializedBookingIds.has(b.id)).map(transformBooking),
     ];
 
     // Check for expired 'held' bookings and update them
@@ -155,7 +225,7 @@ function transformBooking(b: any) {
 
   return {
     ...b,
-    category: b.category || b.booking_type || "other",
+    category: b.category || (b.booking_type === "event" ? "activity" : b.booking_type) || "other",
     type: b.category || b.booking_type || "other",
     // Enrich with domain details
     pnr: flight?.pnr,
@@ -178,13 +248,13 @@ async function handleExpirations(bookings: any[], supabase: any) {
       ...expired.map((b) =>
         b.category === "hotel"
           ? supabase
-              .from("hotel_bookings")
-              .update({ status: "cancelled" })
-              .eq("id", b.id)
+            .from("hotel_bookings")
+            .update({ status: "cancelled" })
+            .eq("id", b.id)
           : supabase
-              .from("bookings")
-              .update({ status: "cancelled" })
-              .eq("id", b.id),
+            .from("bookings")
+            .update({ status: "cancelled" })
+            .eq("id", b.id),
       ),
     ]);
     expired.forEach((b) => (b.status = "cancelled"));
