@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
@@ -37,6 +37,30 @@ export default function ItineraryViewPage() {
   const [expandedActivity, setExpandedActivity] = useState<string | null>(null);
   const [isSaved, setIsSaved] = useState(false);
 
+  const checkIfSaved = (tripId: string) => {
+    const savedTrips = localStorage.getItem("saved_trips");
+    if (savedTrips) {
+      const trips = JSON.parse(savedTrips);
+      const exists = trips.some((t: Itinerary) => t.id === tripId);
+      setIsSaved(exists);
+    }
+  };
+
+  const fetchItinerary = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/itinerary/${params.id}`);
+      const data = await response.json();
+      if (data.success) {
+        setItinerary(data.itinerary);
+        checkIfSaved(data.itinerary.id);
+      }
+    } catch (error) {
+      console.error("Failed to fetch itinerary:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [params.id]);
+
   useEffect(() => {
     // First try to get from sessionStorage (newly generated)
     const stored = sessionStorage.getItem("generated_itinerary");
@@ -66,31 +90,7 @@ export default function ItineraryViewPage() {
 
     // Otherwise fetch from API
     fetchItinerary();
-  }, [params.id]);
-
-  const checkIfSaved = (tripId: string) => {
-    const savedTrips = localStorage.getItem("saved_trips");
-    if (savedTrips) {
-      const trips = JSON.parse(savedTrips);
-      const exists = trips.some((t: Itinerary) => t.id === tripId);
-      setIsSaved(exists);
-    }
-  };
-
-  const fetchItinerary = async () => {
-    try {
-      const response = await fetch(`/api/itinerary/${params.id}`);
-      const data = await response.json();
-      if (data.success) {
-        setItinerary(data.itinerary);
-        checkIfSaved(data.itinerary.id);
-      }
-    } catch (error) {
-      console.error("Failed to fetch itinerary:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [params.id, fetchItinerary]);
 
   const handleSave = async () => {
     if (!itinerary) return;
@@ -168,7 +168,9 @@ export default function ItineraryViewPage() {
     // Title
     addText(itinerary.title, 20, true, [255, 107, 0]);
     yPos += 5;
-    addText(itinerary.description, 11, false, [100, 100, 100]);
+    if (itinerary.description) {
+      addText(itinerary.description, 11, false, [100, 100, 100]);
+    }
     yPos += 10;
 
     // Trip Details
