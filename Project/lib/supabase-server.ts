@@ -12,7 +12,11 @@ import { createClient } from "@supabase/supabase-js";
  * Uses service role key - bypasses RLS for admin operations
  */
 export function createServiceSupabaseClient() {
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_KEY;
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_KEY;
+    const key = serviceKey || anonKey;
+
+    console.log('[SUPABASE_CLIENT] Key type:', serviceKey ? 'SERVICE_ROLE' : 'ANON_KEY');
 
     if (!key) {
         throw new Error("Missing Supabase API Key (SUPABASE_SERVICE_ROLE_KEY or NEXT_PUBLIC_SUPABASE_KEY)");

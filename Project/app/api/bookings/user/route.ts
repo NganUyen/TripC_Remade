@@ -51,7 +51,37 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: hotelError.message }, { status: 500 });
     }
 
-    // Also fetch general bookings (flights, activities, etc.)
+    // 3. Fetch event bookings
+    const { data: eventBookings, error: eventError } = await supabase
+      .from("event_bookings")
+      .select(
+        `
+                *,
+                events (
+                    title,
+                    slug,
+                    city,
+                    location_summary,
+                    cover_image_url
+                ),
+                event_sessions (
+                    name,
+                    session_date,
+                    start_time
+                ),
+                event_ticket_types (
+                    name
+                )
+            `,
+      )
+      .or(`external_user_ref.eq.${user.id},external_user_ref.eq.${dbUser.id},user_uuid.eq.${dbUser.id}`)
+      .order("created_at", { ascending: false });
+
+    if (eventError) {
+      console.error("Fetch event bookings error:", eventError);
+    }
+
+    // 4. Also fetch general bookings (flights, etc.)
     const { data: generalBookings, error: generalError } = await supabase
       .from("bookings")
       .select("*")
@@ -62,21 +92,46 @@ export async function GET(request: NextRequest) {
       console.error("Fetch general bookings error:", generalError);
     }
 
+    // Collect IDs of specialized bookings to exclude from general
+    // Note: hotel_bookings might not be linked to bookings table in older records, 
+    // but event_bookings are. We'll use booking_id to check.
+    const specializedBookingIds = new Set([
+      ...(hotelBookings || []).map((b: any) => b.booking_id).filter(Boolean),
+      ...(eventBookings || []).map((b: any) => b.booking_id).filter(Boolean)
+    ]);
+
     // Combine and transform bookings
     const allBookings = [
       ...(hotelBookings || []).map((b: any) => ({
         ...b,
-        category: "hotel", // Match tab ID
+        category: "hotel",
         type: "hotel",
         title: b.hotels?.name || "Hotel Booking",
         subtitle: b.hotel_rooms?.title || "Room",
         image: b.hotels?.images?.[0] || null,
         location: b.hotels?.address?.city || "Vietnam",
+        start_date: b.check_in_date,
+        end_date: b.check_out_date,
       })),
-      ...(generalBookings || []).map((b: any) => ({
+      ...(eventBookings || []).map((b: any) => ({
+        ...b,
+        category: "event", // Match tab ID
+        type: "event",
+        title: b.events?.title || "Event Booking",
+        subtitle: `${b.event_sessions?.name || 'Session'} - ${b.event_ticket_types?.name || 'Ticket'}`, // e.g. "Main Show - VIP"
+        image: b.events?.cover_image_url || null,
+        location: b.events?.location_summary || b.events?.city || "Vietnam",
+        start_date: b.event_sessions?.session_date,
+        // Calculate amount if not present directly (event_bookings has total_amount)
+        amount: b.total_amount,
+      })),
+      ...(generalBookings || []).filter((b: any) => !specializedBookingIds.has(b.id)).map((b: any) => ({
         ...b,
         category: b.booking_type || "other",
         type: b.booking_type || "other",
+        // For general bookings, we might not have rich details unless we fetch them
+        title: b.booking_type === 'flight' ? 'Flight Booking' : 'Booking',
+        subtitle: `#${b.id.substring(0, 8)}`,
       })),
     ];
 

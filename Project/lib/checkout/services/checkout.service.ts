@@ -64,6 +64,67 @@ export class CheckoutService {
                 console.log('[CheckoutService] Transport calculated amount:', totalAmount);
             }
             title = payload.items?.[0]?.name || 'Transport Booking';
+        } else if (payload.serviceType === 'event') {
+            // Event checkout - validate and calculate price server-side
+            const { eventId, sessionId, ticketTypeId, adultCount, childCount = 0, guestDetails } = payload as any;
+            const totalTickets = adultCount + childCount;
+
+            // Fetch Event and Ticket Type for price verification
+            const { data: event } = await this.supabase
+                .from('events')
+                .select('title, cover_image_url, location_summary')
+                .eq('id', eventId)
+                .single();
+
+            const { data: session } = await this.supabase
+                .from('event_sessions')
+                .select('session_date, name')
+                .eq('id', sessionId)
+                .single();
+
+            const { data: ticketType } = await this.supabase
+                .from('event_ticket_types')
+                .select('name, price, currency, total_capacity, sold_count, held_count')
+                .eq('id', ticketTypeId)
+                .single();
+
+            if (!event || !session || !ticketType) {
+                throw new Error('Invalid event, session, or ticket type');
+            }
+
+            // Check availability
+            const availableCapacity = ticketType.total_capacity - ticketType.sold_count - ticketType.held_count;
+            if (availableCapacity < totalTickets) {
+                throw new Error(`Only ${availableCapacity} tickets available`);
+            }
+
+            // Hold tickets for checkout
+            const { data: holdResult, error: holdError } = await this.supabase
+                .rpc('hold_event_tickets', {
+                    p_ticket_type_id: ticketTypeId,
+                    p_quantity: totalTickets,
+                });
+
+            if (holdError || holdResult === false) {
+                throw new Error('Failed to reserve tickets. Please try again.');
+            }
+
+            // Calculate price (server authority)
+            // For simplicity, children pay full price here; adjust as needed
+            totalAmount = ticketType.price * totalTickets;
+            title = `${event.title} - ${ticketType.name}`;
+
+            // Set metadata for rendering
+            payload.eventName = event.title;
+            payload.eventImage = event.cover_image_url;
+            payload.image_url = event.cover_image_url;
+            payload.address = event.location_summary;
+            payload.location_summary = event.location_summary;
+            payload.sessionDate = session.session_date;
+            payload.sessionName = session.name;
+            payload.ticketTypeName = ticketType.name;
+
+            console.log(`[CheckoutService] Event Pricing: Price=${ticketType.price}, Tickets=${totalTickets}, Total=${totalAmount}`);
         } else if (payload.serviceType === 'hotel') {
             const start = new Date(payload.dates.start);
             const end = new Date(payload.dates.end);

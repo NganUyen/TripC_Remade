@@ -15,7 +15,7 @@ export default function BookingTabs({ activeTab, onTabChange }: BookingTabsProps
         { id: 'hotel', label: 'Khách sạn', icon: 'hotel' },
         { id: 'flight', label: 'Vé máy bay', icon: 'flight' },
         { id: 'shop', label: 'Mua sắm', icon: 'shopping_bag' },
-        { id: 'activity', label: 'Sự kiện', icon: 'event' }, // Changed 'events' to 'activity'
+        { id: 'event', label: 'Sự kiện', icon: 'celebration' },
     ];
 
     return (

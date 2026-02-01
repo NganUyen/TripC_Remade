@@ -37,7 +37,9 @@ export const UnifiedCheckoutContainer = ({ serviceType, initialData }: Props) =>
     const [bookingId, setBookingId] = useState<string | null>(null);
     const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
     const [bookingAmount, setBookingAmount] = useState<number>(0);
-    const [bookingCurrency, setBookingCurrency] = useState<string>('USD'); // Default Shop is USD
+    // Default currency based on service type - VND for local services, USD for shop
+    const defaultCurrency = serviceType === 'shop' ? 'USD' : 'VND';
+    const [bookingCurrency, setBookingCurrency] = useState<string>(defaultCurrency);
     const [showCurrencyGuard, setShowCurrencyGuard] = useState(false);
     const [pendingMethod, setPendingMethod] = useState<string | null>(null);
     const [isTermsAccepted, setIsTermsAccepted] = useState(false);
@@ -52,7 +54,7 @@ export const UnifiedCheckoutContainer = ({ serviceType, initialData }: Props) =>
         const payload: CheckoutPayload = {
             serviceType,
             userId: user.id, // Clerk ID
-            currency: 'USD', // Shop default to USD
+            currency: defaultCurrency, // VND for events/hotels, USD for shop
             ...details
         };
 

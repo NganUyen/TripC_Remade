@@ -64,11 +64,34 @@ export interface FlightCheckoutDetails {
     passengers: any[]; // Define strict passenger type later
 }
 
+export interface EventAttendee {
+    name: string;
+    email?: string;
+    phone?: string;
+    dob?: string;
+}
+
+export interface EventCheckoutDetails {
+    eventId: string;
+    sessionId: string;
+    ticketTypeId: string;
+    adultCount: number;
+    childCount: number;
+    guestDetails: {
+        name: string;
+        email: string;
+        phone?: string;
+    };
+    attendees?: EventAttendee[];
+    specialRequests?: string;
+}
+
 // Discriminated Union for Payload
 export type CheckoutPayload =
     | ({ serviceType: 'shop' } & BaseCheckoutPayload & ShopCheckoutDetails)
     | ({ serviceType: 'hotel' } & BaseCheckoutPayload & HotelCheckoutDetails)
     | ({ serviceType: 'flight' } & BaseCheckoutPayload & FlightCheckoutDetails)
+    | ({ serviceType: 'event' } & BaseCheckoutPayload & EventCheckoutDetails)
     | ({ serviceType: 'dining' } & BaseCheckoutPayload & any) // Placeholder
     | ({ serviceType: 'transport' } & BaseCheckoutPayload & any) // Placeholder
     | ({ serviceType: 'wellness' } & BaseCheckoutPayload & any); // Placeholder
