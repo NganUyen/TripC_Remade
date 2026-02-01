@@ -123,7 +123,7 @@ export function FlightDetailsModal({ flight, isOpen, onClose, onConfirm }: Fligh
                 <div className="p-6 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 rounded-b-2xl">
                     <div>
                         <div className="text-sm text-slate-500">Total Price</div>
-                        <div className="text-2xl font-black text-slate-900 dark:text-white">${flight.price}</div>
+                        <div className="text-2xl font-black text-slate-900 dark:text-white">{flight.price}$</div>
                     </div>
                     <button
                         onClick={onConfirm}

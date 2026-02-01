@@ -1,43 +1,91 @@
-"use client"
+"use client";
 
-import { EntertainmentHeaderPanel } from '@/components/entertainment/EntertainmentHeaderPanel'
-import { EntertainmentContent } from '@/components/entertainment/EntertainmentContent'
-import { EntertainmentDetails } from '@/components/entertainment/EntertainmentDetails'
-import { TicketBookingWidget, MobileBookingBar } from '@/components/entertainment/TicketBookingWidget'
-import { Footer } from '@/components/Footer'
-import { ChevronLeft } from 'lucide-react'
-import Link from 'next/link'
-import { cn } from '@/lib/utils'
-import { getEntertainmentById } from '@/components/entertainment/mockData'
-import { notFound } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { EntertainmentHeaderPanel } from "@/components/entertainment/EntertainmentHeaderPanel";
+import { EntertainmentContent } from "@/components/entertainment/EntertainmentContent";
+import { EntertainmentDetails } from "@/components/entertainment/EntertainmentDetails";
+import {
+  TicketBookingWidget,
+  MobileBookingBar,
+} from "@/components/entertainment/TicketBookingWidget";
+import { Footer } from "@/components/Footer";
+import { ChevronLeft, ArrowLeft } from "lucide-react";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import { useEntertainmentItem } from "@/lib/hooks/useEntertainmentAPI";
 
-export default function EntertainmentDetailPage({ params }: { params: { id: string } }) {
-  const [mounted, setMounted] = useState(false)
-  const [activeTab, setActiveTab] = useState<'overview' | 'details' | 'reviews'>('overview')
+export default function EntertainmentDetailPage() {
+  const params = useParams<{ id: string }>();
+  const id = params.id;
+
+  const [mounted, setMounted] = useState(false);
+  const [activeTab, setActiveTab] = useState<
+    "overview" | "details" | "reviews"
+  >("overview");
+
+  const { item, loading, error } = useEntertainmentItem(id);
 
   useEffect(() => {
-    setMounted(true)
-  }, [])
+    setMounted(true);
+  }, []);
 
-  // Get the entertainment item by ID
-  const item = getEntertainmentById(params.id)
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
-  // If item not found, show 404
-  if (!item) {
-    notFound()
+  // Loading state
+  if (loading || !mounted) {
+    return (
+      <main className="min-h-screen bg-[#fcfaf8] dark:bg-[#0a0a0a] pt-20">
+        <div className="max-w-7xl mx-auto px-4 lg:px-8 py-8">
+          <div className="animate-pulse space-y-8">
+            <div className="h-96 bg-slate-200 dark:bg-zinc-800 rounded-3xl"></div>
+            <div className="grid lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-2 space-y-4">
+                <div className="h-8 bg-slate-200 dark:bg-zinc-800 rounded w-3/4"></div>
+                <div className="h-4 bg-slate-200 dark:bg-zinc-800 rounded w-full"></div>
+                <div className="h-4 bg-slate-200 dark:bg-zinc-800 rounded w-full"></div>
+              </div>
+              <div className="h-96 bg-slate-200 dark:bg-zinc-800 rounded-3xl"></div>
+            </div>
+          </div>
+        </div>
+      </main>
+    );
   }
 
-  // Prevent hydration mismatch
-  if (!mounted) {
-    return null
+  // Error state
+  if (error || !item) {
+    return (
+      <main className="min-h-screen bg-[#fcfaf8] dark:bg-[#0a0a0a] flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+            Item Not Found
+          </h1>
+          <p className="text-slate-500">
+            The entertainment item you're looking for doesn't exist.
+          </p>
+          <Link
+            href="/entertainment"
+            className="inline-flex items-center gap-2 text-[#FF5E1F] font-medium"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Entertainment
+          </Link>
+        </div>
+      </main>
+    );
   }
 
   return (
     <main className="min-h-screen bg-[#fcfaf8] dark:bg-[#0a0a0a]">
       {/* 0. NAVIGATION */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-        <Link href="/entertainment" className="inline-flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">
+        <Link
+          href="/entertainment"
+          className="inline-flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
+        >
           <ChevronLeft className="w-4 h-4" /> Back to Entertainment
         </Link>
       </div>
@@ -49,7 +97,7 @@ export default function EntertainmentDetailPage({ params }: { params: { id: stri
       <div className="sticky top-0 z-40 bg-[#fcfaf8]/95 dark:bg-[#0a0a0a]/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 mb-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-8 overflow-x-auto no-scrollbar">
-            {['overview', 'details', 'reviews'].map((tab) => (
+            {["overview", "details", "reviews"].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab as any)}
@@ -57,7 +105,7 @@ export default function EntertainmentDetailPage({ params }: { params: { id: stri
                   "py-4 text-sm font-bold uppercase tracking-wider border-b-2 transition-colors whitespace-nowrap",
                   activeTab === tab
                     ? "border-primary text-primary"
-                    : "border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                    : "border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white",
                 )}
               >
                 {tab}
@@ -71,9 +119,9 @@ export default function EntertainmentDetailPage({ params }: { params: { id: stri
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Main Content (Left) */}
           <div className="lg:col-span-8">
-            {activeTab === 'overview' && <EntertainmentContent item={item} />}
-            {activeTab === 'details' && <EntertainmentDetails item={item} />}
-            {activeTab === 'reviews' && (
+            {activeTab === "overview" && <EntertainmentContent item={item} />}
+            {activeTab === "details" && <EntertainmentDetails item={item} />}
+            {activeTab === "reviews" && (
               <div className="p-8 text-center text-slate-500 bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800">
                 <p>Reviews coming soon...</p>
               </div>
@@ -90,5 +138,5 @@ export default function EntertainmentDetailPage({ params }: { params: { id: stri
       <MobileBookingBar item={item} />
       <Footer />
     </main>
-  )
+  );
 }

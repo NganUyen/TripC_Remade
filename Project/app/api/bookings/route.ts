@@ -14,7 +14,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServerClient } from "@/lib/hotel/supabaseServerClient";
 import { currentUser } from "@clerk/nextjs/server";
-import { sendBookingConfirmationEmail } from "@/lib/email/booking-confirmation";
+import { unifiedEmailService } from "@/lib/email/unified-email-service";
 
 export const dynamic = "force-dynamic";
 
@@ -111,20 +111,9 @@ async function getRoomRate(
 
 export async function POST(request: NextRequest) {
   try {
-    // Authentication check
+    // Authentication check (Optional for guest)
     const user = await currentUser();
-    if (!user) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: "UNAUTHORIZED",
-            message: "Please sign in to make a booking",
-          },
-        },
-        { status: 401 },
-      );
-    }
+    const externalUserRef = user?.id || 'GUEST';
 
     // Parse request body
     const body = await request.json();
@@ -234,28 +223,31 @@ export async function POST(request: NextRequest) {
     const tcentEarnRate = partner_id ? 0.05 : 0.1; // 10% for direct, 5% for partners
     const tcentEarned = Math.round((grandTotalCents / 100) * tcentEarnRate);
 
-    // Fetch user UUID from users table using Clerk ID
-    const { data: userData, error: userError } = await supabaseServerClient
-      .from("users")
-      .select("id")
-      .eq("clerk_id", user.id)
-      .single();
+    let userUuid: string | null = null;
 
-    if (userError || !userData) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: "USER_NOT_FOUND",
-            message:
-              "User not found in database. Please sign out and sign in again.",
+    if (user) {
+      // Fetch user UUID from users table using Clerk ID
+      const { data: userData, error: userError } = await supabaseServerClient
+        .from("users")
+        .select("id")
+        .eq("clerk_id", user.id)
+        .single();
+
+      if (userError || !userData) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: "USER_NOT_FOUND",
+              message:
+                "User not found in database. Please sign out and sign in again.",
+            },
           },
-        },
-        { status: 404 },
-      );
+          { status: 404 },
+        );
+      }
+      userUuid = userData.id;
     }
-
-    const userUuid = userData.id;
 
     // Generate confirmation code
     const confirmationCode = await getUniqueConfirmationCode();
@@ -280,7 +272,7 @@ export async function POST(request: NextRequest) {
     const { data: booking, error: bookingError } = await supabaseServerClient
       .from("hotel_bookings")
       .insert({
-        external_user_ref: user.id,
+        external_user_ref: externalUserRef,
         user_uuid: userUuid,
         hotel_id,
         room_id,
@@ -322,7 +314,7 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(
-      `[Booking Created] Confirmation: ${confirmationCode}, User: ${user.id}, Hotel: ${hotel_id}`,
+      `[Booking Created] Confirmation: ${confirmationCode}, User: ${externalUserRef}, Hotel: ${hotel_id}`,
     );
 
     // Fetch hotel and room details for email
@@ -339,17 +331,22 @@ export async function POST(request: NextRequest) {
       .single();
 
     // Send confirmation email (async, don't block response)
-    sendBookingConfirmationEmail({
+    unifiedEmailService.sendBookingEmail({
+      category: 'hotel',
       guest_name: guest.name,
       guest_email: guest.email,
-      confirmation_code: confirmationCode,
-      hotel_name: hotelData?.name || "Hotel",
-      room_type: roomData?.title || "Room",
-      check_in_date: check_in_date,
-      check_out_date: check_out_date,
-      nights_count: nights,
+      booking_code: confirmationCode,
+      title: hotelData?.name || "Hotel Reservation",
+      description: roomData?.title || "Room Booking",
+      start_date: check_in_date,
+      end_date: check_out_date,
       total_amount: grandTotalCents / 100,
       currency: "USD",
+      metadata: {
+        hotel_id,
+        room_id,
+        nights
+      }
     }).catch((error) => {
       // Log error but don't fail the booking
       console.error("[Email Send Failed]", error);

@@ -17,19 +17,25 @@ export function StepPayment() {
             return
         }
 
-        // Simulate API call
-        const promise = new Promise((resolve) => setTimeout(resolve, 2000))
+        // Simulate payment selection processing
+        const promise = new Promise((resolve) => setTimeout(resolve, 1500))
 
         toast.promise(promise, {
-            loading: 'Processing payment...',
+            loading: 'Processing selection...',
             success: (data) => {
-                // Mock redirect after success
-                setTimeout(() => {
-                    router.push('/') // Or detailed confirmation page
-                }, 1000)
-                return 'Booking Confirmed! Check your email for details.'
+                // If we have a booking ID in the URL, go to checkout
+                const params = new URLSearchParams(window.location.search);
+                const exBookingId = params.get('bookingId');
+
+                if (exBookingId) {
+                    router.push(`/checkout?bookingId=${exBookingId}`)
+                } else {
+                    // Fallback to home if no booking ID found (shouldn't happen in real flow)
+                    router.push('/')
+                }
+                return 'Redirecting to secure checkout...'
             },
-            error: 'Payment failed',
+            error: 'Failed to process payment selection',
         })
     }
 

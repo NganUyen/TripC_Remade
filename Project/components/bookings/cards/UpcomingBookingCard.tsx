@@ -30,7 +30,7 @@ export default function UpcomingBookingCard({ booking }: UpcomingBookingCardProp
                     <Icon size={24} strokeWidth={1.5} />
                 </div>
                 <div className="px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-900/10 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold tracking-wide uppercase">
-                    Confirmed
+                    Đã đặt
                 </div>
             </div>
 

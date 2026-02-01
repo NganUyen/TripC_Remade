@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { BookingSummary } from "@/components/checkout/BookingSummary";
-import { PaymentSection } from "@/components/checkout/PaymentSection";
+import { UnifiedCheckoutContainer } from "@/components/checkout/unified-checkout-container";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useSupabaseClient } from "@/lib/supabase";
@@ -126,45 +125,14 @@ export default function CheckoutPage() {
     // CheckoutBookingSummary expects: type, details, booking
     // PaymentSection expects: bookingId, amount
 
+    // New Unified Checkout Flow
     return (
         <div className="min-h-screen p-6 md:p-12 bg-background-light dark:bg-background-dark">
-            <div className="max-w-7xl mx-auto">
-                {/* Header */}
-                <div className="mb-12 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <Link href="/" className="size-10 rounded-full bg-white dark:bg-white/10 flex items-center justify-center hover:bg-slate-100 transition-colors">
-                            <span className="material-symbols-outlined">arrow_back</span>
-                        </Link>
-                        <h1 className="text-2xl font-bold">Checkout</h1>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-2 text-sm font-bold text-muted-foreground opacity-50">
-                            <span className="size-6 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-xs">1</span>
-                            Selection
-                        </div>
-                        <div className="w-8 h-px bg-border-subtle"></div>
-                        <div className="flex items-center gap-2 text-sm font-bold text-primary">
-                            <span className="size-6 rounded-full bg-primary text-white flex items-center justify-center text-xs">2</span>
-                            Payment
-                        </div>
-                    </div>
-                </div>
-
-                <div className="flex flex-col lg:flex-row items-start gap-16">
-                    {/* Left: Payment Methods */}
-                    <PaymentSection
-                        bookingId={booking.id}
-                        amount={booking.total_amount}
-                    />
-
-                    {/* Right: Summary */}
-                    <BookingSummary
-                        type={booking.category as any}
-                        details={details}
-                        booking={booking}
-                    />
-                </div>
-            </div>
+            <UnifiedCheckoutContainer
+                serviceType={booking.category as any}
+                existingBooking={booking} // Pass the full booking object
+                initialStep="payment"
+            />
         </div>
     );
 }

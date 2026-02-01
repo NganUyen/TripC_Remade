@@ -286,7 +286,31 @@ export class AppointmentService {
       return { appointment: null, error: error.message };
     }
 
-    return { appointment: data as DiningAppointment };
+    const appointment = data as DiningAppointment;
+
+    // Send confirmation email (Async)
+    try {
+      const { unifiedEmailService } = await import("@/lib/email/unified-email-service");
+      await unifiedEmailService.sendBookingEmail({
+        category: 'dining',
+        guest_name: appointment.guest_name,
+        guest_email: appointment.guest_email || '', // Should have it from body
+        booking_code: appointment.appointment_code,
+        title: "Dining Reservation",
+        description: `${appointment.guest_count} Guests`,
+        start_date: appointment.appointment_date,
+        total_amount: 0, // Dining usually doesn't have prepayment here or handled differently
+        currency: "USD",
+        metadata: {
+          venue_id: appointment.venue_id,
+          time: appointment.appointment_time
+        }
+      });
+    } catch (emailErr) {
+      console.error("[DINING_EMAIL_ERROR]", emailErr);
+    }
+
+    return { appointment };
   }
 }
 

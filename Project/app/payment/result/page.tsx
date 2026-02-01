@@ -2,7 +2,7 @@
 
 import { useSearchParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { CheckCircle2, XCircle, AlertCircle, ArrowRight, RefreshCcw, Home } from 'lucide-react';
+import { CheckCircle2, XCircle, AlertCircle, ArrowRight, RefreshCcw, Home, Star } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
@@ -63,6 +63,38 @@ export default function PaymentResultPage() {
                             >
                                 Back to Home
                             </Link>
+                        </div>
+
+                        {/* Guest User Invitation */}
+                        <div className="mt-12 p-8 bg-gradient-to-br from-[#FF5E1F] to-[#E54810] rounded-[2rem] text-white shadow-xl shadow-orange-500/20 relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-white/20 transition-all duration-500"></div>
+                            <div className="absolute bottom-0 left-0 w-24 h-24 bg-black/10 rounded-full -ml-12 -mb-12 blur-xl"></div>
+
+                            <div className="relative z-10 space-y-4">
+                                <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 rounded-full text-xs font-bold uppercase tracking-wider backdrop-blur-sm">
+                                    <Star className="w-3 h-3 fill-current" />
+                                    Post-Booking Benefit
+                                </div>
+                                <h3 className="text-2xl font-black leading-tight">Create an account to track your trip & earn rewards!</h3>
+                                <p className="text-white/80 text-sm max-w-sm mx-auto">
+                                    Save this booking to your profile, manage your itinerary, and get exclusive member-only discounts on your next adventure.
+                                </p>
+                                <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+                                    <button
+                                        onClick={() => router.push('/sign-up')}
+                                        className="w-full sm:w-auto px-8 py-3 bg-white text-[#FF5E1F] rounded-xl font-black text-sm hover:bg-slate-50 transition-all shadow-lg"
+                                    >
+                                        Sign Up Now
+                                    </button>
+                                    <button
+                                        onClick={() => router.push('/sign-in')}
+                                        className="w-full sm:w-auto px-8 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold text-sm backdrop-blur-sm transition-all border border-white/20"
+                                    >
+                                        Login
+                                    </button>
+                                </div>
+                                <p className="text-[10px] text-white/60 font-medium">It only takes 30 seconds. No password required with Google/Social login.</p>
+                            </div>
                         </div>
                     </div>
                 );

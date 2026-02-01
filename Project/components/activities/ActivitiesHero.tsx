@@ -88,29 +88,29 @@ export function ActivitiesHero({ allActivities }: ActivitiesHeroProps) {
                     </div>
                 </div>
 
-                    {/* Categories - Glass Pills */}
-                    <div className="w-full overflow-x-auto no-scrollbar pb-4 px-4">
-                        <div className="flex justify-center gap-3 w-fit min-w-full md:min-w-0">
-                            {categories.map((cat, i) => (
-                                <motion.button
-                                    key={i}
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.2 + (i * 0.05) }}
-                                    onClick={() => handleCategoryClick(cat)}
-                                    className={`whitespace-nowrap px-6 py-2.5 border rounded-full text-sm font-bold backdrop-blur-sm transition-all shadow-sm ${currentCategory === cat
-                                            ? 'bg-[#FF5E1F] border-[#FF5E1F] text-white'
-                                            : 'bg-white/10 border-white/20 text-white hover:bg-[#FF5E1F] hover:border-[#FF5E1F]'
-                                        }`}
-                                >
-                                    {cat}
-                                </motion.button>
-                            ))}
-                        </div>
+                {/* Categories - Glass Pills */}
+                <div className="w-full overflow-x-auto no-scrollbar pb-4 px-4">
+                    <div className="flex justify-center gap-3 w-fit min-w-full md:min-w-0">
+                        {categories.map((cat, i) => (
+                            <motion.button
+                                key={i}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.2 + (i * 0.05) }}
+                                onClick={() => handleCategoryClick(cat)}
+                                className={`whitespace-nowrap px-6 py-2.5 border rounded-full text-sm font-bold backdrop-blur-sm transition-all shadow-sm ${currentCategory === cat
+                                    ? 'bg-[#FF5E1F] border-[#FF5E1F] text-white'
+                                    : 'bg-white/10 border-white/20 text-white hover:bg-[#FF5E1F] hover:border-[#FF5E1F]'
+                                    }`}
+                            >
+                                {cat}
+                            </motion.button>
+                        ))}
                     </div>
                 </div>
-            
-    </section>
-    )   
+            </div>
+
+        </section>
+    )
 
 }

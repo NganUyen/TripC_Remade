@@ -12,6 +12,7 @@ import {
     BeautySettlementHandler,
     EntertainmentSettlementHandler
 } from './settlement/handlers';
+import { unifiedEmailService } from '@/lib/email/unified-email-service';
 
 export class SettlementService {
     private handlers: Record<string, ISettlementHandler>;
@@ -91,7 +92,78 @@ export class SettlementService {
             throw updateError;
         }
 
-        // 5. Record Completion Event (Idempotency Key)
+        // 5. Send Confirmation Email (Async)
+        try {
+            console.log('[SETTLEMENT_EMAIL_DEBUG] Starting for booking:', bookingId);
+            console.log('[SETTLEMENT_EMAIL_DEBUG] category:', serviceType);
+            console.log('[SETTLEMENT_EMAIL_DEBUG] booking_code:', booking.booking_code);
+            console.log('[SETTLEMENT_EMAIL_DEBUG] guest_details:', JSON.stringify(booking.guest_details));
+
+            let finalEmail = booking.guest_email ||
+                booking.guest_details?.email ||
+                booking.guest_details?.lead_passenger_email ||
+                booking.metadata?.passengerInfo?.email ||
+                booking.metadata?.contactInfo?.email ||
+                booking.metadata?.email;
+
+            let finalName = booking.guest_details?.name ||
+                booking.guest_details?.lead_passenger_name ||
+                booking.metadata?.passengerInfo?.firstName ||
+                booking.metadata?.passengerInfo?.lastName ||
+                'Guest';
+
+            console.log('[SETTLEMENT_EMAIL_DEBUG] extracted email:', finalEmail);
+            console.log('[SETTLEMENT_EMAIL_DEBUG] extracted name:', finalName);
+
+            // IF AUTHENTICATED USER: Fetch email from 'users' table if not in guest_details
+            if (!finalEmail && booking.user_id && booking.user_id !== 'GUEST') {
+                console.log('[SETTLEMENT_EMAIL] Fetching user email for sync:', booking.user_id);
+
+                // Try to find user by ID (UUID) OR Clerk ID
+                // Note: .or() is more robust here if we don't know the format of booking.user_id
+                const { data: userData } = await this.supabase
+                    .from('users')
+                    .select('email, full_name')
+                    .or(`id.eq.${booking.user_id},clerk_id.eq.${booking.user_id}`)
+                    .maybeSingle();
+
+                if (userData) {
+                    finalEmail = userData.email;
+                    finalName = userData.full_name || finalName;
+                    console.log('[SETTLEMENT_EMAIL_DEBUG] resolved user email:', finalEmail);
+                } else {
+                    console.warn('[SETTLEMENT_EMAIL] No user found for lookup:', booking.user_id);
+                }
+            }
+
+            if (finalEmail) {
+                console.log('[SETTLEMENT_EMAIL] Sending email to:', finalEmail, 'with code:', booking.booking_code);
+                const isGuest = !booking.user_id || booking.user_id === 'GUEST';
+
+                const emailResult = await unifiedEmailService.sendBookingEmail({
+                    category: serviceType,
+                    guest_name: finalName,
+                    guest_email: finalEmail,
+                    booking_code: booking.booking_code || 'N/A',
+                    title: booking.title,
+                    description: booking.description || '',
+                    start_date: booking.start_date,
+                    end_date: booking.end_date,
+                    total_amount: booking.total_amount,
+                    currency: booking.currency || 'USD',
+                    location_summary: booking.location_summary,
+                    metadata: booking.metadata,
+                    isGuest: isGuest, // Pass guest flag for CTA display
+                });
+                console.log('[SETTLEMENT_EMAIL] Result:', emailResult);
+            } else {
+                console.warn('[SETTLEMENT_EMAIL] No email found for booking:', bookingId);
+            }
+        } catch (emailErr) {
+            console.error('[SETTLEMENT_EMAIL_ERROR]', emailErr);
+        }
+
+        // 6. Record Completion Event (Idempotency Key)
         // Handled race condition with try-catch or explicit code check
         const { error: eventInsertError } = await this.supabase
             .from('booking_events')

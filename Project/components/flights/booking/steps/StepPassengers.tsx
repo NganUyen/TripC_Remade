@@ -1,13 +1,46 @@
-"use client"
-
+import { useState, useEffect } from "react"
 import { useBookingStore } from "@/store/useBookingStore"
-import { User, Plus, UserPlus } from "lucide-react"
+import { User, Plus, UserPlus, Trash2, Check, Loader2 } from "lucide-react"
 import { FlightDetailsSummary } from "../FlightDetailsSummary"
 import { toast } from "sonner"
 import { DatePicker } from "@/components/ui/date-picker"
+import { getSavedTravelers, type SavedTraveler } from "@/lib/actions/saved-travelers"
 
 export function StepPassengers() {
     const { passengers, contact, updatePassenger, setContact, setStep } = useBookingStore()
+    const [savedTravelers, setSavedTravelers] = useState<SavedTraveler[]>([])
+    const [isLoading, setIsLoading] = useState(true)
+
+    useEffect(() => {
+        async function loadTravelers() {
+            setIsLoading(true)
+            const data = await getSavedTravelers()
+            setSavedTravelers(data || [])
+            setIsLoading(false)
+        }
+        loadTravelers()
+    }, [])
+
+    const handleSelectTraveler = (passengerIndex: number, traveler: SavedTraveler) => {
+        updatePassenger(passengerIndex, {
+            firstName: traveler.first_name,
+            lastName: traveler.last_name,
+            gender: traveler.gender as any,
+            dateOfBirth: traveler.date_of_birth || '',
+            nationality: traveler.nationality || '',
+            passportNumber: traveler.passport_number || '',
+        })
+
+        // Also update contact if it's the first passenger and contact is empty
+        if (passengerIndex === 0 && (!contact.email || !contact.phone)) {
+            setContact({
+                email: traveler.email || contact.email,
+                phone: traveler.phone_number || contact.phone
+            })
+        }
+
+        toast.success(`${traveler.first_name} ${traveler.last_name} loaded`)
+    }
 
     const handleContinue = () => {
         // Validate Passengers
@@ -67,18 +100,57 @@ export function StepPassengers() {
 
                         <div className="mb-6 pb-6 border-b border-slate-100 dark:border-slate-800">
                             <div className="flex items-center justify-between mb-4">
-                                <span className="text-sm text-slate-500 font-medium">Select from saved travelers</span>
+                                <span className="text-sm font-bold text-slate-900 dark:text-white">Quick Select</span>
                                 <button className="flex items-center gap-2 px-4 py-2 rounded-full border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                                     <Plus className="w-3 h-3" /> Add New
                                 </button>
                             </div>
 
-                            {/* Empty State for Saved Travelers */}
-                            <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-8 flex flex-col items-center justify-center text-center border border-dashed border-slate-200 dark:border-slate-700">
-                                <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center mb-3">
-                                    <UserPlus className="w-5 h-5 text-slate-400" />
-                                </div>
-                                <p className="text-sm text-slate-500">No saved travelers yet. Add one to speed up future bookings.</p>
+                            {/* Saved Travelers Selection */}
+                            <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide -mx-2 px-2">
+                                {isLoading ? (
+                                    <div className="py-4 flex items-center gap-2 text-slate-400 text-sm">
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        <span>Loading saved travelers...</span>
+                                    </div>
+                                ) : savedTravelers.length > 0 ? (
+                                    savedTravelers.map((traveler) => {
+                                        const isSelected = p.firstName === traveler.first_name && p.lastName === traveler.last_name;
+                                        return (
+                                            <button
+                                                key={traveler.id}
+                                                onClick={() => handleSelectTraveler(index, traveler)}
+                                                className={`flex-shrink-0 flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all min-w-[120px] ${isSelected
+                                                        ? 'bg-orange-50 border-orange-200 dark:bg-orange-950/20 dark:border-orange-900/50 ring-2 ring-orange-500/20'
+                                                        : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 hover:border-slate-200 dark:hover:border-slate-600'
+                                                    }`}
+                                            >
+                                                <div className={`w-12 h-12 rounded-full flex items-center justify-center relative ${isSelected ? 'bg-orange-500 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-400'
+                                                    }`}>
+                                                    <User className="w-6 h-6" />
+                                                    {isSelected && (
+                                                        <div className="absolute -right-1 -bottom-1 w-5 h-5 bg-orange-600 border-2 border-white dark:border-slate-900 rounded-full flex items-center justify-center">
+                                                            <Check className="w-3 h-3 text-white" />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="text-center">
+                                                    <p className={`text-xs font-bold truncate max-w-[100px] ${isSelected ? 'text-orange-600' : 'text-slate-900 dark:text-white'}`}>
+                                                        {traveler.first_name}
+                                                    </p>
+                                                    <p className="text-[10px] text-slate-400 font-medium">{traveler.nationality || 'Traveler'}</p>
+                                                </div>
+                                            </button>
+                                        );
+                                    })
+                                ) : (
+                                    <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-6 flex flex-col items-center justify-center text-center border border-dashed border-slate-200 dark:border-slate-700 w-full">
+                                        <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center mb-2">
+                                            <UserPlus className="w-4 h-4 text-slate-400" />
+                                        </div>
+                                        <p className="text-xs text-slate-500">No saved travelers yet. They'll appear here after your first booking.</p>
+                                    </div>
+                                )}
                             </div>
                         </div>
 

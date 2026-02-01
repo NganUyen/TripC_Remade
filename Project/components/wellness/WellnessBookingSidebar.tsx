@@ -63,19 +63,7 @@ export function WellnessBookingSidebar({ experience }: WellnessBookingSidebarPro
             return
         }
 
-        if (!isSignedIn) {
-            toast('Please sign in to book', {
-                action: {
-                    label: 'Sign In',
-                    onClick: () => openSignIn({ redirectUrl: window.location.href })
-                }
-            })
-            openSignIn({
-                afterSignInUrl: window.location.href,
-                afterSignUpUrl: window.location.href
-            })
-            return
-        }
+        // Guest booking is allowed
 
         // Validate contact info
         if (!contact.name || !contact.email) {
@@ -97,7 +85,7 @@ export function WellnessBookingSidebar({ experience }: WellnessBookingSidebarPro
             }
 
             const result = await createWellnessBooking({
-                user_id: user.id,
+                user_id: user?.id,
                 experience_id: experience.id,
                 total_amount: totalPrice,
                 booking_details: bookingData,
@@ -108,7 +96,7 @@ export function WellnessBookingSidebar({ experience }: WellnessBookingSidebarPro
                 guest_details: contact
             })
 
-            if (result.success) {
+            if (result.success && result.booking) {
                 toast.success("Booking created!")
                 // Redirect to Global Checkout
                 router.push(`/checkout?bookingId=${result.booking.id}`)

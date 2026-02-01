@@ -6,7 +6,8 @@ export type ServiceType =
     | 'transport'
     | 'wellness'
     | 'activity'
-    | 'event';
+    | 'event'
+    | 'entertainment';
 
 export type BookingStatus =
     | 'draft'
@@ -86,12 +87,26 @@ export interface EventCheckoutDetails {
     specialRequests?: string;
 }
 
+export interface EntertainmentCheckoutDetails {
+    itemId: string;
+    sessionId?: string;
+    ticketTypeId: string;
+    quantity: number;
+    guestDetails: {
+        name: string;
+        email: string;
+        phone?: string;
+    };
+    specialRequests?: string;
+}
+
 // Discriminated Union for Payload
 export type CheckoutPayload =
     | ({ serviceType: 'shop' } & BaseCheckoutPayload & ShopCheckoutDetails)
     | ({ serviceType: 'hotel' } & BaseCheckoutPayload & HotelCheckoutDetails)
     | ({ serviceType: 'flight' } & BaseCheckoutPayload & FlightCheckoutDetails)
     | ({ serviceType: 'event' } & BaseCheckoutPayload & EventCheckoutDetails)
+    | ({ serviceType: 'entertainment' } & BaseCheckoutPayload & EntertainmentCheckoutDetails)
     | ({ serviceType: 'dining' } & BaseCheckoutPayload & any) // Placeholder
     | ({ serviceType: 'transport' } & BaseCheckoutPayload & any) // Placeholder
     | ({ serviceType: 'wellness' } & BaseCheckoutPayload & any); // Placeholder

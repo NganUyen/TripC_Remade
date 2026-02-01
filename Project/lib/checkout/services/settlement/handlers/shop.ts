@@ -1,5 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { ISettlementHandler } from '../types';
+import { resolveUserUuid } from '../utils';
 
 export class ShopSettlementHandler implements ISettlementHandler {
     constructor(private supabase: SupabaseClient) { }
@@ -21,11 +22,7 @@ export class ShopSettlementHandler implements ISettlementHandler {
             .maybeSingle();
 
         if (existingOrder) {
-            console.log('[SHOP_SETTLEMENT_HANDLER] Order already exists (Idempotent)', {
-                bookingId: booking.id,
-                orderId: existingOrder.id,
-                orderNumber: existingOrder.order_number
-            });
+            console.log('[SHOP_SETTLEMENT] Idempotent: Order already exists');
             return; // Already settled
         }
 
@@ -70,11 +67,15 @@ export class ShopSettlementHandler implements ISettlementHandler {
 
         // 3. Create Shop Order
         const orderNumber = `ORD-${Date.now()}`;
+        const userUuid = await resolveUserUuid(this.supabase, booking.user_id);
+
+        console.log('[SHOP_SETTLEMENT] Resolved internal UUID:', userUuid || 'GUEST');
+
         const { data: order, error: orderError } = await this.supabase
             .from('shop_orders')
             .insert({
                 order_number: orderNumber,
-                user_id: booking.user_id,
+                user_id: userUuid,
                 cart_id: cartId,
                 booking_id: booking.id,
                 subtotal: Math.floor(Number(booking.total_amount)),
@@ -205,6 +206,6 @@ export class ShopSettlementHandler implements ISettlementHandler {
         }
 
         // 8. Success
-        console.log('[SHOP_SETTLEMENT_HANDLER] Detailed settlement complete');
+        console.log('[SHOP_SETTLEMENT] Successfully completed shop settlement');
     }
 }

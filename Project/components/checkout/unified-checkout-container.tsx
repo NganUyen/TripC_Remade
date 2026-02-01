@@ -20,21 +20,35 @@ import { cn } from '@/lib/utils';
 interface Props {
     serviceType: ServiceType;
     initialData?: any;
+    initialStep?: 'details' | 'payment';
+    existingBooking?: any;
 }
 
-export const UnifiedCheckoutContainer = ({ serviceType, initialData }: Props) => {
+export const UnifiedCheckoutContainer = ({
+    serviceType,
+    initialData,
+    initialStep = 'details',
+    existingBooking
+}: Props) => {
     const { user } = useUser();
     const { initializeCheckout, initiatePayment, isLoading } = useUnifiedCheckout();
 
-    const [step, setStep] = useState<'details' | 'payment'>('details'); // TODO: Add 'cart' and 'complete' support if needed
+    // If existingBooking is provided, we start at 'payment' regardless of initialStep (safety check)
+    // or respect initialStep if it makes sense.
+    // Actually, if existingBooking is present, we likely skip details.
+    const [step, setStep] = useState<'details' | 'payment'>(
+        existingBooking ? 'payment' : initialStep
+    );
 
     // Derived state for Steps component
     const getCurrentStep = () => {
-        if (serviceType === 'shop' && !bookingId) return 'details'; // or 'cart' if we had previous step
+        if (serviceType === 'shop' && !bookingId) return 'details';
         if (step === 'payment') return 'payment';
         return 'details';
     };
-    const [bookingId, setBookingId] = useState<string | null>(null);
+
+    // Initialize state from existingBooking if avail
+    const [bookingId, setBookingId] = useState<string | null>(existingBooking?.id || null);
     const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
     const [bookingAmount, setBookingAmount] = useState<number>(0);
     // Default currency based on service type - VND for local services, USD for shop
@@ -46,14 +60,9 @@ export const UnifiedCheckoutContainer = ({ serviceType, initialData }: Props) =>
     const router = useRouter();
 
     const handleDetailsSubmit = async (details: any) => {
-        if (!user) {
-            toast.error('Please login to continue');
-            return;
-        }
-
         const payload: CheckoutPayload = {
             serviceType,
-            userId: user.id, // Clerk ID
+            userId: user?.id || 'GUEST', // Clerk ID or GUEST
             currency: defaultCurrency, // VND for events/hotels, USD for shop
             ...details
         };

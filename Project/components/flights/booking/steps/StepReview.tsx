@@ -44,6 +44,7 @@ export function StepReview() {
                 startDate: outboundFlight?.rawDepartureAt || trip.date,
                 endDate: returnFlight?.rawDepartureAt || returnFlight?.rawArrivalAt || trip.returnDate || trip.date,
                 totalAmount: total,
+                currency: 'USD',
                 guestDetails: {
                     contact,
                     passengers: passengers.map(p => ({
@@ -63,7 +64,10 @@ export function StepReview() {
                     seats,
                     extras,
                     insurance,
-                    selectedFlights
+                    selectedFlights,
+                    flightId: outboundFlight?.id,
+                    offerId: outboundFlight?.id, // Use flight ID as offer ID in this mock
+                    contactInfo: contact
                 }
             }
 

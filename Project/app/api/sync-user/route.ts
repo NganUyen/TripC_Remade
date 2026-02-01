@@ -1,6 +1,7 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
+import { createServiceSupabaseClient } from "@/lib/supabase-server";
 
 /**
  * Manual user sync endpoint
@@ -40,43 +41,83 @@ export async function POST() {
       .eq("clerk_id", userId)
       .single();
 
-    if (existingUser) {
-      return NextResponse.json({
-        success: true,
-        message: "User already exists in Supabase",
-        user: existingUser,
-      });
+    let finalUser = existingUser;
+
+    if (!existingUser) {
+      // Insert user into Supabase
+      const { data, error } = await supabase
+        .from("users")
+        .insert({
+          clerk_id: userId,
+          email: user.emailAddresses[0]?.emailAddress || "",
+          first_name: user.firstName || null,
+          last_name: user.lastName || null,
+          name: `${user.firstName || ""} ${user.lastName || ""}`.trim() || null,
+          image_url: user.imageUrl || null,
+          is_email_verified:
+            user.emailAddresses[0]?.verification?.status === "verified",
+          membership_tier: "BRONZE",
+          tcent_balance: 0,
+          tcent_pending: 0,
+          lifetime_spend: 0,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error creating user in Supabase:", error);
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+      finalUser = data;
     }
 
-    // Insert user into Supabase
-    const { data, error } = await supabase
-      .from("users")
-      .insert({
-        clerk_id: userId,
-        email: user.emailAddresses[0]?.emailAddress || "",
-        first_name: user.firstName || null,
-        last_name: user.lastName || null,
-        name: `${user.firstName || ""} ${user.lastName || ""}`.trim() || null,
-        image_url: user.imageUrl || null,
-        is_email_verified:
-          user.emailAddresses[0]?.verification?.status === "verified",
-        membership_tier: "BRONZE",
-        tcent_balance: 0,
-        tcent_pending: 0,
-        lifetime_spend: 0,
-      })
-      .select()
-      .single();
+    // --- GUEST DATA SYNC LOGIC ---
+    // Always run this to claim any new guest bookings made with this email
+    const userEmail = user.emailAddresses[0]?.emailAddress;
+    const dbUserId = finalUser.id; // UUID from users table
+    const clerkId = userId;        // Clerk ID string
 
-    if (error) {
-      console.error("Error creating user in Supabase:", error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    if (userEmail) {
+      console.log(`[SyncUser] Checking for guest data to claim for ${userEmail}`);
+
+      // 1. Sync Bookings (Activity, Wellness, Dining, Transport, Flight, etc.)
+      const { count: bookingsCount, error: bookingsError } = await supabase
+        .from("bookings")
+        .update({ user_id: clerkId })
+        .eq("user_id", "GUEST")
+        .filter("guest_details->>email", "eq", userEmail);
+
+      if (bookingsError) console.error("Error syncing bookings:", bookingsError);
+      else if (bookingsCount && bookingsCount > 0) console.log(`[SyncUser] Synced ${bookingsCount} bookings`);
+
+      // 2. Sync Shop Orders
+      const { count: ordersCount, error: ordersError } = await supabase
+        .from("shop_orders")
+        .update({ user_id: dbUserId })
+        .is("user_id", null)
+        .filter("shipping_address_snapshot->>email", "eq", userEmail);
+
+      if (ordersError) console.error("Error syncing shop orders:", ordersError);
+      else if (ordersCount && ordersCount > 0) console.log(`[SyncUser] Synced ${ordersCount} shop orders`);
+
+      // 3. Sync Event Bookings
+      const { count: eventCount, error: eventError } = await supabase
+        .from("event_bookings")
+        .update({
+          external_user_ref: clerkId,
+          user_uuid: dbUserId
+        })
+        .eq("external_user_ref", "GUEST")
+        .eq("guest_email", userEmail);
+
+      if (eventError) console.error("Error syncing event bookings:", eventError);
+      else if (eventCount && eventCount > 0) console.log(`[SyncUser] Synced ${eventCount} event bookings`);
     }
 
     return NextResponse.json({
       success: true,
-      message: "User synced to Supabase successfully!",
-      user: data,
+      message: existingUser ? "Sync complete (existing user)" : "User synced and guest data claimed!",
+      user: finalUser,
     });
   } catch (error: any) {
     console.error("Sync error:", error);

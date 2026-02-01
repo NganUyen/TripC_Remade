@@ -3,7 +3,7 @@ import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Providers } from "@/components/Providers";
-import { SyncUser } from "@/components/SyncUser"; // TODO: Re-enable after `npx convex dev` is run
+import { SyncSupabaseUser } from "@/components/SyncSupabaseUser";
 import { Toaster } from "@/components/ui/sonner";
 import { ConditionalLayout } from "@/components/ConditionalLayout";
 
@@ -38,7 +38,7 @@ export default function RootLayout({
       </head>
       <body className="bg-background-light dark:bg-background-dark font-display min-h-screen flex flex-col text-slate-900 dark:text-slate-100 antialiased overflow-x-hidden">
         <Providers>
-          {/* <SyncUser /> */}
+          <SyncSupabaseUser />
           <ConditionalLayout>{children}</ConditionalLayout>
         </Providers>
         <Toaster

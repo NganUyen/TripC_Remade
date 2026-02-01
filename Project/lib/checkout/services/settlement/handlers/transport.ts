@@ -5,7 +5,10 @@ export class TransportSettlementHandler implements ISettlementHandler {
     constructor(private supabase: SupabaseClient) { }
 
     async settle(booking: any): Promise<void> {
-        console.log('[TRANSPORT_SETTLEMENT] Starting', { bookingId: booking.id });
+        console.log('[TRANSPORT_SETTLEMENT] Starting settlement for booking:', booking.id);
+
+        const userId = booking.user_id === 'GUEST' ? null : booking.user_id;
+        console.log('[TRANSPORT_SETTLEMENT] Resolved user:', userId || 'GUEST');
 
         // 1. Idempotency Check
         const { data: existing } = await this.supabase
