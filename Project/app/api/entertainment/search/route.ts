@@ -6,16 +6,61 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceSupabaseClient } from "@/lib/supabase-server";
+import { searchItems } from "@/lib/entertainment-mock-data";
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createServiceSupabaseClient();
     const { searchParams } = new URL(request.url);
 
     // Search parameters
     const q = searchParams.get("q") || "";
     const type = searchParams.get("type");
+    const city = searchParams.get("city");
+    const sort = searchParams.get("sort") || "relevance";
+    const limit = Math.min(parseInt(searchParams.get("limit") || "20"), 100);
+    const offset = parseInt(searchParams.get("offset") || "0");
+
+    // Use mock data for now
+    const result = searchItems(q, {
+      type: type || undefined,
+      city: city || undefined,
+      sort: sort || undefined,
+      limit,
+      offset,
+    });
+
+    return NextResponse.json({
+      items: result.items,
+      pagination: {
+        total: result.total,
+        limit,
+        offset,
+        hasMore: offset + limit < result.total,
+      },
+      meta: {
+        query: q,
+        applied_filters: {
+          type: type || undefined,
+          city: city || undefined,
+          sort: sort || undefined,
+        },
+      },
+    });
+  } catch (error: any) {
+    console.error("Search GET error:", error);
+    return NextResponse.json(
+      { error: "Internal server error", details: error.message },
+      { status: 500 },
+    );
+  }
+}
+
+/* Database version for future implementation - currently not used
+async function searchWithDatabase(searchParams: URLSearchParams) {
+    const supabase = createServiceSupabaseClient();
+    const q = searchParams.get("q") || "";
     const category_id = searchParams.get("category_id");
+    const type = searchParams.get("type");
     const min_price = searchParams.get("min_price");
     const max_price = searchParams.get("max_price");
     const city = searchParams.get("city");
@@ -151,18 +196,18 @@ export async function GET(request: NextRequest) {
         },
       },
     });
-  } catch (error: any) {
-    console.error("Search GET error:", error);
-    return NextResponse.json(
-      { error: "Internal server error", details: error.message },
-      { status: 500 },
-    );
-  }
 }
 
-/**
- * Get available filter options based on current search
- */
+async function getAvailableFilters(
+  supabase: any,
+  currentFilters: { q?: string; category_id?: string | null },
+) {
+  // This function is for future use with database search
+  return null;
+}
+*/
+
+/* Original getAvailableFilters implementation - for future database search
 async function getAvailableFilters(
   supabase: any,
   currentFilters: { q?: string; category_id?: string | null },
@@ -221,3 +266,4 @@ async function getAvailableFilters(
     };
   }
 }
+*/

@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceSupabaseClient } from "@/lib/supabase-server";
 import { auth } from "@clerk/nextjs/server";
+import { getItemsWithFilters } from "@/lib/entertainment-mock-data";
 
 /**
  * GET /api/entertainment/items
@@ -15,57 +16,82 @@ import { auth } from "@clerk/nextjs/server";
  */
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createServiceSupabaseClient();
     const { searchParams } = new URL(request.url);
 
     const category = searchParams.get("category");
-    const location = searchParams.get("location");
-    const organizer = searchParams.get("organizer");
-    const status = searchParams.get("status") || "active";
+    const type = searchParams.get("type");
+    const city = searchParams.get("city");
+    const featured = searchParams.get("featured"); // New: filter by featured
+    const minPrice = searchParams.get("minPrice")
+      ? parseFloat(searchParams.get("minPrice")!)
+      : undefined;
+    const maxPrice = searchParams.get("maxPrice")
+      ? parseFloat(searchParams.get("maxPrice")!)
+      : undefined;
     const limit = Math.min(parseInt(searchParams.get("limit") || "20"), 100);
     const offset = parseInt(searchParams.get("offset") || "0");
     const sort = searchParams.get("sort") || "created_at";
 
+    const supabase = createServiceSupabaseClient();
+
+    // Build query
     let query = supabase
       .from("entertainment_items")
-      .select(
-        `
-        *,
-        category:entertainment_categories(*),
-        organizer:entertainment_organizers(*)
-      `,
-        { count: "exact" },
-      )
-      .eq("status", status)
+      .select("*", { count: "exact" })
+      .eq("status", "published")
+      .eq("available", true)
       .range(offset, offset + limit - 1);
 
     // Apply filters
     if (category) {
       query = query.eq("category_id", category);
     }
-    if (location) {
-      query = query.ilike("location", `%${location}%`);
+    if (type) {
+      query = query.eq("type", type);
     }
-    if (organizer) {
-      query = query.eq("organizer_id", organizer);
+    if (city) {
+      // Search in location jsonb field
+      query = query.contains("location", { city });
+    }
+    if (featured === "true") {
+      query = query.eq("is_featured", true);
+    }
+    if (minPrice !== undefined) {
+      query = query.gte("min_price", minPrice);
+    }
+    if (maxPrice !== undefined) {
+      query = query.lte("max_price", maxPrice);
     }
 
     // Apply sorting
     switch (sort) {
       case "rating":
-        query = query.order("average_rating", {
+        query = query
+          .order("rating_average", { ascending: false, nullsFirst: false })
+          .order("rating_count", { ascending: false });
+        break;
+      case "popular":
+        query = query
+          .order("total_bookings", { ascending: false })
+          .order("total_views", { ascending: false });
+        break;
+      case "price_low":
+        query = query.order("min_price", {
+          ascending: true,
+          nullsFirst: false,
+        });
+        break;
+      case "price_high":
+        query = query.order("max_price", {
           ascending: false,
           nullsFirst: false,
         });
         break;
-      case "popular":
-        query = query.order("total_bookings", { ascending: false });
-        break;
-      case "price_low":
-        query = query.order("base_price", { ascending: true });
-        break;
-      case "price_high":
-        query = query.order("base_price", { ascending: false });
+      case "trending":
+        // For trending, prioritize is_trending flag then bookings
+        query = query
+          .order("is_trending", { ascending: false })
+          .order("total_bookings", { ascending: false });
         break;
       case "created_at":
       default:
@@ -76,10 +102,18 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error("Items query error:", error);
-      return NextResponse.json(
-        { error: "Failed to fetch items", details: error.message },
-        { status: 500 },
-      );
+      // Fallback to mock data
+      const result = getItemsWithFilters({
+        category: category || undefined,
+        type: type || undefined,
+        city: city || undefined,
+        minPrice,
+        maxPrice,
+        sort,
+        limit,
+        offset,
+      });
+      return NextResponse.json(result);
     }
 
     return NextResponse.json({
@@ -89,6 +123,10 @@ export async function GET(request: NextRequest) {
         limit,
         offset,
         hasMore: count ? offset + limit < count : false,
+      },
+      meta: {
+        filters: { category, type, city, featured, minPrice, maxPrice },
+        sort,
       },
     });
   } catch (error: any) {

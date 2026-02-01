@@ -7,6 +7,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceSupabaseClient } from "@/lib/supabase-server";
+import { getCategories } from "@/lib/entertainment-mock-data";
 
 /**
  * GET /api/entertainment/categories
@@ -14,6 +15,12 @@ import { createServiceSupabaseClient } from "@/lib/supabase-server";
  */
 export async function GET(request: NextRequest) {
   try {
+    // Use mock data for now
+    const categories = getCategories();
+
+    return NextResponse.json({ categories });
+
+    /* Database version (commented out for now)
     const supabase = createServiceSupabaseClient();
     const { searchParams } = new URL(request.url);
 
@@ -62,6 +69,7 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({ data: categories });
+    */
   } catch (error: any) {
     console.error("Categories GET error:", error);
     return NextResponse.json(

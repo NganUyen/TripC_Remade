@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
-  const bookingIdParam = searchParams.get('bookingId');
+  const bookingIdParam = searchParams.get("bookingId");
 
   try {
     const user = await currentUser();
@@ -14,17 +14,19 @@ export async function GET(request: NextRequest) {
 
     // --- GUEST FETCH (Specific ID) ---
     if (!user && bookingIdParam) {
-      console.log('[BOOKINGS_USER_API] Guest fetch for:', bookingIdParam);
+      console.log("[BOOKINGS_USER_API] Guest fetch for:", bookingIdParam);
       const { data: booking, error } = await supabase
-        .from('bookings')
-        .select(`
+        .from("bookings")
+        .select(
+          `
           *,
           flight_bookings:flight_bookings!booking_id (*),
           transport_bookings:transport_bookings!booking_id (*, transport_routes:route_id (*)),
           shop_orders:shop_orders!booking_id (*)
-        `)
-        .eq('id', bookingIdParam)
-        .eq('user_id', 'GUEST')
+        `,
+        )
+        .eq("id", bookingIdParam)
+        .eq("user_id", "GUEST")
         .single();
 
       if (error || !booking) return NextResponse.json([]);
@@ -45,9 +47,7 @@ export async function GET(request: NextRequest) {
 
     // 2. Fetch all bookings for the resolved Internal UUID or Clerk ID
     // We join the relevant domain tables to get PNR, vehicle info, etc.
-    let query = supabase
-      .from("bookings")
-      .select(`
+    let query = supabase.from("bookings").select(`
         *,
         flight_bookings:flight_bookings!booking_id (*),
         transport_bookings:transport_bookings!booking_id (*, transport_routes:route_id (*)),
@@ -60,25 +60,43 @@ export async function GET(request: NextRequest) {
       query = query.eq("user_id", user.id);
     }
 
-    const { data: bookings, error: bookingsError } = await query
-      .order("created_at", { ascending: false });
+    const { data: bookings, error: bookingsError } = await query.order(
+      "created_at",
+      { ascending: false },
+    );
 
     if (bookingsError) {
       console.error("Fetch bookings error:", bookingsError);
-      return NextResponse.json({ error: bookingsError.message }, { status: 500 });
+      return NextResponse.json(
+        { error: bookingsError.message },
+        { status: 500 },
+      );
     }
 
-    // 3. Keep existing legacy hotel fetch if needed, 
-    // but ideally hotels should also be in 'bookings' table for uniformity.
-    // For now, let's keep it to avoid breaking things.
+    // 3. Fetch hotel bookings (legacy table)
     const { data: hotelBookings } = await supabase
       .from("hotel_bookings")
-      .select(`
+      .select(
+        `
                 *,
                 hotels:hotel_id (name, slug, address, images),
                 hotel_rooms:room_id (title, code)
-            `)
+            `,
+      )
       .eq("external_user_ref", user.id)
+      .order("created_at", { ascending: false });
+
+    // 4. Fetch entertainment bookings
+    const { data: entertainmentBookings } = await supabase
+      .from("entertainment_bookings")
+      .select(
+        `
+        *,
+        item:entertainment_items(id, title, subtitle, images, location, type),
+        session:entertainment_sessions(session_date, start_time, end_time)
+      `,
+      )
+      .eq("user_id", user.id)
       .order("created_at", { ascending: false });
 
     // Combine and transform
@@ -92,6 +110,30 @@ export async function GET(request: NextRequest) {
         image: b.hotels?.images?.[0] || null,
         location: b.hotels?.address?.city || "Vietnam",
       })),
+      ...(entertainmentBookings || []).map((b: any) => ({
+        ...b,
+        id: b.id,
+        category: "entertainment",
+        type: "entertainment",
+        title: b.item?.title || "Entertainment Booking",
+        subtitle: b.item?.subtitle || "Event Ticket",
+        image: b.item?.images?.[0] || null,
+        location:
+          typeof b.item?.location === "object"
+            ? b.item?.location?.city
+            : b.item?.location || "Event Location",
+        status: b.booking_status || "confirmed",
+        payment_status: b.payment_status || "pending",
+        booking_reference: b.booking_reference,
+        total_amount: b.total_amount,
+        currency: b.currency || "USD",
+        quantity: b.total_quantity || 1,
+        event_date: b.session?.session_date,
+        event_time: b.session?.start_time,
+        created_at: b.created_at,
+        customer_name: b.customer_name,
+        customer_email: b.customer_email,
+      })),
       ...(bookings || []).map(transformBooking),
     ];
 
@@ -99,7 +141,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(await handleExpirations(allBookings, supabase));
   } catch (err: any) {
     console.error("User bookings API error:", err);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }
 
@@ -121,19 +166,28 @@ function transformBooking(b: any) {
 
 async function handleExpirations(bookings: any[], supabase: any) {
   const now = new Date();
-  const expired = bookings.filter(b =>
-    (b.status === 'held' || b.status === 'pending') &&
-    b.expires_at && new Date(b.expires_at) < now
+  const expired = bookings.filter(
+    (b) =>
+      (b.status === "held" || b.status === "pending") &&
+      b.expires_at &&
+      new Date(b.expires_at) < now,
   );
 
   if (expired.length > 0) {
     await Promise.all([
-      ...expired.map(b => b.category === 'hotel'
-        ? supabase.from('hotel_bookings').update({ status: 'cancelled' }).eq('id', b.id)
-        : supabase.from('bookings').update({ status: 'cancelled' }).eq('id', b.id)
-      )
+      ...expired.map((b) =>
+        b.category === "hotel"
+          ? supabase
+              .from("hotel_bookings")
+              .update({ status: "cancelled" })
+              .eq("id", b.id)
+          : supabase
+              .from("bookings")
+              .update({ status: "cancelled" })
+              .eq("id", b.id),
+      ),
     ]);
-    expired.forEach(b => b.status = 'cancelled');
+    expired.forEach((b) => (b.status = "cancelled"));
   }
   return bookings;
 }
