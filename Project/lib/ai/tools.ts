@@ -604,6 +604,100 @@ export const paymentTools = {
 };
 
 // ============================================================================
+// 11. ITINERARY TOOLS
+// ============================================================================
+
+export const itineraryTools = {
+  generate_itinerary: {
+    description:
+      "Generate a personalized AI-powered travel itinerary for a trip. Creates detailed day-by-day plans with activities, accommodations, meals, and budget.",
+    parameters: z.object({
+      destination: z
+        .string()
+        .describe(
+          'Destination city or country (e.g., "Paris, France", "Tokyo")',
+        ),
+      start_date: z.string().describe("Trip start date in YYYY-MM-DD format"),
+      end_date: z.string().describe("Trip end date in YYYY-MM-DD format"),
+      adults: z.number().describe("Number of adult travelers"),
+      children: z
+        .number()
+        .optional()
+        .describe("Number of children (0-17 years)"),
+      budget_level: z
+        .enum(["budget", "moderate", "luxury"])
+        .optional()
+        .describe("Budget level for the trip (default: moderate)"),
+      interests: z
+        .array(z.string())
+        .describe(
+          'Travel interests (e.g., ["culture", "food", "adventure", "relaxation", "shopping", "nightlife"])',
+        ),
+      travel_style: z
+        .array(z.string())
+        .describe(
+          'Travel style preferences (e.g., ["backpacker", "luxury", "family-friendly", "romantic", "solo"])',
+        ),
+      pace: z
+        .enum(["relaxed", "moderate", "packed"])
+        .optional()
+        .describe(
+          "Trip pace - how many activities per day (default: moderate)",
+        ),
+      special_requests: z
+        .string()
+        .optional()
+        .describe("Any special requests or requirements"),
+    }),
+  },
+
+  get_itinerary_templates: {
+    description:
+      "Get popular pre-made itinerary templates for inspiration. These are curated itineraries for popular destinations.",
+    parameters: z.object({
+      destination: z
+        .string()
+        .optional()
+        .describe("Filter templates by destination"),
+      duration: z
+        .number()
+        .optional()
+        .describe("Filter by trip duration in days"),
+      interests: z
+        .array(z.string())
+        .optional()
+        .describe("Filter by travel interests"),
+    }),
+  },
+
+  save_itinerary: {
+    description:
+      "Save a generated itinerary to the user's account. User must be authenticated.",
+    parameters: z.object({
+      itinerary_id: z.string().describe("The ID of the itinerary to save"),
+      title: z.string().optional().describe("Custom title for the itinerary"),
+      is_public: z
+        .boolean()
+        .optional()
+        .describe("Whether to make the itinerary public (default: false)"),
+    }),
+  },
+
+  get_saved_itineraries: {
+    description:
+      "Get all itineraries saved by the current user. User must be authenticated.",
+    parameters: z.object({}),
+  },
+
+  get_itinerary_details: {
+    description: "Get detailed information about a specific itinerary.",
+    parameters: z.object({
+      itinerary_id: z.string().describe("The unique ID of the itinerary"),
+    }),
+  },
+};
+
+// ============================================================================
 // COMBINED TOOL REGISTRY
 // ============================================================================
 
@@ -619,6 +713,7 @@ export const allTools = {
   ...voucherTools,
   ...promotionTools,
   ...paymentTools,
+  ...itineraryTools,
 };
 
 // Export tool names for easy reference
@@ -637,4 +732,5 @@ export const toolCategories = {
   Vouchers: Object.keys(voucherTools),
   Promotions: Object.keys(promotionTools),
   Payment: Object.keys(paymentTools),
+  Itinerary: Object.keys(itineraryTools),
 };

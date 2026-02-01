@@ -99,6 +99,19 @@ export async function POST() {
 
       if (ordersError) console.error("Error syncing shop orders:", ordersError);
       else if (ordersCount && ordersCount > 0) console.log(`[SyncUser] Synced ${ordersCount} shop orders`);
+
+      // 3. Sync Event Bookings
+      const { count: eventCount, error: eventError } = await supabase
+        .from("event_bookings")
+        .update({
+          external_user_ref: clerkId,
+          user_uuid: dbUserId
+        })
+        .eq("external_user_ref", "GUEST")
+        .eq("guest_email", userEmail);
+
+      if (eventError) console.error("Error syncing event bookings:", eventError);
+      else if (eventCount && eventCount > 0) console.log(`[SyncUser] Synced ${eventCount} event bookings`);
     }
 
     return NextResponse.json({

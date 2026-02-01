@@ -33,7 +33,13 @@ export function Header() {
           <div className="flex items-center gap-6">
             <nav className="hidden lg:flex items-center gap-6">
               <Link
-                href="#"
+                href="/itinerary/create"
+                className="text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-primary transition-colors"
+              >
+                Plan Trip
+              </Link>
+              <Link
+                href="/my-trips"
                 className="text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-primary transition-colors"
               >
                 My Trips
@@ -86,7 +92,9 @@ export function Header() {
                 <div className="flex items-center">
                   <SignInButton mode="modal">
                     <button className="flex items-center gap-2 px-4 py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-full font-bold hover:opacity-90 transition-opacity">
-                      <span className="material-symbols-outlined text-[20px]">account_circle</span>
+                      <span className="material-symbols-outlined text-[20px]">
+                        account_circle
+                      </span>
                       <span>Sign In</span>
                     </button>
                   </SignInButton>

@@ -50,19 +50,10 @@ export const UnifiedCheckoutContainer = ({
     // Initialize state from existingBooking if avail
     const [bookingId, setBookingId] = useState<string | null>(existingBooking?.id || null);
     const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
-    const [bookingAmount, setBookingAmount] = useState<number>(existingBooking?.total_amount || 0);
-
-    // Determine currency. 
-    // Shop default is USD. Migration: existing bookings might be VND (e.g. Transport usually VND).
-    // Let's default to 'VND' if not specified for non-shop, or try to infer.
-    // Existing Supabase bookings for transport don't always have currency column, usually implied VND.
-    // Shop bookings might have it. 
-    // Let's assume 'VND' for non-shop/transport existing bookings unless overridden.
-    // If existingBooking has currency, use it.
-    const [bookingCurrency, setBookingCurrency] = useState<string>(
-        existingBooking?.currency || (serviceType === 'shop' ? 'USD' : 'VND')
-    );
-
+    const [bookingAmount, setBookingAmount] = useState<number>(0);
+    // Default currency based on service type - VND for local services, USD for shop
+    const defaultCurrency = serviceType === 'shop' ? 'USD' : 'VND';
+    const [bookingCurrency, setBookingCurrency] = useState<string>(defaultCurrency);
     const [showCurrencyGuard, setShowCurrencyGuard] = useState(false);
     const [pendingMethod, setPendingMethod] = useState<string | null>(null);
     const [isTermsAccepted, setIsTermsAccepted] = useState(false);
@@ -72,7 +63,7 @@ export const UnifiedCheckoutContainer = ({
         const payload: CheckoutPayload = {
             serviceType,
             userId: user?.id || 'GUEST', // Clerk ID or GUEST
-            currency: 'USD', // Shop default to USD
+            currency: defaultCurrency, // VND for events/hotels, USD for shop
             ...details
         };
 

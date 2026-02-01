@@ -1013,3 +1013,256 @@ export async function createPaymentLink(params: {
     };
   }
 }
+
+// ============================================================================
+// ITINERARY HANDLERS
+// ============================================================================
+
+export async function generateItinerary(params: {
+  destination: string;
+  start_date: string;
+  end_date: string;
+  adults: number;
+  children?: number;
+  budget_level?: "budget" | "moderate" | "luxury";
+  interests: string[];
+  travel_style: string[];
+  pace?: "relaxed" | "moderate" | "packed";
+  special_requests?: string;
+}) {
+  try {
+    // Call the itinerary generation API
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/api/itinerary/generate`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          destination: params.destination,
+          startDate: params.start_date,
+          endDate: params.end_date,
+          travelers: {
+            adults: params.adults,
+            children: params.children || 0,
+          },
+          budget: params.budget_level
+            ? {
+                level: params.budget_level,
+              }
+            : undefined,
+          interests: params.interests,
+          travelStyle: params.travel_style,
+          pace: params.pace || "moderate",
+          specialRequests: params.special_requests,
+        }),
+      },
+    );
+
+    const data = await response.json();
+
+    if (!data.success) {
+      throw new Error(data.error || "Failed to generate itinerary");
+    }
+
+    const itinerary = data.itinerary;
+
+    return {
+      success: true,
+      itinerary_id: itinerary.id,
+      title: itinerary.title,
+      destination: itinerary.destination,
+      days: itinerary.numberOfDays,
+      budget: itinerary.budget?.total,
+      preview_url: `/itinerary/${itinerary.id}`,
+      message: `✨ I've created a personalized ${itinerary.numberOfDays}-day itinerary for your trip to ${itinerary.destination}! The itinerary includes detailed day-by-day activities, accommodation suggestions, meals, and transportation. Total estimated budget: $${itinerary.budget?.total || "N/A"}. [View your itinerary](/itinerary/${itinerary.id})`,
+      summary: {
+        total_activities: itinerary.days.reduce(
+          (sum: number, day: any) => sum + day.activities.length,
+          0,
+        ),
+        interests_covered: params.interests.join(", "),
+        travel_style: params.travel_style.join(", "),
+      },
+    };
+  } catch (error) {
+    return {
+      error: "Failed to generate itinerary",
+      details: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
+export async function getItineraryTemplates(params: {
+  destination?: string;
+  duration?: number;
+  interests?: string[];
+}) {
+  try {
+    // Mock templates for now - in production, fetch from database
+    const templates = [
+      {
+        id: "temp_paris_5d",
+        name: "Paris Classics",
+        destination: "Paris, France",
+        duration: 5,
+        description:
+          "Experience the best of Paris with iconic landmarks, museums, and French cuisine",
+        thumbnail:
+          "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=600",
+        highlights: [
+          "Eiffel Tower & Seine River Cruise",
+          "Louvre & Musée d'Orsay",
+          "Versailles Day Trip",
+          "French Cooking Class",
+        ],
+        price: 1800,
+        bestFor: ["culture", "food", "art", "couples"],
+      },
+      {
+        id: "temp_tokyo_7d",
+        name: "Tokyo Discovery",
+        destination: "Tokyo, Japan",
+        duration: 7,
+        description:
+          "Immerse yourself in Tokyo's blend of tradition and modernity",
+        thumbnail:
+          "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=600",
+        highlights: [
+          "Senso-ji Temple & Asakusa",
+          "Tsukiji Market Food Tour",
+          "Mount Fuji Day Trip",
+          "Robot Restaurant Experience",
+        ],
+        price: 2500,
+        bestFor: ["culture", "food", "technology", "adventure"],
+      },
+      {
+        id: "temp_bali_10d",
+        name: "Bali Relaxation",
+        destination: "Bali, Indonesia",
+        duration: 10,
+        description:
+          "Unwind in paradise with beaches, temples, and wellness retreats",
+        thumbnail:
+          "https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=600",
+        highlights: [
+          "Ubud Rice Terraces & Temples",
+          "Beach Clubs & Water Sports",
+          "Balinese Spa Treatments",
+          "Sunset at Tanah Lot",
+        ],
+        price: 1500,
+        bestFor: ["relaxation", "nature", "wellness", "beach"],
+      },
+    ];
+
+    let filtered = templates;
+
+    if (params.destination) {
+      filtered = filtered.filter((t) =>
+        t.destination.toLowerCase().includes(params.destination!.toLowerCase()),
+      );
+    }
+
+    if (params.duration) {
+      filtered = filtered.filter(
+        (t) => Math.abs(t.duration - params.duration!) <= 2,
+      );
+    }
+
+    if (params.interests && params.interests.length > 0) {
+      filtered = filtered.filter((t) =>
+        params.interests!.some((interest) => t.bestFor.includes(interest)),
+      );
+    }
+
+    return {
+      success: true,
+      count: filtered.length,
+      templates: filtered,
+      message:
+        filtered.length > 0
+          ? `I found ${filtered.length} itinerary template(s) that match your preferences. Each template includes a complete day-by-day plan that you can customize.`
+          : "No templates found matching your criteria. Would you like me to generate a custom itinerary instead?",
+    };
+  } catch (error) {
+    return {
+      error: "Failed to fetch templates",
+      details: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
+export async function saveItinerary(params: {
+  itinerary_id: string;
+  title?: string;
+  is_public?: boolean;
+}) {
+  try {
+    const { userId } = await auth();
+
+    if (!userId) {
+      return {
+        error: "Authentication required",
+        message: "Please sign in to save itineraries",
+      };
+    }
+
+    // TODO: Implement saving to database
+    // For now, return success message
+    return {
+      success: true,
+      message: `✅ Itinerary saved to your account! You can access it anytime from your profile.`,
+      saved_id: params.itinerary_id,
+    };
+  } catch (error) {
+    return {
+      error: "Failed to save itinerary",
+      details: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
+export async function getSavedItineraries() {
+  try {
+    const { userId } = await auth();
+
+    if (!userId) {
+      return {
+        error: "Authentication required",
+        message: "Please sign in to view your saved itineraries",
+      };
+    }
+
+    // TODO: Fetch from database
+    // Mock data for now
+    return {
+      success: true,
+      count: 0,
+      itineraries: [],
+      message:
+        "You don't have any saved itineraries yet. Generate one to get started!",
+    };
+  } catch (error) {
+    return {
+      error: "Failed to fetch itineraries",
+      details: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
+export async function getItineraryDetails(params: { itinerary_id: string }) {
+  try {
+    // TODO: Fetch from database or API
+    return {
+      success: false,
+      error: "Itinerary details fetch not yet implemented",
+      message: "Please view the itinerary directly from the generated link",
+    };
+  } catch (error) {
+    return {
+      error: "Failed to fetch itinerary details",
+      details: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}

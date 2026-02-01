@@ -48,47 +48,202 @@ export class CheckoutService {
     let totalAmount = 0;
     let title = "Booking";
 
-    if (payload.serviceType === "shop") {
-      totalAmount = payload.items.reduce(
-        (sum: number, item: any) => sum + item.price * item.quantity,
-        0,
-      );
+    if (payload.serviceType === 'shop') {
+      totalAmount = payload.items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
 
-      const firstItemName = payload.items[0]?.name || "Unknown Item";
+      const firstItemName = payload.items[0]?.name || 'Unknown Item';
       if (payload.items.length === 1) {
         title = `Shop Order: ${firstItemName}`;
       } else {
         title = `Shop Order: ${firstItemName} + ${payload.items.length - 1} more`;
       }
-    } else if (payload.serviceType === "transport") {
+    } else if (payload.serviceType === 'transport') {
       // Basic fallback total calculation if not provided (though route logic usually sends it)
       // But payload from transport checkout usually relies on `items` price logic?
       if (payload.items && payload.items.length > 0) {
-        totalAmount = payload.items.reduce(
-          (sum: number, item: any) => sum + item.price * item.quantity,
-          0,
-        );
-        // Apply tax if needed, but usually frontend sends pre-calculated or reliable values?
-        // Actually, CheckoutService typically trusts backend calculation.
+        totalAmount = payload.items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
+        // Apply tax if needed, but usually frontend sends pre-calculated or reliable values? 
+        // Actually, CheckoutService typically trusts backend calculation. 
         // For now, let's stick to the items sum.
         // Note: Transport frontend added 10% tax. Ideally we replicate that here or trust items.
-        // Let's assume items price includes it or we take it from totalAmount if passed?
+        // Let's assume items price includes it or we take it from totalAmount if passed? 
         // The Interface typically calculates from items.
         totalAmount = Math.ceil(totalAmount * 1.1); // Match frontend logic 10% tax? Or just trust items?
         // Let's log it.
-        console.log(
-          "[CheckoutService] Transport calculated amount:",
-          totalAmount,
-        );
+        console.log('[CheckoutService] Transport calculated amount:', totalAmount);
       }
-      title = payload.items?.[0]?.name || "Transport Booking";
-    } else if (payload.serviceType === "hotel") {
+      title = payload.items?.[0]?.name || 'Transport Booking';
+    } else if (payload.serviceType === 'event') {
+      // Event checkout - validate and calculate price server-side
+      const { eventId, sessionId, ticketTypeId, adultCount, childCount = 0, guestDetails } = payload as any;
+      const totalTickets = adultCount + childCount;
+
+      // Fetch Event and Ticket Type for price verification
+      const { data: event } = await this.supabase
+        .from('events')
+        .select('title, cover_image_url, location_summary')
+        .eq('id', eventId)
+        .single();
+
+      const { data: session } = await this.supabase
+        .from('event_sessions')
+        .select('session_date, name')
+        .eq('id', sessionId)
+        .single();
+
+      const { data: ticketType } = await this.supabase
+        .from('event_ticket_types')
+        .select('name, price, currency, total_capacity, sold_count, held_count')
+        .eq('id', ticketTypeId)
+        .single();
+
+      if (!event || !session || !ticketType) {
+        throw new Error('Invalid event, session, or ticket type');
+      }
+
+      // Check availability
+      const availableCapacity = ticketType.total_capacity - ticketType.sold_count - ticketType.held_count;
+      if (availableCapacity < totalTickets) {
+        throw new Error(`Only ${availableCapacity} tickets available`);
+      }
+
+      // Hold tickets for checkout
+      const { data: holdResult, error: holdError } = await this.supabase
+        .rpc('hold_event_tickets', {
+          p_ticket_type_id: ticketTypeId,
+          p_quantity: totalTickets,
+        });
+
+      if (holdError || holdResult === false) {
+        throw new Error('Failed to reserve tickets. Please try again.');
+      }
+
+      // Calculate price (server authority)
+      // For simplicity, children pay full price here; adjust as needed
+      totalAmount = ticketType.price * totalTickets;
+      title = `${event.title} - ${ticketType.name}`;
+
+      // Set metadata for rendering
+      payload.eventName = event.title;
+      payload.eventImage = event.cover_image_url;
+      payload.image_url = event.cover_image_url;
+      payload.address = event.location_summary;
+      payload.location_summary = event.location_summary;
+      payload.sessionDate = session.session_date;
+      payload.sessionName = session.name;
+      payload.ticketTypeName = ticketType.name;
+
+      console.log(`[CheckoutService] Event Pricing: Price=${ticketType.price}, Tickets=${totalTickets}, Total=${totalAmount}`);
+    } else if (payload.serviceType === 'entertainment') {
+      // Entertainment checkout
+      const { itemId, sessionId, ticketTypeId, quantity = 1 } = payload as any;
+
+      // Fetch Item
+      const { data: item } = await this.supabase
+        .from('entertainment_items')
+        .select('title, images, location')
+        .eq('id', itemId)
+        .single();
+
+      // Fetch Ticket Type
+      const { data: ticketType } = await this.supabase
+        .from('entertainment_ticket_types')
+        .select('name, price, currency, total_available, total_sold, held_count')
+        .eq('id', ticketTypeId)
+        .single();
+
+      console.log('[CheckoutService] Entertainment Ticket Type:', JSON.stringify(ticketType, null, 2));
+
+      // Fetch Session (Optional)
+      let sessionName = '';
+      let sessionDate = '';
+
+      if (sessionId) {
+        const { data: session } = await this.supabase
+          .from('entertainment_sessions')
+          .select('name, session_date')
+          .eq('id', sessionId)
+          .single();
+
+        if (session) {
+          sessionName = session.name || '';
+          sessionDate = session.session_date;
+        }
+      }
+
+      if (!item || !ticketType) {
+        throw new Error('Invalid entertainment item or ticket type');
+      }
+
+      // Check availability: Delegated to hold_entertainment_tickets RPC
+      // This avoids mismatches with column names (total_available vs capacity)
+
+
+      // Hold tickets for checkout (Reserve inventory)
+      const { data: holdResult, error: holdError } = await this.supabase
+        .rpc('hold_entertainment_tickets', {
+          p_ticket_type_id: ticketTypeId,
+          p_quantity: quantity,
+        });
+
+      if (holdError) {
+        console.error('[CheckoutService] Hold RPC error:', holdError);
+        throw new Error(`Reservation failed: ${holdError.message}`);
+      }
+
+      if (holdResult === false) {
+        throw new Error('Not enough tickets available for this selection.');
+      }
+
+      // Calculate total
+      // Match frontend logic: subtotal + 7.5% service fee
+      const subtotal = Number(ticketType.price) * quantity;
+      const serviceFee = Math.round(subtotal * 0.075);
+
+      // Update totalAmount to include fee
+      totalAmount = subtotal + serviceFee;
+
+      // CRITICAL: Overwrite payload currency with the actual ticket currency
+      // This prevents 35 USD becoming 35 VND
+      payload.currency = ticketType.currency || 'VND';
+
+      // Add breakdown for UI display (so user sees why price increased)
+      payload.breakdown = [
+        {
+          label: `${quantity}x ${ticketType.name}`,
+          amount: subtotal,
+          currency: payload.currency
+        },
+        {
+          label: 'Service Fee (7.5%)',
+          amount: serviceFee,
+          currency: payload.currency
+        }
+      ];
+
+      title = `${item.title} - ${ticketType.name}`;
+
+      // Prepare metadata
+      const images = item.images || [];
+      const coverImage = images[0] || '/images/placeholder-entertainment.jpg';
+
+      // Parse location
+      const loc = item.location || {};
+      const locationStr = [loc.venue, loc.city, loc.country].filter(Boolean).join(', ') || 'Vietnam';
+
+      payload.itemTitle = item.title;
+      payload.itemImage = coverImage;
+      payload.image_url = coverImage;
+      payload.ticketTypeName = ticketType.name;
+      payload.address = locationStr;
+      payload.location_summary = locationStr;
+      payload.sessionName = sessionName;
+      payload.sessionDate = sessionDate;
+
+    } else if (payload.serviceType === 'hotel') {
       const start = new Date(payload.dates.start);
       const end = new Date(payload.dates.end);
-      const nights = Math.max(
-        1,
-        Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)),
-      );
+      const nights = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
 
       // Fetch Hotel Details for Title, Location, and Price Authorization
       const { data: hotel } = await this.supabase

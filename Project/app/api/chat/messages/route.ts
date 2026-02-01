@@ -88,6 +88,13 @@ const toolHandlers: Record<string, Function> = {
 
   // Payment tools
   create_payment_link: extendedHandlers.createPaymentLink,
+
+  // Itinerary tools
+  generate_itinerary: extendedHandlers.generateItinerary,
+  get_itinerary_templates: extendedHandlers.getItineraryTemplates,
+  save_itinerary: extendedHandlers.saveItinerary,
+  get_saved_itineraries: extendedHandlers.getSavedItineraries,
+  get_itinerary_details: extendedHandlers.getItineraryDetails,
 };
 
 // System prompt for the AI with enhanced security, privacy, and business optimization
