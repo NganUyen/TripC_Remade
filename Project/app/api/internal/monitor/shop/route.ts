@@ -460,7 +460,7 @@ async function checkEndpoint(
 }
 
 export async function GET() {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || '';
 
     // Generate fresh session ID per test run to avoid cart accumulation
     const sessionId = generateTestSessionId();

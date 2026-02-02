@@ -126,7 +126,7 @@ export class UnifiedEmailService {
           <li style="margin: 8px 0;">⚡ Thanh toán nhanh hơn cho lần đặt tiếp theo</li>
           <li style="margin: 8px 0;">🎯 Gợi ý dịch vụ phù hợp với sở thích của bạn</li>
         </ul>
-        <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/welcome?source=booking-email&code=${data.booking_code}" 
+        <a href="${process.env.NEXT_PUBLIC_APP_URL || ''}/welcome?source=booking-email&code=${data.booking_code}" 
            style="display: inline-block; padding: 14px 35px; background: #fff; color: #667eea; text-decoration: none; border-radius: 30px; font-weight: bold; margin-top: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
           Đăng nhập / Đăng ký ngay
         </a>
@@ -134,7 +134,7 @@ export class UnifiedEmailService {
       ` : ''}
       
       <div style="text-align:center;">
-        <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/my-bookings" class="btn">Quản lý đặt chỗ</a>
+        <a href="${process.env.NEXT_PUBLIC_APP_URL || ''}/my-bookings" class="btn">Quản lý đặt chỗ</a>
       </div>
     </div>
     <div class="footer">
