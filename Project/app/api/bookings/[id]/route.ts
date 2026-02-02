@@ -104,6 +104,7 @@ export async function GET(
             return NextResponse.json({ error: "User resolution failed" }, { status: 500 });
         }
 
+
         // Compare ownership
         const ownerId = data.user_id || data.user_uuid || data.external_user_ref;
         if (ownerId && ownerId !== 'GUEST') {
@@ -114,7 +115,8 @@ export async function GET(
                 console.error(`Unauthorized access attempt. Booking User: ${ownerId}, Requestor ClerkID: ${user.id}`);
                 return NextResponse.json({ error: "Unauthorized access to this booking" }, { status: 403 });
             }
-        }
+
+
 
         return NextResponse.json(data);
     } catch (err: any) {
