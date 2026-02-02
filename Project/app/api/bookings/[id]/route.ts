@@ -49,8 +49,8 @@ export async function GET(
             return NextResponse.json({ error: "User resolution failed" }, { status: 500 });
         }
 
-        // Compare using both being UUIDs (or text representation of UUID)
-        if (data.user_id !== userData.id) {
+        // Compare using Internal UUID OR Clerk ID (some legacy/mixed bookings use Clerk ID)
+        if (data.user_id !== userData.id && data.user_id !== user.id) {
             console.error(`Unauthorized access attempt. Booking User: ${data.user_id}, Req User: ${userData.id} (Clerk: ${user.id})`);
             return NextResponse.json({ error: "Unauthorized access to this booking" }, { status: 403 });
         }
