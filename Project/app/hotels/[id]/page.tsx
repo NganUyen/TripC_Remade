@@ -10,7 +10,8 @@ import { Metadata } from "next";
 
 async function getHotelData(slug: string) {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    // Use relative URL for API calls - works in both local and production
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "";
     const res = await fetch(`${baseUrl}/api/hotels/${slug}`, {
       cache: "no-store",
     });

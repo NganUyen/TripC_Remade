@@ -1,6 +1,9 @@
 // Utility functions for API calls
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api'
+// Use relative URL for API calls - works in both local and production
+// In production (Vercel), this will use the same domain
+// In development, Next.js dev server handles this correctly
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api'
 
 export async function fetchAPI(endpoint: string, options?: RequestInit) {
   const url = `${API_BASE_URL}${endpoint}`
