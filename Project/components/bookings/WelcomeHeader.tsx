@@ -6,7 +6,11 @@ import { useUser } from '@clerk/nextjs'
 import { Globe, Map, Plane, Sparkles } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 
-export default function WelcomeHeader() {
+interface WelcomeHeaderProps {
+    bookingsCount?: number
+}
+
+export default function WelcomeHeader({ bookingsCount = 0 }: WelcomeHeaderProps) {
     const { user, isLoaded } = useUser();
 
     // Greeting based on time of day
@@ -15,7 +19,7 @@ export default function WelcomeHeader() {
 
     const stats = [
         { icon: <Map className="size-4" />, count: '24', label: 'Quốc gia' },
-        { icon: <Plane className="size-4" />, count: '03', label: 'Chuyến đi' },
+        { icon: <Plane className="size-4" />, count: bookingsCount.toString().padStart(2, '0'), label: 'Chuyến đi' },
         { icon: <Sparkles className="size-4" />, count: '12', label: 'Ưu đãi' }
     ];
 
@@ -49,7 +53,7 @@ export default function WelcomeHeader() {
                         )}
                     </h1>
                     <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">
-                        Bạn có <span className="text-[#FF5E1F] font-bold">03 chuyến đi</span> sắp khởi hành trong tháng này.
+                        Bạn có <span className="text-[#FF5E1F] font-bold">{bookingsCount.toString().padStart(2, '0')} chuyến đi</span> sắp tới.
                     </p>
                 </div>
             </motion.div>

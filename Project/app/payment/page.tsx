@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { PaymentSection } from "@/components/payment/PaymentSection";
-import { CheckoutHeader } from "@/components/transport/checkout/CheckoutHeader";
+import { CheckoutSteps } from "@/components/checkout/checkout-steps";
 import { useSupabaseClient } from "@/lib/supabase";
 import { useSession } from "@clerk/nextjs";
 import { toast } from "sonner";
@@ -66,7 +66,7 @@ export default function PaymentPage() {
     return (
         <main className="min-h-screen bg-slate-50 dark:bg-slate-950 p-6 lg:p-12">
             <div className="max-w-4xl mx-auto">
-                <CheckoutHeader currentStep={2} />
+                <CheckoutSteps currentStep="payment" />
                 <div className="mb-8">
                     <Link href="/my-bookings" className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">
                         <ArrowLeft size={20} />

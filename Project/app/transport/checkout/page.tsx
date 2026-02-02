@@ -76,7 +76,7 @@ export default function TransportCheckoutPage() {
     return (
         <div className="min-h-screen items-center justify-center p-6 md:p-12 bg-background-light dark:bg-background-dark">
             <div className="max-w-7xl w-full mx-auto space-y-8">
-                <CheckoutHeader currentStep={1} />
+                {/* Header removed - UnifiedCheckoutContainer handles steps */}
 
                 <UnifiedCheckoutContainer
                     serviceType="transport"

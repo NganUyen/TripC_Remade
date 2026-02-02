@@ -27,7 +27,9 @@ export default function MyBookingsPage() {
   const [isSyncing, setIsSyncing] = useState(false);
 
   // Filtering State
-  const [activeCategory, setActiveCategory] = useState<string>("all");
+  const [activeCategory, setActiveCategory] = useState<string>(
+    searchParams.get("category") || "all"
+  );
   const [activeStatus, setActiveStatus] = useState<string>(
     searchParams.get("tab") || "booked",
   ); // 'booked' | 'awaiting' | 'cancelled'
@@ -36,6 +38,10 @@ export default function MyBookingsPage() {
     const tab = searchParams.get("tab");
     if (tab && ["booked", "awaiting", "cancelled"].includes(tab)) {
       setActiveStatus(tab);
+    }
+    const cat = searchParams.get("category");
+    if (cat) {
+      setActiveCategory(cat);
     }
   }, [searchParams]);
 
@@ -232,7 +238,7 @@ export default function MyBookingsPage() {
       >
         <div className="grid grid-cols-12 w-full mb-12 gap-8">
           <MembershipCard />
-          <WelcomeHeader />
+          <WelcomeHeader bookingsCount={bookings.filter(b => b.status === "confirmed" || b.status === "booked" || b.status === "success").length} />
         </div>
 
         <section className="mb-16">

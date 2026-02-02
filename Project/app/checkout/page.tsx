@@ -28,17 +28,18 @@ export default function CheckoutPage() {
             try {
                 // 1. Fetch Booking
                 console.log("Fetching booking with ID:", bookingId);
-                const { data: bookingData, error } = await supabase
-                    .from('bookings')
-                    .select('*')
-                    .eq('id', bookingId)
-                    .single();
+                // 1. Fetch Booking via API (Bypasses Client RLS issues)
+                console.log("Fetching booking with ID:", bookingId);
+                const res = await fetch(`/api/bookings/${bookingId}`);
 
-                if (error) {
-                    console.error("Supabase booking fetch error:", error);
-                    toast.error("Không tìm thấy đơn hàng: " + error.message);
+                if (!res.ok) {
+                    const err = await res.json();
+                    console.error("Booking API fetch error:", err);
+                    toast.error("Lỗi: " + (err.error || "Failed to fetch booking"));
                     return;
                 }
+
+                const bookingData = await res.json();
 
                 if (!bookingData) {
                     console.warn("No booking data returned for ID:", bookingId);

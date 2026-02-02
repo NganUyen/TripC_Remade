@@ -146,6 +146,27 @@ export async function GET(request: NextRequest) {
       console.error("Fetch entertainment bookings error:", entertainmentError);
     }
 
+    // 5. Fetch Dining Appointments (Other category)
+    let diningQuery = supabase
+      .from("dining_appointment")
+      .select(`
+        *,
+        venue:dining_venues(id, name, address, images, city)
+      `)
+      .order("appointment_date", { ascending: false });
+
+    if (dbUser) {
+      diningQuery = diningQuery.or(`user_id.eq.${user.id},user_id.eq.${dbUser.id}`);
+    } else {
+      diningQuery = diningQuery.eq("user_id", user.id);
+    }
+
+    const { data: diningAppointments, error: diningError } = await diningQuery;
+
+    if (diningError) {
+      console.error("Fetch dining appointments error:", diningError);
+    }
+
     // Collect IDs of specialized bookings to exclude from general
     // Note: hotel_bookings might not be linked to bookings table in older records, 
     // but event_bookings are. We'll use booking_id to check.
@@ -203,6 +224,21 @@ export async function GET(request: NextRequest) {
         created_at: b.created_at,
         customer_name: b.customer_name,
         customer_email: b.customer_email,
+      })),
+      ...(diningAppointments || []).map((b: any) => ({
+        id: b.id,
+        category: "other", // As user requested "Other" tab
+        type: "dining",
+        title: b.venue?.name || "Dining Reservation",
+        subtitle: `${b.guest_count} Guests - ${b.appointment_time}`,
+        image: b.venue?.images?.[0] || null,
+        location: b.venue?.address || b.venue?.city || "Restaurant",
+        status: b.status,
+        start_date: b.appointment_date,
+        booking_code: b.appointment_code,
+        created_at: b.created_at,
+        customer_name: b.guest_name,
+        customer_email: b.guest_email,
       })),
       ...(bookings || []).filter((b: any) => !specializedBookingIds.has(b.id)).map(transformBooking),
     ];

@@ -104,6 +104,15 @@ export function useCurrentUser() {
     if (isClerkLoaded) {
       loadSupabaseUser();
     }
+
+    // Listen for custom refresh events (e.g., after earning rewards)
+    const handleRefresh = () => {
+      console.log("🔄 User data refresh triggered via event");
+      loadSupabaseUser();
+    };
+
+    window.addEventListener('user:refresh', handleRefresh);
+    return () => window.removeEventListener('user:refresh', handleRefresh);
   }, [clerkUser, isClerkLoaded, supabase]);
 
   return {

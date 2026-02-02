@@ -53,7 +53,7 @@ export async function POST(req: Request) {
             .insert([{
                 quest_id: questId,
                 user_id: user.id,
-                status: 'SUBMITTED', // Pending Admin Review
+                status: 'completed', // Auto-approve for demo
                 submission_data: { evidenceUrl, notes }
             }])
             .select()
