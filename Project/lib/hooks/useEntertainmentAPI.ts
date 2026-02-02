@@ -50,7 +50,7 @@ export interface TicketType {
   id: string;
   name: string;
   description: string | null;
-  price: number;
+  price: number | Money;
   currency?: string;
   original_price?: number | null;
   max_quantity_per_order?: number;
@@ -86,7 +86,15 @@ export interface EntertainmentItemDetail extends EntertainmentItemList {
     long_description?: string | null;
   };
   ticket_types: TicketType[];
+
   sessions: Session[];
+  addOns?: {
+    id: string;
+    name: string;
+    description: string;
+    price: number;
+    currency?: string;
+  }[];
   reviews_summary?: {
     total: number;
     average_rating: number;

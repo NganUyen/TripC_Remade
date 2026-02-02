@@ -43,10 +43,69 @@ export function TicketBookingWidget({ item }: TicketBookingWidgetProps) {
     );
   };
 
+  // Voucher State
+  const [voucherCode, setVoucherCode] = useState("");
+  const [discountAmount, setDiscountAmount] = useState(0);
+  const [voucherMessage, setVoucherMessage] = useState("");
+  const [isVoucherApplied, setIsVoucherApplied] = useState(false);
+  const [isValidatingVoucher, setIsValidatingVoucher] = useState(false);
+
+  // Handle Voucher Application
+  const handleApplyVoucher = async () => {
+    if (!voucherCode.trim()) return;
+
+    setIsValidatingVoucher(true);
+    setVoucherMessage("");
+    setDiscountAmount(0);
+    setIsVoucherApplied(false);
+
+    try {
+      const res = await fetch("/api/v1/vouchers/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: voucherCode,
+          cartTotal:
+            ((typeof selectedTicketType?.price === 'object' ? (selectedTicketType.price as any).amount : selectedTicketType?.price) ||
+              item.min_price ||
+              0) * ticketQuantity +
+            Math.round(
+              (((typeof selectedTicketType?.price === 'object' ? (selectedTicketType.price as any).amount : selectedTicketType?.price) ||
+                item.min_price ||
+                0) *
+                ticketQuantity +
+                selectedAddOns.reduce((sum, addonId) => {
+                  const addon = item.addOns?.find((a: any) => a.id === addonId);
+                  return sum + (addon?.price || 0);
+                }, 0)) *
+              0.075
+            ),
+          serviceType: "entertainment", // Use 'entertainment' to match validation logic mapping
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setVoucherMessage(data.error || "Invalid voucher");
+        return;
+      }
+
+      if (data.valid) {
+        setDiscountAmount(data.discountAmount);
+        setIsVoucherApplied(true);
+        setVoucherMessage(`Voucher applied: -$${data.discountAmount}`);
+      }
+    } catch (err) {
+      setVoucherMessage("Failed to validate voucher");
+    } finally {
+      setIsValidatingVoucher(false);
+    }
+  };
+
   // Calculate total price
   const ticketPrice =
-    (selectedTicketType?.price?.amount ||
-      selectedTicketType?.price ||
+    ((typeof selectedTicketType?.price === 'object' ? (selectedTicketType.price as any).amount : selectedTicketType?.price) ||
       item.min_price ||
       0) * ticketQuantity;
   const addOnsPrice = selectedAddOns.reduce((sum, addonId) => {
@@ -91,6 +150,8 @@ export function TicketBookingWidget({ item }: TicketBookingWidgetProps) {
         sessionId: sessionId,
         ticketTypeId: selectedTicketTypeId,
         quantity: ticketQuantity.toString(),
+        voucherCode: isVoucherApplied ? voucherCode : "",
+        discountAmount: discountAmount.toString(),
       });
 
       // Navigate to checkout page
@@ -285,12 +346,50 @@ export function TicketBookingWidget({ item }: TicketBookingWidgetProps) {
               ${fees}
             </span>
           </div>
+
+          {/* Voucher Input */}
+          <div className="pt-2 pb-2">
+            <div className="flex items-center justify-between p-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full shadow-sm">
+              <input
+                type="text"
+                placeholder="Promo code"
+                value={voucherCode}
+                onChange={(e) => {
+                  setVoucherCode(e.target.value.toUpperCase())
+                  setIsVoucherApplied(false)
+                  setDiscountAmount(0)
+                  setVoucherMessage('')
+                }}
+                className="flex-1 px-4 py-2 text-sm bg-transparent border-none focus:outline-none focus:ring-0 text-slate-900 dark:text-white placeholder:text-slate-400"
+              />
+              <button
+                onClick={handleApplyVoucher}
+                disabled={!voucherCode || isValidatingVoucher}
+                className="px-6 py-2 bg-[#0B1525] text-white text-sm font-bold rounded-full hover:bg-slate-800 transition-colors shadow-md disabled:opacity-50 disabled:shadow-none"
+              >
+                {isValidatingVoucher ? '...' : 'Apply'}
+              </button>
+            </div>
+            {voucherMessage && (
+              <p className={`text-xs mt-2 ml-4 font-medium ${isVoucherApplied ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
+                {voucherMessage}
+              </p>
+            )}
+          </div>
+
+          {isVoucherApplied && (
+            <div className="flex justify-between text-sm text-green-600 dark:text-green-400 font-medium animate-in fade-in slide-in-from-top-1">
+              <span>Discount</span>
+              <span>-${discountAmount}</span>
+            </div>
+          )}
+
           <div className="flex justify-between text-lg pt-2 border-t border-slate-200 dark:border-slate-800">
             <span className="font-black text-slate-900 dark:text-white">
               Total
             </span>
             <span className="font-black text-orange-600 dark:text-orange-400">
-              ${total}
+              ${Math.max(0, total - discountAmount)}
             </span>
           </div>
         </div>

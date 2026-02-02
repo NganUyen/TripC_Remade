@@ -16,6 +16,8 @@ interface Props {
         sessionId?: string;
         ticketTypeId: string;
         quantity: number;
+        voucherCode?: string;
+        discountAmount?: number;
     };
     onSubmit: (data: any) => void;
 }
@@ -182,6 +184,8 @@ export const EntertainmentCheckoutForm = ({ initialData, onSubmit }: Props) => {
                 email: contact.email,
                 phone: contact.phone || undefined
             },
+            voucherCode: initialData.voucherCode,
+            discountAmount: initialData.discountAmount,
             specialRequests: specialRequests || undefined
         };
 
@@ -190,10 +194,11 @@ export const EntertainmentCheckoutForm = ({ initialData, onSubmit }: Props) => {
         onSubmit(payload);
     };
 
-    // Calculate totals
     const quantity = initialData.quantity || 1;
     const unitPrice = details?.ticketPrice || 0;
     const totalPrice = quantity * unitPrice;
+    const discountAmount = initialData.discountAmount || 0;
+    const finalTotal = Math.max(0, totalPrice - discountAmount);
     const currency = details?.currency || 'VND';
 
     if (!details) {
@@ -252,19 +257,37 @@ export const EntertainmentCheckoutForm = ({ initialData, onSubmit }: Props) => {
                     )}
 
                     {/* Ticket Info */}
-                    <div className="flex items-center justify-between p-4 bg-orange-50 dark:bg-orange-900/20 rounded-xl border border-orange-100 dark:border-orange-900/50">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-[#FF5E1F] rounded-full flex items-center justify-center">
-                                <Ticket className="w-5 h-5 text-white" />
+                    <div className="flex flex-col gap-2 p-4 bg-orange-50 dark:bg-orange-900/20 rounded-xl border border-orange-100 dark:border-orange-900/50">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-[#FF5E1F] rounded-full flex items-center justify-center">
+                                    <Ticket className="w-5 h-5 text-white" />
+                                </div>
+                                <div>
+                                    <p className="font-bold text-slate-900 dark:text-white">{details.ticketTypeName}</p>
+                                    <p className="text-sm text-slate-500">{formatPrice(unitPrice, currency)} / ticket</p>
+                                </div>
                             </div>
-                            <div>
-                                <p className="font-bold text-slate-900 dark:text-white">{details.ticketTypeName}</p>
-                                <p className="text-sm text-slate-500">{formatPrice(unitPrice, currency)} / ticket</p>
+                            <div className="text-right">
+                                <p className="text-lg font-bold text-slate-900 dark:text-slate-300">{formatPrice(totalPrice, currency)}</p>
                             </div>
                         </div>
-                        <div className="text-right">
-                            <p className="text-2xl font-black text-[#FF5E1F]">{formatPrice(totalPrice, currency)}</p>
-                            <p className="text-xs text-slate-500">{quantity} ticket{quantity !== 1 ? 's' : ''}</p>
+
+                        {discountAmount > 0 && (
+                            <div className="flex items-center justify-between pt-2 border-t border-orange-200/50 dark:border-orange-900/30">
+                                <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                                    <span className="text-sm font-bold">Discount {initialData.voucherCode ? `(${initialData.voucherCode})` : ''}</span>
+                                </div>
+                                <span className="font-bold text-green-600 dark:text-green-400">-{formatPrice(discountAmount, currency)}</span>
+                            </div>
+                        )}
+
+                        <div className="flex items-center justify-between pt-2 mt-1 border-t border-orange-200 dark:border-orange-900">
+                            <span className="font-bold text-slate-900 dark:text-white uppercase text-sm">Total</span>
+                            <div className="text-right">
+                                <p className="text-2xl font-black text-[#FF5E1F]">{formatPrice(finalTotal, currency)}</p>
+                                <p className="text-xs text-slate-500">{quantity} ticket{quantity !== 1 ? 's' : ''}</p>
+                            </div>
                         </div>
                     </div>
 

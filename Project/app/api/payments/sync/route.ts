@@ -47,9 +47,9 @@ export async function POST(req: NextRequest) {
                 // OR we can rely on the reference_id in the capture result if PayPal returns it?
                 // PayPal capture response usually has `purchase_units[0].reference_id` which is our bookingId
 
-                const bookingId = captureResult.purchase_units?.[0]?.reference_id;
+                let finalBookingId = captureResult.purchase_units?.[0]?.reference_id;
 
-                if (!bookingId) {
+                if (!finalBookingId) {
                     // Fallback: search DB
                     const { data: txn } = await supabase
                         .from('payment_transactions')
@@ -58,10 +58,8 @@ export async function POST(req: NextRequest) {
                         .single();
 
                     if (!txn) throw new Error('Transaction not found for Order ID');
-                    // bookingId = txn.booking_id; // Const reassignment error if I used const
+                    finalBookingId = txn.booking_id;
                 }
-
-                const finalBookingId = bookingId || captureResult.purchase_units?.[0]?.reference_id;
 
                 if (!finalBookingId) throw new Error('Could not determine Booking ID');
 
