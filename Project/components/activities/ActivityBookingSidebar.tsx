@@ -78,6 +78,22 @@ export function ActivityBookingSidebar({ activity }: ActivityBookingSidebarProps
         })
     }
 
+    // Validation state
+    const hasChild = Object.entries(ticketCounts).some(([name, count]) =>
+        (name.toLowerCase().includes('child') ||
+            name.toLowerCase().includes('kid') ||
+            name.toLowerCase().includes('trẻ em')) &&
+        count > 0
+    )
+
+    const hasAdult = Object.entries(ticketCounts).some(([name, count]) =>
+        (name.toLowerCase().includes('adult') ||
+            name.toLowerCase().includes('người lớn')) &&
+        count > 0
+    )
+
+    const isMissingAdult = hasChild && !hasAdult
+
     const handleBook = async () => {
         if (!date) {
             toast.error("Please select a date")
@@ -89,6 +105,12 @@ export function ActivityBookingSidebar({ activity }: ActivityBookingSidebarProps
         // Validate contact info
         if (!contact.name || !contact.email) {
             toast.error("Please fill in contact details")
+            return
+        }
+
+        // Validate adult for children
+        if (isMissingAdult) {
+            toast.error("Children must be accompanied by an adult")
             return
         }
 
@@ -260,6 +282,21 @@ export function ActivityBookingSidebar({ activity }: ActivityBookingSidebarProps
                             </div>
                         </div>
                     </div>
+
+                    {/* Validation Warning */}
+                    {isMissingAdult && (
+                        <div className="mx-2 mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
+                            <div className="p-2 bg-red-100 dark:bg-red-900/40 rounded-full">
+                                <User className="w-4 h-4 text-red-600 dark:text-red-400" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-bold text-red-600 dark:text-red-400">Adult Required</p>
+                                <p className="text-xs font-medium text-red-500/80 dark:text-red-400/80">
+                                    Children tickets require at least 1 Adult ticket.
+                                </p>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Total & Button */}
                     <div className="pt-6 border-t border-slate-200/60 dark:border-white/10 space-y-4">

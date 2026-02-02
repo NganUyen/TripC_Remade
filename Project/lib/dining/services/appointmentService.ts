@@ -273,7 +273,7 @@ export class AppointmentService {
       .insert({
         ...body,
         user_id: userId,
-        status: "pending",
+        status: "confirmed",
         duration_minutes: duration,
         table_id: tableId,
         appointment_time: timeStr,

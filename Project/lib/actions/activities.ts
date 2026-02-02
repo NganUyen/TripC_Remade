@@ -35,11 +35,7 @@ export async function getActivityById(id: string): Promise<Activity | null> {
         .eq("id", id)
         .single();
 
-    if (error) {
-        console.error(`Error fetching activity ${id}:`, error);
-        return null;
-    }
-
+    console.log(`Activity fetched for ID ${id}:`, { title: data.title, image_url: data.image_url });
     return data as Activity;
 }
 
@@ -87,4 +83,48 @@ export async function createActivityBooking(data: {
     }
 
     return { success: true, booking }
+}
+
+export async function getPopularActivities(limit: number = 3): Promise<Activity[]> {
+    const supabase = createServiceSupabaseClient();
+
+    // First, try to get some bookings to influence popularity
+    const { data: bookings } = await supabase
+        .from('bookings')
+        .select('metadata')
+        .eq('category', 'activity')
+        .limit(100);
+
+    const popularityMap: Record<string, number> = {};
+    if (bookings) {
+        bookings.forEach(b => {
+            const actId = b.metadata?.activity_id;
+            if (actId) {
+                popularityMap[actId] = (popularityMap[actId] || 0) + 1;
+            }
+        });
+    }
+
+    // Now fetch activities
+    const { data, error } = await supabase
+        .from("activities")
+        .select("*")
+        .limit(20); // Fetch a pool to sort by popularity
+
+    if (error) {
+        console.error("Error fetching activities for popularity:", error);
+        return [];
+    }
+
+    const activities = data as Activity[];
+
+    // Sort by booking count, then by rating
+    const sorted = activities.sort((a, b) => {
+        const countA = popularityMap[a.id] || 0;
+        const countB = popularityMap[b.id] || 0;
+        if (countB !== countA) return countB - countA;
+        return (Number(b.rating) || 0) - (Number(a.rating) || 0);
+    });
+
+    return sorted.slice(0, limit);
 }

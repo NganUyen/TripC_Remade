@@ -74,9 +74,9 @@ export function ReservationSidebar({ venueId }: ReservationSidebarProps) {
                 guest_email: guestEmail,
             })
 
-            alert(`Booking confirmed! Code: ${appointment.appointment_code}`)
-            // Optional: add a detail page later
-            router.refresh()
+            // alert(`Booking confirmed! Code: ${appointment.appointment_code}`)
+            // Redirect to My Bookings -> Other tab
+            router.push('/my-bookings?category=other&success=true')
         } catch (error: any) {
             console.error('Error creating reservation:', error)
             alert(error.message || 'Failed to create reservation')

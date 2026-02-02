@@ -84,7 +84,7 @@ export function StepReview() {
 
             const booking = await res.json()
             toast.success("Booking initialized!")
-            router.push(`/checkout?bookingId=${booking.id}`)
+            router.push(`/checkout?bookingId=${booking.bookingId}`)
 
         } catch (error: any) {
             console.error(error)

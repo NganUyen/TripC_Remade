@@ -51,7 +51,7 @@ export function Header() {
                 Rewards
               </Link>
               <Link
-                href="#"
+                href="/help-center"
                 className="text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-primary transition-colors"
               >
                 Support

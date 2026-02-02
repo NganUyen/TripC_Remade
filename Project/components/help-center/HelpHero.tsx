@@ -29,17 +29,17 @@ export function HelpHero({ searchQuery, setSearchQuery }: HelpHeroProps) {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5 }}
-                    className="text-4xl md:text-6xl font-bold text-white mb-4 drop-shadow-md tracking-tight"
+                    className="text-4xl md:text-6xl font-black text-white mb-6 drop-shadow-xl tracking-tighter"
                 >
-                    Help Center
+                    Hello, how can we help?
                 </motion.h1>
                 <motion.p
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: 0.1 }}
-                    className="text-lg text-white/90 max-w-xl font-medium mb-10"
+                    className="text-lg md:text-xl text-white/90 max-w-2xl font-medium mb-12 leading-relaxed drop-shadow-md"
                 >
-                    Get support for bookings, payments, rewards, and your account.
+                    Search our knowledge base, check your booking status, or contact our support team.
                 </motion.p>
 
                 {/* Search Console */}

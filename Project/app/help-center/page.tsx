@@ -7,14 +7,14 @@ import { FAQSection } from '@/components/help-center/FAQSection'
 import { ArticleCarousel } from '@/components/help-center/ArticleCarousel'
 import { SupportCTA } from '@/components/help-center/SupportCTA'
 import { Footer } from '@/components/Footer'
-import { Header } from '@/components/Header'
+import { HelpHeader } from '@/components/help-center/HelpHeader'
 
 export default function HelpCenterPage() {
     const [searchQuery, setSearchQuery] = useState('')
 
     return (
         <main className="min-h-screen bg-[#fcfaf8] dark:bg-[#0a0a0a]">
-            <Header />
+            <HelpHeader />
 
             <HelpHero searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
 

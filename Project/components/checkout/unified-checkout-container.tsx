@@ -50,10 +50,10 @@ export const UnifiedCheckoutContainer = ({
     // Initialize state from existingBooking if avail
     const [bookingId, setBookingId] = useState<string | null>(existingBooking?.id || null);
     const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
-    const [bookingAmount, setBookingAmount] = useState<number>(0);
+    const [bookingAmount, setBookingAmount] = useState<number>(existingBooking?.total_amount || 0);
     // Default currency based on service type - VND for local services, USD for shop
     const defaultCurrency = serviceType === 'shop' ? 'USD' : 'VND';
-    const [bookingCurrency, setBookingCurrency] = useState<string>(defaultCurrency);
+    const [bookingCurrency, setBookingCurrency] = useState<string>(existingBooking?.currency || defaultCurrency);
     const [showCurrencyGuard, setShowCurrencyGuard] = useState(false);
     const [pendingMethod, setPendingMethod] = useState<string | null>(null);
     const [isTermsAccepted, setIsTermsAccepted] = useState(false);
