@@ -179,7 +179,7 @@ async function triggerTicketIssuance(booking_id: string) {
   // For MVP, we'll call the ticket issuance API directly
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_APP_URL}/api/flight/ticket/issue`,
+      `${process.env.NEXT_PUBLIC_APP_URL || ''}/api/flight/ticket/issue`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

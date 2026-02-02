@@ -1,9 +1,11 @@
 "use client"
 
 import { useState, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { Star, Share2, Heart, Truck, RefreshCw, Minus, Plus, Loader2 } from 'lucide-react'
 import { useCartStore } from '@/store/useCartStore'
 import { useCartAnimation } from '@/store/useCartAnimation'
+import { useBuyNowStore } from '@/store/useBuyNowStore'
 import { toast } from 'sonner'
 
 interface ProductInfoProps {
@@ -17,6 +19,8 @@ export function ProductInfo({ data, variantId: initialVariantId, onVariantSelect
     const [selectedVariant, setSelectedVariant] = useState<Record<string, string>>({})
     const [selectedVariantId, setSelectedVariantId] = useState<string | null>(initialVariantId || null)
     const { addItem, isLoading } = useCartStore()
+    const { setBuyNowItem, isProcessing, setProcessing } = useBuyNowStore()
+    const router = useRouter()
 
     const { startAnimation } = useCartAnimation()
     const imageRef = useRef<HTMLImageElement>(null)
@@ -52,6 +56,41 @@ export function ProductInfo({ data, variantId: initialVariantId, onVariantSelect
         };
 
         await addItem(selectedVariantId, quantity, optimisticData)
+    }
+
+    const handleBuyNow = () => {
+        if (!selectedVariantId) {
+            toast.error('Please select a variant')
+            return
+        }
+
+        // Find selected variant details for display
+        const selectedOpt = data.variants?.[0]?.options?.find(
+            (opt: any) => opt.id === selectedVariantId
+        )
+
+        setProcessing(true)
+
+        const buyNowData = {
+            variantId: selectedVariantId,
+            quantity,
+            price: parseFloat(data.price), // Already in cents from API
+            title: data.title,
+            image: data.images?.[0] || null,
+            variantName: selectedOpt?.name || selectedVariant[Object.keys(selectedVariant)[0]],
+            sku: data.sku,
+        };
+
+        console.log('[ProductInfo] Buy Now clicked, saving item:', buyNowData);
+        
+        // Store the buy-now item
+        setBuyNowItem(buyNowData);
+
+        // Small delay to ensure sessionStorage write completes before navigation
+        setTimeout(() => {
+            console.log('[ProductInfo] Navigating to checkout...');
+            router.push('/shop/checkout?mode=buy-now');
+        }, 50);
     }
 
     return (
@@ -167,7 +206,7 @@ export function ProductInfo({ data, variantId: initialVariantId, onVariantSelect
             <div className="flex gap-4 pt-2">
                 <button
                     onClick={handleAddToCart}
-                    disabled={isLoading}
+                    disabled={isLoading || isProcessing}
                     className="flex-1 py-4 rounded-full bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-400 font-bold text-lg hover:bg-cyan-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                     {isLoading ? (
@@ -176,8 +215,16 @@ export function ProductInfo({ data, variantId: initialVariantId, onVariantSelect
                         'Add to Cart'
                     )}
                 </button>
-                <button className="flex-1 py-4 rounded-full bg-[#FF5E1F] text-white font-bold text-lg shadow-lg shadow-orange-500/30 hover:bg-orange-600 transition-all hover:scale-105 active:scale-95">
-                    Buy Now
+                <button 
+                    onClick={handleBuyNow}
+                    disabled={isLoading || isProcessing}
+                    className="flex-1 py-4 rounded-full bg-[#FF5E1F] text-white font-bold text-lg shadow-lg shadow-orange-500/30 hover:bg-orange-600 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+                >
+                    {isProcessing ? (
+                        <><Loader2 className="w-5 h-5 animate-spin" /> Processing...</>
+                    ) : (
+                        'Buy Now'
+                    )}
                 </button>
             </div>
         </div>

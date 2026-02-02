@@ -123,7 +123,59 @@ export function EventBookingSidebar({ event }: EventBookingSidebarProps) {
         setChildren(0)
     }
 
-    // Handle checkout
+    // Voucher State
+    const [voucherCode, setVoucherCode] = useState('')
+    const [discountAmount, setDiscountAmount] = useState(0)
+    const [isVoucherApplied, setIsVoucherApplied] = useState(false)
+    const [voucherMessage, setVoucherMessage] = useState('')
+    const [isValidatingVoucher, setIsValidatingVoucher] = useState(false)
+
+    // Handle Voucher Application
+    const handleApplyVoucher = async () => {
+        if (!voucherCode.trim()) return
+
+        setIsValidatingVoucher(true)
+        setVoucherMessage('')
+        setDiscountAmount(0)
+        setIsVoucherApplied(false)
+
+        try {
+            const res = await fetch('/api/v1/vouchers/validate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    code: voucherCode,
+                    cartTotal: totalPrice,
+                    serviceType: 'event'
+                })
+            })
+
+            const data = await res.json()
+
+            if (!res.ok) {
+                setVoucherMessage(data.error || 'Invalid voucher')
+                return
+            }
+
+            if (data.valid) {
+                setDiscountAmount(data.discountAmount)
+                setIsVoucherApplied(true)
+                setVoucherMessage(`Voucher applied: -$${data.discountAmount}`)
+                toast.success('Voucher applied successfully!')
+            }
+        } catch (err) {
+            setVoucherMessage('Failed to validate voucher')
+        } finally {
+            setIsValidatingVoucher(false)
+        }
+    }
+
+    const finalPrice = Math.max(0, totalPrice - discountAmount)
+
+    // Check if submitting allowed
+    // ... existed logic ...
+
+    // Updated handleGetTickets
     const handleGetTickets = async () => {
         setError('')
 
@@ -134,7 +186,6 @@ export function EventBookingSidebar({ event }: EventBookingSidebarProps) {
 
         if (!user) {
             toast.info("Please sign in to book tickets")
-            // Redirect to sign in with return URL
             router.push(`/sign-in?redirect_url=/events/${event.id}`)
             return
         }
@@ -148,16 +199,16 @@ export function EventBookingSidebar({ event }: EventBookingSidebarProps) {
         setIsSubmitting(true)
 
         try {
-            // Build checkout payload for events
             const query = new URLSearchParams({
                 eventId: event.id,
                 sessionId: selectedSessionId,
                 ticketTypeId: selectedTicketTypeId,
                 adults: adults.toString(),
                 children: children.toString(),
+                voucherCode: isVoucherApplied ? voucherCode : '',
+                discountAmount: discountAmount.toString()
             })
 
-            // Redirect to event checkout page
             toast.success("Redirecting to secure checkout...")
             router.push(`/events/checkout?${query.toString()}`)
         } catch (err: any) {
@@ -412,31 +463,63 @@ export function EventBookingSidebar({ event }: EventBookingSidebarProps) {
 
                 {/* Price Breakdown */}
                 {totalQuantity > 0 && (
-                    <div className="mb-4 space-y-2 p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
-                        <div className="flex justify-between text-sm">
-                            <span className="text-slate-600 dark:text-slate-400">
-                                {formatEventPrice(unitPrice, currency)} × {totalQuantity} ticket{totalQuantity !== 1 ? 's' : ''}
-                            </span>
-                            <span className="font-bold text-slate-900 dark:text-white">
-                                {formatEventPrice(totalPrice, currency)}
-                            </span>
+                    <div className="mb-4 space-y-4 p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                        {/* Breakdown Items */}
+                        <div className="space-y-2">
+                            <div className="flex justify-between text-sm">
+                                <span className="text-slate-600 dark:text-slate-400">
+                                    {formatEventPrice(unitPrice, currency)} × {totalQuantity}
+                                </span>
+                                <span className="font-bold text-slate-900 dark:text-white">
+                                    {formatEventPrice(totalPrice, currency)}
+                                </span>
+                            </div>
+
+                            {/* Voucher Input */}
+                            <div className="pt-2 pb-2">
+                                <div className="flex gap-2">
+                                    <div className="relative flex-1">
+                                        <Ticket className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                        <input
+                                            type="text"
+                                            placeholder="Voucher Code"
+                                            value={voucherCode}
+                                            onChange={(e) => {
+                                                setVoucherCode(e.target.value.toUpperCase())
+                                                setIsVoucherApplied(false) // Reset if changed
+                                                setDiscountAmount(0)
+                                                setVoucherMessage('')
+                                            }}
+                                            className="w-full pl-9 pr-4 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:border-[#FF5E1F]"
+                                        />
+                                    </div>
+                                    <button
+                                        onClick={handleApplyVoucher}
+                                        disabled={!voucherCode || isValidatingVoucher}
+                                        className="px-4 py-2 bg-slate-900 dark:bg-slate-700 text-white text-sm font-bold rounded-lg hover:bg-slate-800 disabled:opacity-50"
+                                    >
+                                        {isValidatingVoucher ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Apply'}
+                                    </button>
+                                </div>
+                                {voucherMessage && (
+                                    <p className={`text-xs mt-1 ${isVoucherApplied ? 'text-green-600' : 'text-red-500'}`}>
+                                        {voucherMessage}
+                                    </p>
+                                )}
+                            </div>
+
+                            {isVoucherApplied && (
+                                <div className="flex justify-between text-sm text-green-600 font-medium">
+                                    <span>Discount</span>
+                                    <span>-{formatEventPrice(discountAmount, currency)}</span>
+                                </div>
+                            )}
                         </div>
-                        {adults > 0 && (
-                            <div className="flex justify-between text-xs text-slate-500">
-                                <span>{adults} Adult{adults !== 1 ? 's' : ''}</span>
-                                <span>{formatEventPrice(adults * unitPrice, currency)}</span>
-                            </div>
-                        )}
-                        {children > 0 && (
-                            <div className="flex justify-between text-xs text-slate-500">
-                                <span>{children} Child{children !== 1 ? 'ren' : ''}</span>
-                                <span>{formatEventPrice(children * unitPrice, currency)}</span>
-                            </div>
-                        )}
+
                         <div className="pt-2 border-t border-slate-200 dark:border-slate-700 flex justify-between">
                             <span className="font-bold text-slate-900 dark:text-white">Total</span>
                             <span className="font-black text-xl text-[#FF5E1F]">
-                                {formatEventPrice(totalPrice, currency)}
+                                {formatEventPrice(finalPrice, currency)}
                             </span>
                         </div>
                     </div>

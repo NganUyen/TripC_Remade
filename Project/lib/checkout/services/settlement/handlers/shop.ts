@@ -8,12 +8,6 @@ export class ShopSettlementHandler implements ISettlementHandler {
     async settle(booking: any): Promise<void> {
         console.log('[SHOP_SETTLEMENT_HANDLER] Starting', { bookingId: booking.id });
 
-        const cartId = booking.metadata?.cartId;
-        if (!cartId) {
-            console.error('[SHOP_SETTLEMENT_HANDLER] Missing cartId', { bookingId: booking.id });
-            throw new Error('Missing cartId in booking metadata');
-        }
-
         // 1. Idempotency Check: Check if order already exists
         const { data: existingOrder } = await this.supabase
             .from('shop_orders')
@@ -26,44 +20,115 @@ export class ShopSettlementHandler implements ISettlementHandler {
             return; // Already settled
         }
 
-        // 2. Fetch Cart Items with detailed product info
-        // We need: variant_id, qty, unit_price, product_id (via variant?)
-        // The detailed query depends on schema.
-        // Assuming cart_items joins product_variants
-        const { data: cartItems, error: cartError } = await this.supabase
-            .from('cart_items')
-            .select(`
-                *,
-                variant:product_variants (
-                    id,
-                    sku,
-                    title,
-                    price,
-                    product_id,
-                    product:shop_products (
-                        id,
-                        title,
-                        product_type
-                    )
-                )
-            `)
-            .eq('cart_id', cartId);
+        // 2. Determine mode: Cart checkout vs Buy Now
+        const isBuyNow = booking.metadata?.isBuyNow === true;
+        const cartId = booking.metadata?.cartId;
 
-        if (cartError || !cartItems || cartItems.length === 0) {
-            console.error('[SHOP_SETTLEMENT_HANDLER] Cart empty or error', {
-                bookingId: booking.id,
-                cartId,
-                error: cartError?.message
-            });
-            // If cart is empty but we are paid, this is critical.
-            // But maybe we already cleared it?
-            // If we are here, and no order exists, then we haven't cleared it yet.
-            // Unless "Clearing" happened but "Order Creation" failed?
-            // We'll throw for now to be safe.
-            throw new Error('Cart items not found or empty during settlement');
+        console.log('[SHOP_SETTLEMENT_HANDLER] Mode:', isBuyNow ? 'BUY_NOW' : 'CART', { cartId, isBuyNow });
+
+        let orderItems: any[] = [];
+
+        if (isBuyNow) {
+            // Buy Now mode: Items are in booking.metadata.items
+            const items = booking.metadata?.items;
+            if (!items || items.length === 0) {
+                console.error('[SHOP_SETTLEMENT_HANDLER] Missing items in Buy Now metadata', { bookingId: booking.id });
+                throw new Error('Missing items in Buy Now booking metadata');
+            }
+
+            console.log('[SHOP_SETTLEMENT_HANDLER] Buy Now items:', items);
+
+            // Fetch variant details for each item
+            for (const item of items) {
+                const { data: variant, error: variantError } = await this.supabase
+                    .from('product_variants')
+                    .select(`
+                        id,
+                        sku,
+                        title,
+                        price,
+                        product_id,
+                        product:shop_products (
+                            id,
+                            title,
+                            product_type
+                        )
+                    `)
+                    .eq('id', item.variantId)
+                    .single();
+
+                if (variantError || !variant) {
+                    console.error('[SHOP_SETTLEMENT_HANDLER] Variant not found', { variantId: item.variantId });
+                    throw new Error(`Variant ${item.variantId} not found`);
+                }
+
+                // Build order item structure (same as cart items)
+                orderItems.push({
+                    variant_id: item.variantId,
+                    qty: item.quantity,
+                    unit_price: item.price, // Price in cents from Buy Now
+                    currency: 'USD',
+                    title_snapshot: item.name || variant.product?.title,
+                    image_url_snapshot: item.image || null,
+                    variant: variant, // Include variant data for stock decrement
+                });
+            }
+        } else {
+            // Cart mode: Use items snapshot from metadata if available, otherwise fetch from database
+            const cartItemsSnapshot = booking.metadata?.cartItemsSnapshot;
+
+            if (cartItemsSnapshot && Array.isArray(cartItemsSnapshot) && cartItemsSnapshot.length > 0) {
+                // Use pre-fetched snapshot from booking creation
+                console.log('[SHOP_SETTLEMENT_HANDLER] Using cart items snapshot from metadata', { 
+                    count: cartItemsSnapshot.length 
+                });
+                orderItems = cartItemsSnapshot;
+            } else {
+                // Fallback: Fetch items from cart_items table (legacy or if snapshot failed)
+                if (!cartId) {
+                    console.error('[SHOP_SETTLEMENT_HANDLER] Missing cartId and no items snapshot', { 
+                        bookingId: booking.id 
+                    });
+                    throw new Error('Missing cartId and cart items snapshot in booking metadata');
+                }
+
+                console.log('[SHOP_SETTLEMENT_HANDLER] No items snapshot, fetching from database...', { cartId });
+
+                const { data: cartItems, error: cartError } = await this.supabase
+                    .from('cart_items')
+                    .select(`
+                        *,
+                        variant:product_variants (
+                            id,
+                            sku,
+                            title,
+                            price,
+                            product_id,
+                            product:shop_products (
+                                id,
+                                title,
+                                product_type
+                            )
+                        )
+                    `)
+                    .eq('cart_id', cartId);
+
+                if (cartError || !cartItems || cartItems.length === 0) {
+                    console.error('[SHOP_SETTLEMENT_HANDLER] Cart empty or error', {
+                        bookingId: booking.id,
+                        cartId,
+                        error: cartError?.message,
+                        hint: 'Cart items may have been cleared before settlement. Ensure cart items snapshot is saved in booking metadata.'
+                    });
+                    throw new Error('Cart items not found or empty during settlement. The cart may have been cleared prematurely.');
+                }
+
+                orderItems = cartItems;
+                console.log('[SHOP_SETTLEMENT_HANDLER] Fetched cart items from database', { count: cartItems.length });
+            }
         }
 
-        console.log('[SHOP_SETTLEMENT_HANDLER] Fetched cart items', { count: cartItems.length });
+        console.log('[SHOP_SETTLEMENT_HANDLER] Processing items:', { count: orderItems.length });
 
         // 3. Create Shop Order
         const orderNumber = `ORD-${Date.now()}`;
@@ -76,7 +141,7 @@ export class ShopSettlementHandler implements ISettlementHandler {
             .insert({
                 order_number: orderNumber,
                 user_id: userUuid,
-                cart_id: cartId,
+                cart_id: cartId || null, // Null for Buy Now
                 booking_id: booking.id,
                 subtotal: Math.floor(Number(booking.total_amount)),
                 shipping_address_snapshot: booking.guest_details?.address || {}, // Fallback
@@ -93,13 +158,13 @@ export class ShopSettlementHandler implements ISettlementHandler {
         console.log('[SHOP_SETTLEMENT_HANDLER] Order Created', { orderId: order.id, orderNumber });
 
         // 4. Create Order Items
-        const orderItemsData = cartItems.map((item: any) => ({
+        const orderItemsData = orderItems.map((item: any) => ({
             order_id: order.id,
-            product_id: item.variant?.product_id,
+            product_id: item.variant?.product_id || item.variant?.product?.id,
             variant_id: item.variant_id,
-            title_snapshot: item.variant?.product?.title || 'Unknown Product',
+            title_snapshot: item.title_snapshot || item.variant?.product?.title || 'Unknown Product',
             sku_snapshot: item.variant?.sku,
-            image_url_snapshot: null, // Add if available
+            image_url_snapshot: item.image_url_snapshot || null,
             qty: item.qty,
             unit_price: item.unit_price,
             line_total: item.qty * item.unit_price,
@@ -125,7 +190,7 @@ export class ShopSettlementHandler implements ISettlementHandler {
         // 5. Update Stock (Decrement)
         // This should be done carefully.
         // We'll loop or use an RPC if available. Loop for now.
-        for (const item of cartItems) {
+        for (const item of orderItems) {
             // Guard negative stock? DB constraints might handle it, or we allow negative for now.
             // 'stock_on_hand' check constraint >= 0 usually.
             const { error: stockError } = await this.supabase.rpc('decrement_stock', {
@@ -135,39 +200,52 @@ export class ShopSettlementHandler implements ISettlementHandler {
 
             // If RPC doesn't exist, we do manual update (race condition prone but acceptable for now)
             if (stockError && stockError.message.includes('function "decrement_stock" does not exist')) {
-                // Fallback
-                const { error: manualStockError } = await this.supabase
+                // Fallback: Fetch current stock and update
+                console.warn('[SHOP_SETTLEMENT_HANDLER] RPC not found, using fallback stock decrement', { variant: item.variant_id });
+                
+                const { data: currentVariant } = await this.supabase
                     .from('product_variants')
-                    .update({
-                        // We can't do "stock - 1" easily without raw query or RPC.
-                        // We'll skip precise stock management if RPC missing to avoid bugs, 
-                        // OR we fetch fresh stock and update.
-                        // Let's rely on the user to have 'decrement_stock' or add it later.
-                        // For SAFETY, if no RPC, we skip stock update or do it optimistically?
-                        // The user requirement says "decrement product_variants.stock_on_hand (guard negative)".
-                        // I will try to use a simple RPC call. If it fails, I'll log.
-                        // Actually, I can write a quick RPC creation in a migration if I was fully autonomous, 
-                        // but I'll stick to client side for now:
-                        // "Decrement" isn't native in Supabase client without .rpc().
-                    })
+                    .select('stock_on_hand')
+                    .eq('id', item.variant_id)
+                    .single();
 
-                // Let's assume we can use a direct RPC call I'll define later, OR just log warning.
-                console.warn('[SHOP_SETTLEMENT_HANDLER] Stock decrement requires RPC', { variant: item.variant_id });
+                if (currentVariant) {
+                    const newStock = Math.max(0, currentVariant.stock_on_hand - item.qty);
+                    await this.supabase
+                        .from('product_variants')
+                        .update({ 
+                            stock_on_hand: newStock,
+                            updated_at: new Date().toISOString()
+                        })
+                        .eq('id', item.variant_id);
+                    
+                    console.log('[SHOP_SETTLEMENT_HANDLER] Stock decremented manually', { 
+                        variant: item.variant_id, 
+                        oldStock: currentVariant.stock_on_hand,
+                        newStock 
+                    });
+                }
             } else if (stockError) {
                 console.error('[SHOP_SETTLEMENT_HANDLER] Stock decrement failed', stockError);
+            } else {
+                console.log('[SHOP_SETTLEMENT_HANDLER] Stock decremented via RPC', { variant: item.variant_id, qty: item.qty });
             }
         }
 
-        // 6. Clear Cart
-        const { error: clearCartError } = await this.supabase
-            .from('cart_items')
-            .delete()
-            .eq('cart_id', cartId);
+        // 6. Clear Cart (only for cart mode)
+        if (!isBuyNow && cartId) {
+            const { error: clearCartError } = await this.supabase
+                .from('cart_items')
+                .delete()
+                .eq('cart_id', cartId);
 
-        if (clearCartError) {
-            console.error('[SHOP_SETTLEMENT_HANDLER] Failed to clear cart', clearCartError);
+            if (clearCartError) {
+                console.error('[SHOP_SETTLEMENT_HANDLER] Failed to clear cart', clearCartError);
+            } else {
+                console.log('[SHOP_SETTLEMENT_HANDLER] Cart Cleared');
+            }
         } else {
-            console.log('[SHOP_SETTLEMENT_HANDLER] Cart Cleared');
+            console.log('[SHOP_SETTLEMENT_HANDLER] Skipping cart clear (Buy Now mode)');
         }
 
         // 7. Consume Voucher (if any)

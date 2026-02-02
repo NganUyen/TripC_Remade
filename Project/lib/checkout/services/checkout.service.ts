@@ -50,13 +50,75 @@ export class CheckoutService {
     let title = "Booking";
 
     if (payload.serviceType === 'shop') {
-      totalAmount = payload.items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
+      // For shop orders, fetch and store full cart item details in metadata
+      // This prevents settlement failures when cart is cleared or modified
+      const cartId = (payload as any).cartId;
+      const isBuyNow = (payload as any).isBuyNow === true;
 
-      const firstItemName = payload.items[0]?.name || 'Unknown Item';
-      if (payload.items.length === 1) {
-        title = `Shop Order: ${firstItemName}`;
+      if (!isBuyNow && cartId) {
+        // Cart mode: Fetch items from database with full variant details
+        console.log('[CheckoutService] Fetching cart items for cartId:', cartId);
+        
+        const { data: cartItems, error: cartError } = await this.supabase
+          .from('cart_items')
+          .select(`
+            *,
+            variant:product_variants (
+              id,
+              sku,
+              title,
+              price,
+              product_id,
+              product:shop_products (
+                id,
+                title,
+                product_type
+              )
+            )
+          `)
+          .eq('cart_id', cartId);
+
+        if (cartError || !cartItems || cartItems.length === 0) {
+          console.error('[CheckoutService] Failed to fetch cart items', {
+            cartId,
+            error: cartError?.message
+          });
+          throw new Error('Cart items not found. Please ensure your cart is not empty.');
+        }
+
+        console.log('[CheckoutService] Fetched cart items:', cartItems.length);
+
+        // Store the full cart items snapshot in metadata for settlement
+        (payload as any).cartItemsSnapshot = cartItems;
+
+        // Calculate total from database items (authoritative)
+        totalAmount = cartItems.reduce((sum: number, item: any) => 
+          sum + (item.unit_price * item.qty), 0
+        );
+
+        const firstItemName = cartItems[0]?.title_snapshot || cartItems[0]?.variant?.product?.title || 'Unknown Item';
+        if (cartItems.length === 1) {
+          title = `Shop Order: ${firstItemName}`;
+        } else {
+          title = `Shop Order: ${firstItemName} + ${cartItems.length - 1} more`;
+        }
       } else {
-        title = `Shop Order: ${firstItemName} + ${payload.items.length - 1} more`;
+        // Buy Now mode: Use items from payload
+        totalAmount = payload.items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
+
+        const firstItemName = payload.items[0]?.name || 'Unknown Item';
+        if (payload.items.length === 1) {
+          title = `Shop Order: ${firstItemName}`;
+        } else {
+          title = `Shop Order: ${firstItemName} + ${payload.items.length - 1} more`;
+        }
+      }
+
+      // Apply Discount if present
+      const discount = (payload as any).discountAmount || 0;
+      if (discount > 0) {
+        console.log(`[CheckoutService] Applying discount: -${discount} ${payload.currency}`);
+        totalAmount = Math.max(0, totalAmount - discount);
       }
     } else if (payload.serviceType === 'transport') {
       // Basic fallback total calculation if not provided (though route logic usually sends it)
@@ -122,6 +184,14 @@ export class CheckoutService {
       // Calculate price (server authority)
       // For simplicity, children pay full price here; adjust as needed
       totalAmount = ticketType.price * totalTickets;
+
+      // Apply Discount if present
+      const discount = (payload as any).discountAmount || 0;
+      if (discount > 0) {
+        console.log(`[CheckoutService] Applying event discount: -${discount} ${ticketType.currency}`);
+        totalAmount = Math.max(0, totalAmount - discount);
+      }
+
       title = `${event.title} - ${ticketType.name}`;
 
       // Set metadata for rendering
@@ -271,8 +341,15 @@ export class CheckoutService {
         // 3. Final Total
         totalAmount = roomTotal + tax + serviceFee;
 
+        // Apply Discount if present
+        const discount = (payload as any).discountAmount || 0;
+        if (discount > 0) {
+          console.log(`[CheckoutService] Applying hotel discount: -${discount}`);
+          totalAmount = Math.max(0, totalAmount - discount);
+        }
+
         console.log(
-          `[CheckoutService] Hotel Pricing: Rate=${nightlyRate}, Nights=${nights}, Room=${roomTotal}, Tax=${tax}, Service=${serviceFee}, Total=${totalAmount}`,
+          `[CheckoutService] Hotel Pricing: Rate=${nightlyRate}, Nights=${nights}, Room=${roomTotal}, Tax=${tax}, Service=${serviceFee}, Discount=${discount}, Total=${totalAmount}`,
         );
 
         title = hotel.name;
@@ -297,6 +374,12 @@ export class CheckoutService {
         title = `Hotel Stay (${nights} nights)`;
         // Fallback validation if hotel fetch fails (shouldn't happen)
         if (payload.rate) totalAmount = payload.rate * nights;
+
+        // Apply Discount fallback
+        const discount = (payload as any).discountAmount || 0;
+        if (discount > 0) {
+          totalAmount = Math.max(0, totalAmount - discount);
+        }
       }
 
       // 4. Currency Conversion (Hotel records are in USD/cents)
@@ -387,11 +470,74 @@ export class CheckoutService {
       event_type: "BOOKING_CREATED",
     });
 
+    // 5. Mark Voucher as Used
+    const code = (payload as any).couponCode || (payload as any).voucherCode;
+    // Also check metadata just in case
+    const metaCode = (payload.metadata as any)?.couponCode || (payload.metadata as any)?.voucherCode;
+    const voucherCode = code || metaCode;
+
+    if (voucherCode && userId && userId !== 'GUEST') {
+      await this.markVoucherAsUsed(userId, voucherCode);
+    }
+
     return {
       bookingId: booking.id,
       totalAmount: booking.total_amount,
       currency: booking.currency,
       status: booking.status,
     };
+  }
+
+  private async markVoucherAsUsed(userId: string, code: string) {
+    console.log(`[CheckoutService] Marking voucher '${code}' as used for user ${userId}`);
+
+    const { data: voucher } = await this.supabase
+      .from('vouchers')
+      .select('id, code, is_public') // Check is_public or implicit logic
+      .eq('code', code)
+      .single();
+
+    if (!voucher) return;
+
+    // Check if user already has a record
+    const { data: userVoucher } = await this.supabase
+      .from('user_vouchers')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('voucher_id', voucher.id)
+      .eq('status', 'AVAILABLE')
+      .limit(1)
+      .maybeSingle();
+
+    if (userVoucher) {
+      // Update existing record
+      const { error: updateError } = await this.supabase
+        .from('user_vouchers')
+        .update({ status: 'USED', used_at: new Date().toISOString() })
+        .eq('id', userVoucher.id);
+
+      if (updateError) {
+        console.error(`[CheckoutService] Failed to mark voucher USED: ${updateError.message}`, updateError);
+      } else {
+        console.log(`[CheckoutService] Successfully marked voucher ${userVoucher.id} as USED`);
+      }
+    } else {
+      // Insert new usage record (for public vouchers)
+      const { error: insertError } = await this.supabase
+        .from('user_vouchers')
+        .insert({
+          user_id: userId,
+          voucher_id: voucher.id,
+          status: 'USED',
+          used_at: new Date().toISOString(),
+          acquired_at: new Date().toISOString()
+        });
+
+      if (insertError) {
+        console.error(`[CheckoutService] Failed to insert USED voucher record: ${insertError.message}`, insertError);
+      } else {
+        console.log(`[CheckoutService] Successfully inserted USED voucher record for ${code}`);
+      }
+    }
   }
 }

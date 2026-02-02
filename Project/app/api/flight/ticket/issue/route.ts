@@ -175,7 +175,7 @@ async function generateBoardingPasses(
   // Placeholder implementation
   // In production, generate actual PDF files and upload to storage
   const urls = tickets.map((ticket) => {
-    return `${process.env.NEXT_PUBLIC_APP_URL}/boarding-pass/${ticket.id}.pdf`;
+    return `${process.env.NEXT_PUBLIC_APP_URL || ''}/boarding-pass/${ticket.id}.pdf`;
   });
 
   // TODO: Generate actual PDF files

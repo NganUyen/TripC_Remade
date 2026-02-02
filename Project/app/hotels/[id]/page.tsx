@@ -7,20 +7,51 @@ import { HotelContent } from "@/components/hotels/HotelContent";
 import { Footer } from "@/components/Footer";
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
+import { headers } from "next/headers";
+import { supabaseServerClient } from "@/lib/hotel/supabaseServerClient";
 
 async function getHotelData(slug: string) {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-    const res = await fetch(`${baseUrl}/api/hotels/${slug}`, {
-      cache: "no-store",
-    });
+    // Direct Supabase call - no external fetch needed
+    const { data: hotel, error: hotelError } = await supabaseServerClient
+      .from("hotels")
+      .select(
+        `
+        *,
+        rooms:hotel_rooms(*)
+      `,
+      )
+      .eq("slug", slug)
+      .eq("status", "active")
+      .single();
 
-    if (!res.ok) {
+    if (hotelError || !hotel) {
       return null;
     }
 
-    const data = await res.json();
-    return data.success ? data.data : null;
+    // Fetch recent reviews
+    const { data: reviews } = await supabaseServerClient
+      .from("hotel_reviews")
+      .select("*")
+      .eq("hotel_id", hotel.id)
+      .eq("status", "approved")
+      .order("created_at", { ascending: false })
+      .limit(10);
+
+    // Calculate average rating
+    const avgRating =
+      reviews && reviews.length > 0
+        ? reviews.reduce((sum, r) => sum + r.overall_rating, 0) / reviews.length
+        : null;
+
+    return {
+      ...hotel,
+      reviews: {
+        items: reviews || [],
+        count: reviews?.length || 0,
+        average_rating: avgRating,
+      },
+    };
   } catch (error) {
     console.error("Error fetching hotel:", error);
     return null;
