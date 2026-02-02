@@ -1,30 +1,42 @@
-# Vercel Deployment Fix
+# Vercel Deployment Fix - UPDATED
 
 ## Issues Fixed
 
-### 1. Hotel Detail Pages Not Loading
-**Problem**: The hotel detail page was using `NEXT_PUBLIC_APP_URL` with a hardcoded fallback to `http://localhost:3000`, which doesn't work in production.
+### 1. Hotel Detail Pages Not Loading ✅
+**Problem**: The hotel detail page was making external HTTP fetch calls during server-side rendering, which requires absolute URLs. Using `NEXT_PUBLIC_APP_URL` with localhost didn't work in production.
 
-**Solution**: Updated to use relative URLs that work in both development and production environments.
+**Solution**: Changed to direct Supabase calls in the server component, eliminating the need for HTTP fetch and URL configuration entirely.
 
-### 2. Dining Page Not Fetching Data
-**Problem**: The dining API client was using `NEXT_PUBLIC_API_URL` with a hardcoded fallback to `http://localhost:3000/api`.
+### 2. Dining Page Not Fetching Data ✅
+**Problem**: 
+- The dining API client was using relative URLs, which is correct
+- BUT the API response handling was broken - the API returns `{ success: true, data: {...} }`, but the client was trying to access `response.data.data`
 
-**Solution**: Updated to use relative API paths (`/api`) that automatically work with the deployed domain.
+**Solution**: 
+- Updated `fetchAPI` utility to automatically unwrap the `data` field from API responses
+- Updated all dining API methods to remove the redundant `.data` access
+- Dining API now works correctly with relative URLs
 
 ---
 
 ## Files Modified
 
 1. **`app/hotels/[id]/page.tsx`**
-   - Changed from absolute URL to relative URL for API calls
-   - Now works seamlessly on both localhost and Vercel
+   - Removed external fetch() call
+   - Now uses direct Supabase query in the server component
+   - No URL configuration needed - works everywhere automatically
 
 2. **`lib/api.ts`**
-   - Updated `API_BASE_URL` to use relative path `/api` instead of `http://localhost:3000/api`
-   - All dining and other API calls now use relative URLs
+   - Updated `fetchAPI` to automatically unwrap API responses
+   - When API returns `{ success: true, data: {...} }`, it now returns just the data
+   - Maintains compatibility with both wrapped and unwrapped responses
 
-3. **`.env.local.example`**
+3. **`lib/dining/api.ts`**
+   - Removed all `.data` property access (50+ occurrences)
+   - Now uses type assertions instead
+   - Clean, consistent API client
+
+4. **`.env.local.example`**
    - Updated documentation to clarify environment variable usage
 
 ---

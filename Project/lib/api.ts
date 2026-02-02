@@ -22,6 +22,12 @@ export async function fetchAPI(endpoint: string, options?: RequestInit) {
       const message = (body as { error?: string })?.error ?? `API error: ${response.status}`
       throw new Error(message)
     }
+    
+    // If the response has a 'data' field (our API wrapper pattern), return just the data
+    if (body && typeof body === 'object' && 'data' in body && 'success' in body) {
+      return body.data
+    }
+    
     return body
   } catch (error) {
     console.error('API fetch error:', error)
