@@ -41,6 +41,7 @@ export interface ShopCheckoutDetails {
     cartId?: string;
     couponCode?: string;
     discountAmount?: number;
+    isBuyNow?: boolean; // Flag for direct purchase (skips cart)
 }
 
 export interface HotelCheckoutDetails {

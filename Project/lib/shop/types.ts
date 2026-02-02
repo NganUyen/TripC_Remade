@@ -29,7 +29,7 @@ export interface Variant {
     product_id: string;
     sku: string;
     title: string;
-    price: Float16Array;
+    price: number;
     compare_at_price: number | null;
     currency: string;
     stock_on_hand: number;
