@@ -149,4 +149,37 @@ export const beautyApi = {
       : `/beauty/appointments/${id}`;
     await api.delete(url);
   },
+
+  // ============================================================
+  // Review functions
+  // ============================================================
+
+  getVenueReviews: async (
+    venueId: string,
+    limit: number = 20,
+    offset: number = 0,
+  ): Promise<{ reviews: any[]; stats: any }> => {
+    const response = await api.get(
+      `/beauty/venues/${venueId}/reviews?limit=${limit}&offset=${offset}`,
+    );
+    return response.data;
+  },
+
+  createReview: async (
+    data: {
+      venue_id: string;
+      service_id?: string;
+      rating: number;
+      title?: string;
+      comment?: string;
+    },
+    options?: { headers?: Record<string, string> },
+  ): Promise<any> => {
+    const response = await api.post(
+      `/beauty/venues/${data.venue_id}/reviews`,
+      data,
+      options?.headers ? { headers: options.headers } : undefined,
+    );
+    return response.data;
+  },
 };

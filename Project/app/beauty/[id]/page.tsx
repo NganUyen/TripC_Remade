@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { useUser } from '@clerk/nextjs'
 import { beautyApi } from '@/lib/beauty/api'
 import type { BeautyService, BeautyVenue, BeautyAppointment } from '@/lib/beauty/types'
+import { ReviewSection } from '@/components/shared/reviews/ReviewSection'
 
 const FALLBACK_HERO = {
     title: 'Radiance Renewal Facial',
@@ -45,7 +46,7 @@ export default function BeautyDetailPage() {
                 return s.venue_id ? beautyApi.getVenueById(s.venue_id) : null
             })
             .then((v) => v && setVenue(v))
-            .catch(() => {})
+            .catch(() => { })
             .finally(() => setLoading(false))
     }, [id])
 
@@ -244,11 +245,10 @@ export default function BeautyDetailPage() {
                             </div>
                             {bookingMessage && (
                                 <div
-                                    className={`mb-4 p-4 rounded-xl text-sm font-medium ${
-                                        bookingMessage.type === 'success'
-                                            ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200'
-                                            : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200'
-                                    }`}
+                                    className={`mb-4 p-4 rounded-xl text-sm font-medium ${bookingMessage.type === 'success'
+                                        ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200'
+                                        : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200'
+                                        }`}
                                 >
                                     {bookingMessage.text}
                                 </div>
@@ -274,6 +274,17 @@ export default function BeautyDetailPage() {
                     </div>
                 </div>
             </main>
+
+            {id && (
+                <div className="max-w-7xl mx-auto px-6 md:px-12 mb-16">
+                    <ReviewSection
+                        entityId={id}
+                        entityType="beauty_service"
+                        title="Service Reviews"
+                        className="bg-white dark:bg-zinc-900 rounded-[2rem] p-8 md:p-12 shadow-sm border border-zinc-100 dark:border-zinc-800"
+                    />
+                </div>
+            )}
 
             <section className="max-w-7xl mx-auto px-6 md:px-12 pb-24">
                 <div className="relative w-full h-[500px] rounded-[2rem] overflow-hidden shadow-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-100">

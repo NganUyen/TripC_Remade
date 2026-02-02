@@ -166,4 +166,36 @@ export const diningApi = {
     const response = await api.get(`/dining/venues/${venueId}/available-times?${queryParams.toString()}`)
     return response.data
   },
+
+  // ============================================================
+  // Review functions
+  // ============================================================
+
+  getVenueReviews: async (
+    venueId: string,
+    limit: number = 20,
+    offset: number = 0,
+  ): Promise<{ reviews: any[]; stats: any }> => {
+    const response = await api.get(
+      `/dining/venues/${venueId}/reviews?limit=${limit}&offset=${offset}`,
+    )
+    return response.data
+  },
+
+  createReview: async (
+    data: {
+      venue_id: string;
+      rating: number;
+      title?: string;
+      comment?: string;
+    },
+    options?: { headers?: Record<string, string> },
+  ): Promise<any> => {
+    const response = await api.post(
+      `/dining/venues/${data.venue_id}/reviews`,
+      data,
+      options?.headers ? { headers: options.headers } : undefined,
+    )
+    return response.data
+  },
 }
