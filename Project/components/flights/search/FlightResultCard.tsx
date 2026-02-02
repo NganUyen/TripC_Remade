@@ -11,7 +11,7 @@ interface FlightResultCardProps {
         airlineColor?: string
         flightNumber: string
         departure: { time: string, airport: string }
-        arrival: { time: string, airport: string }
+        arrival: { time: string, airport: string, daysAdded?: number }
         duration: string
         stops: number
         price: number
@@ -61,7 +61,7 @@ export function FlightResultCard({ flight, onSelect, isSelected }: FlightResultC
 
                         {/* Duration Path */}
                         <div className="flex-1 flex flex-col items-center">
-                            <div className="text-[10px] font-bold text-slate-400 mb-1 tracking-widest">{flight.duration}</div>
+                            <div className="text-xs font-black text-slate-800 dark:text-slate-200 mb-1 tracking-widest">{flight.duration}</div>
                             <div className="w-full h-[1px] bg-slate-200 dark:bg-slate-800 relative flex items-center justify-center">
                                 {/* Simple dot or plane */}
                                 <div className="bg-white dark:bg-slate-900 p-1 rounded-full border border-slate-100 dark:border-slate-800">
@@ -75,7 +75,12 @@ export function FlightResultCard({ flight, onSelect, isSelected }: FlightResultC
 
                         {/* Arrival */}
                         <div className="text-center min-w-[70px]">
-                            <div className="text-2xl font-bold text-slate-900 dark:text-white leading-none mb-1">{flight.arrival.time}</div>
+                            <div className="flex items-start justify-center">
+                                <div className="text-2xl font-bold text-slate-900 dark:text-white leading-none mb-1">{flight.arrival.time}</div>
+                                {(flight.arrival.daysAdded ?? 0) > 0 && (
+                                    <span className="text-[10px] font-bold text-[#FF5E1F] ml-0.5">+{flight.arrival.daysAdded}</span>
+                                )}
+                            </div>
                             <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">{flight.arrival.airport}</div>
                         </div>
                     </div>
@@ -85,8 +90,8 @@ export function FlightResultCard({ flight, onSelect, isSelected }: FlightResultC
                         <div className="flex flex-col items-end text-right">
                             <span className="text-xs text-slate-400 line-through font-medium">${flight.price + 45}</span>
                             <div className="flex items-baseline gap-0.5">
-                                <span className="text-sm font-bold text-[#FF5E1F]">$</span>
                                 <span className="text-3xl font-black text-[#FF5E1F] tracking-tight">{flight.price}</span>
+                                <span className="text-sm font-bold text-[#FF5E1F]">$</span>
                             </div>
                             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">/pax</span>
                         </div>

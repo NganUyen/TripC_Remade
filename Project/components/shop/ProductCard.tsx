@@ -3,6 +3,7 @@
 import React from 'react'
 import Link from 'next/link'
 import { Star, ShoppingBag, Heart } from 'lucide-react'
+import { WishlistButton } from '@/components/WishlistButton'
 
 export interface ProductCardProps {
     id: string | number
@@ -22,6 +23,7 @@ import { useCartStore } from '@/store/useCartStore';
 import { useCartAnimation } from '@/store/useCartAnimation';
 import { toast } from 'sonner';
 import { useAuth } from '@clerk/nextjs';
+import { shopApi } from '@/lib/hooks/useShopAPI';
 
 export function ProductCard({ id, slug, title, price, rating, reviews, image, badge, compareAtPrice, category = "Travel Gear", colors = ["#000000", "#1e293b", "#cbd5e1"] }: ProductCardProps) {
     const discount = compareAtPrice ? Math.round(((compareAtPrice - price) / compareAtPrice) * 100) : 0
@@ -37,6 +39,7 @@ export function ProductCard({ id, slug, title, price, rating, reviews, image, ba
     const handleQuickAdd = async (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
+        const button = e.currentTarget;
 
         if (!userId) {
             toast.error("Please login to add items");
@@ -48,15 +51,12 @@ export function ProductCard({ id, slug, title, price, rating, reviews, image, ba
 
 
         try {
-            // Fetch variants using slug if possible, else ID (but ID route is removed now, so only slug)
-            // Wait, if we removed [id] route, we MUST use slug.
-            // ProductCard has slug prop.
-            const identifier = slug || id;
-            const res = await fetch(`/api/shop/products/${identifier}/variants`);
-            if (!res.ok) throw new Error('Failed to fetch variants');
+            // Use slug if available, fallback to id if allowed by API (but our API expects slug)
+            // Ideally backend handles both, but for now we rely on slug or assume id can act as slug if needed.
+            const identifier = slug || String(id);
 
-            const json = await res.json();
-            const variants = json.data;
+            const { data: variants, error } = await shopApi.getVariants(identifier);
+            if (error) throw new Error(error);
 
             if (!variants || variants.length === 0) {
                 toast.error('Product unavailable');
@@ -72,7 +72,7 @@ export function ProductCard({ id, slug, title, price, rating, reviews, image, ba
             }
 
             // Animation
-            const imgEl = (e.currentTarget.closest('.group')?.querySelector('img') as HTMLImageElement);
+            const imgEl = (button.closest('.group')?.querySelector('img') as HTMLImageElement);
             if (imgEl) {
                 // Pass the element directly, store handles the rect/ref
                 startAnimation(imgEl, image);
@@ -81,9 +81,9 @@ export function ProductCard({ id, slug, title, price, rating, reviews, image, ba
             // Add to Cart
             await addItem(variant.id, 1);
 
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
-            toast.error('Failed to add to cart');
+            toast.error(err.message || 'Failed to add to cart');
         } finally {
             setIsAdding(false);
         }
@@ -115,6 +115,23 @@ export function ProductCard({ id, slug, title, price, rating, reviews, image, ba
                             -{discount}%
                         </div>
                     )}
+
+                    {/* Wishlist Button */}
+                    <div
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                        }}
+                    >
+                        <WishlistButton
+                            itemId={String(id)}
+                            itemType="shop"
+                            title={title}
+                            imageUrl={image}
+                            price={price}
+                            className="ml-2 bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border hover:bg-white"
+                        />
+                    </div>
                 </div>
 
                 {/* Hover Overlay & Quick Add Button Slide Up */}

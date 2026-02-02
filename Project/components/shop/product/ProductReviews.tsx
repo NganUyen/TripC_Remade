@@ -6,6 +6,7 @@ import { ReviewSummaryComp } from './ReviewSummary'
 import { ReviewFilters } from './ReviewFilters'
 import { ReviewItem } from './ReviewItem'
 import { Loader2, MessageSquare } from 'lucide-react'
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface ProductReviewsProps {
     slug: string
@@ -36,9 +37,18 @@ export function ProductReviews({ slug }: ProductReviewsProps) {
 
     if (summaryLoading && !summary) {
         return (
-            <div className="flex flex-col items-center justify-center py-20 gap-4">
-                <Loader2 className="w-8 h-8 animate-spin text-[#FF5E1F]" />
-                <p className="text-slate-500 font-medium">Loading reviews...</p>
+            <div className="space-y-8 animate-pulse">
+                <div className="h-8 w-48 bg-slate-100 dark:bg-slate-800 rounded-lg" />
+                <div className="flex flex-col md:flex-row gap-8 items-start">
+                    {/* Summary Skeleton */}
+                    <div className="w-full md:w-1/3 bg-slate-50 dark:bg-white/5 p-6 rounded-2xl h-48" />
+                    {/* Bars Skeleton */}
+                    <div className="w-full md:w-2/3 space-y-3">
+                        {[1, 2, 3, 4, 5].map(i => (
+                            <div key={i} className="h-4 bg-slate-100 dark:bg-slate-800 rounded-full w-full" />
+                        ))}
+                    </div>
+                </div>
             </div>
         )
     }

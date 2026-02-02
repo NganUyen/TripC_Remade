@@ -41,6 +41,23 @@ export default function SettingsPage() {
     const { user, isLoaded } = useUser();
     const { openUserProfile } = useClerk();
     const [activeSection, setActiveSection] = useState<SectionId>('account')
+    const [profileData, setProfileData] = useState<any>(null)
+
+    // Fetch TripC Profile Data
+    useEffect(() => {
+        const fetchProfile = async () => {
+            try {
+                const res = await fetch('/api/v1/user/profile')
+                if (res.ok) {
+                    const data = await res.json()
+                    setProfileData(data)
+                }
+            } catch (error) {
+                console.error('Failed to fetch profile settings', error)
+            }
+        }
+        fetchProfile()
+    }, [])
 
     // Toggle States for interactive demo
     const [toggles, setToggles] = useState({
@@ -73,9 +90,18 @@ export default function SettingsPage() {
         return <div className="min-h-screen bg-[#fcfaf8] dark:bg-[#0a0a0a] flex items-center justify-center">Loading...</div>
     }
 
+    // Helper to split name
+    const fullName = profileData?.name || user?.fullName || ''
+    const [firstName, ...lastNameParts] = fullName.split(' ')
+    const lastName = lastNameParts.join(' ')
+
     return (
         <main className="min-h-screen bg-[#fcfaf8] dark:bg-[#0a0a0a] pb-20">
-            <SettingsHero />
+            <SettingsHero
+                name={profileData?.name || user?.fullName || ''}
+                username={user?.username || ''}
+                image={user?.imageUrl}
+            />
 
             <BridgeNav activeSection={activeSection} setActiveSection={setActiveSection} />
 
@@ -94,10 +120,10 @@ export default function SettingsPage() {
                             >
                                 <SectionCard title="Personal Information" icon={User}>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <InputField label="First Name" defaultValue={user?.firstName || ''} />
-                                        <InputField label="Last Name" defaultValue={user?.lastName || ''} />
+                                        <InputField key={`first-${firstName}`} label="First Name" defaultValue={firstName} />
+                                        <InputField key={`last-${lastName}`} label="Last Name" defaultValue={lastName} />
                                     </div>
-                                    <InputField label="Email Address" defaultValue={user?.primaryEmailAddress?.emailAddress || ''} type="email" disabled />
+                                    <InputField label="Email Address" defaultValue={profileData?.email || user?.primaryEmailAddress?.emailAddress || ''} type="email" disabled />
                                     <InputField label="Username" defaultValue={user?.username || ''} type="text" disabled={!user?.username} />
 
                                     <div className="mt-6 flex justify-end">

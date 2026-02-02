@@ -231,6 +231,11 @@ export const shopApi = {
         return { data: json.data || [], error: null };
     },
 
+    async getVariants(slug: string): Promise<{ data: ProductVariant[]; error: string | null }> {
+        const result = await fetchApi<ProductVariant[]>(`/products/${slug}/variants`);
+        return { data: result.data || [], error: result.error };
+    },
+
     // Categories
     async getCategories(): Promise<{ data: Category[]; error: string | null }> {
         const result = await fetchApi<Category[]>('/categories');
@@ -476,13 +481,13 @@ export function useReviewsSummary(slug: string) {
 // ============================================================================
 
 export function formatPrice(money: Money): string {
-    const amount = money.amount / 100;
+    const amount = money.amount;
     return new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: money.currency,
     }).format(amount);
 }
 
-export function formatPriceSimple(cents: number): number {
-    return cents / 100;
+export function formatPriceSimple(amount: number): number {
+    return amount;
 }

@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
       user = await verifyClerkAuth();
     } catch (authError) {
       return NextResponse.json(
-        { 
+        {
           error: 'Unauthorized',
           message: 'Authentication required. Please sign in to book flights.'
         },
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
 
     if (!passengers || !validatePassengers(passengers)) {
       return NextResponse.json(
-        { 
+        {
           error: 'Invalid passengers data',
           message: 'passengers must be an array with at least one passenger containing first_name and last_name'
         },
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
 
     if (!contact_info || !contact_info.email || !contact_info.phone) {
       return NextResponse.json(
-        { 
+        {
           error: 'Invalid contact_info',
           message: 'contact_info must include email and phone'
         },
@@ -150,7 +150,7 @@ export async function POST(request: NextRequest) {
     // Check seat availability
     if (offer.seats_available < passengers.length) {
       return NextResponse.json(
-        { 
+        {
           error: 'Insufficient seats',
           message: `Only ${offer.seats_available} seats available, but ${passengers.length} requested`
         },
@@ -172,7 +172,7 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (!existingBooking) break;
-      
+
       pnr = generatePNR();
       pnrAttempts++;
     }
@@ -214,11 +214,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Auto-save travelers for the user
+    try {
+      const { upsertSavedTraveler } = await import('@/lib/actions/saved-travelers');
+      for (const p of passengers) {
+        await upsertSavedTraveler({
+          first_name: p.first_name,
+          last_name: p.last_name,
+          email: contact_info.email, // Use booking contact email as fallback
+          phone_number: contact_info.phone, // Use booking contact phone as fallback
+          date_of_birth: p.dob,
+          nationality: p.nationality,
+          passport_number: p.document_number,
+        }).catch(err => console.error('[AUTO_SAVE_TRAVELER] Failed for', p.first_name, err));
+      }
+    } catch (saveErr) {
+      console.error('[AUTO_SAVE_TRAVELERS] Critical error in auto-save logic:', saveErr);
+    }
+
     // Update seat availability (decrement)
     const { error: updateError } = await supabaseServerClient
       .from('flight_offers')
-      .update({ 
-        seats_available: offer.seats_available - passengers.length 
+      .update({
+        seats_available: offer.seats_available - passengers.length
       })
       .eq('id', offer.id);
 
@@ -260,7 +278,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Booking error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    
+
     return NextResponse.json(
       { error: 'Internal server error', message: errorMessage },
       { status: 500 }

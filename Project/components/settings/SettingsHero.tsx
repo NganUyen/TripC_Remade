@@ -4,9 +4,15 @@ import { motion } from 'framer-motion'
 import { Save, Ban, CheckCircle } from 'lucide-react'
 import { springTransition } from './InternalComponents'
 
-export function SettingsHero() {
+interface SettingsHeroProps {
+    name?: string
+    username?: string
+    image?: string
+}
+
+export function SettingsHero({ name, username, image }: SettingsHeroProps) {
     return (
-        <section className="w-full pt-28 pb-8">
+        <section className="w-full pt-8 pb-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <motion.div
                     initial={{ opacity: 0, y: 10 }}
@@ -20,7 +26,7 @@ export function SettingsHero() {
                         <div className="relative shrink-0">
                             <div className="w-24 h-24 md:w-28 md:h-28 rounded-full p-1 bg-gradient-to-tr from-[#FF5E1F] to-amber-500 shadow-lg">
                                 <img
-                                    src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=2864&auto=format&fit=crop"
+                                    src={image || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=2864&auto=format&fit=crop"}
                                     alt="User"
                                     className="w-full h-full rounded-full object-cover border-4 border-[#fcfaf8] dark:border-[#0a0a0a]"
                                 />
@@ -37,7 +43,7 @@ export function SettingsHero() {
                                 </span>
                             </div>
                             <p className="text-slate-500 dark:text-slate-400 font-medium mb-3">
-                                @alex.j • Account & preferences
+                                @{username || 'guest'} • Account & preferences
                             </p>
 
                             {/* Mini Stats */}

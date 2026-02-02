@@ -33,7 +33,7 @@ export function BeautyHero({
   }, [])
 
   return (
-    <section className="relative min-h-[550px] w-full flex flex-col items-center justify-center pt-24 pb-12 px-4">
+    <section className="relative min-h-[550px] w-full flex flex-col items-center justify-center pt-16 pb-12 px-4">
       <div className="absolute inset-0 z-0 overflow-hidden rounded-b-[2.5rem]">
         <img
           src="https://images.unsplash.com/photo-1600948836101-f9ffda59d250?q=80&w=2669&auto=format&fit=crop"
@@ -43,7 +43,7 @@ export function BeautyHero({
         <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/20 to-[#fcfaf8] dark:to-[#0a0a0a]"></div>
       </div>
 
-      <div className="relative z-10 w-full max-w-5xl flex flex-col items-center mt-8 md:mt-16">
+      <div className="relative z-10 w-full max-w-5xl flex flex-col items-center mt-4 md:mt-8">
         <motion.h1
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}

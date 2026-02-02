@@ -4,6 +4,7 @@ import { ReactNode } from "react";
 import { ConvexProvider, ConvexReactClient } from "convex/react";
 import { ClerkProvider, useAuth } from "@clerk/nextjs";
 import { ConvexProviderWithClerk } from "convex/react-clerk";
+import { WishlistProvider } from "@/components/providers/WishlistProvider";
 
 // Validate required environment variables
 if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
@@ -42,7 +43,9 @@ export function Providers({ children }: { children: ReactNode }) {
       }}
     >
       <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
-        {children}
+        <WishlistProvider>
+          {children}
+        </WishlistProvider>
       </ConvexProviderWithClerk>
     </ClerkProvider>
   );

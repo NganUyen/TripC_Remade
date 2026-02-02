@@ -20,6 +20,10 @@ export async function GET(request: NextRequest, { params }: Params) {
         // Use queries interface
         const product = await getProductBySlug(slug);
 
+        if (product) {
+            const vars = await getVariantsByProductId(product.id);
+        }
+
         if (!product) {
             return errorResponse('PRODUCT_NOT_FOUND', `Product "${slug}" not found`, 404);
         }

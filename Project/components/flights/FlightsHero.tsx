@@ -1,31 +1,31 @@
 "use client"
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from "sonner"
-// import { DatePicker } from "@/components/ui/date-picker" // Removed
-import { Plane, ArrowRightLeft, Users, Search, Plus } from "lucide-react"
+import { ArrowRightLeft, Users, Search, Plus, X, ArrowRight } from "lucide-react"
+import { SearchHistoryItem } from '../common/SearchWithHistoryInput'
 import { SelectPopup } from '../ui/SelectPopup'
 import { CounterInput } from '../ui/CounterInput'
 import { SimpleCalendar as Calendar } from '../ui/SimpleCalendar'
+import { SearchWithHistoryInput } from '../common/SearchWithHistoryInput'
+import { AIRPORTS, type Airport } from '@/lib/constants/airports'
 
-// Mock Data
-const AIRPORTS = [
-    { code: 'HAN', city: 'Hanoi', country: 'Vietnam' },
-    { code: 'SGN', city: 'Ho Chi Minh', country: 'Vietnam' },
-    { code: 'DAD', city: 'Da Nang', country: 'Vietnam' },
-    { code: 'JFK', city: 'New York', country: 'United States' },
-    { code: 'LHR', city: 'London', country: 'United Kingdom' },
-    { code: 'HND', city: 'Tokyo', country: 'Japan' },
-    { code: 'SIN', city: 'Singapore', country: 'Singapore' },
-    { code: 'DXB', city: 'Dubai', country: 'UAE' },
-]
+const MAX_MULTI_CITY_FLIGHTS = 5
+
+interface MultiCityFlight {
+    id: number;
+    from: Airport | null;
+    to: Airport | null;
+    date: Date | undefined;
+    isOpen: boolean;
+}
 
 export function FlightsHero() {
     const router = useRouter()
-    const [tripType, setTripType] = useState('round-trip')
-    const [from, setFrom] = useState(AIRPORTS[3]) // JFK default
-    const [to, setTo] = useState(AIRPORTS[4]) // LHR default
+    const [tripType, setTripType] = useState<'round-trip' | 'one-way' | 'multi-city'>('round-trip')
+    const [from, setFrom] = useState<Airport | null>(null)
+    const [to, setTo] = useState<Airport | null>(null)
     const [departDate, setDepartDate] = useState<Date>()
     const [returnDate, setReturnDate] = useState<Date>()
 
@@ -34,25 +34,13 @@ export function FlightsHero() {
     const [activeTab, setActiveTab] = useState<'depart' | 'return' | 'travelers' | null>(null)
     const travelersRef = useRef<HTMLDivElement>(null)
 
-    // Multi-City State (Adapted for DatePicker)
-    const [multiCityFlights, setMultiCityFlights] = useState([
-        { id: 1, from: AIRPORTS[0], to: AIRPORTS[1], date: undefined as Date | undefined, isOpen: false },
-        { id: 2, from: AIRPORTS[1], to: AIRPORTS[2], date: undefined as Date | undefined, isOpen: false }
+    // Multi-City State
+    const [multiCityFlights, setMultiCityFlights] = useState<MultiCityFlight[]>([
+        { id: 1, from: null, to: null, date: undefined, isOpen: false }
     ])
 
     // Swap Animation State
     const [isSwapped, setIsSwapped] = useState(false)
-
-    // Click outside handler for travelers popover
-    useEffect(() => {
-        function handleClickOutside(event: MouseEvent) {
-            if (travelersRef.current && !travelersRef.current.contains(event.target as Node)) {
-                // setActiveTab(null) // handled by SelectPopup
-            }
-        }
-        document.addEventListener("mousedown", handleClickOutside)
-        return () => document.removeEventListener("mousedown", handleClickOutside)
-    }, [])
 
     const handleSwap = () => {
         setIsSwapped(!isSwapped)
@@ -89,9 +77,55 @@ export function FlightsHero() {
         setMultiCityFlights(newFlights)
     }
 
+    const updateMultiCityFrom = (index: number, airport: Airport) => {
+        const newFlights = [...multiCityFlights]
+        newFlights[index].from = airport
+        setMultiCityFlights(newFlights)
+    }
+
+    const updateMultiCityTo = (index: number, airport: Airport) => {
+        const newFlights = [...multiCityFlights]
+        newFlights[index].to = airport
+        setMultiCityFlights(newFlights)
+    }
+
+    const addMultiCityFlight = () => {
+        if (multiCityFlights.length >= MAX_MULTI_CITY_FLIGHTS) {
+            toast.error(`Maximum ${MAX_MULTI_CITY_FLIGHTS} flight segments allowed`)
+            return
+        }
+        const lastFlight = multiCityFlights[multiCityFlights.length - 1]
+        setMultiCityFlights([
+            ...multiCityFlights,
+            {
+                id: multiCityFlights.length + 1,
+                from: lastFlight.to, // Pre-populate with previous destination
+                to: null,
+                date: undefined,
+                isOpen: false
+            }
+        ])
+    }
+
+    const removeMultiCityFlight = (index: number) => {
+        if (multiCityFlights.length === 1) {
+            toast.error("At least one flight segment is required")
+            return
+        }
+        setMultiCityFlights(multiCityFlights.filter((_, i) => i !== index))
+    }
+
     const handleSearch = () => {
         // Validation
         if (tripType !== 'multi-city') {
+            if (!from) {
+                toast.error("Please select a departure airport.")
+                return
+            }
+            if (!to) {
+                toast.error("Please select a destination airport.")
+                return
+            }
             if (!departDate) {
                 toast.error("Please select a departure date.")
                 return
@@ -105,29 +139,109 @@ export function FlightsHero() {
                 toast.error("Return date must be after departure date.")
                 return
             }
+
+            // Save search history
+            try {
+                fetch("/api/user/history", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        category: "flight",
+                        searchParams: {
+                            query: `${from.city} -> ${to.city}`,
+                            timestamp: new Date().toISOString(),
+                            type: "flight_route",
+                            from,
+                            to,
+                            tripType
+                        },
+                    }),
+                });
+            } catch (error) {
+                console.error("Failed to save route history", error)
+            }
         } else {
-            // Minimal validation for multi-city
-            const invalidFlight = multiCityFlights.find(f => !f.date)
-            if (invalidFlight) {
-                toast.error(`Please select a date for Flight ${invalidFlight.id}`)
-                return
+            // Multi-city validation
+            for (let i = 0; i < multiCityFlights.length; i++) {
+                const flight = multiCityFlights[i]
+                if (!flight.from) {
+                    toast.error(`Please select departure airport for Flight ${i + 1}`)
+                    return
+                }
+                if (!flight.to) {
+                    toast.error(`Please select destination airport for Flight ${i + 1}`)
+                    return
+                }
+                if (!flight.date) {
+                    toast.error(`Please select a date for Flight ${i + 1}`)
+                    return
+                }
             }
         }
 
-        const params = new URLSearchParams({
-            from: from.code,
-            fromCity: from.city,
-            to: to.code,
-            toCity: to.city,
-            depart: departDate ? departDate.toISOString() : '',
-            return: returnDate ? returnDate.toISOString() : '',
-            tripType,
-            adults: travelers.adults.toString(),
-            children: travelers.children.toString(),
-        })
+        if (tripType !== 'multi-city' && from && to) {
+            const params = new URLSearchParams({
+                from: from.code,
+                fromCity: from.city,
+                to: to.code,
+                toCity: to.city,
+                depart: departDate ? departDate.toISOString() : '',
+                return: returnDate ? returnDate.toISOString() : '',
+                tripType,
+                adults: travelers.adults.toString(),
+                children: travelers.children.toString(),
+            })
+            router.push(`/flights/search?${params.toString()}`)
+        } else {
+            // Multi-city search (implement as needed)
+            toast.info("Multi-city search coming soon!")
+        }
+    }
 
-        // Push logic
-        router.push(`/flights/search?${params.toString()}`)
+    const getAirportDisplay = (airport: Airport) => {
+        return `${airport.city} (${airport.code})`
+    }
+
+    const renderAirportResult = (airport: Airport) => {
+        return (
+            <div className="flex flex-col">
+                <div className="flex items-center gap-2">
+                    <span className="font-bold text-slate-900 dark:text-white">{airport.city}</span>
+                    <span className="text-xs font-mono text-slate-500 dark:text-slate-400">{airport.code}</span>
+                </div>
+                <div className="text-xs text-slate-500 dark:text-slate-400">
+                    {airport.name} • {airport.country}
+                </div>
+            </div>
+        )
+    }
+
+    const handleRouteSelect = (item: SearchHistoryItem) => {
+        const params = item.search_params;
+        if (params.from && params.to) {
+            setFrom(params.from);
+            setTo(params.to);
+            if (params.tripType) setTripType(params.tripType);
+        }
+    }
+
+    const renderRouteHistory = (item: SearchHistoryItem) => {
+        const params = item.search_params;
+        if (params.type === 'flight_route' && params.from && params.to) {
+            return (
+                <div className="flex flex-col">
+                    <div className="flex items-center gap-2 text-sm font-medium">
+                        <span className="text-slate-900 dark:text-white">{params.from.city}</span>
+                        <ArrowRight className="w-3 h-3 text-slate-400" />
+                        <span className="text-slate-900 dark:text-white">{params.to.city}</span>
+                    </div>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+                        {params.tripType === 'round-trip' ? 'Round Trip' : 'One Way'}
+                    </span>
+                </div>
+            )
+        }
+        return <span>{params.query}</span>;
     }
 
     return (
@@ -145,10 +259,6 @@ export function FlightsHero() {
             <div className="relative z-10 w-full max-w-[1440px] px-4 lg:px-12 flex flex-col items-center">
                 {/* Hero Text */}
                 <div className="text-center mb-8 max-w-4xl animate-fadeIn">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-sm font-medium mb-6">
-                        <Plane className="w-4 h-4 text-[#FF5E1F]" />
-                        <span>Discover the world with comfort</span>
-                    </div>
                     <h1 className="text-white text-4xl md:text-6xl lg:text-7xl font-black leading-tight tracking-tight mb-3 drop-shadow-2xl">
                         Explore the World
                     </h1>
@@ -163,7 +273,7 @@ export function FlightsHero() {
 
                         {/* Trip Type Tabs */}
                         <div className="flex mb-6 gap-6 border-b border-black/5 dark:border-white/10 pb-0 w-fit">
-                            {['round-trip', 'one-way', 'multi-city'].map((type) => (
+                            {(['round-trip', 'one-way', 'multi-city'] as const).map((type) => (
                                 <button
                                     key={type}
                                     onClick={() => setTripType(type)}
@@ -180,25 +290,50 @@ export function FlightsHero() {
                             <div className="flex flex-col gap-4">
                                 {/* Route: From - Swap - To */}
                                 <div className="flex flex-col md:grid md:grid-cols-12 gap-3 relative items-center">
-                                    <div className="w-full md:col-span-5 h-16 bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-xl px-4 flex flex-col justify-center transition-all hover:bg-white dark:hover:bg-white/10 group">
-                                        <label className="text-[10px] uppercase tracking-widest text-slate-500 dark:text-white/40 font-bold mb-0.5">From</label>
-                                        <div className="text-slate-900 dark:text-white font-black text-xl truncate">{from.city} ({from.code})</div>
-                                        <span className="text-[11px] text-slate-400 dark:text-white/40 truncate">{from.country}</span>
+                                    <div className="w-full md:col-span-5">
+                                        <SearchWithHistoryInput
+                                            data={AIRPORTS}
+                                            searchKeys={['code', 'city', 'name', 'country']}
+                                            placeholder="Search airport..."
+                                            onSelect={(airport) => setFrom(airport)}
+                                            category="flight"
+                                            historyType="flight_route"
+                                            label="From"
+                                            renderResult={renderAirportResult}
+                                            getDisplayValue={getAirportDisplay}
+                                            value={from ? getAirportDisplay(from) : ''}
+                                            onHistorySelect={handleRouteSelect}
+                                            renderHistoryItem={renderRouteHistory}
+                                            disableLocalSave={true}
+                                        />
                                     </div>
 
-                                    <div className="md:col-span-2 relative flex justify-center z-30 my-[-18px] md:my-0">
+                                    <div className="md:col-span-2 relative flex justify-center z-40 my-[-18px] md:my-0">
                                         <button
                                             onClick={handleSwap}
-                                            className="w-10 h-10 rounded-full bg-white dark:bg-[#2a2a2a] border border-slate-200 dark:border-white/20 flex items-center justify-center text-slate-500 dark:text-white/80 hover:text-[#FF5E1F] hover:border-[#FF5E1F] shadow-lg transition-all md:absolute md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 relative z-30 rotate-90 md:rotate-0 group"
+                                            disabled={!from || !to}
+                                            className="w-10 h-10 rounded-full bg-white dark:bg-[#2a2a2a] border border-slate-200 dark:border-white/20 flex items-center justify-center text-slate-500 dark:text-white/80 hover:text-[#FF5E1F] hover:border-[#FF5E1F] shadow-lg transition-all md:absolute md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 relative z-30 rotate-90 md:rotate-0 group disabled:opacity-30 disabled:cursor-not-allowed"
                                         >
                                             <ArrowRightLeft className={`w-4 h-4 transition-transform duration-500 ${isSwapped ? 'rotate-180' : 'rotate-0'}`} />
                                         </button>
                                     </div>
 
-                                    <div className="w-full md:col-span-5 h-16 bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-xl px-4 flex flex-col justify-center transition-all hover:bg-white dark:hover:bg-white/10 group">
-                                        <label className="text-[10px] uppercase tracking-widest text-slate-500 dark:text-white/40 font-bold mb-0.5">To</label>
-                                        <div className="text-slate-900 dark:text-white font-black text-xl truncate">{to.city} ({to.code})</div>
-                                        <span className="text-[11px] text-slate-400 dark:text-white/40 truncate">{to.country}</span>
+                                    <div className="w-full md:col-span-5">
+                                        <SearchWithHistoryInput
+                                            data={AIRPORTS}
+                                            searchKeys={['code', 'city', 'name', 'country']}
+                                            placeholder="Search airport..."
+                                            onSelect={(airport) => setTo(airport)}
+                                            category="flight"
+                                            historyType="flight_route"
+                                            label="To"
+                                            renderResult={renderAirportResult}
+                                            getDisplayValue={getAirportDisplay}
+                                            value={to ? getAirportDisplay(to) : ''}
+                                            onHistorySelect={handleRouteSelect}
+                                            renderHistoryItem={renderRouteHistory}
+                                            disableLocalSave={true}
+                                        />
                                     </div>
                                 </div>
 
@@ -250,7 +385,7 @@ export function FlightsHero() {
                                                         setReturnDate(d)
                                                         setActiveTab(null)
                                                     }}
-                                                    minDate={departDate}
+                                                    minDate={departDate || new Date()}
                                                 />
                                             </SelectPopup>
                                         </div>
@@ -312,26 +447,59 @@ export function FlightsHero() {
                         {tripType === 'multi-city' && (
                             <div className="flex flex-col gap-3">
                                 {multiCityFlights.map((flight, index) => (
-                                    <div key={flight.id} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center animate-in fade-in">
-                                        {/* Badge */}
-                                        <div className="hidden md:flex md:col-span-1 h-14 items-center justify-center bg-slate-100 dark:bg-white/5 rounded-xl font-black text-slate-400">
+                                    <div key={flight.id} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-start animate-in fade-in">
+                                        {/* Badge & Remove */}
+                                        <div className="hidden md:flex md:col-span-1 h-14 items-center justify-center bg-slate-100 dark:bg-white/5 rounded-xl font-black text-slate-400 relative">
                                             {index + 1}
+                                            {multiCityFlights.length > 1 && (
+                                                <button
+                                                    onClick={() => removeMultiCityFlight(index)}
+                                                    className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors"
+                                                >
+                                                    <X className="w-3 h-3" />
+                                                </button>
+                                            )}
                                         </div>
 
-                                        {/* Route */}
-                                        <div className="md:col-span-6 h-14 bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-xl px-4 flex items-center justify-between">
-                                            <div className="text-slate-900 dark:text-white font-bold">{flight.from.city}</div>
-                                            <ArrowRightLeft className="w-4 h-4 text-slate-400" />
-                                            <div className="text-slate-900 dark:text-white font-bold">{flight.to.city}</div>
+                                        {/* From */}
+                                        <div className="md:col-span-3">
+                                            <SearchWithHistoryInput
+                                                data={AIRPORTS}
+                                                searchKeys={['code', 'city', 'name', 'country']}
+                                                placeholder="From..."
+                                                onSelect={(airport) => updateMultiCityFrom(index, airport)}
+                                                category="flight"
+                                                historyType="origin"
+                                                label={`Flight ${index + 1} - From`}
+                                                renderResult={renderAirportResult}
+                                                getDisplayValue={getAirportDisplay}
+                                                value={flight.from ? getAirportDisplay(flight.from) : ''}
+                                            />
                                         </div>
 
-                                        {/* Date */}
+                                        {/* To */}
+                                        <div className="md:col-span-3">
+                                            <SearchWithHistoryInput
+                                                data={AIRPORTS}
+                                                searchKeys={['code', 'city', 'name', 'country']}
+                                                placeholder="To..."
+                                                onSelect={(airport) => updateMultiCityTo(index, airport)}
+                                                category="flight"
+                                                historyType="destination"
+                                                label="To"
+                                                renderResult={renderAirportResult}
+                                                getDisplayValue={getAirportDisplay}
+                                                value={flight.to ? getAirportDisplay(flight.to) : ''}
+                                            />
+                                        </div>
+
                                         {/* Date */}
                                         <div
                                             className={`md:col-span-5 bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-xl px-4 py-3 cursor-pointer relative ${flight.isOpen ? 'bg-white dark:bg-white/10 ring-2 ring-[#FF5E1F]/20' : ''}`}
                                             onClick={() => toggleMultiCityPopup(index, true)}
                                         >
-                                            <div className={`font-bold text-center ${flight.date ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-white/40'}`}>
+                                            <label className="text-[10px] uppercase tracking-widest text-slate-500 dark:text-white/40 font-bold mb-0.5">Date</label>
+                                            <div className={`font-bold ${flight.date ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-white/40'}`}>
                                                 {flight.date ? flight.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Select Date'}
                                             </div>
 
@@ -349,10 +517,15 @@ export function FlightsHero() {
                                         </div>
                                     </div>
                                 ))}
-                                <button className="w-full py-3 border-2 border-dashed border-slate-300 dark:border-white/10 rounded-xl text-slate-500 hover:text-[#FF5E1F] hover:border-[#FF5E1F] font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-2">
-                                    <Plus className="w-5 h-5" />
-                                    Add Another Flight
-                                </button>
+                                {multiCityFlights.length < MAX_MULTI_CITY_FLIGHTS && (
+                                    <button
+                                        onClick={addMultiCityFlight}
+                                        className="w-full py-3 border-2 border-dashed border-slate-300 dark:border-white/10 rounded-xl text-slate-500 hover:text-[#FF5E1F] hover:border-[#FF5E1F] font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        <Plus className="w-5 h-5" />
+                                        Add Another Flight
+                                    </button>
+                                )}
                             </div>
                         )}
 
@@ -364,18 +537,6 @@ export function FlightsHero() {
                                 <Search className="w-6 h-6" />
                                 Search Flights
                             </button>
-                        </div>
-                    </div>
-
-                    {/* Recent Searches */}
-                    <div className="mt-12 flex justify-center">
-                        <div className="flex gap-3 overflow-x-auto no-scrollbar max-w-full px-4 items-center">
-                            <span className="text-white/60 font-medium text-xs uppercase tracking-wider py-2">Recent:</span>
-                            {['NYC - LHR', 'DXB - SIN', 'HAN - HND'].map((route, i) => (
-                                <div key={i} className="px-4 py-2 rounded-full bg-black/40 border border-white/10 text-white/90 text-xs font-bold cursor-pointer hover:bg-white/10 transition-colors whitespace-nowrap backdrop-blur-sm">
-                                    {route}
-                                </div>
-                            ))}
                         </div>
                     </div>
                 </div>

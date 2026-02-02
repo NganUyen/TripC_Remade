@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react'
 import { Search, Loader2 } from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
@@ -123,7 +124,17 @@ export function SearchBar() {
                         </div>
 
                         {loading ? (
-                            <div className="p-4 text-center text-slate-400 text-sm">Searching...</div>
+                            <div className="space-y-2 p-1">
+                                {[1, 2, 3].map((i) => (
+                                    <div key={i} className="flex items-center gap-4 p-3 rounded-xl">
+                                        <Skeleton className="w-12 h-12 rounded-lg flex-shrink-0" />
+                                        <div className="flex-1 space-y-2">
+                                            <Skeleton className="h-4 w-3/4" />
+                                            <Skeleton className="h-3 w-1/2" />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         ) : suggestions.length > 0 ? (
                             <>
                                 {suggestions.map((item) => (
@@ -161,7 +172,8 @@ export function SearchBar() {
                         )}
                     </div>
                 </div>
-            )}
-        </div>
+            )
+            }
+        </div >
     )
 }

@@ -1,88 +1,51 @@
-
-import { createServiceSupabaseClient } from "@/lib/supabase-server";
-import { currentUser } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
-import { addMinutes } from "date-fns";
-import { generateBookingCode } from "@/utils/booking-codes";
+import { CheckoutService } from "@/lib/checkout/services/checkout.service";
+import { currentUser } from "@clerk/nextjs/server";
+import { CheckoutPayload } from "@/lib/checkout/types";
 
-export async function POST(request: NextRequest) {
+export const dynamic = "force-dynamic";
+
+export async function POST(req: NextRequest) {
     try {
         const user = await currentUser();
-        if (!user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        const payload = await req.json();
+
+        console.log("[Booking API] Received payload:", JSON.stringify(payload, null, 2));
+
+        // Resolve User ID
+        let userId = payload.userId;
+        if (!userId && user) {
+            userId = user.id; // Clerk ID, service resolves to UUID
+        } else if (!userId) {
+            userId = "GUEST";
         }
 
-        const body = await request.json();
-        const {
-            category,
-            title,
-            description,
-            imageUrl,
-            locationSummary,
-            startDate,
-            endDate,
-            totalAmount,
-            guestDetails,
-            metadata
-        } = body;
+        // Map 'category' (frontend) to 'serviceType' (CheckoutPayload)
+        // The frontend sends 'category', but the type expects 'serviceType'.
+        // We'll normalize it here.
+        const serviceType = payload.category || payload.serviceType;
 
-        // Basic Validation
-        if (!category || !title || !startDate || totalAmount === undefined) {
+        if (!serviceType) {
             return NextResponse.json(
-                { error: "Missing required fields: category, title, startDate, totalAmount" },
+                { error: "Missing serviceType or category" },
                 { status: 400 }
             );
         }
 
-        // TIME CONSTRAINT VALIDATION (Server-Side)
-        const start = new Date(startDate);
-        const now = new Date();
-        const diffMinutes = (start.getTime() - now.getTime()) / (1000 * 60);
+        const checkoutPayload: CheckoutPayload = {
+            ...payload,
+            userId,
+            serviceType: serviceType,
+        };
 
-        if (diffMinutes < 60) {
-            return NextResponse.json(
-                { error: "Invalid booking time. Must be at least 1 hour in advance." },
-                { status: 400 }
-            );
-        }
+        const checkoutService = new CheckoutService();
+        const result = await checkoutService.createBooking(checkoutPayload);
 
-        const supabase = createServiceSupabaseClient();
-        const bookingCode = generateBookingCode(category);
-
-        // Hold for 8 minutes (Strict Business Rule)
-        const expiresAt = addMinutes(new Date(), 8).toISOString();
-
-        const { data, error } = await supabase
-            .from("bookings")
-            .insert({
-                user_id: user.id,
-                category,
-                title,
-                description,
-                image_url: imageUrl,
-                location_summary: locationSummary,
-                start_date: startDate,
-                end_date: endDate,
-                total_amount: totalAmount,
-                status: "held",
-                booking_code: bookingCode,
-                guest_details: guestDetails,
-                metadata: metadata,
-                expires_at: expiresAt,
-            })
-            .select()
-            .single();
-
-        if (error) {
-            console.error("Booking create error:", error);
-            return NextResponse.json({ error: error.message }, { status: 500 });
-        }
-
-        return NextResponse.json(data);
-    } catch (err: any) {
-        console.error("Booking API error:", err);
+        return NextResponse.json(result);
+    } catch (error: any) {
+        console.error("[Booking API] Error:", error);
         return NextResponse.json(
-            { error: "Internal Server Error" },
+            { error: error.message || "Failed to create booking" },
             { status: 500 }
         );
     }

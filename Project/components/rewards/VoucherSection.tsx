@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Tag, Plane, Hotel, Music, Gift, Loader2 } from 'lucide-react'
 import { Voucher } from './shared'
+import { toast } from 'sonner'
 
 
 // --- Helpers ---
@@ -38,7 +39,11 @@ function getVoucherColor(type: string): string {
 
 // --- Components ---
 
-export function VoucherDrawer({ voucher, onClose }: { voucher: Voucher | null, onClose: () => void }) {
+export function VoucherDrawer({ voucher, onClose, onRedeemSuccess }: {
+    voucher: Voucher | null,
+    onClose: () => void,
+    onRedeemSuccess?: () => void
+}) {
     const [redeeming, setRedeeming] = useState(false)
 
     const handleRedeem = async () => {
@@ -53,16 +58,29 @@ export function VoucherDrawer({ voucher, onClose }: { voucher: Voucher | null, o
 
             if (res.ok) {
                 const data = await res.json()
-                // Simple alert for now as sonner is not installed
-                window.alert(`Successfully redeemed ${voucher.code}!\nNew Balance: ${data.newBalance} Tcents`)
+                toast.success(`Successfully redeemed ${voucher.code}!`, {
+                    description: `New Balance: ${data.newBalance} Tcents`
+                })
                 onClose()
-                setTimeout(() => window.location.reload(), 500)
+                // Dispatch custom event to refresh balance instead of page reload
+                window.dispatchEvent(new CustomEvent('voucher-redeemed', {
+                    detail: { newBalance: data.newBalance }
+                }))
+                // Also trigger marketplace refresh to hide redeemed voucher
+                console.log('[VOUCHER] Dispatching refresh-marketplace event')
+                window.dispatchEvent(new Event('refresh-marketplace'))
+
+                // Call parent callback if provided
+                if (onRedeemSuccess) {
+                    console.log('[VOUCHER] Calling onRedeemSuccess callback')
+                    onRedeemSuccess()
+                }
             } else {
                 const err = await res.json()
-                window.alert(err.error || 'Redemption failed')
+                toast.error(err.error || 'Redemption failed')
             }
         } catch (error) {
-            window.alert('Network error. Please try again.')
+            toast.error('Network error. Please try again.')
         } finally {
             setRedeeming(false)
         }

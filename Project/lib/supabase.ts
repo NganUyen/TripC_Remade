@@ -25,7 +25,9 @@ export function useSupabaseClient() {
             });
 
             const headers = new Headers(options?.headers);
-            headers.set("Authorization", `Bearer ${clerkToken}`);
+            if (clerkToken) {
+              headers.set("Authorization", `Bearer ${clerkToken}`);
+            }
 
             return fetch(url, {
               ...options,

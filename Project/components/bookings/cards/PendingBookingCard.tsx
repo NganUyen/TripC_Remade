@@ -1,129 +1,107 @@
+"use client";
 
-import React from 'react';
-import { Plane, Hotel, Ticket, AlertCircle, ArrowRight, Clock } from 'lucide-react';
-import { format } from 'date-fns';
-import { vi } from 'date-fns/locale';
+import React, { useState, useEffect } from 'react';
+import { Clock, ArrowRight, CreditCard, ShieldCheck } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 
 interface PendingBookingCardProps {
     booking: any;
 }
 
 export default function PendingBookingCard({ booking }: PendingBookingCardProps) {
-    const isFlight = booking.category === 'flight';
-    const isHotel = booking.category === 'hotel';
+    const [timeLeft, setTimeLeft] = useState('Checking...');
+    const [progress, setProgress] = useState(100);
+    const router = useRouter();
 
-    const bookingCode = booking.booking_code || booking.metadata?.booking_code || `ORD-${booking.id.slice(0, 8).toUpperCase()}`;
-
-    const Icon = isFlight ? Plane : isHotel ? Hotel : Ticket;
-
-
-    // Calculate remaining time
-    const [timeLeft, setTimeLeft] = React.useState<string>("");
-
-    React.useEffect(() => {
+    useEffect(() => {
         if (!booking.expires_at) return;
-        const interval = setInterval(() => {
+
+        const calculateTimeLeft = () => {
             const now = new Date().getTime();
-            const end = new Date(booking.expires_at).getTime();
-            const distance = end - now;
+            const expiryTime = new Date(booking.expires_at).getTime();
+            const createdTime = new Date(booking.created_at).getTime();
+
+            const distance = expiryTime - now;
+            const totalDuration = expiryTime - createdTime;
 
             if (distance < 0) {
-                clearInterval(interval);
-                setTimeLeft("EXPIRED");
-                // Ideally trigger a refresh
-            } else {
-                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-                setTimeLeft(`${hours > 0 ? hours + 'h ' : ''}${minutes}m ${seconds}s`);
+                setTimeLeft("Hết hạn");
+                setProgress(0);
+                // Ideally trigger a refresh or move to cancelled list
+                router.refresh();
+                return;
             }
-        }, 1000);
-        return () => clearInterval(interval);
-    }, [booking.expires_at]);
 
-    // Handle resume link - Always go to generic payment page now
-    const resumeUrl = `/payment?bookingId=${booking.id}`;
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
-    if (timeLeft === "EXPIRED") return null; // Or show expired state
+            setTimeLeft(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+            setProgress((distance / totalDuration) * 100);
+        };
+
+        const timer = setInterval(calculateTimeLeft, 1000);
+        calculateTimeLeft(); // Initial call
+
+        return () => clearInterval(timer);
+    }, [booking.expires_at, booking.created_at]);
 
     return (
-        <div className="bg-white dark:bg-slate-900 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
-            {/* Top Banner for "Sắp hết hạn" or similar status if needed */}
-            {/* <div className="absolute top-0 right-0 bg-red-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl uppercase tracking-wider">Sắp hết hạn</div> */}
-
-            <div className="flex gap-4 mb-6">
-                <div className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-900 dark:text-white shrink-0">
-                    <Icon size={24} />
+        <motion.div
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            whileHover={{ y: -4 }}
+            className="group relative flex flex-col h-full bg-white dark:bg-zinc-900 rounded-[2rem] p-6 shadow-[0_2px_20px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] transition-all duration-500 border border-orange-100 dark:border-orange-500/20"
+        >
+            {/* Header: Status & Icon */}
+            <div className="flex justify-between items-start mb-6">
+                <div className="p-3 rounded-2xl bg-orange-50 dark:bg-orange-900/10 text-orange-600 dark:text-orange-400">
+                    <CreditCard size={24} strokeWidth={1.5} />
                 </div>
-                <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider line-clamp-1 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-nowrap">
-                            {isFlight ? `VÉ MÁY BAY GIÁ TRỊ CAO` : isHotel ? `ĐẶT PHÒNG KHÁCH SẠN` : `DỊCH VỤ`}
-                        </span>
-                        <span className="text-[10px] font-bold text-white bg-red-500 px-2 py-0.5 rounded uppercase tracking-wider text-nowrap">
-                            SẮP HẾT HẠN
-                        </span>
-                    </div>
-                    <h3 className="text-lg font-bold text-slate-900 dark:text-white leading-tight mb-2 line-clamp-2">
-                        {booking.title}
-                    </h3>
-                    <p className="text-xs text-slate-500 line-clamp-1">
-                        {booking.description || 'Chuyến bay thẳng • Vietnam Airlines • 12h 45m'}
-                    </p>
+                <div className="px-3 py-1 rounded-full bg-orange-100 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 text-[11px] font-bold tracking-wide uppercase flex items-center gap-1.5 animate-pulse">
+                    <Clock size={12} strokeWidth={2} />
+                    Chờ thanh toán
                 </div>
             </div>
 
-            <div className="grid grid-cols-4 gap-4 mb-6">
-                <div className="col-span-2 md:col-span-1">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">HÀNH KHÁCH</p>
-                    <p className="text-xs font-bold text-slate-900 dark:text-white">
-                        {booking.guest_details?.firstName} {booking.guest_details?.lastName}
-                        {booking.guest_details?.passengersCount > 1 ? ` +${booking.guest_details.passengersCount - 1}` : ''}
-                    </p>
-                </div>
-                <div className="col-span-2 md:col-span-1">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">KHỞI HÀNH</p>
-                    <p className="text-xs font-bold text-slate-900 dark:text-white">{format(new Date(booking.start_date), "dd 'Thg' MM, yyyy", { locale: vi })}</p>
-                </div>
-                <div className="col-span-2 md:col-span-1">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">MÃ ĐẶT CHỖ</p>
-                    <p className="text-xs font-bold text-orange-500">{bookingCode}</p>
-                </div>
-                <div className="col-span-2 md:col-span-1">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">HẠNG VÉ</p>
-                    <p className="text-xs font-bold text-slate-900 dark:text-white">{booking.metadata?.vehicleType || 'Phổ thông'}</p>
+            {/* Content: Title & Timer */}
+            <div className="mb-6 space-y-3">
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white leading-tight line-clamp-2">
+                    {booking.title}
+                </h3>
+                <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-sm font-medium">
+                    <span>Hết hạn trong:</span>
+                    <span className="font-mono text-orange-600 dark:text-orange-400 font-bold bg-orange-50 dark:bg-orange-900/10 px-2 py-0.5 rounded-md">
+                        {timeLeft}
+                    </span>
                 </div>
             </div>
 
-            <div className="flex flex-col md:flex-row gap-6 p-5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl items-center">
-                <div className="flex items-center gap-2 text-slate-500 text-xs italic md:w-1/2">
-                    <AlertCircle size={14} />
-                    <span>Vui lòng thanh toán để xác nhận giá vé. Giá có thể thay đổi sau khi thời gian giữ chỗ kết thúc.</span>
+            {/* Action */}
+            <div className="mt-auto pt-4 space-y-4">
+                <div className="w-full bg-slate-100 dark:bg-white/5 h-1.5 rounded-full overflow-hidden">
+                    <motion.div
+                        initial={{ width: "100%" }}
+                        animate={{ width: `${progress}%` }}
+                        transition={{ duration: 0.5 }}
+                        className="h-full bg-orange-500 rounded-full"
+                    />
                 </div>
-                <div className="flex flex-col items-center md:items-end w-full md:w-1/2 gap-3">
-                    <div className="flex items-center gap-2 text-red-500 font-bold border-b-2 border-red-500/20 pb-2 w-full justify-center md:justify-end">
-                        <Clock size={16} className="animate-pulse" />
-                        <span className="text-xl tabular-nums">{timeLeft || '--:--'}</span>
-                    </div>
 
-                    <div className="text-center md:text-right">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase">TỔNG CỘNG (ĐÃ GỒM THUẾ)</p>
-                        <p className="text-2xl font-black text-slate-900 dark:text-white">
-                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: booking.currency || 'VND' }).format(booking.total_amount)}
-                        </p>
-                    </div>
+                <button
+                    onClick={() => router.push(`/payment?bookingId=${booking.id}`)}
+                    className="w-full py-3.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold text-sm hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg shadow-slate-200/50 dark:shadow-none"
+                >
+                    Thanh toán ngay
+                    <ArrowRight size={16} strokeWidth={2} />
+                </button>
 
-                    <a
-                        href={resumeUrl}
-                        className="w-full flex items-center justify-center gap-2 bg-[#FF5E1F] hover:bg-[#ff4e08] text-white font-bold py-3 rounded-full shadow-lg shadow-orange-500/30 transition-all active:scale-95"
-                    >
-                        Thanh toán ngay
-                        <ArrowRight size={16} />
-                    </a>
-
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">HỖ TRỢ 24/7: 1900 6000</p>
+                <div className="flex items-center justify-center gap-1.5 opacity-60">
+                    <ShieldCheck size={12} strokeWidth={1.5} className="text-slate-400 dark:text-slate-500" />
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider">Giao dịch an toàn</span>
                 </div>
             </div>
-        </div>
+        </motion.div>
     );
 }
+

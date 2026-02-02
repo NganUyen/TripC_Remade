@@ -11,14 +11,19 @@ export async function DELETE(request: NextRequest) {
 
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');
+        const category = searchParams.get('category');
 
         const supabase = createServiceSupabaseClient();
-        let query = supabase.from("user_search_history").delete().eq("user_id", user.id);
+        let query = supabase.from("user_search_history").delete().eq("external_user_ref", user.id);
 
         if (id) {
             // Delete specific item
             query = query.eq("id", id);
+        } else if (category) {
+            // Delete all items in category
+            query = query.eq("category", category);
         }
+        // If neither id nor category, delete all user's history
 
         const { error } = await query;
 

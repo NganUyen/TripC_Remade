@@ -1,0 +1,79 @@
+# Entertainment Service - Task List & Progress Checklist
+
+## Status Legend
+- [ ] Not started
+- [x] Completed
+- [~] In progress
+
+## Phase 1: Database Setup
+- [x] Create migrations.sql with entertainment_items table
+- [x] Add UUID support and indexes
+- [x] Add full-text search capability
+- [x] Add Row Level Security policies
+- [x] Add sample seed data
+- [ ] Run migration in Supabase SQL editor
+
+## Phase 2: Backend Infrastructure
+- [x] Create lib/supabaseServer.ts utility
+- [x] Configure environment variables
+- [ ] Test Supabase connection
+
+## Phase 3: API Implementation
+- [x] Implement GET /api/entertainment (list with search)
+- [x] Implement POST /api/entertainment (create)
+- [x] Implement GET /api/entertainment/:id (get single)
+- [x] Implement PUT /api/entertainment/:id (update)
+- [x] Implement DELETE /api/entertainment/:id (delete)
+- [x] Add authentication checks (Clerk integration)
+- [ ] Test all CRUD operations
+
+## Phase 4: Health & Monitoring
+- [x] Create /api/ping health check endpoint
+- [x] Add database connectivity check
+- [x] Add authentication health check
+- [ ] Test ping endpoint
+
+## Phase 5: Documentation
+- [x] Write README.md (setup & usage)
+- [x] Write schema.md (database structure)
+- [x] Write api.md (API contract)
+- [x] Document environment variables
+- [ ] Review and update docs
+
+## Phase 6: Testing
+- [x] Create test examples file
+- [x] Write health endpoint test
+- [x] Write CRUD operation test
+- [ ] Run tests and verify
+
+## Phase 7: Verification & Deployment
+- [ ] Run local dev server
+- [ ] Verify all endpoints work
+- [ ] Test authentication flow
+- [ ] Run migration on production Supabase
+- [ ] Deploy to production
+
+## Environment Variables Required
+- NEXT_PUBLIC_SUPABASE_URL ✓
+- NEXT_PUBLIC_SUPABASE_KEY ✓
+- SUPABASE_SERVICE_ROLE_KEY ✓
+- NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ✓
+- CLERK_SECRET_KEY ✓
+
+## Notes & TODOs
+- Authentication uses Clerk for user verification
+- All write operations (POST, PUT, DELETE) require authentication
+- Read operations are public for available items
+- Consider adding pagination for large result sets
+- Consider adding filtering by type, location, price range
+- Consider adding booking functionality in future iteration
+- Consider adding reviews/ratings system
+- Consider integrating with external entertainment providers (GetYourGuide, Viator, etc.)
+
+## Known Issues / Blockers
+- None at this time
+
+## Completion Date
+- Started: January 30, 2026
+- Target: January 30, 2026
+- Completed: [PENDING]

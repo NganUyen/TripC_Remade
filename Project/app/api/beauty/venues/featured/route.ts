@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { venueService } from "@/lib/beauty";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const limit = request.nextUrl.searchParams.get("limit")

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Check, Gift, Upload, Loader2, X } from 'lucide-react'
+import { toast } from 'sonner'
 import { Quest, fadeInUp } from './shared'
 
 function SubmitModal({ quest, isOpen, onClose }: { quest: Quest | null, isOpen: boolean, onClose: () => void }) {
@@ -23,14 +24,15 @@ function SubmitModal({ quest, isOpen, onClose }: { quest: Quest | null, isOpen: 
             })
 
             if (res.ok) {
-                window.alert('Evidence submitted successfully! Reward pending review.')
+                toast.success('Evidence submitted successfully! Reward pending review.')
+                window.dispatchEvent(new Event('user:refresh')) // Refresh to update list if auto-completed
                 onClose()
             } else {
                 const err = await res.json()
-                window.alert(err.error || 'Submission failed')
+                toast.error(err.error || 'Submission failed')
             }
         } catch (error) {
-            window.alert('Network error. Please try again.')
+            toast.error('Network error. Please try again.')
         } finally {
             setSubmitting(false)
         }
@@ -110,11 +112,13 @@ export function EarnList() {
                 setQuests(prev => prev.map(q =>
                     q.id === questId ? { ...q, status: 'claimed' } : q
                 ))
-                window.alert(`Reward claimed! New balance: ${data.newBalance} Tcent`)
-                window.location.reload() // Refresh to update balance in header
+                toast.success(`Reward claimed! New balance: ${data.newBalance} Tcent`)
+                toast.success(`Reward claimed! New balance: ${data.newBalance} Tcent`)
+                // Trigger global user data refresh without page reload
+                window.dispatchEvent(new Event('user:refresh'))
             } else {
                 const err = await res.json()
-                window.alert(err.error || 'Claim failed')
+                toast.error(err.error || 'Claim failed')
             }
         } catch (error) {
             console.error('Claim error:', error)
@@ -126,9 +130,34 @@ export function EarnList() {
     useEffect(() => {
         const fetchQuests = async () => {
             try {
-                const res = await fetch('/api/v1/quests/available')
-                if (res.ok) {
-                    const data = await res.json()
+                // Parallel: Fetch Quests & Verify Profile
+                const [questsRes, verifyRes] = await Promise.all([
+                    fetch('/api/v1/quests/available'),
+                    fetch('/api/v1/quests/verify-identity', { method: 'POST' })
+                ])
+
+                if (questsRes.ok) {
+                    const data = await questsRes.json()
+                    // If verify turned something to 'completed', we want the fresh list
+                    // Actually, the available endpoint might not return user status efficiently
+                    // But usually 'available' joins submissions. 
+                    // Let's rely on re-fetching or assumes the first fetch is fresh enough if we reload.
+                    // Ideally, we fetch available AGAIN if verify changed something?
+                    // For simplicity: just set data, if the user refreshes they see checkmark.
+                    // Or better: Re-fetch if verify was created/upgraded.
+
+                    if (verifyRes.ok) {
+                        const vData = await verifyRes.json()
+                        if (vData.created || vData.upgraded) {
+                            // Re-fetch quota/status to ensure UI is in sync
+                            const retryRes = await fetch('/api/v1/quests/available')
+                            if (retryRes.ok) {
+                                const newData = await retryRes.json()
+                                setQuests(newData.quests)
+                                return
+                            }
+                        }
+                    }
                     setQuests(data.quests)
                 }
             } catch (err) {

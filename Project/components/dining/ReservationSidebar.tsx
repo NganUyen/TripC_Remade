@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { Calendar, Clock, Users, ChevronDown } from 'lucide-react'
 import { diningApi } from '@/lib/dining/api'
+import { useUser, useClerk } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
 
 interface ReservationSidebarProps {
@@ -16,6 +17,9 @@ export function ReservationSidebar({ venueId }: ReservationSidebarProps) {
     const [availableTimes, setAvailableTimes] = useState<string[]>([])
     const [availabilityReason, setAvailabilityReason] = useState<string | undefined>(undefined)
     const [loading, setLoading] = useState(false)
+    const [guestName, setGuestName] = useState('')
+    const [guestEmail, setGuestEmail] = useState('')
+    const { user } = useUser()
     const router = useRouter()
 
     useEffect(() => {
@@ -36,9 +40,16 @@ export function ReservationSidebar({ venueId }: ReservationSidebarProps) {
             })
     }, [venueId, date, guests])
 
+    useEffect(() => {
+        if (user) {
+            setGuestName(user.fullName || '')
+            setGuestEmail(user.primaryEmailAddress?.emailAddress || '')
+        }
+    }, [user])
+
     const canBook = useMemo(() => {
-        return !!venueId && !!date && !!time && guests >= 1 && availableTimes.includes(time)
-    }, [venueId, date, time, guests, availableTimes])
+        return !!venueId && !!date && !!time && guests >= 1 && availableTimes.includes(time) && !!guestName && !!guestEmail
+    }, [venueId, date, time, guests, availableTimes, guestName, guestEmail])
 
     const handleReservation = async () => {
         if (!venueId) {
@@ -59,12 +70,13 @@ export function ReservationSidebar({ venueId }: ReservationSidebarProps) {
                 appointment_date: date,
                 appointment_time: time,
                 guest_count: guests,
-                guest_name: 'Guest', // You'll want to get this from user context
+                guest_name: guestName,
+                guest_email: guestEmail,
             })
 
-            alert(`Booking confirmed! Code: ${appointment.appointment_code}`)
-            // Optional: add a detail page later
-            router.refresh()
+            // alert(`Booking confirmed! Code: ${appointment.appointment_code}`)
+            // Redirect to My Bookings -> Other tab
+            router.push('/my-bookings?category=other&success=true')
         } catch (error: any) {
             console.error('Error creating reservation:', error)
             alert(error.message || 'Failed to create reservation')
@@ -134,6 +146,24 @@ export function ReservationSidebar({ venueId }: ReservationSidebarProps) {
                         <button onClick={() => setGuests(guests + 1)} className="w-6 h-6 rounded-full bg-white dark:bg-zinc-800 shadow flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold hover:bg-[#FF5E1F] hover:text-white">+</button>
                     </div>
                 </div>
+
+                {/* Guest Info (Always show or only if not logged in? User requested guest support, so let's allow input) */}
+                <div className="space-y-3 pt-2">
+                    <input
+                        type="text"
+                        placeholder="Full Name *"
+                        value={guestName}
+                        onChange={(e) => setGuestName(e.target.value)}
+                        className="w-full bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-full px-5 py-3 text-sm font-bold outline-none focus:border-[#FF5E1F]"
+                    />
+                    <input
+                        type="email"
+                        placeholder="Email Address *"
+                        value={guestEmail}
+                        onChange={(e) => setGuestEmail(e.target.value)}
+                        className="w-full bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-full px-5 py-3 text-sm font-bold outline-none focus:border-[#FF5E1F]"
+                    />
+                </div>
             </div>
 
             <button
@@ -146,7 +176,7 @@ export function ReservationSidebar({ venueId }: ReservationSidebarProps) {
             </button>
 
             <button className="w-full text-slate-500 dark:text-slate-400 font-bold text-sm hover:text-slate-900 dark:hover:text-white transition-colors">
-            For groups > 10, click here
+                For groups {'>'} 10, click here
             </button>
         </div>
     )

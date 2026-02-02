@@ -2,13 +2,15 @@
 // GET /api/dining/appointments?user_id=xxx
 
 import { NextRequest, NextResponse } from "next/server";
+import { currentUser } from "@clerk/nextjs/server";
 import { appointmentService } from "@/lib/dining";
 import type { CreateDiningAppointmentRequest } from "@/lib/dining/types";
 
 export async function POST(request: NextRequest) {
   try {
     const body: CreateDiningAppointmentRequest = await request.json();
-    const userId = request.headers.get("x-user-id") || "anonymous";
+    const user = await currentUser();
+    const userId = user?.id || request.headers.get("x-user-id") || "anonymous";
 
     const { appointment, error } = await appointmentService.createAppointment(body, userId);
     if (!appointment) {
