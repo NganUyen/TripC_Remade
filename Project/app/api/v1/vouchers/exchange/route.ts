@@ -72,6 +72,35 @@ export async function POST(req: Request) {
     }
 
     // 4. Validation Checks
+
+    // Check if user has already redeemed this voucher
+    console.log('[EXCHANGE API] Checking for existing redemption:', {
+      user_id: user.id,
+      voucher_id: voucherId
+    })
+
+    const { data: existingRedemption, error: redemptionCheckError } = await supabase
+      .from('user_vouchers')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('voucher_id', voucherId)
+      .maybeSingle()
+
+    console.log('[EXCHANGE API] Redemption check result:', {
+      existingRedemption,
+      error: redemptionCheckError
+    })
+
+    if (existingRedemption) {
+      console.log('[EXCHANGE API] BLOCKED: User has already redeemed this voucher')
+      return NextResponse.json(
+        { error: "You have already redeemed this voucher" },
+        { status: 400 },
+      );
+    }
+
+    console.log('[EXCHANGE API] Validation passed - proceeding with redemption')
+
     if (!voucher.is_purchasable || !voucher.is_active) {
       return NextResponse.json(
         { error: "This voucher is not available for purchase" },

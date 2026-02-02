@@ -119,9 +119,10 @@ export function CategorySlider() {
   // Assuming "detail" pages are anything deeper than the first segment (e.g. /events/123)
   // We allow root "/", any top-level path "/events", and the compare page
   const isDiscoverPage =
-    pathname === "/" ||
-    /^\/[^/]+$/.test(pathname) ||
-    pathname === "/hotels/compare";
+    (pathname === "/" ||
+      /^\/[^/]+$/.test(pathname) ||
+      pathname === "/hotels/compare") &&
+    pathname !== "/wishlist";
 
   if (!isDiscoverPage) return null;
 

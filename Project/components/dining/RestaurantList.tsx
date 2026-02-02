@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { Star, MapPin, Utensils, BookOpen } from 'lucide-react'
+import { WishlistButton } from '@/components/WishlistButton'
 import { motion } from 'framer-motion'
 import { diningApi } from '@/lib/dining/api'
 import type { DiningVenue } from '@/lib/dining/types'
@@ -98,6 +99,17 @@ export function RestaurantList() {
                                             Featured
                                         </div>
                                     )}
+
+                                    {/* Wishlist Button */}
+                                    <div className="absolute top-4 right-4 z-10">
+                                        <WishlistButton
+                                            itemId={place.id}
+                                            itemType="dining"
+                                            title={place.name}
+                                            imageUrl={place.cover_image_url || undefined}
+                                            className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border hover:bg-white"
+                                        />
+                                    </div>
 
                                     {/* Floating Book Button - Appears on Hover */}
                                     <div className="absolute bottom-4 right-4 translate-y-12 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">

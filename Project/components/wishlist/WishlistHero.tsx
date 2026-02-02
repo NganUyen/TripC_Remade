@@ -7,15 +7,23 @@ import { useState } from 'react'
 const TABS = [
     { id: 'all', label: 'All', icon: Map },
     { id: 'stays', label: 'Stays', icon: Calendar },
-    { id: 'experiences', label: 'Experiences', icon: Heart },
     { id: 'dining', label: 'Dining', icon: Utensils },
+    { id: 'events', label: 'Events', icon: Calendar },
+    { id: 'activities', label: 'Activities', icon: Map },
+    { id: 'wellness', label: 'Wellness', icon: Heart },
+    { id: 'beauty', label: 'Beauty', icon: Heart },
+    { id: 'shop', label: 'Shop', icon: Utensils },
 ]
 
-export function WishlistHero() {
-    const [activeTab, setActiveTab] = useState('all')
+interface WishlistHeroProps {
+    activeTab: string
+    onTabChange: (tab: string) => void
+}
+
+export function WishlistHero({ activeTab, onTabChange }: WishlistHeroProps) {
 
     return (
-        <section className="pt-28 px-4 sm:px-6 lg:px-8 max-w-[1440px] mx-auto mb-6">
+        <section className="pt-8 px-4 sm:px-6 lg:px-8 max-w-[1440px] mx-auto mb-6">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
 
                 {/* Text Content */}
@@ -42,10 +50,10 @@ export function WishlistHero() {
                     {TABS.map((tab) => (
                         <button
                             key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
+                            onClick={() => onTabChange(tab.id)}
                             className={`relative px-4 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap ${activeTab === tab.id
-                                    ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-md transform scale-105'
-                                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                                ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-md transform scale-105'
+                                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
                                 }`}
                         >
                             {tab.label}

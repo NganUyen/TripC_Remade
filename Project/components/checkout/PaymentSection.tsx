@@ -1,4 +1,5 @@
 "use client";
+import { formatCurrency } from "@/lib/utils/currency";
 
 import { useState } from "react";
 import { toast } from "sonner";
@@ -6,9 +7,10 @@ import { toast } from "sonner";
 interface PaymentSectionProps {
     bookingId: string;
     amount: number;
+    currency?: string;
 }
 
-export function PaymentSection({ bookingId, amount }: PaymentSectionProps) {
+export function PaymentSection({ bookingId, amount, currency = 'VND' }: PaymentSectionProps) {
     const [method, setMethod] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
 
@@ -136,7 +138,7 @@ export function PaymentSection({ bookingId, amount }: PaymentSectionProps) {
                 disabled={loading || !agreed || !method}
                 className="w-full bg-primary text-white py-5 rounded-full font-extrabold text-lg shadow-xl shadow-primary/25 hover:shadow-2xl hover:translate-y-[-2px] transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed disabled:translate-y-0"
             >
-                {loading ? "Processing..." : `Pay ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount)}`}
+                {loading ? "Processing..." : `Pay ${formatCurrency(amount, currency as 'USD' | 'VND')}`}
             </button>
         </div>
     );

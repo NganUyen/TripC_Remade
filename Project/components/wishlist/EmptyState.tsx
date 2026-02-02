@@ -2,8 +2,26 @@
 
 import { motion } from 'framer-motion'
 import { Heart, ArrowRight } from 'lucide-react'
+import Link from 'next/link'
 
-export function EmptyState() {
+interface EmptyStateProps {
+    activeTab?: string
+}
+
+export function EmptyState({ activeTab = 'all' }: EmptyStateProps) {
+    const getExploreLink = () => {
+        switch (activeTab) {
+            case 'stays': return '/hotels';
+            case 'dining': return '/dining';
+            case 'events': return '/events';
+            case 'activities': return '/activities';
+            case 'wellness': return '/wellness';
+            case 'beauty': return '/beauty';
+            case 'shop': return '/shop';
+            default: return '/';
+        }
+    }
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -29,10 +47,13 @@ export function EmptyState() {
                 </div>
 
                 {/* Action */}
-                <button className="h-12 px-6 rounded-full bg-[#FF5E1F] text-white font-bold text-sm shadow-lg shadow-orange-500/20 hover:shadow-orange-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 whitespace-nowrap">
+                <Link
+                    href={getExploreLink()}
+                    className="h-12 px-6 rounded-full bg-[#FF5E1F] text-white font-bold text-sm shadow-lg shadow-orange-500/20 hover:shadow-orange-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 whitespace-nowrap"
+                >
                     Explore Trending Destinations
                     <ArrowRight className="w-4 h-4" />
-                </button>
+                </Link>
             </div>
         </motion.div>
     )

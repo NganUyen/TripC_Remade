@@ -23,6 +23,7 @@ export interface Voucher {
     current_usage_count: number
     is_purchasable: boolean
     is_active: boolean
+    is_redeemed?: boolean  // Added by API to indicate if current user has redeemed this voucher
     // Frontend helpers (will need to be derived or mapped if not in DB, but adhering to strict DB fields for 'Voucher' type itself as requested)
 }
 
