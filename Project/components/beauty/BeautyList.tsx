@@ -6,33 +6,34 @@ import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { beautyApi } from '@/lib/beauty/api'
 import type { VenueSearchParams } from '@/lib/beauty/types'
+import { WishlistButton } from '@/components/WishlistButton'
 
 type DisplayItem = {
-  id: string
-  salon: string
-  service: string
-  rating: number
-  reviews: number
-  price: number
-  image: string
-  badge: string | null
+    id: string
+    salon: string
+    service: string
+    rating: number
+    reviews: number
+    price: number
+    image: string
+    badge: string | null
 }
 
 type VenueCardItem = {
-  id: string
-  name: string
-  city: string | null
-  district: string | null
-  rating: number
-  reviews: number
-  image: string
+    id: string
+    name: string
+    city: string | null
+    district: string | null
+    rating: number
+    reviews: number
+    image: string
 }
 
 const FALLBACK: DisplayItem[] = [
-  { id: '1', salon: 'Lumina Hair Studio', service: 'Luxury Balayage & Cut', rating: 4.9, reviews: 320, price: 150, image: 'https://images.unsplash.com/photo-1562322140-8baeececf3df?q=80&w=800&auto=format&fit=crop', badge: 'Bestseller' },
-  { id: '2', salon: 'Glow Nail Bar', service: 'Gel Manicure & Art', rating: 4.8, reviews: 850, price: 45, image: 'https://images.unsplash.com/photo-1632345031435-8727f6897d53?q=80&w=800&auto=format&fit=crop', badge: 'Trending' },
-  { id: '3', salon: 'Serenity Spa', service: 'Full Body Massage (90m)', rating: 4.9, reviews: 1200, price: 90, image: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?q=80&w=800&auto=format&fit=crop', badge: 'Relaxing' },
-  { id: '4', salon: 'Modern Barber', service: 'Premium Haircut & Shave', rating: 4.7, reviews: 500, price: 35, image: 'https://images.unsplash.com/photo-1621605815971-fbc98d665033?q=80&w=800&auto=format&fit=crop', badge: null },
+    { id: '1', salon: 'Lumina Hair Studio', service: 'Luxury Balayage & Cut', rating: 4.9, reviews: 320, price: 150, image: 'https://images.unsplash.com/photo-1562322140-8baeececf3df?q=80&w=800&auto=format&fit=crop', badge: 'Bestseller' },
+    { id: '2', salon: 'Glow Nail Bar', service: 'Gel Manicure & Art', rating: 4.8, reviews: 850, price: 45, image: 'https://images.unsplash.com/photo-1632345031435-8727f6897d53?q=80&w=800&auto=format&fit=crop', badge: 'Trending' },
+    { id: '3', salon: 'Serenity Spa', service: 'Full Body Massage (90m)', rating: 4.9, reviews: 1200, price: 90, image: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?q=80&w=800&auto=format&fit=crop', badge: 'Relaxing' },
+    { id: '4', salon: 'Modern Barber', service: 'Premium Haircut & Shave', rating: 4.7, reviews: 500, price: 35, image: 'https://images.unsplash.com/photo-1621605815971-fbc98d665033?q=80&w=800&auto=format&fit=crop', badge: null },
 ]
 
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?q=80&w=800&auto=format&fit=crop'
@@ -133,6 +134,21 @@ export function BeautyList({ appliedFilters }: { appliedFilters: VenueSearchPara
                                         alt={v.name}
                                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                                     />
+                                    <div
+                                        className="absolute top-4 right-4 z-20"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                        }}
+                                    >
+                                        <WishlistButton
+                                            itemId={v.id}
+                                            itemType="beauty"
+                                            title={v.name}
+                                            imageUrl={v.image}
+                                            className="bg-white/20 backdrop-blur-md border-transparent hover:bg-white text-white"
+                                        />
+                                    </div>
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-8 px-4">
                                         <motion.span
                                             className="w-full bg-[#FF5E1F] text-white py-3.5 rounded-full font-bold shadow-xl text-center translate-y-8 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-300"
@@ -183,8 +199,20 @@ export function BeautyList({ appliedFilters }: { appliedFilters: VenueSearchPara
                                             <Sparkles className="w-3 h-3 text-[#FF5E1F]" /> {item.badge}
                                         </div>
                                     ) : <div></div>}
-                                    <div className="w-10 h-10 bg-white/20 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center hover:bg-white hover:text-red-500 hover:border-white transition-all pointer-events-auto shadow-sm text-white">
-                                        <Heart className="w-5 h-5 stroke-2" />
+                                    <div
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                        }}
+                                    >
+                                        <WishlistButton
+                                            itemId={item.id}
+                                            itemType="beauty"
+                                            title={item.service}
+                                            imageUrl={item.image}
+                                            price={item.price}
+                                            className="bg-white/20 backdrop-blur-md border-transparent hover:bg-white text-white"
+                                        />
                                     </div>
                                 </div>
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-8 px-4">

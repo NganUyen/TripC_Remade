@@ -52,7 +52,7 @@ export function ActivitiesHero({ allActivities }: ActivitiesHeroProps) {
             </div>
 
             {/* Hero Content */}
-            <div className="relative z-10 w-full max-w-2xl flex flex-col items-center mt-12 md:mt-16">
+            <div className="relative z-10 w-full max-w-2xl flex flex-col items-center mt-4 md:mt-8">
                 <motion.h1
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}

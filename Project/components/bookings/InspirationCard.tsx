@@ -1,4 +1,5 @@
 import React from 'react'
+import Link from 'next/link'
 import { Compass, Map as MapIcon } from 'lucide-react'
 
 export default function InspirationCard() {
@@ -14,9 +15,11 @@ export default function InspirationCard() {
                     </div>
                     <h3 className="text-2xl font-bold mb-3 text-slate-900 dark:text-white">Tìm cảm hứng mới?</h3>
                     <p className="text-slate-400 dark:text-slate-400 text-sm mb-8 leading-relaxed">Hãy để AI của TripC gợi ý những địa điểm phù hợp với sở thích du lịch của bạn.</p>
-                    <button className="bg-[#FF5E1F] hover:bg-orange-600 text-white px-10 py-4 rounded-full font-bold text-sm shadow-lg shadow-orange-500/30 hover:shadow-orange-500/40 transition-all active:scale-95">
-                        Khám phá ngay
-                    </button>
+                    <Link href="/">
+                        <button className="bg-[#FF5E1F] hover:bg-orange-600 text-white px-10 py-4 rounded-full font-bold text-sm shadow-lg shadow-orange-500/30 hover:shadow-orange-500/40 transition-all active:scale-95">
+                            Khám phá ngay
+                        </button>
+                    </Link>
                 </div>
                 <div className="absolute -right-10 -bottom-10 opacity-[0.03] dark:opacity-[0.05] select-none pointer-events-none">
                     <MapIcon size={320} className="text-slate-900 dark:text-white" strokeWidth={1} />

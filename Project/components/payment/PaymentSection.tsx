@@ -4,15 +4,30 @@ import { PaymentMethodSelector } from "@/components/checkout/payment-method-sele
 import { useState } from "react";
 import { toast } from "sonner";
 import { CurrencyGuardModal } from "@/components/checkout/currency-guard-modal";
+import { formatCurrency } from "@/lib/utils/currency";
+import { Clock } from "lucide-react";
 
 interface PaymentSectionProps {
     bookingId: string;
     amount: number;
-    category?: string; // To conditionally show policies
+    category?: string;
     currency?: string;
+    title?: string;
+    description?: string;
+    bookingCode?: string;
+    guestName?: string;
 }
 
-export function PaymentSection({ bookingId, amount, category = 'transport', currency = 'VND' }: PaymentSectionProps) {
+export function PaymentSection({
+    bookingId,
+    amount,
+    category = 'transport',
+    currency = 'USD',
+    title,
+    description,
+    bookingCode,
+    guestName
+}: PaymentSectionProps) {
     const [method, setMethod] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
 
@@ -40,7 +55,7 @@ export function PaymentSection({ bookingId, amount, category = 'transport', curr
                 throw new Error(responseData.error || "Payment init failed");
             }
 
-            toast.success(`Đang chuyển đến trang thanh toán ${method.toUpperCase()}...`);
+            toast.success(`Đang chuyển đến trang thanh toán ${selectedMethod.toUpperCase()}...`);
 
             const { data } = responseData;
 
@@ -123,8 +138,30 @@ export function PaymentSection({ bookingId, amount, category = 'transport', curr
         <div className="flex-1 py-4 flex flex-col">
             <div className="mb-8">
                 <h1 className="text-3xl font-extrabold tracking-tight mb-2">Thanh toán</h1>
-                <p className="text-muted-foreground">Chọn phương thức thanh toán ưu tiên của bạn.</p>
+                <p className="text-muted-foreground">Vui lòng kiểm tra thông tin và chọn phương thức thanh toán.</p>
             </div>
+
+            {/* Unified Booking Summary within Payment Section */}
+            {(title || bookingCode) && (
+                <div className="mb-8 p-6 bg-slate-50 dark:bg-slate-800/50 rounded-3xl border border-slate-100 dark:border-slate-800">
+                    <div className="flex flex-col gap-1 mb-4">
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Thông tin đơn hàng</span>
+                        <h2 className="text-xl font-bold">{title}</h2>
+                        {description && <p className="text-sm text-slate-500 line-clamp-1">{description}</p>}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+                        <div>
+                            <span className="block text-[10px] font-bold text-slate-400 uppercase">Mã đặt chỗ</span>
+                            <span className="font-mono font-bold text-primary">{bookingCode}</span>
+                        </div>
+                        <div className="text-right">
+                            <span className="block text-[10px] font-bold text-slate-400 uppercase">Tổng cộng</span>
+                            <span className="font-black text-lg text-primary">{formatCurrency(amount, currency as 'USD' | 'VND')}</span>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Policy Section - Could be dynamic based on category */}
             <div className="mb-8 p-6 bg-white dark:bg-white/5 rounded-3xl border border-border-subtle dark:border-white/10">
@@ -185,7 +222,7 @@ export function PaymentSection({ bookingId, amount, category = 'transport', curr
                 disabled={loading || !agreed || !method}
                 className="w-full bg-primary text-white py-5 rounded-pill font-extrabold text-lg shadow-xl shadow-primary/25 hover:shadow-2xl hover:translate-y-[-2px] transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed disabled:translate-y-0"
             >
-                {loading ? "Processing..." : `Thanh toán ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount)}`}
+                {loading ? "Processing..." : `Thanh toán ${formatCurrency(amount, currency as 'USD' | 'VND')}`}
             </button>
             <CurrencyGuardModal
                 isOpen={showGuard}

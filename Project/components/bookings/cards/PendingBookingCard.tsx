@@ -29,7 +29,7 @@ export default function PendingBookingCard({ booking }: PendingBookingCardProps)
                 setTimeLeft("Hết hạn");
                 setProgress(0);
                 // Ideally trigger a refresh or move to cancelled list
-                window.location.reload();
+                router.refresh();
                 return;
             }
 

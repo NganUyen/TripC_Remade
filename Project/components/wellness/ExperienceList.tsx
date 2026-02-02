@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { Star, Heart, MapPin, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import { WellnessExperience } from '@/types'
+import { WishlistButton } from '@/components/WishlistButton'
 
 interface ExperienceListProps {
     experiences: WellnessExperience[]
@@ -51,10 +52,21 @@ export function ExperienceList({ experiences }: ExperienceListProps) {
                             )}
                         </div>
 
-                        <div className="absolute top-4 right-4 z-10">
-                            <button className="size-10 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center text-white hover:bg-white hover:text-red-500 transition-colors">
-                                <Heart className="w-5 h-5" />
-                            </button>
+                        <div
+                            className="absolute top-4 right-4 z-10"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                            }}
+                        >
+                            <WishlistButton
+                                itemId={item.id}
+                                itemType="wellness"
+                                title={item.title}
+                                imageUrl={item.image_url}
+                                price={item.price}
+                                className="bg-white/20 backdrop-blur-md border-transparent hover:bg-white text-white"
+                            />
                         </div>
 
                         {/* Content */}

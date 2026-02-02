@@ -35,7 +35,12 @@ export async function getActivityById(id: string): Promise<Activity | null> {
         .eq("id", id)
         .single();
 
-    console.log(`Activity fetched for ID ${id}:`, { title: data.title, image_url: data.image_url });
+    if (error) {
+        console.error(`Error fetching activity ${id}:`, error);
+        return null;
+    }
+
+    // console.log(`Activity fetched for ID ${id}:`, { title: data.title, image_url: data.image_url });
     return data as Activity;
 }
 
