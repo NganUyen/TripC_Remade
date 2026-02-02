@@ -50,6 +50,23 @@ export function FlightSearchForm({ compact, onSearch, initialValues, className }
     const [activeTab, setActiveTab] = useState<'depart' | 'return' | 'travelers' | null>(null)
     const [isSwapped, setIsSwapped] = useState(false)
 
+    // Mobile Collapse State
+    const [isExpanded, setIsExpanded] = useState(true)
+    const [isMobile, setIsMobile] = useState(false)
+
+    useEffect(() => {
+        const checkMobile = () => {
+            const mobile = window.innerWidth < 1024
+            setIsMobile(mobile)
+            if (!mobile) setIsExpanded(true)
+            else setIsExpanded(false) // Default collapsed on mobile
+        }
+
+        checkMobile()
+        window.addEventListener('resize', checkMobile)
+        return () => window.removeEventListener('resize', checkMobile)
+    }, [])
+
     // Initialize from/to based on codes if provided
     useEffect(() => {
         if (initialValues?.from && !from) {
@@ -171,28 +188,67 @@ export function FlightSearchForm({ compact, onSearch, initialValues, className }
         </div>
     )
 
+    // Mobile Summary View
+    if (!isExpanded && isMobile) {
+        return (
+            <div
+                onClick={() => setIsExpanded(true)}
+                className={cn("w-full bg-white dark:bg-[#18181b] rounded-2xl shadow-lg border border-slate-200 dark:border-white/10 p-4 cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 transition-colors", className)}
+            >
+                <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-full bg-orange-50 dark:bg-orange-900/20 flex items-center justify-center text-[#FF5E1F]">
+                        <Search className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1">
+                        <div className="font-bold text-slate-900 dark:text-white flex items-center gap-2 text-sm">
+                            {from ? from.code : 'Where from?'}
+                            <ArrowRight className="w-4 h-4 text-slate-400" />
+                            {to ? to.code : 'Where to?'}
+                        </div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                            {departDate ? departDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Select Dates'} • {totalTravelers} Pax
+                        </div>
+                    </div>
+                    <div className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300">
+                        Edit
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
     return (
         <div className={cn("w-full bg-white dark:bg-[#18181b] rounded-2xl shadow-xl border border-slate-200 dark:border-white/10 p-5", className)}>
             {/* Trip Type Tabs */}
-            <div className="flex mb-4 gap-6 border-b border-slate-100 dark:border-white/10 pb-0 w-fit">
-                {(['round-trip', 'one-way'] as const).map((type) => (
+            <div className="flex justify-between items-start mb-4">
+                <div className="flex gap-6 border-b border-slate-100 dark:border-white/10 pb-0 w-fit">
+                    {(['round-trip', 'one-way'] as const).map((type) => (
+                        <button
+                            key={type}
+                            onClick={() => setTripType(type)}
+                            className={cn(
+                                "relative pb-3 text-xs font-bold tracking-wide transition-all",
+                                tripType === type
+                                    ? "text-[#FF5E1F]"
+                                    : "text-slate-500 dark:text-white/60 hover:text-black dark:hover:text-white"
+                            )}
+                        >
+                            {type.replace('-', ' ').toUpperCase()}
+                            <span className={cn(
+                                "absolute bottom-0 left-0 w-full h-[2px] bg-[#FF5E1F] rounded-t-full transition-transform duration-300",
+                                tripType === type ? "scale-x-100" : "scale-x-0"
+                            )} />
+                        </button>
+                    ))}
+                </div>
+                {isMobile && (
                     <button
-                        key={type}
-                        onClick={() => setTripType(type)}
-                        className={cn(
-                            "relative pb-3 text-xs font-bold tracking-wide transition-all",
-                            tripType === type
-                                ? "text-[#FF5E1F]"
-                                : "text-slate-500 dark:text-white/60 hover:text-black dark:hover:text-white"
-                        )}
+                        onClick={() => setIsExpanded(false)}
+                        className="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400"
                     >
-                        {type.replace('-', ' ').toUpperCase()}
-                        <span className={cn(
-                            "absolute bottom-0 left-0 w-full h-[2px] bg-[#FF5E1F] rounded-t-full transition-transform duration-300",
-                            tripType === type ? "scale-x-100" : "scale-x-0"
-                        )} />
+                        <span className="material-symbols-outlined text-lg">close</span>
                     </button>
-                ))}
+                )}
             </div>
 
             <div className="flex flex-col lg:flex-row gap-3">
@@ -308,7 +364,7 @@ export function FlightSearchForm({ compact, onSearch, initialValues, className }
                 <div className="">
                     <button
                         onClick={handleSearch}
-                        className="h-full w-full lg:w-auto px-8 bg-[#FF5E1F] hover:bg-[#E54810] rounded-xl text-white font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20"
+                        className="h-full w-full lg:w-auto px-8 py-4 bg-[#FF5E1F] hover:bg-[#E54810] rounded-2xl text-white font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20"
                     >
                         <Search className="w-5 h-5" />
                         <span className="lg:hidden">Search</span>

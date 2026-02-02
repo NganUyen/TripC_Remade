@@ -45,7 +45,10 @@ export const useUnifiedCheckout = () => {
                 })
             });
 
-            if (!response.ok) throw new Error('Payment initiation failed');
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Payment initiation failed');
+            }
 
             const { data } = await response.json();
 

@@ -1,12 +1,19 @@
 "use client"
 
+import { useState } from "react"
+
 import { useBookingStore } from "@/store/useBookingStore"
 import { CheckCircle2, Ticket, Shield } from "lucide-react"
 
 export function PriceSummary() {
-    const { trip, seats, extras, insurance, useTcent, selectedFlights } = useBookingStore()
+    const {
+        trip, seats, extras, insurance, useTcent, selectedFlights,
+        promoCode, setPromoCode, discountAmount, setDiscountAmount
+    } = useBookingStore()
 
-    // Price Calculation
+    const [loading, setLoading] = useState(false)
+    const [voucherMessage, setVoucherMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+
     // Price Calculation
     const totalFlightPrice = selectedFlights.reduce((acc, f) => acc + (f.price || 0), 0)
     const basePrice = (totalFlightPrice) * trip.passengersCount
@@ -36,7 +43,45 @@ export function PriceSummary() {
     const insuranceCost = (insurance === 'no' ? 0 : (insurance === 'basic' ? 19 : (insurance === 'standard' ? 39 : 69)) * trip.passengersCount)
 
     let total = basePrice + taxes + seatCost + baggageCost + mealCost + insuranceCost
-    if (useTcent) total -= 50
+
+    // Apply Voucher Discount
+    if (discountAmount > 0) total = Math.max(0, total - discountAmount)
+
+    // Determine TCent Discount (Fixed 50 for now or dynamic?)
+    // Existing logic had fixed 50. Let's keep it but ideally it should be dynamic.
+    if (useTcent) total = Math.max(0, total - 50)
+
+    const handleApplyVoucher = async () => {
+        if (!promoCode) return
+        setLoading(true)
+        setVoucherMessage(null)
+
+        try {
+            const res = await fetch('/api/v1/vouchers/validate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    code: promoCode,
+                    cartTotal: total + (discountAmount || 0),
+                    serviceType: 'flight'
+                }) // Send original total before discount
+            })
+            const data = await res.json()
+
+            if (!res.ok) {
+                setDiscountAmount(0)
+                setVoucherMessage({ type: 'error', text: data.error || 'Invalid voucher' })
+            } else {
+                setDiscountAmount(data.discountAmount)
+                setVoucherMessage({ type: 'success', text: `Voucher applied: -$${data.discountAmount}` })
+                // Also update store promo code if needed (already bound)
+            }
+        } catch (err) {
+            setVoucherMessage({ type: 'error', text: 'Failed to apply voucher' })
+        } finally {
+            setLoading(false)
+        }
+    }
 
     return (
         <div className="bg-white dark:bg-slate-900 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-800 shadow-lg">
@@ -76,12 +121,49 @@ export function PriceSummary() {
                         <span className="font-medium text-emerald-600">+{insuranceCost}$</span>
                     </div>
                 )}
+
+                {/* Voucher Discount Line */}
+                {discountAmount > 0 && (
+                    <div className="flex justify-between text-sm text-emerald-600 font-bold">
+                        <span>Voucher Discount</span>
+                        <span>-{discountAmount.toFixed(2)}$</span>
+                    </div>
+                )}
+
                 {useTcent && (
                     <div className="flex justify-between text-sm text-[#FF5E1F] font-bold">
                         <span>TCent Discount</span>
                         <span>-50.00$</span>
                     </div>
                 )}
+
+                <div className="h-[1px] bg-slate-100 dark:bg-slate-800 my-2"></div>
+
+                {/* Voucher Application Box */}
+                <div className="py-2">
+                    <div className="flex gap-2">
+                        <input
+                            type="text"
+                            placeholder="Voucher Code"
+                            value={promoCode}
+                            onChange={(e) => setPromoCode(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleApplyVoucher()}
+                            className="flex-1 px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:border-[#FF5E1F]"
+                        />
+                        <button
+                            onClick={handleApplyVoucher}
+                            disabled={loading || !promoCode}
+                            className="px-4 py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-lg text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
+                        >
+                            {loading ? '...' : 'Apply'}
+                        </button>
+                    </div>
+                    {voucherMessage && (
+                        <p className={`text-xs mt-2 ${voucherMessage.type === 'success' ? 'text-emerald-500' : 'text-red-500'}`}>
+                            {voucherMessage.text}
+                        </p>
+                    )}
+                </div>
 
                 <div className="h-[1px] bg-slate-100 dark:bg-slate-800 my-2"></div>
 
