@@ -50,13 +50,68 @@ export class CheckoutService {
     let title = "Booking";
 
     if (payload.serviceType === 'shop') {
-      totalAmount = payload.items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
+      // For shop orders, fetch and store full cart item details in metadata
+      // This prevents settlement failures when cart is cleared or modified
+      const cartId = (payload as any).cartId;
+      const isBuyNow = (payload as any).isBuyNow === true;
 
-      const firstItemName = payload.items[0]?.name || 'Unknown Item';
-      if (payload.items.length === 1) {
-        title = `Shop Order: ${firstItemName}`;
+      if (!isBuyNow && cartId) {
+        // Cart mode: Fetch items from database with full variant details
+        console.log('[CheckoutService] Fetching cart items for cartId:', cartId);
+        
+        const { data: cartItems, error: cartError } = await this.supabase
+          .from('cart_items')
+          .select(`
+            *,
+            variant:product_variants (
+              id,
+              sku,
+              title,
+              price,
+              product_id,
+              product:shop_products (
+                id,
+                title,
+                product_type
+              )
+            )
+          `)
+          .eq('cart_id', cartId);
+
+        if (cartError || !cartItems || cartItems.length === 0) {
+          console.error('[CheckoutService] Failed to fetch cart items', {
+            cartId,
+            error: cartError?.message
+          });
+          throw new Error('Cart items not found. Please ensure your cart is not empty.');
+        }
+
+        console.log('[CheckoutService] Fetched cart items:', cartItems.length);
+
+        // Store the full cart items snapshot in metadata for settlement
+        (payload as any).cartItemsSnapshot = cartItems;
+
+        // Calculate total from database items (authoritative)
+        totalAmount = cartItems.reduce((sum: number, item: any) => 
+          sum + (item.unit_price * item.qty), 0
+        );
+
+        const firstItemName = cartItems[0]?.title_snapshot || cartItems[0]?.variant?.product?.title || 'Unknown Item';
+        if (cartItems.length === 1) {
+          title = `Shop Order: ${firstItemName}`;
+        } else {
+          title = `Shop Order: ${firstItemName} + ${cartItems.length - 1} more`;
+        }
       } else {
-        title = `Shop Order: ${firstItemName} + ${payload.items.length - 1} more`;
+        // Buy Now mode: Use items from payload
+        totalAmount = payload.items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
+
+        const firstItemName = payload.items[0]?.name || 'Unknown Item';
+        if (payload.items.length === 1) {
+          title = `Shop Order: ${firstItemName}`;
+        } else {
+          title = `Shop Order: ${firstItemName} + ${payload.items.length - 1} more`;
+        }
       }
     } else if (payload.serviceType === 'transport') {
       // Basic fallback total calculation if not provided (though route logic usually sends it)
