@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { serviceService } from "@/lib/beauty";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const venueId = request.nextUrl.searchParams.get("venue_id");
