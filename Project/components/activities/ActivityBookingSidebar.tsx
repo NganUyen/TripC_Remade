@@ -38,6 +38,11 @@ export function ActivityBookingSidebar({ activity }: ActivityBookingSidebarProps
         phone: ''
     })
 
+    // Voucher state
+    const [voucherCode, setVoucherCode] = useState('')
+    const [discountAmount, setDiscountAmount] = useState(0)
+    const [isValidating, setIsValidating] = useState(false)
+
     useEffect(() => {
         if (user) {
             setContact({
@@ -69,6 +74,36 @@ export function ActivityBookingSidebar({ activity }: ActivityBookingSidebarProps
         })
         setTotalPrice(total)
     }, [ticketCounts, activity])
+
+    const handleApplyVoucher = async () => {
+        if (!voucherCode) return
+        setIsValidating(true)
+        try {
+            const baseTotal = totalPrice
+            const res = await fetch('/api/v1/vouchers/validate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    code: voucherCode,
+                    cartTotal: baseTotal,
+                    serviceType: 'activity'
+                }),
+            })
+            const data = await res.json()
+
+            if (!res.ok) {
+                toast.error(data.error || 'Invalid voucher')
+                setDiscountAmount(0)
+            } else {
+                toast.success(`Voucher applied! Saved $${data.discountAmount}`)
+                setDiscountAmount(data.discountAmount)
+            }
+        } catch (error) {
+            toast.error('Failed to validate voucher')
+        } finally {
+            setIsValidating(false)
+        }
+    }
 
     const handleTicketChange = (name: string, delta: number) => {
         setTicketCounts(prev => {
@@ -124,13 +159,15 @@ export function ActivityBookingSidebar({ activity }: ActivityBookingSidebarProps
                 date: formattedDate,
                 tickets: ticketCounts,
                 contact,
-                totalPrice
+                totalPrice: Math.max(0, totalPrice - discountAmount),
+                voucherCode: discountAmount > 0 ? voucherCode : undefined,
+                discountAmount
             }
 
             const result = await createActivityBooking({
                 user_id: user?.id,
                 activity_id: activity.id,
-                total_amount: totalPrice,
+                total_amount: Math.max(0, totalPrice - discountAmount),
                 booking_details: bookingData,
                 title: activity.title,
                 image_url: activity.image_url,
@@ -268,15 +305,28 @@ export function ActivityBookingSidebar({ activity }: ActivityBookingSidebarProps
                                 </div>
 
                                 {/* Promo Code */}
-                                <div className="flex gap-2">
-                                    <input
-                                        type="text"
-                                        placeholder="Promo code"
-                                        className="flex-1 bg-white dark:bg-slate-800/50 border-slate-200/60 dark:border-white/10 rounded-full px-6 py-4 focus:ring-2 focus:ring-[#FF5E1F]/20 dark:text-white transition-all text-sm outline-none"
-                                    />
-                                    <button className="px-6 py-4 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-full font-bold text-sm hover:opacity-90 transition-opacity">
-                                        Apply
-                                    </button>
+                                <div className="space-y-2">
+                                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest px-2">
+                                        Voucher Code
+                                    </label>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            placeholder="Enter code"
+                                            value={voucherCode}
+                                            onChange={(e) => setVoucherCode(e.target.value.toUpperCase())}
+                                            disabled={isLoading}
+                                            className="flex-1 bg-white dark:bg-slate-800/50 border-slate-200/60 dark:border-white/10 rounded-full px-6 py-4 focus:ring-2 focus:ring-[#FF5E1F]/20 dark:text-white transition-all text-sm outline-none"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={handleApplyVoucher}
+                                            disabled={isValidating || !voucherCode}
+                                            className="px-6 py-4 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-full font-bold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+                                        >
+                                            {isValidating ? 'Checking...' : 'Apply'}
+                                        </button>
+                                    </div>
                                 </div>
 
                             </div>
@@ -300,9 +350,23 @@ export function ActivityBookingSidebar({ activity }: ActivityBookingSidebarProps
 
                     {/* Total & Button */}
                     <div className="pt-6 border-t border-slate-200/60 dark:border-white/10 space-y-4">
-                        <div className="flex items-center justify-between">
-                            <span className="font-bold text-slate-500">Total</span>
-                            <span className="text-3xl font-black text-slate-900 dark:text-white">${totalPrice.toLocaleString()}</span>
+                        <div className="space-y-2">
+                            {discountAmount > 0 && (
+                                <>
+                                    <div className="flex items-center justify-between text-sm">
+                                        <span className="font-medium text-slate-500">Subtotal</span>
+                                        <span className="font-semibold text-slate-700 dark:text-slate-300">${totalPrice.toLocaleString()}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between text-sm text-green-600 font-bold">
+                                        <span>Discount</span>
+                                        <span>-${discountAmount.toLocaleString()}</span>
+                                    </div>
+                                </>
+                            )}
+                            <div className="flex items-center justify-between">
+                                <span className="font-bold text-slate-500">Total</span>
+                                <span className="text-3xl font-black text-slate-900 dark:text-white">${Math.max(0, totalPrice - discountAmount).toLocaleString()}</span>
+                            </div>
                         </div>
                         <button
                             onClick={handleBook}

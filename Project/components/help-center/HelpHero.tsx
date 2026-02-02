@@ -12,7 +12,7 @@ export function HelpHero({ searchQuery, setSearchQuery }: HelpHeroProps) {
     const suggestions = ['Refunds', 'My Bookings', 'Wallet', 'Rewards', 'Account', 'Technical']
 
     return (
-        <section className="relative min-h-[500px] w-full flex flex-col items-center justify-center p-4 pt-24 pb-12">
+        <section className="relative min-h-[500px] w-full flex flex-col items-center justify-center p-4 pt-16 pb-12">
             {/* Background & Mask */}
             <div className="absolute inset-0 z-0 overflow-hidden rounded-b-[2.5rem]">
                 <img
@@ -24,7 +24,7 @@ export function HelpHero({ searchQuery, setSearchQuery }: HelpHeroProps) {
             </div>
 
             {/* Content */}
-            <div className="relative z-10 w-full max-w-3xl flex flex-col items-center text-center mt-10">
+            <div className="relative z-10 w-full max-w-3xl flex flex-col items-center text-center mt-4">
                 <motion.h1
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}

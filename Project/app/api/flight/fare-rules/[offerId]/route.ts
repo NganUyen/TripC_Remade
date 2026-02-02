@@ -7,7 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/flight/supabaseServerClient";
+import { supabaseServerClient } from "@/lib/flight/supabaseServerClient";
 
 export async function GET(
   request: NextRequest,
@@ -23,7 +23,7 @@ export async function GET(
       );
     }
 
-    const supabase = createClient();
+    const supabase = supabaseServerClient;
 
     // Get offer details with fare rules
     const { data: offer, error: offerError } = await supabase

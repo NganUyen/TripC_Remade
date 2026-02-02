@@ -7,7 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/flight/supabaseServerClient";
+import { supabaseServerClient } from "@/lib/flight/supabaseServerClient";
 
 interface PaymentWebhookPayload {
   transaction_id: string;
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = createClient();
+    const supabase = supabaseServerClient;
 
     // Find payment record by transaction ID
     const { data: payment, error: paymentError } = await supabase
@@ -179,7 +179,7 @@ async function triggerTicketIssuance(booking_id: string) {
   // For MVP, we'll call the ticket issuance API directly
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_APP_URL}/api/flight/ticket/issue`,
+      `${process.env.NEXT_PUBLIC_APP_URL || ''}/api/flight/ticket/issue`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -200,7 +200,7 @@ async function triggerTicketIssuance(booking_id: string) {
  */
 async function sendPaymentConfirmation(booking: any) {
   // TODO: Implement email/SMS notification
-  const supabase = createClient();
+  const supabase = supabaseServerClient;
 
   await supabase.from("booking_notifications").insert({
     booking_id: booking.id,
@@ -218,7 +218,7 @@ async function sendPaymentConfirmation(booking: any) {
  * Send payment failure notification
  */
 async function sendPaymentFailure(booking: any) {
-  const supabase = createClient();
+  const supabase = supabaseServerClient;
 
   await supabase.from("booking_notifications").insert({
     booking_id: booking.id,

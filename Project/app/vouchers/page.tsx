@@ -24,6 +24,21 @@ export default function VouchersPage() {
             }
         }
         fetchUserData()
+
+        // Listen for voucher redemption events to refresh balance
+        const handleVoucherRedeemed = (event: CustomEvent) => {
+            if (event.detail?.newBalance !== undefined) {
+                setBalance(event.detail.newBalance)
+            } else {
+                // Fallback: refetch if newBalance not provided
+                fetchUserData()
+            }
+        }
+
+        window.addEventListener('voucher-redeemed', handleVoucherRedeemed as EventListener)
+        return () => {
+            window.removeEventListener('voucher-redeemed', handleVoucherRedeemed as EventListener)
+        }
     }, [])
 
     return (

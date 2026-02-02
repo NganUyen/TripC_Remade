@@ -13,16 +13,42 @@ export interface SMTPLogEntry {
 
 export class SMTPLogger {
     private logDir: string;
+    private isServerless: boolean;
 
     constructor() {
         // Use logs/smtp directory in project root
         this.logDir = path.join(process.cwd(), 'logs', 'smtp');
-        this.ensureLogDirectory();
+        
+        // Detect serverless environment (Vercel, AWS Lambda, etc.)
+        this.isServerless = process.env.VERCEL === '1' || 
+                           process.env.AWS_LAMBDA_FUNCTION_NAME !== undefined ||
+                           !this.canWriteToFilesystem();
+        
+        if (!this.isServerless) {
+            this.ensureLogDirectory();
+        }
+    }
+
+    private canWriteToFilesystem(): boolean {
+        try {
+            const testDir = path.join(process.cwd(), 'logs');
+            if (!fs.existsSync(testDir)) {
+                fs.mkdirSync(testDir, { recursive: true });
+            }
+            return true;
+        } catch {
+            return false;
+        }
     }
 
     private ensureLogDirectory() {
-        if (!fs.existsSync(this.logDir)) {
-            fs.mkdirSync(this.logDir, { recursive: true });
+        try {
+            if (!fs.existsSync(this.logDir)) {
+                fs.mkdirSync(this.logDir, { recursive: true });
+            }
+        } catch (error) {
+            console.warn('[SMTP_LOGGER] Cannot create log directory (likely serverless environment):', error);
+            this.isServerless = true;
         }
     }
 
@@ -53,13 +79,15 @@ export class SMTPLogger {
 
     log(entry: SMTPLogEntry) {
         try {
-            const logFile = this.getLogFileName();
+            // Always log to console
             const logLine = this.formatLogEntry(entry);
-
-            // Append to log file
-            fs.appendFileSync(logFile, logLine, 'utf8');
-
             console.log('[SMTP_LOGGER]', logLine.trim());
+
+            // Only write to file in non-serverless environments
+            if (!this.isServerless) {
+                const logFile = this.getLogFileName();
+                fs.appendFileSync(logFile, logLine, 'utf8');
+            }
         } catch (error) {
             console.error('[SMTP_LOGGER_ERROR] Failed to write log:', error);
         }

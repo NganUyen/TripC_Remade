@@ -65,8 +65,8 @@ function HistoryModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
                                     <div key={item.id} className="bg-white dark:bg-white/5 p-4 rounded-2xl flex items-center justify-between shadow-sm border border-slate-100 dark:border-white/5 group hover:border-[#FF5E1F]/30 transition-colors">
                                         <div className="flex items-center gap-4">
                                             <div className={`w-10 h-10 rounded-full flex items-center justify-center ${item.amount > 0
-                                                    ? 'bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-400'
-                                                    : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+                                                ? 'bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-400'
+                                                : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
                                                 }`}>
                                                 {item.amount > 0 ? <ArrowDownLeft className="w-5 h-5" /> : <ArrowUpRight className="w-5 h-5" />}
                                             </div>
@@ -123,7 +123,7 @@ export function BalanceBanner({ balance = 0 }: { balance?: number }) {
                             </div>
                             <span>Available Balance</span>
                         </div>
-                        <h2 className="text-5xl md:text-7xl font-black text-white tracking-tight">{balance.toLocaleString()} <span className="text-2xl md:text-4xl opacity-50 font-bold">Points</span></h2>
+                        <h2 className="text-5xl md:text-7xl font-black text-white tracking-tight">{balance.toLocaleString()} <span className="text-2xl md:text-4xl opacity-50 font-bold">TCent</span></h2>
                     </div>
 
                     {/* Removed Top Up Button, replaced by absolute history button */}

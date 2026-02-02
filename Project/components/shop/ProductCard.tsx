@@ -3,6 +3,7 @@
 import React from 'react'
 import Link from 'next/link'
 import { Star, ShoppingBag, Heart } from 'lucide-react'
+import { WishlistButton } from '@/components/WishlistButton'
 
 export interface ProductCardProps {
     id: string | number
@@ -114,6 +115,23 @@ export function ProductCard({ id, slug, title, price, rating, reviews, image, ba
                             -{discount}%
                         </div>
                     )}
+
+                    {/* Wishlist Button */}
+                    <div
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                        }}
+                    >
+                        <WishlistButton
+                            itemId={String(id)}
+                            itemType="shop"
+                            title={title}
+                            imageUrl={image}
+                            price={price}
+                            className="ml-2 bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border hover:bg-white"
+                        />
+                    </div>
                 </div>
 
                 {/* Hover Overlay & Quick Add Button Slide Up */}

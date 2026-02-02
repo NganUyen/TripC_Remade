@@ -7,7 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/flight/supabaseServerClient";
+import { supabaseServerClient } from "@/lib/flight/supabaseServerClient";
 
 interface NotificationRequest {
   booking_id: string;
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = createClient();
+    const supabase = supabaseServerClient;
 
     // Get booking details
     const { data: booking, error: bookingError } = await supabase

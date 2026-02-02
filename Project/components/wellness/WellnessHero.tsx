@@ -14,7 +14,7 @@ const categories = [
 
 export function WellnessHero() {
     return (
-        <section className="relative min-h-[600px] w-full flex flex-col items-center justify-center p-4 pt-24 md:pt-32 pb-12">
+        <section className="relative min-h-[600px] w-full flex flex-col items-center justify-center p-4 pt-16 md:pt-24 pb-12">
             {/* Background & Mask */}
             <div className="absolute inset-0 z-0 overflow-hidden rounded-b-[2.5rem]">
                 <img

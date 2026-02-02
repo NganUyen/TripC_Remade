@@ -10,6 +10,8 @@ import { createServiceSupabaseClient } from "@/lib/supabase-server";
 import { auth } from "@clerk/nextjs/server";
 import { getItemsWithFilters } from "@/lib/entertainment-mock-data";
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/entertainment/items
  * List entertainment items with pagination and filters

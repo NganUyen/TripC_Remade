@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = createClient();
+    const supabase = supabaseServerClient;
 
     // Get offer details
     const { data: offer, error: offerError } = await supabase

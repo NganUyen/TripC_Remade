@@ -7,7 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/flight/supabaseServerClient";
+import { supabaseServerClient } from "@/lib/flight/supabaseServerClient";
 import { verifyClerkAuth } from "@/lib/flight/clerkAuth";
 
 interface TicketIssuanceRequest {
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = createClient();
+    const supabase = supabaseServerClient;
 
     // Get booking details
     const { data: booking, error: bookingError } = await supabase
@@ -175,7 +175,7 @@ async function generateBoardingPasses(
   // Placeholder implementation
   // In production, generate actual PDF files and upload to storage
   const urls = tickets.map((ticket) => {
-    return `${process.env.NEXT_PUBLIC_APP_URL}/boarding-pass/${ticket.id}.pdf`;
+    return `${process.env.NEXT_PUBLIC_APP_URL || ''}/boarding-pass/${ticket.id}.pdf`;
   });
 
   // TODO: Generate actual PDF files

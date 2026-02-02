@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { useEvents, formatEventPrice, formatEventDate } from '@/hooks/use-events'
 import { EventCardSkeleton } from './EventCardSkeleton'
 import type { EventWithSessions } from '@/lib/events/types'
+import { WishlistButton } from '@/components/WishlistButton'
 
 interface EventResultsProps {
   city?: string
@@ -108,16 +109,24 @@ function EventCard({ event, index }: EventCardProps) {
             </div>
           )}
 
+
           {/* Wishlist button */}
-          <button
+          <div
+            className="absolute top-4 right-4 z-10 transition-transform hover:scale-110 active:scale-95"
             onClick={(e) => {
-              e.preventDefault()
-              // TODO: Add to wishlist
+              e.preventDefault();
+              e.stopPropagation();
             }}
-            className="absolute top-4 right-4 bg-white/20 backdrop-blur-md p-2 rounded-full cursor-pointer hover:bg-white/40 transition-colors z-10"
           >
-            <Heart className="w-4 h-4 text-white" />
-          </button>
+            <WishlistButton
+              itemId={event.id}
+              itemType="event"
+              title={event.title}
+              imageUrl={event.cover_image_url || undefined}
+              price={cheapestTicket?.price}
+              className="bg-white/20 backdrop-blur-md border-transparent hover:bg-white text-white"
+            />
+          </div>
 
           {/* Featured badge */}
           {event.is_featured && (

@@ -39,24 +39,46 @@ export function MarketplaceList() {
     const [loading, setLoading] = useState(true)
     const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(null)
 
-    useEffect(() => {
-        const fetchVouchers = async () => {
-            try {
-                const res = await fetch('/api/v1/vouchers/marketplace', { cache: 'no-store' })
-                if (res.ok) {
-                    const data = await res.json()
-                    setVouchers(data.vouchers || [])
-                } else {
-                    console.error('Marketplace fetch failed:', res.status, await res.text())
-                }
-            } catch (err) {
-                console.error(err)
-            } finally {
-                setLoading(false)
+    const fetchVouchers = async () => {
+        console.log('[MARKETPLACE] Fetching vouchers...')
+        try {
+            const res = await fetch('/api/v1/vouchers/marketplace', { cache: 'no-store' })
+            if (res.ok) {
+                const data = await res.json()
+                console.log('[MARKETPLACE] Received vouchers:', data.vouchers?.length)
+                setVouchers(data.vouchers || [])
+            } else {
+                console.error('Marketplace fetch failed:', res.status, await res.text())
             }
+        } catch (err) {
+            console.error(err)
+        } finally {
+            setLoading(false)
         }
+    }
+
+    useEffect(() => {
         fetchVouchers()
+
+        // Listen for marketplace refresh events (e.g., after voucher redemption)
+        const handleRefresh = () => {
+            console.log('[MARKETPLACE] Refresh event received!')
+            setLoading(true)
+            fetchVouchers()
+        }
+
+        window.addEventListener('refresh-marketplace', handleRefresh)
+        console.log('[MARKETPLACE] Event listener registered')
+        return () => {
+            window.removeEventListener('refresh-marketplace', handleRefresh)
+        }
     }, [])
+
+    const handleRedeemSuccess = () => {
+        console.log('[MARKETPLACE] Redeem success callback - refetching vouchers')
+        setLoading(true)
+        fetchVouchers()
+    }
 
     if (loading) {
         return (
@@ -128,7 +150,8 @@ export function MarketplaceList() {
             <VoucherDrawer
                 voucher={selectedVoucher}
                 onClose={() => setSelectedVoucher(null)}
+                onRedeemSuccess={handleRedeemSuccess}
             />
-        </div>
+        </div >
     )
 }

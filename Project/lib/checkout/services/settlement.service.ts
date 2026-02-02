@@ -119,13 +119,22 @@ export class SettlementService {
             if (!finalEmail && booking.user_id && booking.user_id !== 'GUEST') {
                 console.log('[SETTLEMENT_EMAIL] Fetching user email for sync:', booking.user_id);
 
-                // Try to find user by ID (UUID) OR Clerk ID
-                // Note: .or() is more robust here if we don't know the format of booking.user_id
-                const { data: userData } = await this.supabase
+                // Try to find user by ID (UUID) first, then fall back to Clerk ID
+                let { data: userData } = await this.supabase
                     .from('users')
                     .select('email, full_name')
-                    .or(`id.eq.${booking.user_id},clerk_id.eq.${booking.user_id}`)
+                    .eq('id', booking.user_id)
                     .maybeSingle();
+
+                // If not found by UUID, try Clerk ID
+                if (!userData && booking.user_id.startsWith('user_')) {
+                    const result = await this.supabase
+                        .from('users')
+                        .select('email, full_name')
+                        .eq('clerk_id', booking.user_id)
+                        .maybeSingle();
+                    userData = result.data;
+                }
 
                 if (userData) {
                     finalEmail = userData.email;

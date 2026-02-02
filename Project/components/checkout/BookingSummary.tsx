@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Clock } from "lucide-react";
+import { formatCurrency } from "@/lib/utils/currency";
 
 interface CheckoutBookingSummaryProps {
     type: 'transport' | 'wellness' | 'activity' | 'flight';
@@ -191,7 +192,7 @@ export function BookingSummary({ type, details, booking }: CheckoutBookingSummar
                     <div>
                         <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Total Payable</p>
                         <span className="text-4xl font-black text-charcoal dark:text-white tracking-tighter">
-                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(total)}
+                            {formatCurrency(total, (booking.currency || 'VND') as 'USD' | 'VND')}
                         </span>
                     </div>
                     <div className="text-right">

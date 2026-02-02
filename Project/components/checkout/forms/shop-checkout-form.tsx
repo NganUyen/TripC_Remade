@@ -26,7 +26,8 @@ export const ShopCheckoutForm = ({ initialData, onSubmit }: ShopCheckoutFormProp
             shippingMethodId,
             cartId: initialData?.cartId,
             couponCode: initialData?.couponCode,
-            discountAmount: initialData?.discountAmount
+            discountAmount: initialData?.discountAmount,
+            isBuyNow: initialData?.isBuyNow || false,
         };
         onSubmit(payload);
     };
