@@ -119,7 +119,20 @@ export function SearchWithHistoryInput<T extends Record<string, any>>({
             });
             if (res.ok) {
                 const data = await res.json();
-                setHistory(Array.isArray(data) ? data : []);
+                if (Array.isArray(data)) {
+                    // Deduplicate results based on their display value to prevent visual duplicates
+                    const uniqueHistoryMap = new Map();
+                    data.forEach(item => {
+                        const queryValue = item.search_params?.query || JSON.stringify(item.search_params);
+                        // Only keep the most recent one (already sorted by created_at in backend)
+                        if (!uniqueHistoryMap.has(queryValue)) {
+                            uniqueHistoryMap.set(queryValue, item);
+                        }
+                    });
+                    setHistory(Array.from(uniqueHistoryMap.values()));
+                } else {
+                    setHistory([]);
+                }
             }
         } catch (error) {
             console.error("Failed to fetch history");
@@ -170,7 +183,6 @@ export function SearchWithHistoryInput<T extends Record<string, any>>({
                         category,
                         searchParams: {
                             query: displayValue,
-                            timestamp: new Date().toISOString(),
                             type: historyType,
                             ...item
                         },
@@ -327,33 +339,41 @@ export function SearchWithHistoryInput<T extends Record<string, any>>({
                                 </button>
                             </div>
                             <div>
-                                {history.map((item) => (
-                                    <div
-                                        key={item.id}
-                                        onClick={() => handleHistorySelect(item)}
-                                        className="group flex items-center justify-between px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer border-b border-slate-50 dark:border-slate-800/50 last:border-0 transition-colors"
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:text-primary group-hover:bg-primary/10 transition-colors">
-                                                <Clock className="w-4 h-4" />
-                                            </div>
-                                            <div className="flex flex-col">
-                                                {renderHistoryItem ? renderHistoryItem(item) : (
-                                                    <span className="text-sm font-medium text-slate-700 dark:text-slate-200 group-hover:text-primary transition-colors">
-                                                        {item.search_params?.query || JSON.stringify(item.search_params)}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </div>
-                                        <button
-                                            onClick={(e) => handleDeleteOne(e, item.id)}
-                                            className="p-1.5 rounded-full text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 opacity-0 group-hover:opacity-100 transition-all"
-                                            title="Delete"
+                                {(() => {
+                                    const seen = new Set();
+                                    return history.filter(item => {
+                                        const queryValue = item.search_params?.query || JSON.stringify(item.search_params);
+                                        if (seen.has(queryValue)) return false;
+                                        seen.add(queryValue);
+                                        return true;
+                                    }).map((item) => (
+                                        <div
+                                            key={item.id}
+                                            onClick={() => handleHistorySelect(item)}
+                                            className="group flex items-center justify-between px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer border-b border-slate-50 dark:border-slate-800/50 last:border-0 transition-colors"
                                         >
-                                            <X className="w-4 h-4" />
-                                        </button>
-                                    </div>
-                                ))}
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:text-primary group-hover:bg-primary/10 transition-colors">
+                                                    <Clock className="w-4 h-4" />
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    {renderHistoryItem ? renderHistoryItem(item) : (
+                                                        <span className="text-sm font-medium text-slate-700 dark:text-slate-200 group-hover:text-primary transition-colors">
+                                                            {item.search_params?.query || JSON.stringify(item.search_params)}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={(e) => handleDeleteOne(e, item.id)}
+                                                className="p-1.5 rounded-full text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 opacity-0 group-hover:opacity-100 transition-all"
+                                                title="Delete"
+                                            >
+                                                <X className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    ));
+                                })()}
                             </div>
                         </div>
                     )}
