@@ -92,6 +92,47 @@ export const HotelCheckoutForm = ({ initialData, onSubmit }: Props) => {
     }, [initialData.hotelId, initialData.roomId, supabase]);
 
 
+    const [voucherCode, setVoucherCode] = useState('');
+    const [discountAmount, setDiscountAmount] = useState(0);
+    const [isValidating, setIsValidating] = useState(false);
+
+    // Calculate nights
+    const start = new Date(dates.start);
+    const end = new Date(dates.end);
+    const nights = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
+
+    // Calculate Base Total for Validation
+    const baseTotal = (initialData.rate * nights) * 1.15; // Including Tax
+
+    const handleApplyVoucher = async () => {
+        if (!voucherCode) return;
+        setIsValidating(true);
+        try {
+            const res = await fetch('/api/v1/vouchers/validate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    code: voucherCode,
+                    cartTotal: baseTotal,
+                    serviceType: 'hotel' // Ensure 'hotel' is supported in API
+                }),
+            });
+            const data = await res.json();
+
+            if (!res.ok) {
+                toast.error(data.error || 'Invalid voucher');
+                setDiscountAmount(0);
+            } else {
+                toast.success(`Voucher applied! Saved $${data.discountAmount}`);
+                setDiscountAmount(data.discountAmount);
+            }
+        } catch (error) {
+            toast.error('Failed to validate voucher');
+        } finally {
+            setIsValidating(false);
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!user) {
@@ -108,7 +149,10 @@ export const HotelCheckoutForm = ({ initialData, onSubmit }: Props) => {
             dates: dates,
             guestDetails: contact,
             guestCount: guests,
-            rate: initialData.rate // Pass explicitly so Server can rely on it if DB fetch skipped (MVP)
+            rate: initialData.rate,
+            // Pass voucher info
+            voucherCode: discountAmount > 0 ? voucherCode : undefined,
+            discountAmount: discountAmount
         };
 
         console.log('[HotelCheckoutForm] Submitting Payload:', payload);
@@ -116,10 +160,7 @@ export const HotelCheckoutForm = ({ initialData, onSubmit }: Props) => {
         onSubmit(payload);
     };
 
-    // Calculate Nights
-    const start = new Date(dates.start);
-    const end = new Date(dates.end);
-    const nights = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
+
 
     if (!details) {
         return <div className="p-8 text-center text-slate-500">Loading details...</div>;
@@ -210,7 +251,61 @@ export const HotelCheckoutForm = ({ initialData, onSubmit }: Props) => {
                 </div>
             </div>
 
-            <Button type="submit" className="w-full h-12 text-lg font-bold bg-[#FF5E1F] hover:bg-orange-600 shadow-lg shadow-orange-500/20" disabled={isLoading}>
+            {/* 3. Price Summary & Payment */}
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
+                <h3 className="text-lg font-bold mb-4">Price Detail</h3>
+
+                <div className="space-y-3 text-sm">
+                    <div className="flex justify-between">
+                        <span className="text-slate-600 dark:text-slate-400">Room ({nights} nights)</span>
+                        <span>${(initialData.rate * nights).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                        <span className="text-slate-600 dark:text-slate-400">Taxes & Fees (15%)</span>
+                        <span>${((initialData.rate * nights) * 0.15).toFixed(2)}</span>
+                    </div>
+
+                    {/* Voucher Discount Display */}
+                    {discountAmount > 0 && (
+                        <div className="flex justify-between text-emerald-600 font-bold">
+                            <span>Voucher Discount</span>
+                            <span>-${discountAmount.toFixed(2)}</span>
+                        </div>
+                    )}
+
+                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
+                        <div className="flex justify-between items-end">
+                            <span className="font-bold">Total</span>
+                            <span className="text-2xl font-black text-[#FF5E1F]">
+                                ${(Math.max(0, (initialData.rate * nights * 1.15) - discountAmount)).toFixed(2)}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Voucher Input */}
+                <div className="mt-6 pt-6 border-t border-slate-100 dark:border-slate-800">
+                    <Label className="text-xs font-bold uppercase text-slate-500 mb-2 block">Voucher Code</Label>
+                    <div className="flex gap-2">
+                        <Input
+                            placeholder="Enter code"
+                            value={voucherCode}
+                            onChange={(e) => setVoucherCode(e.target.value.toUpperCase())}
+                            disabled={isLoading}
+                        />
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleApplyVoucher}
+                            disabled={isValidating || !voucherCode}
+                        >
+                            {isValidating ? 'Checking...' : 'Apply'}
+                        </Button>
+                    </div>
+                </div>
+            </div>
+
+            <Button type="submit" className="w-full h-14 text-lg font-bold bg-[#FF5E1F] hover:bg-orange-600 shadow-lg shadow-orange-500/20 rounded-xl" disabled={isLoading}>
                 {isLoading ? 'Processing...' : 'Proceed to Payment'}
             </Button>
         </form>

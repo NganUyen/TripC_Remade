@@ -128,8 +128,8 @@ export function CategorySlider() {
   return (
     <div className="sticky top-16 sm:top-20 z-50 w-full bg-white dark:bg-[#0f111a] border-b border-slate-200 dark:border-slate-800 transition-all duration-300 shadow-sm">
       <div className="max-w-[1440px] mx-auto relative group/slider">
-        <div className="relative overflow-x-auto no-scrollbar scroll-smooth">
-          <div className="flex items-center gap-2 sm:gap-4 px-4 sm:px-6 lg:px-8 py-3 min-w-max mx-auto justify-start lg:justify-center">
+        <div className="relative overflow-x-auto lg:overflow-hidden no-scrollbar scroll-smooth">
+          <div className="flex items-center gap-2 sm:gap-4 px-4 sm:px-6 lg:px-8 py-3 min-w-max lg:w-full lg:justify-center justify-start">
             {categories.map((cat, i) => {
               const isActive = pathname === cat.href;
               // Dynamic Active State Styles

@@ -65,9 +65,9 @@ export function HotelDetailHero({ hotel }: HotelDetailHeroProps) {
   }, [HERO_IMAGES.length]);
 
   return (
-    <section className="relative w-full z-0 h-[600px] mb-24 cursor-default group">
+    <section className="relative w-full z-0 h-[45vh] md:h-[600px] mb-24 cursor-default group">
       {/* Masking Container */}
-      <div className="relative h-full w-full overflow-hidden rounded-b-[2.5rem]">
+      <div className="relative h-full w-full overflow-hidden rounded-b-[2rem] md:rounded-b-[2.5rem]">
         {/* Parallax Wrapper */}
         <motion.div
           style={{ y }}
@@ -124,7 +124,7 @@ export function HotelDetailHero({ hotel }: HotelDetailHeroProps) {
         </div>
 
         {/* Top Overlay Controls */}
-        <div className="absolute top-0 left-0 w-full p-4 sm:p-8 flex justify-between items-start z-30 pt-24 pointer-events-none">
+        <div className="absolute top-0 left-0 w-full p-4 sm:p-8 flex justify-between items-start z-30 pointer-events-none">
           <Link
             href="/hotels"
             className="pointer-events-auto flex items-center gap-2 px-5 py-2.5 rounded-full bg-black/20 hover:bg-white/90 backdrop-blur-md border border-white/20 text-white hover:text-slate-900 transition-all font-medium text-sm group/back shadow-lg"
