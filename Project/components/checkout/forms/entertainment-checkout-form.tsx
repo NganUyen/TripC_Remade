@@ -16,13 +16,6 @@ interface Props {
     sessionId?: string;
     ticketTypeId: string;
     quantity: number;
-  };
-  onSubmit: (data: any) => void;
-  initialData: {
-    itemId: string;
-    sessionId?: string;
-    ticketTypeId: string;
-    quantity: number;
     voucherCode?: string;
     discountAmount?: number;
   };
