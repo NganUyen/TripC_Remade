@@ -27,38 +27,38 @@ export const beautyApi = {
       });
     }
     const response = await api.get(`/beauty/venues?${queryParams.toString()}`);
-    return response.data;
+    return response as VenueListResponse;
   },
 
   getVenueById: async (id: string): Promise<BeautyVenue> => {
     const response = await api.get(`/beauty/venues/${id}`);
-    return response.data;
+    return response as BeautyVenue;
   },
 
   getVenueBySlug: async (slug: string): Promise<BeautyVenue> => {
     const response = await api.get(`/beauty/venues/slug/${slug}`);
-    return response.data;
+    return response as BeautyVenue;
   },
 
   getFeaturedVenues: async (limit: number = 10): Promise<BeautyVenue[]> => {
     const response = await api.get(`/beauty/venues/featured?limit=${limit}`);
-    return response.data;
+    return response as BeautyVenue[];
   },
 
   /** Distinct categories from DB (venues + services). */
   getCategories: async (): Promise<{ id: string; label: string }[]> => {
     const response = await api.get("/beauty/categories");
-    return Array.isArray(response?.data) ? response.data : [];
+    return Array.isArray(response) ? response : [];
   },
 
   createVenue: async (venueData: CreateVenueRequest): Promise<BeautyVenue> => {
     const response = await api.post("/beauty/venues", venueData);
-    return response.data;
+    return response as BeautyVenue;
   },
 
   updateVenue: async (id: string, updates: Partial<CreateVenueRequest>): Promise<BeautyVenue> => {
     const response = await api.put(`/beauty/venues/${id}`, updates);
-    return response.data;
+    return response as BeautyVenue;
   },
 
   deleteVenue: async (id: string): Promise<void> => {
@@ -67,7 +67,7 @@ export const beautyApi = {
 
   getVenueServices: async (venueId: string): Promise<BeautyService[]> => {
     const response = await api.get(`/beauty/services?venue_id=${venueId}`);
-    return response.data;
+    return response as BeautyService[];
   },
 
   /** Get available time slots for a venue on a date (optionally for a service → uses service duration). */
@@ -81,15 +81,15 @@ export const beautyApi = {
     const response = await api.get(
       `/beauty/venues/${venueId}/availability?${params.toString()}`,
     );
-    const body = response?.data;
-    return Array.isArray(body?.data?.available_slots)
-      ? body.data.available_slots
+    // Handle special case where response might be nested
+    return Array.isArray(response?.available_slots)
+      ? response.available_slots
       : [];
   },
 
   getServiceById: async (id: string): Promise<BeautyService> => {
     const response = await api.get(`/beauty/services/${id}`);
-    return response.data;
+    return response as BeautyService;
   },
 
   getFeaturedServices: async (venueId?: string, limit?: number): Promise<BeautyService[]> => {
@@ -97,12 +97,12 @@ export const beautyApi = {
     if (venueId) q.append("venue_id", venueId);
     if (limit) q.append("limit", String(limit));
     const response = await api.get(`/beauty/services/featured?${q.toString()}`);
-    return response.data;
+    return response as BeautyService[];
   },
 
   getTopRatedServices: async (limit: number = 10): Promise<BeautyService[]> => {
     const response = await api.get(`/beauty/services/top-rated?limit=${limit}`);
-    return response.data;
+    return response as BeautyService[];
   },
 
   getServicesListing: async (
@@ -118,7 +118,7 @@ export const beautyApi = {
     })[]
   > => {
     const response = await api.get(`/beauty/services/listing?limit=${limit}`);
-    return response.data;
+    return response as any;
   },
 
   createAppointment: async (
@@ -130,17 +130,17 @@ export const beautyApi = {
       appointmentData,
       options?.headers ? { headers: options.headers } : undefined,
     );
-    return response.data;
+    return response as BeautyAppointment;
   },
 
   getAppointment: async (id: string): Promise<BeautyAppointment> => {
     const response = await api.get(`/beauty/appointments/${id}`);
-    return response.data;
+    return response as BeautyAppointment;
   },
 
   getUserAppointments: async (userId: string): Promise<BeautyAppointment[]> => {
     const response = await api.get(`/beauty/appointments?user_id=${userId}`);
-    return response.data;
+    return response as BeautyAppointment[];
   },
 
   cancelAppointment: async (id: string, reason?: string): Promise<void> => {
@@ -162,7 +162,7 @@ export const beautyApi = {
     const response = await api.get(
       `/beauty/venues/${venueId}/reviews?limit=${limit}&offset=${offset}`,
     );
-    return response.data;
+    return response as { reviews: any[]; stats: any };
   },
 
   createReview: async (
@@ -180,6 +180,6 @@ export const beautyApi = {
       data,
       options?.headers ? { headers: options.headers } : undefined,
     );
-    return response.data;
+    return response;
   },
 };
