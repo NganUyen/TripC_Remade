@@ -41,9 +41,11 @@ export async function POST(request: Request) {
             // Allow 'hotel credit' (or any hotel string) on 'hotel' bookings
             const isMatch =
                 voucherCategory === currentCategory ||
-                (voucherCategory === 'transport' && currentCategory === 'flight') ||
+                (voucherCategory === 'transport' && (currentCategory === 'transport' || currentCategory === 'flight')) ||
                 (voucherCategory.includes('hotel') && currentCategory === 'hotel') ||
-                (voucherCategory === 'entertainment' && currentCategory === 'event') ||
+                (voucherCategory === 'entertainment' && (currentCategory === 'event' || currentCategory === 'entertainment')) ||
+                (voucherCategory === 'activities' && (currentCategory === 'event' || currentCategory === 'entertainment')) ||
+                (voucherCategory === 'wellness' && currentCategory === 'wellness') ||
                 (voucherCategory === 'global'); // Global vouchers work everywhere
 
             if (!isMatch && voucherCategory) {
@@ -92,7 +94,10 @@ export async function POST(request: Request) {
                 voucher.code === 'FLIGHT_DEAL' ||
                 voucher.code === 'HOTEL20' ||
                 voucher.code === 'EVENT20' ||
-                voucher.code === 'EVENTVND';
+                voucher.code === 'EVENTVND' ||
+                voucher.code === 'ACT_USD10' ||
+                voucher.code === 'SPA_RETREAT' ||
+                voucher.code === 'TRANS20';
 
             if (!isPublic) {
                 return NextResponse.json({ error: 'You do not own this voucher' }, { status: 403 })

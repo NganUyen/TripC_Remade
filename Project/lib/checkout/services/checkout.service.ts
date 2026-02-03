@@ -134,6 +134,13 @@ export class CheckoutService {
         totalAmount = Math.ceil(totalAmount * 1.1); // Match frontend logic 10% tax? Or just trust items?
         // Let's log it.
         console.log('[CheckoutService] Transport calculated amount:', totalAmount);
+
+        // Apply Discount if present
+        const discount = (payload as any).discountAmount || 0;
+        if (discount > 0) {
+          console.log(`[CheckoutService] Applying transport discount: -${discount} ${payload.currency}`);
+          totalAmount = Math.max(0, totalAmount - discount);
+        }
       }
       title = payload.items?.[0]?.name || 'Transport Booking';
     } else if (payload.serviceType === 'event') {
@@ -273,6 +280,13 @@ export class CheckoutService {
 
       // Update totalAmount to include fee
       totalAmount = subtotal + serviceFee;
+
+      // Apply Discount if present
+      const discount = (payload as any).discountAmount || 0;
+      if (discount > 0) {
+        console.log(`[CheckoutService] Applying entertainment discount: -${discount} ${ticketType.currency}`);
+        totalAmount = Math.max(0, totalAmount - discount);
+      }
 
       // CRITICAL: Overwrite payload currency with the actual ticket currency
       // This prevents 35 USD becoming 35 VND
