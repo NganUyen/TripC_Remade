@@ -245,25 +245,55 @@ async function handleExpirations(bookings: any[], supabase: any) {
   const now = new Date();
   const expired = bookings.filter(
     (b) =>
-      (b.status === "held" || b.status === "pending") &&
+      (b.status === "held" || b.status === "pending" || b.status === "confirmed") &&
       b.expires_at &&
       new Date(b.expires_at) < now,
   );
 
   if (expired.length > 0) {
-    await Promise.all([
-      ...expired.map((b) =>
-        b.category === "hotel"
-          ? supabase
-            .from("hotel_bookings")
-            .update({ status: "cancelled" })
-            .eq("id", b.id)
-          : supabase
-            .from("bookings")
-            .update({ status: "cancelled" })
-            .eq("id", b.id),
-      ),
-    ]);
+    // Group expired bookings by category for efficient updates
+    const updatePromises = expired.map((b) => {
+      // Determine which table to update based on booking category/type
+      if (b.category === "hotel") {
+        return supabase
+          .from("hotel_bookings")
+          .update({ status: "cancelled" })
+          .eq("id", b.id);
+      } else if (b.category === "activity" && b.type === "event") {
+        return supabase
+          .from("event_bookings")
+          .update({ status: "cancelled" })
+          .eq("id", b.id);
+      } else if (b.category === "entertainment") {
+        return supabase
+          .from("entertainment_bookings")
+          .update({ booking_status: "cancelled" })
+          .eq("id", b.id);
+      } else if (b.category === "other" && b.type === "dining") {
+        return supabase
+          .from("dining_appointment")
+          .update({ status: "cancelled" })
+          .eq("id", b.id);
+      } else {
+        // Default to general bookings table
+        return supabase
+          .from("bookings")
+          .update({ status: "cancelled" })
+          .eq("id", b.id);
+      }
+    });
+
+    // Execute all updates in parallel
+    const results = await Promise.allSettled(updatePromises);
+
+    // Log any failures for debugging
+    results.forEach((result, index) => {
+      if (result.status === "rejected") {
+        console.error(`Failed to update expired booking ${expired[index].id}:`, result.reason);
+      }
+    });
+
+    // Update status in returned data
     expired.forEach((b) => (b.status = "cancelled"));
   }
   return bookings;

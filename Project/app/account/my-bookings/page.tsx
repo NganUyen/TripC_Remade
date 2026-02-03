@@ -19,6 +19,7 @@ interface Booking {
     currency: string;
     created_at: string;
     start_date: string;
+    expires_at?: string;
     metadata: any;
 }
 
@@ -58,10 +59,24 @@ export default function MyBookingsPage() {
         fetchBookings();
     }, []);
 
+    // Helper function to check if booking is expired
+    const isExpired = (booking: Booking) => {
+        if (!booking.expires_at) return false;
+        return new Date(booking.expires_at) < new Date();
+    };
+
     const filteredBookings = bookings.filter(booking => {
-        if (activeTab === 'upcoming') return ['held', 'confirmed'].includes(booking.status);
+        const expired = isExpired(booking);
+
+        if (activeTab === 'upcoming') {
+            // Exclude expired bookings from upcoming tab
+            return ['held', 'confirmed'].includes(booking.status) && !expired;
+        }
         if (activeTab === 'completed') return booking.status === 'completed';
-        if (activeTab === 'cancelled') return ['cancelled', 'payment_failed'].includes(booking.status);
+        if (activeTab === 'cancelled') {
+            // Include cancelled bookings AND expired ones
+            return ['cancelled', 'payment_failed'].includes(booking.status) || expired;
+        }
         return true;
     });
 
@@ -156,9 +171,14 @@ export default function MyBookingsPage() {
                                     {/* Info */}
                                     <div className="flex-1">
                                         <div className="flex items-center gap-2 mb-2">
-                                            <span className={`px-3 py-1 rounded-full text-xs font-bold ${statusColors[booking.status]}`}>
-                                                {statusLabels[booking.status]}
+                                            <span className={`px-3 py-1 rounded-full text-xs font-bold ${statusColors[booking.status] || 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400'}`}>
+                                                {statusLabels[booking.status] || booking.status}
                                             </span>
+                                            {isExpired(booking) && (
+                                                <span className="px-3 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400">
+                                                    Hết hạn thanh toán
+                                                </span>
+                                            )}
                                             <span className="text-xs text-muted">
                                                 {new Date(booking.created_at).toLocaleDateString('vi-VN')}
                                             </span>

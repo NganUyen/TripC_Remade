@@ -26,10 +26,8 @@ export default function PendingBookingCard({ booking }: PendingBookingCardProps)
             const totalDuration = expiryTime - createdTime;
 
             if (distance < 0) {
-                setTimeLeft("Hết hạn");
+                setTimeLeft("Đã hết hạn");
                 setProgress(0);
-                // Ideally trigger a refresh or move to cancelled list
-                router.refresh();
                 return;
             }
 
@@ -88,18 +86,26 @@ export default function PendingBookingCard({ booking }: PendingBookingCardProps)
                     />
                 </div>
 
-                <button
-                    onClick={() => router.push(`/payment?bookingId=${booking.id}`)}
-                    className="w-full py-3.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold text-sm hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg shadow-slate-200/50 dark:shadow-none"
-                >
-                    Thanh toán ngay
-                    <ArrowRight size={16} strokeWidth={2} />
-                </button>
+                {timeLeft === "Đã hết hạn" ? (
+                    <div className="text-center py-3 text-red-600 dark:text-red-400 font-bold text-sm">
+                        Đơn đặt chỗ đã hết hạn thanh toán
+                    </div>
+                ) : (
+                    <>
+                        <button
+                            onClick={() => router.push(`/payment?bookingId=${booking.id}`)}
+                            className="w-full py-3.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold text-sm hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg shadow-slate-200/50 dark:shadow-none"
+                        >
+                            Thanh toán ngay
+                            <ArrowRight size={16} strokeWidth={2} />
+                        </button>
 
-                <div className="flex items-center justify-center gap-1.5 opacity-60">
-                    <ShieldCheck size={12} strokeWidth={1.5} className="text-slate-400 dark:text-slate-500" />
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider">Giao dịch an toàn</span>
-                </div>
+                        <div className="flex items-center justify-center gap-1.5 opacity-60">
+                            <ShieldCheck size={12} strokeWidth={1.5} className="text-slate-400 dark:text-slate-500" />
+                            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider">Giao dịch an toàn</span>
+                        </div>
+                    </>
+                )}
             </div>
         </motion.div>
     );
