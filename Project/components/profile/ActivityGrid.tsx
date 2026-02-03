@@ -59,7 +59,7 @@ const ACTIVITIES = [
         colorName: "amber",
         colorClass: "text-amber-600 dark:text-amber-400",
         bgClass: "bg-amber-50 dark:bg-amber-900/20",
-        href: "/my-bookings"
+        href: "/shop/cart"
     },
     {
         icon: Gift,
@@ -67,7 +67,8 @@ const ACTIVITIES = [
         badge: null,
         colorName: "emerald",
         colorClass: "text-emerald-600 dark:text-emerald-400",
-        bgClass: "bg-emerald-50 dark:bg-emerald-900/20"
+        bgClass: "bg-emerald-50 dark:bg-emerald-900/20",
+        href: "/rewards"
     },
     {
         icon: Users,
@@ -108,6 +109,7 @@ const itemVariants: Variants = {
 
 export function ActivityGrid() {
     const router = useRouter()
+
     return (
         <section className="mb-12">
             <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6 px-2">My Activity</h3>
@@ -127,6 +129,7 @@ export function ActivityGrid() {
                             variants={itemVariants}
                             whileHover="hover"
                             whileTap={{ scale: 0.95 }}
+                            onClick={() => item.href && router.push(item.href)}
                             className="group flex flex-col items-center gap-3 relative"
                             onClick={() => item.href && router.push(item.href)}
                         >

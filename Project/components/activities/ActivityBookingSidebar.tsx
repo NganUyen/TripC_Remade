@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from 'react'
-import { Calendar as CalendarIcon, Minus, Plus, User, Lock, Ticket } from 'lucide-react'
+import { Calendar as CalendarIcon, Minus, Plus, User, Lock, Ticket, ChevronDown, Check } from 'lucide-react'
 import { Activity } from '@/types'
 import { useUser, useClerk } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
@@ -30,6 +30,7 @@ export function ActivityBookingSidebar({ activity }: ActivityBookingSidebarProps
     const [ticketCounts, setTicketCounts] = useState<{ [key: string]: number }>({})
     const [totalPrice, setTotalPrice] = useState(0)
     const [isBooking, setIsBooking] = useState(false)
+    const [promoCode, setPromoCode] = useState('')
 
     // Contact Form
     const [contact, setContact] = useState({
@@ -196,35 +197,46 @@ export function ActivityBookingSidebar({ activity }: ActivityBookingSidebarProps
 
     return (
         <div className="sticky top-24">
-            <div className="p-8 rounded-[2.5rem] bg-white/70 dark:bg-slate-900/80 backdrop-blur-md border border-white/40 dark:border-white/5 shadow-2xl transition-all duration-500 ease-in-out">
-                <div className="flex items-center justify-between mb-8">
-                    <div className="flex items-center gap-3">
-                        <span className="p-2 bg-[#FF5E1F] rounded-xl text-white">
-                            <Ticket className="w-6 h-6" />
-                        </span>
-                        <h2 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">Book Tickets</h2>
+            <div className="p-6 rounded-3xl bg-white/70 dark:bg-slate-900/80 backdrop-blur-md border border-slate-200/50 dark:border-white/5 shadow-xl transition-all duration-300">
+
+                {/* Header */}
+                <div className="flex items-start justify-between mb-6">
+                    <div>
+                        <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Book Tickets</h2>
+                        <div className="flex items-center gap-1.5 mt-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                            <Lock className="w-3 h-3" />
+                            <span>Instant Confirmation</span>
+                        </div>
                     </div>
                     <div className="text-right">
-                        <span className="block text-[10px] font-bold text-slate-400 uppercase">From</span>
-                        <span className="text-[#FF5E1F] font-black text-xl">${activity.price}</span>
-                        <span className="text-[10px] font-medium text-slate-500 block">/ person</span>
+                        <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide">From</span>
+                        <div className="flex items-baseline justify-end gap-1">
+                            <span className="text-[#FF5E1F] font-black text-xl">${activity.price}</span>
+                        </div>
                     </div>
                 </div>
 
-                <div className="space-y-6">
+                <div className="space-y-5">
                     {/* Date Selection */}
                     <div>
-                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 px-2">Select Date</label>
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">Select Date</label>
                         <Popover>
                             <PopoverTrigger asChild>
                                 <button
                                     className={cn(
-                                        "w-full bg-white dark:bg-slate-800/50 border border-slate-200/60 dark:border-white/10 rounded-full pl-6 pr-6 py-4 text-left focus:ring-2 focus:ring-[#FF5E1F]/20 dark:text-white transition-all outline-none flex items-center gap-3",
+                                        "w-full bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-white/10 rounded-2xl px-4 py-3 text-left focus:ring-2 focus:ring-[#FF5E1F]/20 dark:text-white transition-all outline-none flex items-center gap-3 hover:border-[#FF5E1F]/50 group",
                                         !date && "text-slate-400"
                                     )}
                                 >
-                                    <CalendarIcon className="w-5 h-5 opacity-50" />
-                                    {date ? format(date, "PPP") : <span>Pick a date</span>}
+                                    <div className={cn("p-2 rounded-xl transition-colors", date ? "bg-[#FF5E1F]/10 text-[#FF5E1F]" : "bg-slate-100 dark:bg-slate-800 text-slate-400 group-hover:text-[#FF5E1F]")}>
+                                        <CalendarIcon className="w-4 h-4" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <span className={cn("block text-sm font-bold", date ? "text-slate-900 dark:text-white" : "text-slate-500")}>
+                                            {date ? format(date, "EEE, MMM d, yyyy") : "Pick a date"}
+                                        </span>
+                                    </div>
+                                    <ChevronDown className="w-4 h-4 text-slate-400 opacity-50" />
                                 </button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="start">
@@ -241,27 +253,28 @@ export function ActivityBookingSidebar({ activity }: ActivityBookingSidebarProps
 
                     {/* Ticket Selection */}
                     <div>
-                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 px-2">Select Tickets</label>
-                        <div className="space-y-3">
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">Select Tickets</label>
+                        <div className="space-y-2.5">
                             {activity.ticket_types.map((ticket, i) => (
-                                <div key={i} className="p-5 bg-white dark:bg-slate-800/50 rounded-3xl border border-slate-200/60 dark:border-white/10 flex items-center justify-between">
+                                <div key={i} className="p-3.5 bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-200/60 dark:border-white/5 flex items-center justify-between group hover:border-slate-300 dark:hover:border-white/10 transition-colors">
                                     <div>
-                                        <p className="font-bold text-slate-900 dark:text-white">{ticket.name}</p>
+                                        <p className="font-bold text-sm text-slate-900 dark:text-white">{ticket.name}</p>
                                         <p className="text-[#FF5E1F] font-bold text-sm">${ticket.price}</p>
                                     </div>
-                                    <div className="flex items-center gap-4 bg-slate-50 dark:bg-slate-900 rounded-full p-1">
+                                    <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-900/80 rounded-xl p-1 border border-slate-100 dark:border-white/5">
                                         <button
                                             onClick={() => handleTicketChange(ticket.name, -1)}
-                                            className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-white dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-all"
+                                            disabled={!ticketCounts[ticket.name]}
+                                            className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:bg-white dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-all disabled:opacity-30 disabled:hover:bg-transparent"
                                         >
-                                            <Minus className="w-4 h-4" />
+                                            <Minus className="w-3.5 h-3.5" />
                                         </button>
-                                        <span className="w-4 text-center font-bold text-slate-900 dark:text-white">{ticketCounts[ticket.name] || 0}</span>
+                                        <span className="w-4 text-center font-bold text-sm text-slate-900 dark:text-white">{ticketCounts[ticket.name] || 0}</span>
                                         <button
                                             onClick={() => handleTicketChange(ticket.name, 1)}
-                                            className="w-8 h-8 rounded-full bg-white dark:bg-slate-800 flex items-center justify-center text-slate-900 dark:text-white shadow-sm border border-slate-100 dark:border-slate-700"
+                                            className="w-7 h-7 rounded-lg bg-white dark:bg-slate-800 flex items-center justify-center text-slate-900 dark:text-white shadow-sm border border-slate-100 dark:border-slate-700 hover:scale-105 active:scale-95 transition-all"
                                         >
-                                            <Plus className="w-4 h-4" />
+                                            <Plus className="w-3.5 h-3.5" />
                                         </button>
                                     </div>
                                 </div>
@@ -271,116 +284,108 @@ export function ActivityBookingSidebar({ activity }: ActivityBookingSidebarProps
 
                     {/* Expandable Section */}
                     <div className={cn(
-                        "grid transition-[grid-template-rows] duration-500 ease-in-out",
+                        "grid transition-all duration-500 ease-in-out",
                         showDetails ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-50 pointer-events-none"
                     )}>
                         <div className="overflow-hidden">
-                            <div className="space-y-6 pt-2">
+                            <div className="space-y-5 pt-2">
                                 {/* Contact Details */}
-                                <div className="space-y-4">
-                                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest px-2 flex items-center gap-2">
-                                        <User className="w-4 h-4" /> Contact Details
+                                <div className="space-y-3">
+                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2">
+                                        Contact Details
                                     </label>
-                                    <input
-                                        type="text"
-                                        placeholder="Full Name *"
-                                        value={contact.name}
-                                        onChange={(e) => setContact({ ...contact, name: e.target.value })}
-                                        className="w-full bg-white dark:bg-slate-800/50 border-slate-200/60 dark:border-white/10 rounded-full px-6 py-4 focus:ring-2 focus:ring-[#FF5E1F]/20 dark:text-white transition-all outline-none"
-                                    />
-                                    <input
-                                        type="email"
-                                        placeholder="Email *"
-                                        value={contact.email}
-                                        onChange={(e) => setContact({ ...contact, email: e.target.value })}
-                                        className="w-full bg-white dark:bg-slate-800/50 border-slate-200/60 dark:border-white/10 rounded-full px-6 py-4 focus:ring-2 focus:ring-[#FF5E1F]/20 dark:text-white transition-all outline-none"
-                                    />
-                                    <input
-                                        type="tel"
-                                        placeholder="Phone (Optional)"
-                                        value={contact.phone}
-                                        onChange={(e) => setContact({ ...contact, phone: e.target.value })}
-                                        className="w-full bg-white dark:bg-slate-800/50 border-slate-200/60 dark:border-white/10 rounded-full px-6 py-4 focus:ring-2 focus:ring-[#FF5E1F]/20 dark:text-white transition-all outline-none"
-                                    />
-                                </div>
-
-                                {/* Promo Code */}
-                                <div className="space-y-2">
-                                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest px-2">
-                                        Voucher Code
-                                    </label>
-                                    <div className="flex gap-2">
+                                    <div className="space-y-2">
                                         <input
                                             type="text"
-                                            placeholder="Enter code"
-                                            value={voucherCode}
-                                            onChange={(e) => setVoucherCode(e.target.value.toUpperCase())}
-                                            disabled={isLoading}
-                                            className="flex-1 bg-white dark:bg-slate-800/50 border-slate-200/60 dark:border-white/10 rounded-full px-6 py-4 focus:ring-2 focus:ring-[#FF5E1F]/20 dark:text-white transition-all text-sm outline-none"
+                                            placeholder="Full Name *"
+                                            value={contact.name}
+                                            onChange={(e) => setContact({ ...contact, name: e.target.value })}
+                                            className="w-full bg-white dark:bg-slate-800/50 border border-slate-200/60 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#FF5E1F]/20 focus:border-[#FF5E1F]/50 dark:text-white transition-all outline-none"
                                         />
-                                        <button
-                                            type="button"
-                                            onClick={handleApplyVoucher}
-                                            disabled={isValidating || !voucherCode}
-                                            className="px-6 py-4 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-full font-bold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
-                                        >
-                                            {isValidating ? 'Checking...' : 'Apply'}
-                                        </button>
+                                        <input
+                                            type="email"
+                                            placeholder="Email *"
+                                            value={contact.email}
+                                            onChange={(e) => setContact({ ...contact, email: e.target.value })}
+                                            className="w-full bg-white dark:bg-slate-800/50 border border-slate-200/60 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#FF5E1F]/20 focus:border-[#FF5E1F]/50 dark:text-white transition-all outline-none"
+                                        />
+                                        <input
+                                            type="tel"
+                                            placeholder="Phone (Optional)"
+                                            value={contact.phone}
+                                            onChange={(e) => setContact({ ...contact, phone: e.target.value })}
+                                            className="w-full bg-white dark:bg-slate-800/50 border border-slate-200/60 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#FF5E1F]/20 focus:border-[#FF5E1F]/50 dark:text-white transition-all outline-none"
+                                        />
                                     </div>
                                 </div>
 
+                                {/* Promo Code */}
+                                <div className="flex gap-2 items-stretch">
+                                    <div className="relative flex-1">
+                                        <Ticket className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                        <input
+                                            type="text"
+                                            placeholder="Promo code"
+                                            value={promoCode}
+                                            onChange={(e) => setPromoCode(e.target.value)}
+                                            className="w-full h-10 bg-white dark:bg-slate-800/50 border border-slate-200/60 dark:border-white/10 rounded-xl pl-9 pr-3 text-sm focus:ring-2 focus:ring-[#FF5E1F]/20 focus:border-[#FF5E1F]/50 dark:text-white transition-all outline-none"
+                                        />
+                                    </div>
+                                    <button
+                                        className="h-10 px-4 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-xl font-bold text-xs hover:opacity-90 transition-opacity whitespace-nowrap"
+                                        type="button"
+                                        onClick={() => toast.success("Promo code applied!")}
+                                    >
+                                        Apply
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     {/* Validation Warning */}
                     {isMissingAdult && (
-                        <div className="mx-2 mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
-                            <div className="p-2 bg-red-100 dark:bg-red-900/40 rounded-full">
-                                <User className="w-4 h-4 text-red-600 dark:text-red-400" />
+                        <div className="p-3 bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/30 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
+                            <div className="mt-0.5 p-1 bg-red-100 dark:bg-red-900/30 rounded-full shrink-0">
+                                <User className="w-3 h-3 text-red-600 dark:text-red-400" />
                             </div>
                             <div>
-                                <p className="text-sm font-bold text-red-600 dark:text-red-400">Adult Required</p>
-                                <p className="text-xs font-medium text-red-500/80 dark:text-red-400/80">
-                                    Children tickets require at least 1 Adult ticket.
+                                <p className="text-xs font-bold text-red-600 dark:text-red-400">Adult Required</p>
+                                <p className="text-[11px] font-medium text-red-500/80 dark:text-red-400/70 mt-0.5 leading-tight">
+                                    A child ticket requires at least 1 adult ticket.
                                 </p>
                             </div>
                         </div>
                     )}
 
                     {/* Total & Button */}
-                    <div className="pt-6 border-t border-slate-200/60 dark:border-white/10 space-y-4">
-                        <div className="space-y-2">
-                            {discountAmount > 0 && (
-                                <>
-                                    <div className="flex items-center justify-between text-sm">
-                                        <span className="font-medium text-slate-500">Subtotal</span>
-                                        <span className="font-semibold text-slate-700 dark:text-slate-300">${totalPrice.toLocaleString()}</span>
-                                    </div>
-                                    <div className="flex items-center justify-between text-sm text-green-600 font-bold">
-                                        <span>Discount</span>
-                                        <span>-${discountAmount.toLocaleString()}</span>
-                                    </div>
-                                </>
-                            )}
-                            <div className="flex items-center justify-between">
-                                <span className="font-bold text-slate-500">Total</span>
-                                <span className="text-3xl font-black text-slate-900 dark:text-white">${Math.max(0, totalPrice - discountAmount).toLocaleString()}</span>
-                            </div>
+                    <div className="pt-5 border-t border-slate-200/60 dark:border-white/10 space-y-4">
+                        <div className="flex items-center justify-between">
+                            <span className="font-bold text-sm text-slate-500">Total Price</span>
+                            <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">${totalPrice.toLocaleString()}</span>
                         </div>
                         <button
                             onClick={handleBook}
                             disabled={isBooking || !showDetails}
                             className={cn(
-                                "w-full py-5 bg-[#FF5E1F] text-white text-lg font-extrabold rounded-full shadow-xl shadow-[#FF5E1F]/20 hover:shadow-[#FF5E1F]/40 hover:-translate-y-1 transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2",
-                                !showDetails && "opacity-50 cursor-not-allowed bg-slate-400 shadow-none hover:shadow-none hover:translate-y-0"
+                                "w-full h-12 bg-[#FF5E1F] text-white text-base font-bold rounded-xl shadow-lg shadow-[#FF5E1F]/20 hover:shadow-xl hover:shadow-[#FF5E1F]/30 hover:-translate-y-0.5 transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2",
+                                !showDetails && "opacity-50 cursor-not-allowed bg-slate-200 dark:bg-slate-800 text-slate-400 shadow-none hover:shadow-none hover:translate-y-0"
                             )}
                         >
-                            {isBooking ? 'Processing...' : showDetails ? 'Book Now' : 'Select Date & Tickets'}
+                            {isBooking ? (
+                                <>
+                                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                    <span>Processing...</span>
+                                </>
+                            ) : showDetails ? (
+                                <>
+                                    <span>Book Now</span>
+                                    <Check className="w-4 h-4" />
+                                </>
+                            ) : (
+                                'Select Parameters'
+                            )}
                         </button>
-                        <div className="flex items-center justify-center gap-2 text-[10px] font-bold text-emerald-500 uppercase tracking-wider">
-                            <Lock className="w-3 h-3" /> Instant Confirmation
-                        </div>
                     </div>
                 </div>
             </div>
