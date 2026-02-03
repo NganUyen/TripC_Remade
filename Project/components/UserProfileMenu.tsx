@@ -73,7 +73,7 @@ export function UserProfileMenu({ isOpen, onClose }: { isOpen: boolean; onClose:
                             <MenuItem icon={User} label="My Profile" href="/profile" onClick={onClose} />
                             <MenuItem icon={BookOpen} label="My Bookings" href="/my-bookings" onClick={onClose} />
                             <MenuItem icon={Heart} label="Wishlist" href="/wishlist" onClick={onClose} />
-                            <MenuItem icon={Bell} label="Price Alerts" onClick={onClose} />
+
                             <MenuItem icon={Gift} label="Rewards" href="/rewards" onClick={onClose} />
                         </div>
 
