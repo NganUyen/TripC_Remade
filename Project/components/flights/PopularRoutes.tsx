@@ -15,7 +15,7 @@ export function PopularRoutes() {
                     </div>
                 </div>
 
-                <div className="grid grid-flow-col auto-cols-[85%] md:grid-flow-row md:grid-cols-2 lg:grid-cols-3 gap-6 overflow-x-auto md:overflow-visible no-scrollbar pb-6 md:pb-0 snap-x snap-mandatory">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-6 md:pb-0">
                     {/* Card 1 */}
                     <div className="bg-white dark:bg-[#2c241b] rounded-3xl p-6 hover:shadow-xl dark:hover:bg-[#362d23] transition-all duration-300 border border-slate-100 dark:border-white/5 hover:border-primary/20 dark:hover:border-white/10 shadow-lg snap-center group cursor-pointer relative overflow-hidden">
                         <div className="absolute top-6 right-6 p-2 bg-slate-50 dark:bg-white/5 rounded-full">

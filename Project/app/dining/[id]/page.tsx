@@ -4,6 +4,7 @@ import React from 'react'
 import { RestaurantHero } from '@/components/dining/RestaurantHero'
 import { ReservationSidebar } from '@/components/dining/ReservationSidebar'
 import { RestaurantContent } from '@/components/dining/RestaurantContent'
+import { ReviewSection } from '@/components/shared/reviews/ReviewSection'
 import { Footer } from '@/components/Footer'
 
 export default function RestaurantDetailPage({ params }: { params: { id: string } }) {
@@ -19,8 +20,15 @@ export default function RestaurantDetailPage({ params }: { params: { id: string 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
 
                     {/* Left Content (Span 2) */}
-                    <div className="lg:col-span-2">
+                    <div className="lg:col-span-2 space-y-12">
                         <RestaurantContent />
+
+                        <ReviewSection
+                            entityId={venueId}
+                            entityType="dining_venue"
+                            title="Guest Reviews"
+                            className="bg-white dark:bg-zinc-900 rounded-3xl p-8 border border-zinc-100 dark:border-zinc-800 shadow-sm"
+                        />
                     </div>
 
                     {/* Right Sidebar (Sticky) */}

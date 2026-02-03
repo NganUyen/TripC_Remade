@@ -119,13 +119,22 @@ export class SettlementService {
             if (!finalEmail && booking.user_id && booking.user_id !== 'GUEST') {
                 console.log('[SETTLEMENT_EMAIL] Fetching user email for sync:', booking.user_id);
 
-                // Try to find user by ID (UUID) OR Clerk ID
-                // Note: .or() is more robust here if we don't know the format of booking.user_id
-                const { data: userData } = await this.supabase
+                // Try to find user by ID (UUID) first, then fall back to Clerk ID
+                let { data: userData } = await this.supabase
                     .from('users')
                     .select('email, full_name')
-                    .or(`id.eq.${booking.user_id},clerk_id.eq.${booking.user_id}`)
+                    .eq('id', booking.user_id)
                     .maybeSingle();
+
+                // If not found by UUID, try Clerk ID
+                if (!userData && booking.user_id.startsWith('user_')) {
+                    const result = await this.supabase
+                        .from('users')
+                        .select('email, full_name')
+                        .eq('clerk_id', booking.user_id)
+                        .maybeSingle();
+                    userData = result.data;
+                }
 
                 if (userData) {
                     finalEmail = userData.email;
@@ -199,11 +208,24 @@ export class SettlementService {
             return;
         }
 
-        const totalAmount = Number(booking.total_amount);
+        let totalAmount = Number(booking.total_amount);
         if (isNaN(totalAmount) || totalAmount <= 0) {
             console.log('[CASHBACK_SKIP] Invalid amount:', totalAmount);
             return;
         }
+
+        // CURRENCY NORMALIZATION
+        // Convert local currencies to USD for consistent point calculation
+        const currency = booking.currency || 'USD';
+        if (currency === 'VND') {
+            // Approx exchange rate: 1 USD = 25,450 VND (Example)
+            // If the amount is > 100,000, it's almost certainly VND even if currency tag is missing,
+            // but relying on the tag is safer.
+            totalAmount = totalAmount / 25900;
+        }
+
+        // Round to 2 decimals for USD
+        totalAmount = Math.round(totalAmount * 100) / 100;
 
         console.log('[CASHBACK_START]', { userId: booking.user_id, amount: totalAmount });
 
@@ -297,9 +319,10 @@ export class SettlementService {
 
         // 5. Update User Balance (Since trigger might not do it)
         // We do this explicitly to be safe as `trg_process_cashback` only did stats.
+        // Updated to matching params: (amount_inc, user_uuid)
         const { error: balanceError } = await this.supabase.rpc('increment_tcent_balance', {
-            userid: userId,
-            amount: finalPoints
+            user_uuid: userId,
+            amount_inc: finalPoints
         });
 
         // Fallback if RPC doesn't exist (it should, but just in case)

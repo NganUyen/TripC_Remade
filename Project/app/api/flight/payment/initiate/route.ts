@@ -36,8 +36,8 @@ export async function POST(request: NextRequest) {
       booking_id,
       payment_method,
       tcent_to_redeem = 0,
-      return_url = `${process.env.NEXT_PUBLIC_APP_URL}/bookings/${booking_id}`,
-      cancel_url = `${process.env.NEXT_PUBLIC_APP_URL}/checkout/${booking_id}`,
+      return_url = `${process.env.NEXT_PUBLIC_APP_URL || ''}/bookings/${booking_id}`,
+      cancel_url = `${process.env.NEXT_PUBLIC_APP_URL || ''}/checkout/${booking_id}`,
     } = body;
 
     // Validate input
@@ -205,7 +205,7 @@ async function simulatePaymentGateway(params: {
   const transaction_id = `TXN_${Date.now()}_${Math.random().toString(36).substring(7).toUpperCase()}`;
 
   // Generate mock payment URL
-  const payment_url = `${process.env.NEXT_PUBLIC_APP_URL}/payment/gateway?txn=${transaction_id}`;
+  const payment_url = `${process.env.NEXT_PUBLIC_APP_URL || ''}/payment/gateway?txn=${transaction_id}`;
 
   // In production, this would call PayOS/Stripe API:
   /*

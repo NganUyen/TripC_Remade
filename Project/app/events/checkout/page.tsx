@@ -17,6 +17,8 @@ export default function EventCheckoutPage() {
     const ticketTypeId = searchParams.get('ticketTypeId');
     const adults = parseInt(searchParams.get('adults') || '1');
     const children = parseInt(searchParams.get('children') || '0');
+    const voucherCode = searchParams.get('voucherCode') || '';
+    const discountAmount = parseFloat(searchParams.get('discountAmount') || '0');
 
     const [isValid, setIsValid] = useState(false);
 
@@ -43,13 +45,15 @@ export default function EventCheckoutPage() {
         sessionId: sessionId!,
         ticketTypeId: ticketTypeId!,
         adults,
-        children
+        children,
+        voucherCode,
+        discountAmount
     };
 
     return (
         <div className="min-h-screen bg-[#fcfaf8] dark:bg-[#0a0a0a] py-12">
             <div className="container mx-auto px-4 mb-6">
-                <Link 
+                <Link
                     href={`/events/${eventId}`}
                     className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors text-sm font-medium"
                 >

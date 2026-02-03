@@ -14,13 +14,23 @@ const plusJakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "TripC SuperApp - Category Slider Variant 2.9",
+  title: "TripC Pro",
   description: "TripC Pro - Your all-in-one travel companion",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "TripC",
+  },
+  formatDetection: {
+    telephone: false,
+  },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  themeColor: "#5b21b6",
 };
 
 export default function RootLayout({

@@ -74,42 +74,58 @@ export class ShopSettlementHandler implements ISettlementHandler {
                 });
             }
         } else {
-            // Cart mode: Fetch items from cart_items table
-            if (!cartId) {
-                console.error('[SHOP_SETTLEMENT_HANDLER] Missing cartId for cart checkout', { bookingId: booking.id });
-                throw new Error('Missing cartId in booking metadata for cart checkout');
-            }
+            // Cart mode: Use items snapshot from metadata if available, otherwise fetch from database
+            const cartItemsSnapshot = booking.metadata?.cartItemsSnapshot;
 
-            const { data: cartItems, error: cartError } = await this.supabase
-                .from('cart_items')
-                .select(`
-                    *,
-                    variant:product_variants (
-                        id,
-                        sku,
-                        title,
-                        price,
-                        product_id,
-                        product:shop_products (
-                            id,
-                            title,
-                            product_type
-                        )
-                    )
-                `)
-                .eq('cart_id', cartId);
-
-            if (cartError || !cartItems || cartItems.length === 0) {
-                console.error('[SHOP_SETTLEMENT_HANDLER] Cart empty or error', {
-                    bookingId: booking.id,
-                    cartId,
-                    error: cartError?.message
+            if (cartItemsSnapshot && Array.isArray(cartItemsSnapshot) && cartItemsSnapshot.length > 0) {
+                // Use pre-fetched snapshot from booking creation
+                console.log('[SHOP_SETTLEMENT_HANDLER] Using cart items snapshot from metadata', {
+                    count: cartItemsSnapshot.length
                 });
-                throw new Error('Cart items not found or empty during settlement');
-            }
+                orderItems = cartItemsSnapshot;
+            } else {
+                // Fallback: Fetch items from cart_items table (legacy or if snapshot failed)
+                if (!cartId) {
+                    console.error('[SHOP_SETTLEMENT_HANDLER] Missing cartId and no items snapshot', {
+                        bookingId: booking.id
+                    });
+                    throw new Error('Missing cartId and cart items snapshot in booking metadata');
+                }
 
-            orderItems = cartItems;
-            console.log('[SHOP_SETTLEMENT_HANDLER] Fetched cart items', { count: cartItems.length });
+                console.log('[SHOP_SETTLEMENT_HANDLER] No items snapshot, fetching from database...', { cartId });
+
+                const { data: cartItems, error: cartError } = await this.supabase
+                    .from('cart_items')
+                    .select(`
+                        *,
+                        variant:product_variants (
+                            id,
+                            sku,
+                            title,
+                            price,
+                            product_id,
+                            product:shop_products (
+                                id,
+                                title,
+                                product_type
+                            )
+                        )
+                    `)
+                    .eq('cart_id', cartId);
+
+                if (cartError || !cartItems || cartItems.length === 0) {
+                    console.error('[SHOP_SETTLEMENT_HANDLER] Cart empty or error', {
+                        bookingId: booking.id,
+                        cartId,
+                        error: cartError?.message,
+                        hint: 'Cart items may have been cleared before settlement. Ensure cart items snapshot is saved in booking metadata.'
+                    });
+                    throw new Error('Cart items not found or empty during settlement. The cart may have been cleared prematurely.');
+                }
+
+                orderItems = cartItems;
+                console.log('[SHOP_SETTLEMENT_HANDLER] Fetched cart items from database', { count: cartItems.length });
+            }
         }
 
         console.log('[SHOP_SETTLEMENT_HANDLER] Processing items:', { count: orderItems.length });
@@ -186,7 +202,7 @@ export class ShopSettlementHandler implements ISettlementHandler {
             if (stockError && stockError.message.includes('function "decrement_stock" does not exist')) {
                 // Fallback: Fetch current stock and update
                 console.warn('[SHOP_SETTLEMENT_HANDLER] RPC not found, using fallback stock decrement', { variant: item.variant_id });
-                
+
                 const { data: currentVariant } = await this.supabase
                     .from('product_variants')
                     .select('stock_on_hand')
@@ -197,16 +213,16 @@ export class ShopSettlementHandler implements ISettlementHandler {
                     const newStock = Math.max(0, currentVariant.stock_on_hand - item.qty);
                     await this.supabase
                         .from('product_variants')
-                        .update({ 
+                        .update({
                             stock_on_hand: newStock,
                             updated_at: new Date().toISOString()
                         })
                         .eq('id', item.variant_id);
-                    
-                    console.log('[SHOP_SETTLEMENT_HANDLER] Stock decremented manually', { 
-                        variant: item.variant_id, 
+
+                    console.log('[SHOP_SETTLEMENT_HANDLER] Stock decremented manually', {
+                        variant: item.variant_id,
                         oldStock: currentVariant.stock_on_hand,
-                        newStock 
+                        newStock
                     });
                 }
             } else if (stockError) {

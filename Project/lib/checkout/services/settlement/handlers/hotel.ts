@@ -3,7 +3,7 @@ import { ISettlementHandler } from "../types";
 import { resolveUserUuid } from "../utils";
 
 export class HotelSettlementHandler implements ISettlementHandler {
-  constructor(private supabase: SupabaseClient) {}
+  constructor(private supabase: SupabaseClient) { }
 
   async settle(booking: any): Promise<void> {
     console.log(
@@ -47,11 +47,54 @@ export class HotelSettlementHandler implements ISettlementHandler {
       userUuid || "GUEST",
     );
 
-    const totalCents = Math.round(Number(booking.total_amount) * 100);
-    // Estimate nightly rate if not in metadata
-    const nights = booking.metadata?.nights || 1;
-    const nightlyRateCents =
-      booking.metadata?.nightlyRateCents || Math.round(totalCents / nights);
+    const currencyMultiplier = booking.currency === 'VND' ? 1 : 100;
+    const totalCents = Math.round(Number(booking.total_amount) * currencyMultiplier);
+
+    // Calculate nights from dates to ensure accuracy
+    let nights = 1;
+    if (dates?.start && dates?.end) {
+      const start = new Date(dates.start);
+      const end = new Date(dates.end);
+      nights = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
+    } else {
+      nights = booking.metadata?.nights || 1;
+    }
+
+    let nightlyRateCents = booking.metadata?.nightlyRateCents;
+
+    // We must reconstruct the pricing components to satisfy the DB constraint:
+    // total = (rate * nights) + tax + fee - discount
+
+    // 1. Get Discount (if any)
+    const discountAmount = Number(booking.metadata?.discountAmount || 0);
+    const discountCents = Math.round(discountAmount * currencyMultiplier);
+
+    // 2. Derive room cost from Tax/Fee structure
+    // Structure: Total + Discount = Room + Tax(10%) + Fee(5%) = Room * 1.15
+    // So: Room = (Total + Discount) / 1.15
+    const effectiveTotal = totalCents + discountCents;
+    const roomTotalCents = Math.round(effectiveTotal / 1.15);
+
+    // 3. Calculate Tax/Fee based on Room Cost
+    const taxCents = Math.round(roomTotalCents * 0.10);
+    const feesCents = Math.round(roomTotalCents * 0.05);
+
+    // 4. Calculate Nightly Rate
+    nightlyRateCents = Math.floor(roomTotalCents / nights);
+
+    // 5. Adjust for rounding errors to ensure exact match
+    // The Constraint: Total = (Rate * Nights) + Tax + Fee - Discount
+    // We adjust 'feesCents' to be the remainder balancer.
+    const calculatedTotal = (nightlyRateCents * nights) + taxCents + feesCents - discountCents;
+    const diff = totalCents - calculatedTotal;
+
+    if (diff !== 0) {
+      console.log(`[HOTEL_SETTLEMENT] Adjusting fees by ${diff} cents to match total.`);
+      // Add diff to fees (or tax)
+      // Note: we modify 'feesCents' const by redeclaring or just using a new variable in insert
+      // Actually, let's use a mutable variable for the insert object
+    }
+    const finalFeesCents = feesCents + diff;
 
     // 3. Create Domain Record
     const { error } = await this.supabase.from("hotel_bookings").insert({
@@ -74,6 +117,9 @@ export class HotelSettlementHandler implements ISettlementHandler {
       payment_status: booking.payment_status === "paid" ? "paid" : "pending",
       total_cents: totalCents,
       nightly_rate_cents: nightlyRateCents,
+      tax_cents: taxCents,
+      fees_cents: finalFeesCents,
+      discount_cents: discountCents,
       currency: booking.currency || "USD",
       confirmation_code: `HT-${booking.booking_code || Math.random().toString(36).substr(2, 6).toUpperCase()}`,
     });

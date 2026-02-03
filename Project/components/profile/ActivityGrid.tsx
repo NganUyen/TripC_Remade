@@ -131,6 +131,7 @@ export function ActivityGrid() {
                             whileTap={{ scale: 0.95 }}
                             onClick={() => item.href && router.push(item.href)}
                             className="group flex flex-col items-center gap-3 relative"
+                            onClick={() => item.href && router.push(item.href)}
                         >
                             {/* Icon Container - The "App Icon" */}
                             <motion.div

@@ -90,16 +90,7 @@ function BookingContent() {
                         <PriceSummary />
 
                         {/* TCent Card */}
-                        <div className="bg-gradient-to-br from-indigo-600 to-purple-600 rounded-[2rem] p-6 text-white shadow-lg relative overflow-hidden">
-                            <div className="relative z-10">
-                                <h4 className="font-bold text-lg mb-1">Earn 450 TCent</h4>
-                                <p className="text-white/80 text-sm mb-4">on this booking</p>
-                                <div className="h-2 bg-black/20 rounded-full overflow-hidden">
-                                    <div className="h-full w-3/4 bg-[#FF5E1F]"></div>
-                                </div>
-                                <p className="text-xs mt-2 text-white/60">Tier Progress</p>
-                            </div>
-                        </div>
+
                     </div>
                 </div>
 
