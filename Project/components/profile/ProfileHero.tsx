@@ -29,7 +29,7 @@ export function ProfileHero({ profile, initialEditMode, onProfileUpdate }: Profi
 
     if (!isLoaded) {
         return (
-            <div className="w-full pt-32 pb-8 animate-pulse">
+            <div className="w-full pt-8 pb-8 animate-pulse">
                 <div className="flex flex-col md:flex-row items-end md:items-center justify-between gap-6">
                     <div className="flex items-center gap-6">
                         <div className="w-24 h-24 rounded-full bg-slate-200 dark:bg-slate-800" />
@@ -48,7 +48,7 @@ export function ProfileHero({ profile, initialEditMode, onProfileUpdate }: Profi
     const displayLocation = profile?.city ? `${profile.city}, ${profile.country || ''}` : null
 
     return (
-        <section className="w-full pt-32 pb-8">
+        <section className="w-full pt-8 pb-8">
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}

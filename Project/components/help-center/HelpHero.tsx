@@ -12,7 +12,7 @@ export function HelpHero({ searchQuery, setSearchQuery }: HelpHeroProps) {
     const suggestions = ['Refunds', 'My Bookings', 'Wallet', 'Rewards', 'Account', 'Technical']
 
     return (
-        <section className="relative min-h-[500px] w-full flex flex-col items-center justify-center p-4 pt-24 pb-12">
+        <section className="relative min-h-[500px] w-full flex flex-col items-center justify-center p-4 pt-16 pb-12">
             {/* Background & Mask */}
             <div className="absolute inset-0 z-0 overflow-hidden rounded-b-[2.5rem]">
                 <img
@@ -24,22 +24,22 @@ export function HelpHero({ searchQuery, setSearchQuery }: HelpHeroProps) {
             </div>
 
             {/* Content */}
-            <div className="relative z-10 w-full max-w-3xl flex flex-col items-center text-center mt-10">
+            <div className="relative z-10 w-full max-w-3xl flex flex-col items-center text-center mt-4">
                 <motion.h1
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5 }}
-                    className="text-4xl md:text-6xl font-bold text-white mb-4 drop-shadow-md tracking-tight"
+                    className="text-4xl md:text-6xl font-black text-white mb-6 drop-shadow-xl tracking-tighter"
                 >
-                    Help Center
+                    Hello, how can we help?
                 </motion.h1>
                 <motion.p
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: 0.1 }}
-                    className="text-lg text-white/90 max-w-xl font-medium mb-10"
+                    className="text-lg md:text-xl text-white/90 max-w-2xl font-medium mb-12 leading-relaxed drop-shadow-md"
                 >
-                    Get support for bookings, payments, rewards, and your account.
+                    Search our knowledge base, check your booking status, or contact our support team.
                 </motion.p>
 
                 {/* Search Console */}

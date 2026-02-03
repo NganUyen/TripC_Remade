@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import MembershipCard from "@/components/bookings/MembershipCard";
 import WelcomeHeader from "@/components/bookings/WelcomeHeader";
@@ -22,12 +22,15 @@ import { cn } from "@/lib/utils";
 
 export default function MyBookingsPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [bookings, setBookings] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
 
   // Filtering State
-  const [activeCategory, setActiveCategory] = useState<string>("all");
+  const [activeCategory, setActiveCategory] = useState<string>(
+    searchParams.get("category") || "all"
+  );
   const [activeStatus, setActiveStatus] = useState<string>(
     searchParams.get("tab") || "booked",
   ); // 'booked' | 'awaiting' | 'cancelled'
@@ -36,6 +39,10 @@ export default function MyBookingsPage() {
     const tab = searchParams.get("tab");
     if (tab && ["booked", "awaiting", "cancelled"].includes(tab)) {
       setActiveStatus(tab);
+    }
+    const cat = searchParams.get("category");
+    if (cat) {
+      setActiveCategory(cat);
     }
   }, [searchParams]);
 
@@ -66,11 +73,13 @@ export default function MyBookingsPage() {
           });
           const data = await res.json();
           if (data.ok && data.status === "success") {
-            window.location.href = "/my-bookings?tab=booked&success=true";
+            setIsSyncing(false);
+            router.replace("/my-bookings?tab=booked&success=true");
           } else {
             toast.error("Thanh toán thất bại");
+            setIsSyncing(false);
             setTimeout(
-              () => (window.location.href = "/my-bookings?tab=cancelled"),
+              () => router.replace("/my-bookings?tab=cancelled"),
               2000,
             );
           }
@@ -78,7 +87,7 @@ export default function MyBookingsPage() {
           toast.error("Lỗi xác minh thanh toán");
           setIsSyncing(false);
           setTimeout(
-            () => (window.location.href = "/my-bookings?tab=cancelled"),
+            () => router.replace("/my-bookings?tab=cancelled"),
             2000,
           );
         }
@@ -109,12 +118,13 @@ export default function MyBookingsPage() {
           });
           const data = await res.json();
           if (data.ok) {
-            window.location.href = "/my-bookings?tab=booked&success=true";
+            setIsSyncing(false);
+            router.replace("/my-bookings?tab=booked&success=true");
           } else {
             toast.error("Lỗi xác minh PayPal");
             setIsSyncing(false);
             setTimeout(
-              () => (window.location.href = "/my-bookings?tab=cancelled"),
+              () => router.replace("/my-bookings?tab=cancelled"),
               2000,
             );
           }
@@ -122,7 +132,7 @@ export default function MyBookingsPage() {
           toast.error("Lỗi kết nối");
           setIsSyncing(false);
           setTimeout(
-            () => (window.location.href = "/my-bookings?tab=cancelled"),
+            () => router.replace("/my-bookings?tab=cancelled"),
             2000,
           );
         }
@@ -147,8 +157,8 @@ export default function MyBookingsPage() {
       try {
         const bId = searchParams.get("bookingId");
         const url = bId
-          ? `/api/bookings/user?bookingId=${bId}`
-          : "/api/bookings/user";
+          ? `/api/bookings/user?bookingId=${bId}&t=${Date.now()}`
+          : `/api/bookings/user?t=${Date.now()}`;
 
         const res = await fetch(url);
         if (res.status === 401) {
@@ -232,7 +242,7 @@ export default function MyBookingsPage() {
       >
         <div className="grid grid-cols-12 w-full mb-12 gap-8">
           <MembershipCard />
-          <WelcomeHeader />
+          <WelcomeHeader bookingsCount={bookings.filter(b => b.status === "confirmed" || b.status === "booked" || b.status === "success").length} />
         </div>
 
         <section className="mb-16">

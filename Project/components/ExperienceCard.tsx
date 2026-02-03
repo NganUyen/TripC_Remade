@@ -1,4 +1,5 @@
 import { Heart, Star, MapPin, Clock } from 'lucide-react'
+import { WishlistButton } from './WishlistButton'
 
 interface ExperienceCardProps {
     image: string
@@ -45,9 +46,14 @@ export function ExperienceCard({
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                         <span className="text-white font-medium tracking-wide border border-white/50 px-4 py-2 rounded-full backdrop-blur-sm">View Details</span>
                     </div>
-                    <button className="absolute top-4 right-4 p-2 rounded-full bg-white/20 backdrop-blur-md hover:bg-white text-white hover:text-red-500 transition-colors z-20 flex items-center justify-center">
-                        <Heart size={20} />
-                    </button>
+                    <WishlistButton
+                        itemId={title} // Using title as ID if no specific ID is provided to this generic component
+                        itemType={category.toLowerCase()}
+                        title={title}
+                        imageUrl={image}
+                        price={parseFloat(price)}
+                        className="absolute top-4 right-4 z-20 bg-white/20 backdrop-blur-md border-transparent hover:bg-white text-white"
+                    />
                     {tags?.map((tag, i) => (
                         <div key={i} className={`absolute ${i === 0 ? 'top-4 left-4' : 'bottom-2 left-2'} px-3 py-1 ${tag.color === 'bg-blue-500' ? 'bg-emerald-500' : (tag.color || 'bg-[#FF5E1F]')} text-white text-[10px] font-bold uppercase tracking-wider rounded-full shadow-lg backdrop-blur-sm`}>
                             {tag.text}

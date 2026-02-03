@@ -21,7 +21,9 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { AmenitiesChips } from "@/components/ui/AmenitiesChips";
+import { WishlistButton } from "@/components/WishlistButton";
 import { useRouter, useSearchParams } from "next/navigation";
+import { formatCurrency } from "@/lib/utils/currency";
 
 import { hotels as mockHotels } from "@/data/hotels";
 import { transformHotelData } from "@/lib/hotel/dataUtils";
@@ -294,8 +296,8 @@ export function HotelList() {
                   <button
                     onClick={(e) => toggleShare(hotel.id, e)}
                     className={`size-10 rounded-xl backdrop-blur-md border border-white/30 flex items-center justify-center transition-all ${isShareOpen
-                        ? "bg-white text-slate-900"
-                        : "bg-white/20 text-white hover:bg-white hover:text-slate-900"
+                      ? "bg-white text-slate-900"
+                      : "bg-white/20 text-white hover:bg-white hover:text-slate-900"
                       }`}
                   >
                     <Share2 className="w-5 h-5" />
@@ -331,9 +333,14 @@ export function HotelList() {
                 </div>
 
                 {/* Like Button */}
-                <button className="size-10 pointer-events-auto rounded-xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center text-white hover:bg-white hover:text-red-500 transition-colors">
-                  <Heart className="w-5 h-5" />
-                </button>
+                <WishlistButton
+                  itemId={hotel.id.toString()}
+                  itemType="hotel"
+                  title={hotel.name}
+                  imageUrl={hotel.image}
+                  price={hotel.priceNew}
+                  className="pointer-events-auto rounded-xl bg-white/20 backdrop-blur-md border border-white/30 text-white hover:bg-white transition-colors"
+                />
               </div>
             </div>
 
@@ -384,14 +391,14 @@ export function HotelList() {
                   <button
                     onClick={() => toggleCompare(hotel.id)}
                     className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-full text-xs font-bold transition-all shadow-sm ${isSelected
-                        ? "bg-orange-50 text-[#FF5E1F] border border-orange-200 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/30"
-                        : "bg-white text-slate-600 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700"
+                      ? "bg-orange-50 text-[#FF5E1F] border border-orange-200 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/30"
+                      : "bg-white text-slate-600 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700"
                       }`}
                   >
                     <div
                       className={`size-4 rounded-full border flex items-center justify-center transition-colors ${isSelected
-                          ? "bg-[#FF5E1F] border-[#FF5E1F]"
-                          : "border-slate-300 dark:border-slate-600 bg-transparent"
+                        ? "bg-[#FF5E1F] border-[#FF5E1F]"
+                        : "border-slate-300 dark:border-slate-600 bg-transparent"
                         }`}
                     >
                       {isSelected && (
@@ -424,7 +431,7 @@ export function HotelList() {
                   <div className="h-5 mb-1 flex justify-end w-full">
                     {hotel.priceOld ? (
                       <span className="text-sm text-slate-400 line-through font-medium leading-none">
-                        US${hotel.priceOld}
+                        {formatCurrency(hotel.priceOld, 'USD')}
                       </span>
                     ) : (
                       <span className="opacity-0 text-sm">
@@ -438,7 +445,7 @@ export function HotelList() {
                       from
                     </span>
                     <span className="text-3xl font-black text-orange-500">
-                      US${hotel.priceNew}
+                      {formatCurrency(hotel.priceNew, 'USD')}
                     </span>
                     <span className="text-xs text-slate-500 font-medium">
                       /night
@@ -513,11 +520,19 @@ export function HotelList() {
                   Clear All
                 </button>
                 <button
-                  onClick={() =>
+                  onClick={() => {
+                    // Store selected hotels data in sessionStorage for compare page
+                    const hotelsToCompare = hotels.filter((h) =>
+                      selectedHotels.includes(h.id),
+                    );
+                    sessionStorage.setItem(
+                      "compareHotels",
+                      JSON.stringify(hotelsToCompare),
+                    );
                     router.push(
                       `/hotels/compare?ids=${selectedHotels.join(",")}`,
-                    )
-                  }
+                    );
+                  }}
                   className="px-6 py-2 rounded-full bg-[#FF5E1F] hover:bg-orange-600 text-white text-sm font-bold transition-colors shadow-lg shadow-orange-500/20"
                 >
                   Compare ({selectedHotels.length})

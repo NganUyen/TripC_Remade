@@ -21,7 +21,7 @@ export function DiningHero() {
             </div>
 
             {/* Hero Content */}
-            <div className="relative z-10 w-full max-w-3xl flex flex-col items-center mt-12 md:mt-24">
+            <div className="relative z-10 w-full max-w-3xl flex flex-col items-center mt-4 md:mt-12">
                 <motion.h1
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}

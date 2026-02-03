@@ -43,6 +43,11 @@ export default function UpcomingBookingCard({ booking }: UpcomingBookingCardProp
                 <h3 className="text-xl font-bold text-slate-900 dark:text-white leading-tight group-hover:text-primary transition-colors duration-300 line-clamp-2">
                     {booking.title}
                 </h3>
+                {booking.booking_code && (
+                    <div className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                        Code: <span className="text-slate-900 dark:text-white font-bold">{booking.booking_code}</span>
+                    </div>
+                )}
             </div>
 
             {/* Footer: Location & Action */}
@@ -50,7 +55,7 @@ export default function UpcomingBookingCard({ booking }: UpcomingBookingCardProp
                 <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-300 transition-colors">
                     <MapPin size={16} strokeWidth={1.5} className="flex-shrink-0" />
                     <span className="text-sm font-medium truncate max-w-[160px]">
-                        {booking.location_summary || 'Xem bản đồ'}
+                        {booking.location || booking.location_summary || 'Xem bản đồ'}
                     </span>
                 </div>
 

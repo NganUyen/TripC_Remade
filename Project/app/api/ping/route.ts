@@ -197,12 +197,12 @@ export async function GET(request: NextRequest) {
     const uptime = process.uptime ? process.uptime() : 0;
     const overallStatus =
       flightDbStatus === "ok" &&
-      hotelDbStatus === "ok" &&
-      voucherDbStatus === "ok" &&
-      transportDbStatus === "ok" &&
-      diningDbStatus === "ok" &&
-      shopDbStatus === "ok" &&
-      entertainmentDbStatus === "ok"
+        hotelDbStatus === "ok" &&
+        voucherDbStatus === "ok" &&
+        transportDbStatus === "ok" &&
+        diningDbStatus === "ok" &&
+        shopDbStatus === "ok" &&
+        entertainmentDbStatus === "ok"
         ? "ok"
         : "degraded";
 

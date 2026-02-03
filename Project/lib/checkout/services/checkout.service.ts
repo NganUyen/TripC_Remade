@@ -1,6 +1,7 @@
 import { createServiceSupabaseClient } from "@/lib/supabase-server";
 import { CheckoutPayload, CheckoutResult } from "../types";
 import { generateBookingCode } from "@/utils/booking-codes";
+import { convertUsdToVnd } from "@/lib/utils/currency";
 
 export class CheckoutService {
   private supabase;
@@ -297,6 +298,37 @@ export class CheckoutService {
         // Fallback validation if hotel fetch fails (shouldn't happen)
         if (payload.rate) totalAmount = payload.rate * nights;
       }
+
+      // 4. Currency Conversion (Hotel records are in USD/cents)
+      if (payload.currency === "VND") {
+        const usdAmount = totalAmount;
+        totalAmount = convertUsdToVnd(totalAmount);
+        console.log(
+          `[CheckoutService] Converting Hotel Total: ${usdAmount} USD -> ${totalAmount} VND`,
+        );
+      }
+    } else if (payload.serviceType === 'flight') {
+      // Flight Booking Logic
+      const flightPayload = payload as any;
+
+      title = flightPayload.title || "Flight Booking";
+
+      // For flights, we currently trust the frontend calculated amount + validation 
+      // In a real production app, we would re-fetch the quote from the flight GDS/Provider
+      totalAmount = flightPayload.totalAmount;
+
+      if (!totalAmount) {
+        console.warn("[CheckoutService] Flight booking missing totalAmount, defaulting to 0");
+        totalAmount = 0;
+      }
+
+      // Map metadata for generic fields
+      payload.image_url = flightPayload.imageUrl;
+      // Save flights in items for reference if needed, or just keep in metadata
+      // payload.items = flightPayload.metadata?.selectedFlights; 
+      payload.address = flightPayload.locationSummary;
+
+      console.log(`[CheckoutService] Processing Flight: ${title}, Total=${totalAmount}`);
     }
 
     // ... other types

@@ -45,105 +45,97 @@ export async function GET(request: NextRequest) {
       .eq("clerk_id", user.id)
       .single();
 
-    // 2. Fetch all bookings for the resolved Internal UUID or Clerk ID
-    // We join the relevant domain tables to get PNR, vehicle info, etc.
-    let query = supabase.from("bookings").select(`
-        *,
-        flight_bookings:flight_bookings!booking_id (*),
-        transport_bookings:transport_bookings!booking_id (*, transport_routes:route_id (*)),
-        shop_orders:shop_orders!booking_id (*)
-      `);
+    // 2. Fetch all types of bookings in parallel
+    const [
+      { data: bookings, error: bookingsError },
+      { data: hotelBookings, error: hotelError },
+      { data: eventBookings, error: eventError },
+      { data: entertainmentBookings, error: entertainmentError },
+      { data: diningAppointments, error: diningError },
+    ] = await Promise.all([
+      // General Bookings
+      (dbUser
+        ? supabase.from("bookings").select(`
+            *,
+            flight_bookings:flight_bookings!booking_id (*),
+            transport_bookings:transport_bookings!booking_id (*, transport_routes:route_id (*)),
+            shop_orders:shop_orders!booking_id (*)
+          `).or(`user_id.eq.${user.id},user_id.eq.${dbUser.id}`)
+        : supabase.from("bookings").select(`
+            *,
+            flight_bookings:flight_bookings!booking_id (*),
+            transport_bookings:transport_bookings!booking_id (*, transport_routes:route_id (*)),
+            shop_orders:shop_orders!booking_id (*)
+          `).eq("user_id", user.id)
+      ).order("created_at", { ascending: false }),
 
-    if (dbUser) {
-      query = query.or(`user_id.eq.${user.id},user_id.eq.${dbUser.id}`);
-    } else {
-      query = query.eq("user_id", user.id);
-    }
+      // Hotel Bookings
+      supabase
+        .from("hotel_bookings")
+        .select(`
+          *,
+          hotels:hotel_id (name, slug, address, images),
+          hotel_rooms:room_id (title, code)
+        `)
+        .eq("external_user_ref", user.id)
+        .order("created_at", { ascending: false }),
 
-    const { data: bookings, error: bookingsError } = await query.order(
-      "created_at",
-      { ascending: false },
-    );
+      // Event Bookings
+      (dbUser
+        ? supabase.from("event_bookings").select(`
+            *,
+            events (title, slug, city, location_summary, cover_image_url),
+            event_sessions (name, session_date, start_time),
+            event_ticket_types (name)
+          `).or(`external_user_ref.eq.${user.id},external_user_ref.eq.${dbUser.id},user_uuid.eq.${dbUser.id}`)
+        : supabase.from("event_bookings").select(`
+            *,
+            events (title, slug, city, location_summary, cover_image_url),
+            event_sessions (name, session_date, start_time),
+            event_ticket_types (name)
+          `).eq("external_user_ref", user.id)
+      ).order("created_at", { ascending: false }),
+
+      // Entertainment Bookings
+      supabase
+        .from("entertainment_bookings")
+        .select(`
+          *,
+          item:entertainment_items(id, title, subtitle, images, location, type),
+          session:entertainment_sessions(session_date, start_time, end_time)
+        `)
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false }),
+
+      // Dining Appointments
+      (dbUser
+        ? supabase.from("dining_appointment").select(`
+            *,
+            venue:dining_venues(id, name, address, images, city)
+          `).or(`user_id.eq.${user.id},user_id.eq.${dbUser.id}`)
+        : supabase.from("dining_appointment").select(`
+            *,
+            venue:dining_venues(id, name, address, images, city)
+          `).eq("user_id", user.id)
+      ).order("appointment_date", { ascending: false }),
+    ]);
 
     if (bookingsError) {
       console.error("Fetch bookings error:", bookingsError);
-      return NextResponse.json(
-        { error: bookingsError.message },
-        { status: 500 },
-      );
+      return NextResponse.json({ error: bookingsError.message }, { status: 500 });
     }
-
-    // 3. Fetch hotel bookings (legacy table)
-    const { data: hotelBookings, error: hotelError } = await supabase
-      .from("hotel_bookings")
-      .select(
-        `
-                *,
-                hotels:hotel_id (name, slug, address, images),
-                hotel_rooms:room_id (title, code)
-            `,
-      )
-      .eq("external_user_ref", user.id)
-      .order("created_at", { ascending: false });
-
     if (hotelError) {
       console.error("Fetch hotel bookings error:", hotelError);
       return NextResponse.json({ error: hotelError.message }, { status: 500 });
     }
-
-    // 3. Fetch event bookings
-    let eventQuery = supabase
-      .from("event_bookings")
-      .select(
-        `
-                *,
-                events (
-                    title,
-                    slug,
-                    city,
-                    location_summary,
-                    cover_image_url
-                ),
-                event_sessions (
-                    name,
-                    session_date,
-                    start_time
-                ),
-                event_ticket_types (
-                    name
-                )
-            `,
-      );
-
-    if (dbUser) {
-      eventQuery = eventQuery.or(
-        `external_user_ref.eq.${user.id},external_user_ref.eq.${dbUser.id},user_uuid.eq.${dbUser.id}`
-      );
-    } else {
-      eventQuery = eventQuery.eq("external_user_ref", user.id);
-    }
-
-    const { data: eventBookings, error: eventError } = await eventQuery.order("created_at", { ascending: false });
-
     if (eventError) {
       console.error("Fetch event bookings error:", eventError);
     }
-
-    // 4. Fetch entertainment bookings
-    const { data: entertainmentBookings, error: entertainmentError } = await supabase
-      .from("entertainment_bookings")
-      .select(
-        `
-        *,
-        item:entertainment_items(id, title, subtitle, images, location, type),
-        session:entertainment_sessions(session_date, start_time, end_time)
-      `,
-      )
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
-
     if (entertainmentError) {
       console.error("Fetch entertainment bookings error:", entertainmentError);
+    }
+    if (diningError) {
+      console.error("Fetch dining appointments error:", diningError);
     }
 
     // Collect IDs of specialized bookings to exclude from general
@@ -203,6 +195,21 @@ export async function GET(request: NextRequest) {
         created_at: b.created_at,
         customer_name: b.customer_name,
         customer_email: b.customer_email,
+      })),
+      ...(diningAppointments || []).map((b: any) => ({
+        id: b.id,
+        category: "other", // As user requested "Other" tab
+        type: "dining",
+        title: b.venue?.name || "Dining Reservation",
+        subtitle: `${b.guest_count} Guests - ${b.appointment_time}`,
+        image: b.venue?.images?.[0] || null,
+        location: b.venue?.address || b.venue?.city || "Restaurant",
+        status: b.status,
+        start_date: b.appointment_date,
+        booking_code: b.appointment_code,
+        created_at: b.created_at,
+        customer_name: b.guest_name,
+        customer_email: b.guest_email,
       })),
       ...(bookings || []).filter((b: any) => !specializedBookingIds.has(b.id)).map(transformBooking),
     ];

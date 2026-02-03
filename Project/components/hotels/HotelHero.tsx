@@ -22,7 +22,7 @@ export function HotelHero() {
       </div>
 
       {/* Content Container */}
-      <div className="relative z-40 max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 pt-32 sm:pt-40">
+      <div className="relative z-40 max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 pt-20 sm:pt-28">
         <div className="flex flex-col items-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}

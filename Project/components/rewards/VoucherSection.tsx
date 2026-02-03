@@ -39,7 +39,11 @@ function getVoucherColor(type: string): string {
 
 // --- Components ---
 
-export function VoucherDrawer({ voucher, onClose }: { voucher: Voucher | null, onClose: () => void }) {
+export function VoucherDrawer({ voucher, onClose, onRedeemSuccess }: {
+    voucher: Voucher | null,
+    onClose: () => void,
+    onRedeemSuccess?: () => void
+}) {
     const [redeeming, setRedeeming] = useState(false)
 
     const handleRedeem = async () => {
@@ -58,7 +62,19 @@ export function VoucherDrawer({ voucher, onClose }: { voucher: Voucher | null, o
                     description: `New Balance: ${data.newBalance} Tcents`
                 })
                 onClose()
-                setTimeout(() => window.location.reload(), 1000)
+                // Dispatch custom event to refresh balance instead of page reload
+                window.dispatchEvent(new CustomEvent('voucher-redeemed', {
+                    detail: { newBalance: data.newBalance }
+                }))
+                // Also trigger marketplace refresh to hide redeemed voucher
+                console.log('[VOUCHER] Dispatching refresh-marketplace event')
+                window.dispatchEvent(new Event('refresh-marketplace'))
+
+                // Call parent callback if provided
+                if (onRedeemSuccess) {
+                    console.log('[VOUCHER] Calling onRedeemSuccess callback')
+                    onRedeemSuccess()
+                }
             } else {
                 const err = await res.json()
                 toast.error(err.error || 'Redemption failed')

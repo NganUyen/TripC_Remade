@@ -12,7 +12,7 @@ interface SettingsHeroProps {
 
 export function SettingsHero({ name, username, image }: SettingsHeroProps) {
     return (
-        <section className="w-full pt-28 pb-8">
+        <section className="w-full pt-8 pb-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <motion.div
                     initial={{ opacity: 0, y: 10 }}

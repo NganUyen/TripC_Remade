@@ -7,16 +7,17 @@ import { ChatWidget } from "./ChatWidget";
 
 export function ConditionalLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isDeveloperRoute = pathname?.startsWith("/ping");
+  const isCustomLayout = pathname?.startsWith("/ping") || pathname?.startsWith("/help-center");
+  const isPayment = pathname?.startsWith("/payment");
 
-  if (isDeveloperRoute) {
+  if (isCustomLayout) {
     return <>{children}</>;
   }
 
   return (
     <>
       <Header />
-      <CategorySlider />
+      {!isPayment && <CategorySlider />}
       {children}
       <ChatWidget />
     </>
