@@ -79,15 +79,15 @@ export class ShopSettlementHandler implements ISettlementHandler {
 
             if (cartItemsSnapshot && Array.isArray(cartItemsSnapshot) && cartItemsSnapshot.length > 0) {
                 // Use pre-fetched snapshot from booking creation
-                console.log('[SHOP_SETTLEMENT_HANDLER] Using cart items snapshot from metadata', { 
-                    count: cartItemsSnapshot.length 
+                console.log('[SHOP_SETTLEMENT_HANDLER] Using cart items snapshot from metadata', {
+                    count: cartItemsSnapshot.length
                 });
                 orderItems = cartItemsSnapshot;
             } else {
                 // Fallback: Fetch items from cart_items table (legacy or if snapshot failed)
                 if (!cartId) {
-                    console.error('[SHOP_SETTLEMENT_HANDLER] Missing cartId and no items snapshot', { 
-                        bookingId: booking.id 
+                    console.error('[SHOP_SETTLEMENT_HANDLER] Missing cartId and no items snapshot', {
+                        bookingId: booking.id
                     });
                     throw new Error('Missing cartId and cart items snapshot in booking metadata');
                 }
@@ -202,7 +202,7 @@ export class ShopSettlementHandler implements ISettlementHandler {
             if (stockError && stockError.message.includes('function "decrement_stock" does not exist')) {
                 // Fallback: Fetch current stock and update
                 console.warn('[SHOP_SETTLEMENT_HANDLER] RPC not found, using fallback stock decrement', { variant: item.variant_id });
-                
+
                 const { data: currentVariant } = await this.supabase
                     .from('product_variants')
                     .select('stock_on_hand')
@@ -213,16 +213,16 @@ export class ShopSettlementHandler implements ISettlementHandler {
                     const newStock = Math.max(0, currentVariant.stock_on_hand - item.qty);
                     await this.supabase
                         .from('product_variants')
-                        .update({ 
+                        .update({
                             stock_on_hand: newStock,
                             updated_at: new Date().toISOString()
                         })
                         .eq('id', item.variant_id);
-                    
-                    console.log('[SHOP_SETTLEMENT_HANDLER] Stock decremented manually', { 
-                        variant: item.variant_id, 
+
+                    console.log('[SHOP_SETTLEMENT_HANDLER] Stock decremented manually', {
+                        variant: item.variant_id,
                         oldStock: currentVariant.stock_on_hand,
-                        newStock 
+                        newStock
                     });
                 }
             } else if (stockError) {
