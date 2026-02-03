@@ -6,7 +6,7 @@ import { motion } from 'framer-motion'
 
 export function RestaurantContent() {
     const [activeTab, setActiveTab] = useState('Overview')
-    const tabs = ['Overview', 'Menu', 'Reviews']
+    const tabs = ['Overview', 'Menu']
 
     return (
         <div className="space-y-12">
@@ -59,49 +59,7 @@ export function RestaurantContent() {
                 </div>
             </section>
 
-            {/* Reviews Section */}
-            <section>
-                <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-black text-slate-900 dark:text-white">Reviews (2.3k)</h2>
-                    <div className="flex items-center gap-2">
-                        <span className="text-3xl font-black text-[#FF5E1F]">4.9</span>
-                        <div className="flex text-amber-500">
-                            {[1, 2, 3, 4, 5].map(s => <Star key={s} className="w-4 h-4 fill-current" />)}
-                        </div>
-                    </div>
-                </div>
 
-                {/* Write Input */}
-                <div className="bg-slate-50 dark:bg-zinc-900 rounded-[2rem] p-4 flex gap-4 items-center mb-8">
-                    <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-zinc-800 flex items-center justify-center">
-                        <MessageSquare className="w-5 h-5 text-slate-500" />
-                    </div>
-                    <input
-                        type="text"
-                        placeholder="Share your dining experience..."
-                        className="flex-1 bg-transparent outline-none text-slate-900 dark:text-white placeholder:text-slate-400 font-medium"
-                    />
-                    <button className="text-[#FF5E1F] font-bold text-sm">Post</button>
-                </div>
-
-                {/* Mock Reviews List */}
-                <div className="space-y-6">
-                    {[1, 2].map((review) => (
-                        <div key={review} className="border-b border-slate-100 dark:border-zinc-800 pb-6">
-                            <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-8 h-8 rounded-full bg-slate-200" />
-                                    <span className="font-bold text-slate-900 dark:text-white">Sarah Jenkins</span>
-                                </div>
-                                <span className="text-xs text-slate-400">2 days ago</span>
-                            </div>
-                            <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed">
-                                Absolutely stunning food and atmosphere. The Pho Wagyu was out of this world! Highly recommend booking the patio seating for sunset.
-                            </p>
-                        </div>
-                    ))}
-                </div>
-            </section>
         </div>
     )
 }

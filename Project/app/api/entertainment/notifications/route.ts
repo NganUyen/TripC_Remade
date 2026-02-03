@@ -8,6 +8,8 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+
+export const dynamic = "force-dynamic";
 import { createServiceSupabaseClient } from "@/lib/supabase-server";
 import { auth } from "@clerk/nextjs/server";
 

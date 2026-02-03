@@ -11,7 +11,7 @@ export async function POST(request: Request) {
         }
 
         const body = await request.json()
-        const { code, cartTotal } = body
+        const { code, cartTotal, serviceType } = body
 
         if (!code) {
             return NextResponse.json({ error: 'Voucher code is required' }, { status: 400 })
@@ -30,6 +30,31 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Invalid voucher code' }, { status: 404 })
         }
 
+        // 1.5. Validate Category (if serviceType is provided)
+        if (serviceType) {
+            // Normalize categories
+            const voucherCategory = (voucher.category || voucher.voucher_type || '').toLowerCase();
+            const currentCategory = serviceType.toLowerCase();
+
+            // Check match
+            // Allow 'transport' vouchers on 'flight' bookings, assuming flights are a subset of transport
+            // Allow 'hotel credit' (or any hotel string) on 'hotel' bookings
+            const isMatch =
+                voucherCategory === currentCategory ||
+                (voucherCategory === 'transport' && (currentCategory === 'transport' || currentCategory === 'flight')) ||
+                (voucherCategory.includes('hotel') && currentCategory === 'hotel') ||
+                (voucherCategory === 'entertainment' && (currentCategory === 'event' || currentCategory === 'entertainment')) ||
+                (voucherCategory === 'activities' && (currentCategory === 'event' || currentCategory === 'entertainment')) ||
+                (voucherCategory === 'wellness' && currentCategory === 'wellness') ||
+                (voucherCategory === 'global'); // Global vouchers work everywhere
+
+            if (!isMatch && voucherCategory) {
+                return NextResponse.json({
+                    error: `Voucher is not applicable for this category (${currentCategory})`
+                }, { status: 400 })
+            }
+        }
+
         // 2. Get internal User ID
         const { data: user } = await supabase
             .from('users')
@@ -41,17 +66,43 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 })
         }
 
-        // 3. CHECK OWNERSHIP: Does user have this voucher in user_vouchers?
+        // 3. CHECK OWNERSHIP & USAGE
+        // Check if user has interacted with this voucher before
         const { data: userVoucher, error: ownershipError } = await supabase
             .from('user_vouchers')
             .select('*')
             .eq('user_id', user.id)
             .eq('voucher_id', voucher.id)
-            .eq('status', 'active') // Must be active
-            .single()
+            .maybeSingle() // Use maybeSingle to handle "no row" as null instead of error
 
-        if (ownershipError || !userVoucher) {
-            return NextResponse.json({ error: 'You do not own this voucher or it has been used' }, { status: 403 })
+        // Case A: User has a record (Already claimed or Used)
+        if (userVoucher) {
+            if (userVoucher.status === 'used') {
+                return NextResponse.json({ error: 'You have already used this voucher' }, { status: 403 })
+            }
+            if (userVoucher.status === 'expired') {
+                return NextResponse.json({ error: 'This voucher has expired' }, { status: 400 })
+            }
+            // If status is 'active', proceed.
+        }
+        // Case B: No record found. 
+        // Valid ONLY if it's a public/global voucher (e.g. SHOP20).
+        // If it's a private assigned voucher, they should have had a record.
+        else {
+            const isPublic = (voucher as any).is_public ||
+                voucher.code === 'SHOP20' ||
+                voucher.code === 'FLIGHT_DEAL' ||
+                voucher.code === 'HOTEL20' ||
+                voucher.code === 'EVENT20' ||
+                voucher.code === 'EVENTVND' ||
+                voucher.code === 'ACT_USD10' ||
+                voucher.code === 'SPA_RETREAT' ||
+                voucher.code === 'TRANS20';
+
+            if (!isPublic) {
+                return NextResponse.json({ error: 'You do not own this voucher' }, { status: 403 })
+            }
+            // If public and not used yet (no record), allow it.
         }
 
         // 4. Validate Logic (Min Spend, Expiry)

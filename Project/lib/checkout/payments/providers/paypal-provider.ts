@@ -93,7 +93,8 @@ export class PaypalPaymentProvider implements PaymentProvider {
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${accessToken}`,
-                    'PayPal-Request-Id': `booking-${bookingId}`
+                    // Use timestamp to ensure unique Request ID for retries
+                    'PayPal-Request-Id': `booking-${bookingId}-${Date.now()}`
                 },
                 body: JSON.stringify(orderBody)
             });
@@ -104,9 +105,12 @@ export class PaypalPaymentProvider implements PaymentProvider {
             }
 
             const data = await response.json();
-            const approveLink = data.links.find((l: any) => l.rel === 'approve');
+            const approveLink = data.links?.find((l: any) => l.rel === 'approve');
 
-            if (!approveLink) throw new Error('No approval link in PayPal response');
+            if (!approveLink) {
+                console.error('PayPal Response missing approve link:', JSON.stringify(data, null, 2));
+                throw new Error('No approval link in PayPal response');
+            }
 
             return {
                 paymentUrl: approveLink.href,

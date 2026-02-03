@@ -76,20 +76,28 @@ export async function POST(request: NextRequest) {
 
         const internalUserId = userData.id;
 
-        // Check if the most recent search is identical to the new one
-        const { data: recent } = await supabase
+        // Check if this identical search already exists for this user and category
+        const { data: existing } = await supabase
             .from("user_search_history")
-            .select("search_params")
+            .select("id")
             .eq("user_id", internalUserId)
             .eq("category", category)
-            .order("created_at", { ascending: false })
+            .contains("search_params", searchParamsData)
             .limit(1);
 
-        if (recent && recent.length > 0) {
-            const lastSearchMatches = JSON.stringify(recent[0].search_params) === JSON.stringify(searchParamsData);
-            if (lastSearchMatches) {
-                return NextResponse.json({ success: true, duplicate: true });
+        if (existing && existing.length > 0) {
+            // Found a duplicate, update its timestamp to "bump" it to the top
+            const { error: updateError } = await supabase
+                .from("user_search_history")
+                .update({ created_at: new Date().toISOString() })
+                .eq("id", existing[0].id);
+
+            if (updateError) {
+                console.error("History update error:", updateError);
+                return NextResponse.json({ error: updateError.message }, { status: 500 });
             }
+
+            return NextResponse.json({ success: true, updated: true });
         }
 
         const { error } = await supabase

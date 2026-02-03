@@ -39,6 +39,11 @@ export function ActivityBookingSidebar({ activity }: ActivityBookingSidebarProps
         phone: ''
     })
 
+    // Voucher state
+    const [voucherCode, setVoucherCode] = useState('')
+    const [discountAmount, setDiscountAmount] = useState(0)
+    const [isValidating, setIsValidating] = useState(false)
+
     useEffect(() => {
         if (user) {
             setContact({
@@ -70,6 +75,36 @@ export function ActivityBookingSidebar({ activity }: ActivityBookingSidebarProps
         })
         setTotalPrice(total)
     }, [ticketCounts, activity])
+
+    const handleApplyVoucher = async () => {
+        if (!voucherCode) return
+        setIsValidating(true)
+        try {
+            const baseTotal = totalPrice
+            const res = await fetch('/api/v1/vouchers/validate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    code: voucherCode,
+                    cartTotal: baseTotal,
+                    serviceType: 'activity'
+                }),
+            })
+            const data = await res.json()
+
+            if (!res.ok) {
+                toast.error(data.error || 'Invalid voucher')
+                setDiscountAmount(0)
+            } else {
+                toast.success(`Voucher applied! Saved $${data.discountAmount}`)
+                setDiscountAmount(data.discountAmount)
+            }
+        } catch (error) {
+            toast.error('Failed to validate voucher')
+        } finally {
+            setIsValidating(false)
+        }
+    }
 
     const handleTicketChange = (name: string, delta: number) => {
         setTicketCounts(prev => {
@@ -125,13 +160,15 @@ export function ActivityBookingSidebar({ activity }: ActivityBookingSidebarProps
                 date: formattedDate,
                 tickets: ticketCounts,
                 contact,
-                totalPrice
+                totalPrice: Math.max(0, totalPrice - discountAmount),
+                voucherCode: discountAmount > 0 ? voucherCode : undefined,
+                discountAmount
             }
 
             const result = await createActivityBooking({
                 user_id: user?.id,
                 activity_id: activity.id,
-                total_amount: totalPrice,
+                total_amount: Math.max(0, totalPrice - discountAmount),
                 booking_details: bookingData,
                 title: activity.title,
                 image_url: activity.image_url,
