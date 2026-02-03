@@ -3,18 +3,12 @@
 import { useRouter, useParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useUser } from '@clerk/nextjs'
+import { motion } from 'framer-motion'
 import { beautyApi } from '@/lib/beauty/api'
 import type { BeautyService, BeautyVenue, BeautyAppointment } from '@/lib/beauty/types'
-import { ReviewSection } from '@/components/shared/reviews/ReviewSection'
 
-const FALLBACK_HERO = {
-    title: 'Radiance Renewal Facial',
-    description: 'Transform your skin with our signature luxury ritual, designed for immediate luminosity and deep restoration.',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD69V78Zoy-Xc0l_UHWAJ5LFipbj1SKZqa5c5L3kHbUrs2hNoFj24NIJKKIkonNnoGzxRSE8b1q78fZwPh5uf3GzoStSk6ObLa0OvE5F_pKEAklgpLeguvclP_q9BTb7ijUfiuDMchFndHGV6Smgy1j_dCXt1mdQVkJ366WFeBJfK0PMJtFRccq4sgZU47ApRqHNBQZOJnRJNnnxLgn_2NVGhyJ_qAIoy0RoE82WtQCO9QFH1-9OPE8DC8JG3cZNOiiY5FjesaWi48',
-}
-const FALLBACK_VENUE = { name: 'Aura Wellness Spa', address: '124 Avenue des Champs-Élysées, 75008 Paris, France', distance: '1.2 km away' }
-const FALLBACK_PRICE = 120
-const FALLBACK_DURATION = 90
+import { BeautyDetailSkeleton } from '@/components/beauty/BeautyDetailSkeleton'
+import { BeautyLocationSection } from '@/components/beauty/BeautyLocationSection'
 
 function formatDate(d: Date): string {
     const y = d.getFullYear()
@@ -99,205 +93,266 @@ export default function BeautyDetailPage() {
         }
     }
 
-    const title = service?.name ?? FALLBACK_HERO.title
-    const description = service?.description ?? FALLBACK_HERO.description
-    const heroImage = service?.image_url ?? FALLBACK_HERO.image
-    const price = service?.price ?? FALLBACK_PRICE
-    const duration = service?.duration_minutes ?? FALLBACK_DURATION
-    const venueName = venue?.name ?? FALLBACK_VENUE.name
-    const venueAddress = venue?.address ?? venue?.location_summary ?? FALLBACK_VENUE.address
-    const venueDistance = venue?.location_summary ?? FALLBACK_VENUE.distance
+    const title = service?.name
+    const description = service?.description
+    const heroImage = service?.image_url
+    const price = service?.price
+    const duration = service?.duration_minutes
+    const venueName = venue?.name
 
     if (loading) {
+        return <BeautyDetailSkeleton />
+    }
+
+    if (!service) {
         return (
-            <div className="bg-background-light dark:bg-background-dark min-h-screen flex items-center justify-center">
-                <div className="animate-pulse text-zinc-500 font-medium">Loading...</div>
+            <div className="bg-background-light dark:bg-background-dark min-h-screen flex items-center justify-center flex-col gap-4">
+                <p className="text-zinc-500 font-medium">Service not found.</p>
+                <button
+                    onClick={() => router.back()}
+                    className="text-primary font-bold hover:underline"
+                >
+                    Go Back
+                </button>
             </div>
         )
     }
 
     return (
-        <div className="bg-background-light dark:bg-background-dark text-[#181210] dark:text-[#f5f1f0] min-h-screen">
-            <div className="absolute top-20 left-0 w-full z-[70] p-8 flex items-center pointer-events-none">
+        <div className="bg-background-light dark:bg-background-dark text-[#181210] dark:text-[#f5f1f0] min-h-screen pb-safe">
+            {/* Hero Section */}
+            <section className="relative w-full h-[50vh] min-h-[400px] md:h-[600px] overflow-hidden rounded-b-[2.5rem] md:rounded-b-[4rem] shadow-2xl z-0">
+                <div
+                    className="absolute inset-0 w-full h-full bg-center bg-no-repeat bg-cover transition-transform duration-1000 hover:scale-105"
+                    style={{ backgroundImage: `url("${heroImage}")` }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/60" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-90" />
+
+                {/* Back Button */}
                 <button
                     onClick={() => router.back()}
-                    className="flex items-center justify-center w-12 h-12 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white hover:bg-white/40 transition-all pointer-events-auto drop-shadow-md"
+                    className="absolute top-6 left-6 md:top-10 md:left-10 z-20 flex items-center justify-center w-12 h-12 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white hover:bg-white/40 transition-all drop-shadow-md hover:scale-105 active:scale-95"
                 >
                     <span className="material-symbols-outlined">arrow_back</span>
                 </button>
-            </div>
 
-            <section className="relative w-full h-[600px] overflow-hidden rounded-b-[3rem] shadow-2xl">
-                <div
-                    className="absolute inset-0 w-full h-full bg-center bg-no-repeat bg-cover"
-                    style={{ backgroundImage: `url("${heroImage}")` }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/40" />
-                <div className="absolute bottom-12 left-12 md:left-40 max-w-2xl">
-                    <h1 className="font-display text-5xl md:text-7xl font-black text-white leading-tight tracking-tight">{title}</h1>
-                    <p className="text-white/90 text-lg md:text-xl mt-4 font-light max-w-lg">{description}</p>
+                <div className="absolute bottom-8 left-6 md:bottom-12 md:left-12 lg:left-40 max-w-3xl pr-6">
+                    <motion.h1
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="font-display text-4xl md:text-6xl lg:text-7xl font-black text-white leading-[1.1] tracking-tight mb-4"
+                    >
+                        {title}
+                    </motion.h1>
+                    <motion.p
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 }}
+                        className="text-white/90 text-base md:text-xl font-light max-w-xl leading-relaxed line-clamp-3 md:line-clamp-none"
+                    >
+                        {description}
+                    </motion.p>
                 </div>
             </section>
 
-            <main className="max-w-7xl mx-auto px-6 md:px-12 py-16">
-                <div className="flex flex-col lg:flex-row gap-16 relative">
-                    <div className="flex-1 space-y-16">
+            <main className="max-w-7xl mx-auto px-4 md:px-8 lg:px-12 py-12 md:py-20">
+                <div className="flex flex-col lg:flex-row gap-12 lg:gap-20 relative">
+
+                    {/* Main Content Column */}
+                    <div className="flex-1 space-y-12 md:space-y-16 min-w-0">
+
+                        {/* Highlights */}
                         <section>
-                            <h2 className="font-display text-2xl font-bold mb-8">Service Highlights</h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="p-6 bg-[#f5f1f0] dark:bg-zinc-800 rounded-2xl flex items-start gap-4">
-                                    <div className="p-3 bg-white dark:bg-zinc-700 rounded-xl shadow-sm">
+                            <h2 className="font-display text-2xl md:text-3xl font-bold mb-6 md:mb-8 flex items-center gap-3">
+                                <span>Service Highlights</span>
+                                <div className="h-px flex-1 bg-zinc-200 dark:bg-zinc-800 ml-4"></div>
+                            </h2>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+                                <div className="p-5 md:p-6 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-2xl flex items-start gap-4 hover:shadow-lg transition-shadow duration-300">
+                                    <div className="p-3 bg-primary/5 dark:bg-primary/20 rounded-xl shadow-sm shrink-0">
                                         <span className="material-symbols-outlined text-primary">eco</span>
                                     </div>
                                     <div>
-                                        <h4 className="font-bold text-lg">Organic Products</h4>
-                                        <p className="text-sm text-zinc-600 dark:text-zinc-400">Exclusively using ECOCERT certified oils and serums.</p>
+                                        <h4 className="font-bold text-base md:text-lg mb-1">Organic Products</h4>
+                                        <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">Exclusively using ECOCERT certified oils and serums.</p>
                                     </div>
                                 </div>
-                                <div className="p-6 bg-[#f5f1f0] dark:bg-zinc-800 rounded-2xl flex items-start gap-4">
-                                    <div className="p-3 bg-white dark:bg-zinc-700 rounded-xl shadow-sm">
+                                <div className="p-5 md:p-6 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-2xl flex items-start gap-4 hover:shadow-lg transition-shadow duration-300">
+                                    <div className="p-3 bg-primary/5 dark:bg-primary/20 rounded-xl shadow-sm shrink-0">
                                         <span className="material-symbols-outlined text-primary">psychology</span>
                                     </div>
                                     <div>
-                                        <h4 className="font-bold text-lg">Expert Therapists</h4>
-                                        <p className="text-sm text-zinc-600 dark:text-zinc-400">Treatment administered by CIDESCO certified professionals.</p>
+                                        <h4 className="font-bold text-base md:text-lg mb-1">Expert Therapists</h4>
+                                        <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">Treatment administered by CIDESCO certified professionals.</p>
                                     </div>
                                 </div>
-                                <div className="p-6 bg-[#f5f1f0] dark:bg-zinc-800 rounded-2xl flex items-start gap-4">
-                                    <div className="p-3 bg-white dark:bg-zinc-700 rounded-xl shadow-sm">
+                                <div className="p-5 md:p-6 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-2xl flex items-start gap-4 hover:shadow-lg transition-shadow duration-300">
+                                    <div className="p-3 bg-primary/5 dark:bg-primary/20 rounded-xl shadow-sm shrink-0">
                                         <span className="material-symbols-outlined text-primary">bolt</span>
                                     </div>
                                     <div>
-                                        <h4 className="font-bold text-lg">Advanced Tech</h4>
-                                        <p className="text-sm text-zinc-600 dark:text-zinc-400">Micro-current and ultrasonic infusion included.</p>
+                                        <h4 className="font-bold text-base md:text-lg mb-1">Advanced Tech</h4>
+                                        <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">Micro-current and ultrasonic infusion included.</p>
                                     </div>
                                 </div>
-                                <div className="p-6 bg-sage/10 dark:bg-sage/20 rounded-2xl flex items-start gap-4">
-                                    <div className="p-3 bg-white dark:bg-zinc-700 rounded-xl shadow-sm">
+                                <div className="p-5 md:p-6 bg-sage/5 dark:bg-sage/10 border border-sage/20 dark:border-sage/20 rounded-2xl flex items-start gap-4 hover:shadow-lg transition-shadow duration-300">
+                                    <div className="p-3 bg-white dark:bg-zinc-800 rounded-xl shadow-sm shrink-0">
                                         <span className="material-symbols-outlined text-sage">auto_awesome</span>
                                     </div>
                                     <div>
-                                        <h4 className="font-bold text-lg text-sage-700 dark:text-sage">Holistic Care</h4>
-                                        <p className="text-sm text-zinc-600 dark:text-zinc-400">Mind-skin connection through aromatic sequences.</p>
+                                        <h4 className="font-bold text-base md:text-lg text-sage-800 dark:text-sage mb-1">Holistic Care</h4>
+                                        <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">Mind-skin connection through aromatic sequences.</p>
                                     </div>
                                 </div>
                             </div>
                         </section>
 
+                        {/* About */}
                         <section>
-                            <h2 className="font-display text-2xl font-bold mb-6">About the Treatment</h2>
-                            <div className="prose prose-lg dark:prose-invert max-w-none text-zinc-700 dark:text-zinc-300 space-y-4">
+                            <h2 className="font-display text-2xl md:text-3xl font-bold mb-6 flex items-center gap-3">
+                                <span>About</span>
+                            </h2>
+                            <div className="prose prose-lg dark:prose-invert max-w-none text-zinc-600 dark:text-zinc-300 space-y-4 leading-relaxed">
                                 <p>The Radiance Renewal Facial is more than just a skincare treatment; it's a sensory journey curated by experts. We begin with a deep double-cleansing process using botanically infused oils, followed by a gentle enzymatic exfoliation that reveals fresh, oxygenated skin cells.</p>
                                 <p>Our unique technique combines traditional lymphatic drainage massage with modern micro-current technology to lift, tone, and depuff. The treatment culminates in a custom-blended hydro-jelly mask, tailored to your specific skin needs, ensuring you leave with an undeniable "post-spa" glow.</p>
                             </div>
                         </section>
 
+                        {/* Ritual Steps */}
                         <section>
-                            <h2 className="font-display text-2xl font-bold mb-8">The Beauty Ritual</h2>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-                                <div className="text-center group">
-                                    <div className="w-16 h-16 mx-auto mb-4 rounded-full border border-zinc-200 dark:border-zinc-700 flex items-center justify-center group-hover:bg-primary/5 transition-colors">
-                                        <span className="material-symbols-outlined text-zinc-400 group-hover:text-primary">water_drop</span>
+                            <h2 className="font-display text-2xl md:text-3xl font-bold mb-8 text-center">The Beauty Ritual</h2>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
+                                {[
+                                    { icon: 'water_drop', label: 'Cleansing' },
+                                    { icon: 'layers', label: 'Exfoliation' },
+                                    { icon: 'auto_fix_high', label: 'Infusion' },
+                                    { icon: 'face_6', label: 'Masking' }
+                                ].map((step, idx) => (
+                                    <div key={idx} className="flex flex-col items-center group cursor-default">
+                                        <div className="w-16 h-16 md:w-20 md:h-20 mb-4 rounded-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 flex items-center justify-center group-hover:border-primary/50 group-hover:shadow-lg group-hover:shadow-primary/10 transition-all duration-300">
+                                            <span className="material-symbols-outlined text-2xl text-zinc-400 group-hover:text-primary transition-colors">{step.icon}</span>
+                                        </div>
+                                        <span className="text-xs md:text-sm font-bold uppercase tracking-widest text-zinc-600 dark:text-zinc-400 group-hover:text-primary transition-colors">{step.label}</span>
+                                        <span className="text-[10px] text-zinc-400 mt-1 font-mono">STEP 0{idx + 1}</span>
                                     </div>
-                                    <span className="text-sm font-semibold uppercase tracking-widest">Cleansing</span>
-                                </div>
-                                <div className="text-center group">
-                                    <div className="w-16 h-16 mx-auto mb-4 rounded-full border border-zinc-200 dark:border-zinc-700 flex items-center justify-center group-hover:bg-primary/5 transition-colors">
-                                        <span className="material-symbols-outlined text-zinc-400 group-hover:text-primary">layers</span>
-                                    </div>
-                                    <span className="text-sm font-semibold uppercase tracking-widest">Exfoliation</span>
-                                </div>
-                                <div className="text-center group">
-                                    <div className="w-16 h-16 mx-auto mb-4 rounded-full border border-zinc-200 dark:border-zinc-700 flex items-center justify-center group-hover:bg-primary/5 transition-colors">
-                                        <span className="material-symbols-outlined text-zinc-400 group-hover:text-primary">auto_fix_high</span>
-                                    </div>
-                                    <span className="text-sm font-semibold uppercase tracking-widest">Infusion</span>
-                                </div>
-                                <div className="text-center group">
-                                    <div className="w-16 h-16 mx-auto mb-4 rounded-full border border-zinc-200 dark:border-zinc-700 flex items-center justify-center group-hover:bg-primary/5 transition-colors">
-                                        <span className="material-symbols-outlined text-zinc-400 group-hover:text-primary">face_6</span>
-                                    </div>
-                                    <span className="text-sm font-semibold uppercase tracking-widest">Masking</span>
-                                </div>
+                                ))}
                             </div>
                         </section>
 
-                        <section className="bg-primary/5 dark:bg-primary/10 rounded-3xl p-8 border border-primary/10">
-                            <div className="flex items-center gap-3 mb-4">
-                                <span className="material-symbols-outlined text-primary">flare</span>
-                                <h2 className="font-display text-xl font-bold">AI Glow Prediction</h2>
+                        {/* AI Prediction */}
+                        <section className="bg-gradient-to-br from-primary/5 to-transparent dark:from-primary/10 rounded-3xl p-8 border border-primary/10 relative overflow-hidden">
+                            <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+                                <span className="material-symbols-outlined text-9xl text-primary">flare</span>
                             </div>
-                            <p className="text-zinc-700 dark:text-zinc-300 text-lg leading-relaxed italic">
-                                "Based on your profile, expect a <span className="text-primary font-bold">40% increase</span> in skin hydration and immediate luminosity post-treatment. Best results are achieved with our bi-weekly ritual schedule."
-                            </p>
+                            <div className="relative z-10">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="p-2 bg-primary/10 rounded-full">
+                                        <span className="material-symbols-outlined text-primary text-xl">temp_preferences_custom</span>
+                                    </div>
+                                    <h2 className="font-display text-lg font-bold text-primary">AI Glow Prediction</h2>
+                                </div>
+                                <p className="text-zinc-700 dark:text-zinc-300 text-lg md:text-xl leading-relaxed font-serif italic">
+                                    "Based on your profile, expect a <span className="text-primary font-bold decoration-primary/30 underline decoration-2 underline-offset-4">40% increase</span> in skin hydration and immediate luminosity post-treatment. Best results are achieved with our bi-weekly ritual schedule."
+                                </p>
+                            </div>
                         </section>
                     </div>
 
-                    <div className="lg:w-[400px]">
-                        <div className="sticky top-24 p-8 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl rounded-[2rem] border border-white/20 dark:border-zinc-700 shadow-2xl">
-                            <div className="flex justify-between items-center mb-8">
-                                <div>
-                                    <p className="text-sm text-zinc-500 uppercase tracking-widest font-bold">Price</p>
-                                    <p className="text-4xl font-display font-black">${price}</p>
+                    {/* Sidebar Column */}
+                    <div className="lg:w-[380px] xl:w-[420px] shrink-0">
+                        <div className="sticky top-24 space-y-6">
+                            <div className="p-6 md:p-8 bg-white dark:bg-zinc-900 rounded-[2rem] border border-zinc-100 dark:border-zinc-800 shadow-xl shadow-zinc-200/50 dark:shadow-none">
+                                <div className="flex justify-between items-start mb-8 pb-8 border-b border-zinc-100 dark:border-zinc-800">
+                                    <div>
+                                        <p className="text-xs text-zinc-500 uppercase tracking-widest font-bold mb-1">Total Price</p>
+                                        <div className="flex items-baseline gap-1">
+                                            <span className="text-4xl font-display font-black text-slate-900 dark:text-white">${price}</span>
+                                            <span className="text-zinc-400 font-medium">/ session</span>
+                                        </div>
+                                    </div>
+                                    <div className="text-right bg-zinc-50 dark:bg-zinc-800 px-3 py-2 rounded-lg">
+                                        <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold mb-1">Duration</p>
+                                        <p className="text-base font-bold text-slate-900 dark:text-white flex items-center justify-end gap-1">
+                                            <span className="material-symbols-outlined text-sm">schedule</span>
+                                            {duration}m
+                                        </p>
+                                    </div>
                                 </div>
-                                <div className="text-right">
-                                    <p className="text-sm text-zinc-500 uppercase tracking-widest font-bold">Time</p>
-                                    <p className="text-xl font-bold">{duration} mins</p>
-                                </div>
-                            </div>
-                            <div className="space-y-4 mb-8">
-                                <div className="flex items-center gap-3 text-zinc-600 dark:text-zinc-400">
-                                    <span className="material-symbols-outlined text-sm">check_circle</span>
-                                    <span className="text-sm">Free Cancellation (up to 24h)</span>
-                                </div>
-                                <div className="flex items-center gap-3 text-zinc-600 dark:text-zinc-400">
-                                    <span className="material-symbols-outlined text-sm">verified_user</span>
-                                    <span className="text-sm">Health & Safety protocols active</span>
-                                </div>
-                            </div>
 
-                            <div className="space-y-3 mb-6">
-                                <input
-                                    type="text"
-                                    placeholder="Full Name *"
-                                    value={guestName}
-                                    onChange={(e) => setGuestName(e.target.value)}
-                                    className="w-full bg-[#f5f1f0] dark:bg-zinc-800 border border-transparent focus:border-primary rounded-xl px-4 py-3 text-sm outline-none transition-all"
-                                />
-                                <input
-                                    type="email"
-                                    placeholder="Email Address *"
-                                    value={guestEmail}
-                                    onChange={(e) => setGuestEmail(e.target.value)}
-                                    className="w-full bg-[#f5f1f0] dark:bg-zinc-800 border border-transparent focus:border-primary rounded-xl px-4 py-3 text-sm outline-none transition-all"
-                                />
-                            </div>
+                                <div className="space-y-4 mb-8">
+                                    <div className="flex items-start gap-3 text-zinc-600 dark:text-zinc-400">
+                                        <span className="material-symbols-outlined text-green-500 mt-0.5">check_circle</span>
+                                        <span className="text-sm leading-snug">Free Cancellation up to 24h before appointment</span>
+                                    </div>
+                                    <div className="flex items-start gap-3 text-zinc-600 dark:text-zinc-400">
+                                        <span className="material-symbols-outlined text-blue-500 mt-0.5">verified_user</span>
+                                        <span className="text-sm leading-snug">Health & Safety protocols active at this venue</span>
+                                    </div>
+                                </div>
 
-                            {bookingMessage && (
-                                <div
-                                    className={`mb-4 p-4 rounded-xl text-sm font-medium ${bookingMessage.type === 'success'
-                                        ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200'
-                                        : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200'
-                                        }`}
+                                <div className="space-y-4 mb-6">
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-bold text-zinc-500 ml-1">GUEST DETAILS</label>
+                                        <input
+                                            type="text"
+                                            placeholder="Full Name"
+                                            value={guestName}
+                                            onChange={(e) => setGuestName(e.target.value)}
+                                            className="w-full bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-xl px-4 py-3.5 text-sm outline-none transition-all placeholder:text-zinc-400"
+                                        />
+                                        <input
+                                            type="email"
+                                            placeholder="Email Address"
+                                            value={guestEmail}
+                                            onChange={(e) => setGuestEmail(e.target.value)}
+                                            className="w-full bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-xl px-4 py-3.5 text-sm outline-none transition-all placeholder:text-zinc-400"
+                                        />
+                                    </div>
+                                </div>
+
+                                {bookingMessage && (
+                                    <div
+                                        className={`mb-6 p-4 rounded-xl text-sm font-medium flex items-start gap-3 ${bookingMessage.type === 'success'
+                                            ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border border-green-100 dark:border-green-800'
+                                            : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border border-red-100 dark:border-red-800'
+                                            }`}
+                                    >
+                                        <span className="material-symbols-outlined text-lg">
+                                            {bookingMessage.type === 'success' ? 'check_circle' : 'error'}
+                                        </span>
+                                        {bookingMessage.text}
+                                    </div>
+                                )}
+
+                                <button
+                                    onClick={handleBookAppointment}
+                                    disabled={bookingLoading}
+                                    className="w-full py-4 bg-primary hover:bg-primary/90 disabled:opacity-70 disabled:cursor-not-allowed text-white rounded-xl font-bold text-lg shadow-lg shadow-primary/25 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
                                 >
-                                    {bookingMessage.text}
-                                </div>
-                            )}
-                            <button
-                                onClick={handleBookAppointment}
-                                disabled={bookingLoading}
-                                className="w-full py-5 bg-primary hover:bg-primary/90 disabled:opacity-70 disabled:cursor-not-allowed text-white rounded-2xl font-bold text-lg shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
-                            >
-                                {bookingLoading ? 'Booking...' : 'Book Appointment'}
-                            </button>
+                                    {bookingLoading ? (
+                                        <>
+                                            <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                            <span>Processing...</span>
+                                        </>
+                                    ) : (
+                                        'Book Appointment'
+                                    )}
+                                </button>
 
-                            <div className="mt-8 pt-8 border-t border-zinc-100 dark:border-zinc-800">
-                                <p className="text-center text-zinc-500 text-sm mb-4">Select therapist</p>
-                                <div className="flex justify-center -space-x-3">
-                                    <div className="w-10 h-10 rounded-full border-2 border-white bg-zinc-200 bg-center bg-cover" style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuAHc-NjQMG4nuqLzVHG5dZCLx2gs9dUt5LfH-Tg4kJUG-pYescDIQ9RwjE3IamYFiHEusl-9mpnYr44M4lTAcw5-mHmDYmMNkB8qtsaL2sj5r9g8VKl4G3v0elzlOb9ObC45287YmEeGnCI7THwVpkECcnUqP1cRO3ahmZvvKlplOiXRs97uGAHSHf7M_abQ7QN5x7umSeO3Cp4n7O4O10Ykb9o-Mc6yNk_jqFCrV88jpE4zzCpRpamhJAXYk9wrpE2RPahMlLErog')" }}></div>
-                                    <div className="w-10 h-10 rounded-full border-2 border-white bg-zinc-200 bg-center bg-cover" style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuBDQHVE25D4m_uA1B9MX5S-hhyjZG14WpaM27O-n2BEmnw1Tl2njykW4DF3ECzlrG2EFE919F2wg_KZyTWcPxgPvrhhmLdi1HWmGaLuM3SU6WI-sNIFG7QOwv-FOyhx9ayCVm8VToNZxzGK2ocl8DwMSWaceE_FvApeiTMNb3REJhVpyYTx46XgrGWmu6coi6DuLiZzd8JI0CIal33rLbX_xKpHy02zIU1Ui5Uo08hEEHR6Er9Jx1jO9Olo3B4r8S9AdPMvPR1VDuw')" }}></div>
-                                    <div className="w-10 h-10 rounded-full border-2 border-white bg-zinc-200 bg-center bg-cover" style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuDB-SBwpbHh2-wCrlxxoQNd10eo0wFl5pRylXXEJsFlchjagHvbHPwF92C1SP35JRazA49j8APxPdDUUsWinZE62hvmF3nkQCQvYiRGtSLwluoOzqt5fStX3rOkMrCzCu1E5J_VRh1bODA4b2yj0oc8QP1RMyIAH_DFe6jy9-Idkjcs2smP3yCancz0V_U2p0v9bFJQX6afzvbgoMIsHfIeMC4y_5aS3sihBG8JaesZntxlKTmKAyXEXRXUBj7RjzLm8fDitiqH0wQ')" }}></div>
-                                    <div className="w-10 h-10 rounded-full border-2 border-white bg-zinc-100 flex items-center justify-center text-[10px] font-bold text-slate-800">+12</div>
+                                <div className="mt-8 pt-6 border-t border-zinc-100 dark:border-zinc-800">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <span className="text-xs font-bold text-zinc-500 uppercase">Available Therapists</span>
+                                        <span className="text-xs font-bold text-primary cursor-pointer hover:underline">View All</span>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex -space-x-3">
+                                            {[1, 2, 3].map((_, i) => (
+                                                <div key={i} className="w-10 h-10 rounded-full border-2 border-white dark:border-zinc-800 bg-zinc-200 dark:bg-zinc-700" />
+                                            ))}
+                                        </div>
+                                        <span className="text-xs text-zinc-500 font-medium">+12 professionals available</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -305,65 +360,7 @@ export default function BeautyDetailPage() {
                 </div>
             </main>
 
-            {id && (
-                <div className="max-w-7xl mx-auto px-6 md:px-12 mb-16">
-                    <ReviewSection
-                        entityId={id}
-                        entityType="beauty_service"
-                        title="Service Reviews"
-                        className="bg-white dark:bg-zinc-900 rounded-[2rem] p-8 md:p-12 shadow-sm border border-zinc-100 dark:border-zinc-800"
-                    />
-                </div>
-            )}
-
-            <section className="max-w-7xl mx-auto px-6 md:px-12 pb-24">
-                <div className="relative w-full h-[500px] rounded-[2rem] overflow-hidden shadow-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-100">
-                    <div className="absolute inset-0 w-full h-full bg-center bg-no-repeat bg-cover grayscale opacity-60 mix-blend-multiply transition-all duration-700" style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuBd22Z0639ZgeP5LDG4Z7EWblESyP4LatuDTxn4XDmO-n7kShtEFRzCpIWQtznAEgGsW_XMAYiOj86OMsPNyFLuzLLttfgTN1Ks2H_fVFW8pF4UJl36MaRBZDqXrpxnowB9ZadwUx2TITu8X5xcIlHhFlaaxU8ANohfNazT7nNQKmPypDPn4VD-YidbBEuIQRF3XYqhqDQiKxRngJBkBH_t3FpNNrDQfC6zWGAjBpXxEvtorVpK9Uo7Mq0wReWrFV7xM-go-Qw4IGk')" }}></div>
-                    <div className="absolute inset-0 bg-gradient-to-tr from-white/40 via-transparent to-white/20 pointer-events-none"></div>
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <div className="relative group">
-                            <div className="absolute -inset-4 bg-primary/20 rounded-full blur-xl scale-150"></div>
-                            <div className="relative bg-primary text-white p-3 rounded-full shadow-2xl border-4 border-white dark:border-zinc-900 transition-transform hover:scale-110">
-                                <span className="material-symbols-outlined text-4xl leading-none">location_on</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="absolute top-8 left-8 z-20">
-                        <div className="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md p-6 rounded-[1.5rem] border border-white/40 dark:border-zinc-700/50 shadow-2xl max-w-xs transition-all hover:bg-white/80 dark:hover:bg-zinc-900/80">
-                            <div className="flex items-center gap-2 mb-3">
-                                <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                                <span className="text-[10px] font-bold uppercase tracking-wider text-green-600 dark:text-green-400">Open Now</span>
-                            </div>
-                            <h3 className="font-display text-xl font-bold mb-1 text-slate-900 dark:text-white">{venueName}</h3>
-                            <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed mb-4">{venueAddress}</p>
-                            <div className="flex items-center justify-between mb-6">
-                                <div className="flex items-center gap-2 text-zinc-500">
-                                    <span className="material-symbols-outlined text-sm">near_me</span>
-                                    <span className="text-xs font-semibold">{venueDistance}</span>
-                                </div>
-                            </div>
-                            <button className="w-full py-3 bg-primary hover:bg-primary/90 text-white rounded-full font-bold text-sm shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2">
-                                <span className="material-symbols-outlined text-sm">directions</span>
-                                Get Directions
-                            </button>
-                        </div>
-                    </div>
-                    <div className="absolute bottom-8 right-8 flex flex-col gap-2">
-                        <button className="w-12 h-12 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-sm rounded-xl border border-white/20 dark:border-zinc-700 shadow-lg flex items-center justify-center text-zinc-700 dark:text-zinc-300 hover:bg-white transition-colors">
-                            <span className="material-symbols-outlined">add</span>
-                        </button>
-                        <button className="w-12 h-12 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-sm rounded-xl border border-white/20 dark:border-zinc-700 shadow-lg flex items-center justify-center text-zinc-700 dark:text-zinc-300 hover:bg-white transition-colors">
-                            <span className="material-symbols-outlined">remove</span>
-                        </button>
-                    </div>
-                    <div className="absolute bottom-8 left-8">
-                        <button className="px-4 py-2 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-sm rounded-full border border-white/20 dark:border-zinc-700 shadow-lg flex items-center gap-2 text-xs font-bold text-zinc-600 dark:text-zinc-300 hover:bg-white transition-colors">
-                            <span className="material-symbols-outlined text-sm">layers</span>
-                            Satellite View
-                        </button>
-                    </div>
-                </div>
-            </section>
+            {venue && <BeautyLocationSection venue={venue} />}
         </div>
     )
 }
