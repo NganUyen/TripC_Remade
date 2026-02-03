@@ -130,7 +130,7 @@ export class UnifiedEmailService {
         <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://trip-c-remade-k0u19c8g8-nganuyens-projects.vercel.app'}/welcome?source=booking-email&code=${data.booking_code}" 
 
            style="display: inline-block; padding: 14px 35px; background: #fff; color: #667eea; text-decoration: none; border-radius: 30px; font-weight: bold; margin-top: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
-          Đăng nhập / Đăng ký ngay
+             / Đăng ký ngay
         </a>
       </div>
       ` : ''}
