@@ -15,13 +15,25 @@ export default function PendingBookingCard({ booking }: PendingBookingCardProps)
     const router = useRouter();
 
     useEffect(() => {
-        if (!booking.expires_at) return;
-
         const calculateTimeLeft = () => {
             const now = new Date().getTime();
-            const expiryTime = new Date(booking.expires_at).getTime();
-            const createdTime = new Date(booking.created_at).getTime();
 
+            // If expires_at exists, use it. Otherwise, calculate from created_at + 8 minutes
+            let expiryTime: number;
+            if (booking.expires_at) {
+                expiryTime = new Date(booking.expires_at).getTime();
+            } else if (booking.created_at) {
+                // Default: 8 minutes from creation
+                const createdTime = new Date(booking.created_at).getTime();
+                expiryTime = createdTime + (8 * 60 * 1000); // 8 minutes in milliseconds
+            } else {
+                // Fallback: if no dates available, show expired
+                setTimeLeft("Đã hết hạn");
+                setProgress(0);
+                return;
+            }
+
+            const createdTime = new Date(booking.created_at).getTime();
             const distance = expiryTime - now;
             const totalDuration = expiryTime - createdTime;
 
