@@ -19,7 +19,7 @@ export function RestaurantHero({ venueId }: RestaurantHeroProps) {
         if (venueId) {
             async function fetchVenue() {
                 try {
-                    const data = await diningApi.getVenueById(venueId)
+                    const data = await diningApi.getVenueById(venueId!)
                     setVenue(data)
                 } catch (error) {
                     console.error('Error fetching venue:', error)
@@ -58,18 +58,20 @@ export function RestaurantHero({ venueId }: RestaurantHeroProps) {
 
     const displayVenue = venue || {
         name: 'Restaurant',
-        cuisine_type: null,
-        price_range: null,
+        cuisine_type: [],
+        price_range: '$$',
         average_rating: 0,
         review_count: 0,
         location_summary: 'Location',
+        address: 'Viet Nam',
+        is_verified: true,
         cover_image_url: 'https://images.unsplash.com/photo-1514362545857-3bc165497db5?q=80&w=2670&auto=format&fit=crop',
     }
 
     return (
         <section className="relative w-full mb-24">
             {/* Tall Hero Image Container with Mask */}
-            <div className="h-[500px] w-full relative z-0 overflow-hidden rounded-b-[2.5rem]">
+            <div className="h-[350px] md:h-[500px] w-full relative z-0 overflow-hidden rounded-b-3xl md:rounded-b-[2.5rem]">
                 <img
                     src={displayVenue.cover_image_url || "https://images.unsplash.com/photo-1514362545857-3bc165497db5?q=80&w=2670&auto=format&fit=crop"}
                     alt={displayVenue.name}
@@ -96,12 +98,12 @@ export function RestaurantHero({ venueId }: RestaurantHeroProps) {
             </div>
 
             {/* Floating Info Card - Overlapping Bottom Curve */}
-            <div className="absolute -bottom-16 w-full px-4 z-10">
+            <div className="absolute -bottom-12 md:-bottom-16 w-full px-4 z-10">
                 <motion.div
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}
-                    className="max-w-[1200px] mx-auto bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl border border-white/20 rounded-[2.5rem] p-8 shadow-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6"
+                    className="max-w-[1200px] mx-auto bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-white/20 dark:border-zinc-800 rounded-3xl md:rounded-[2.5rem] p-5 md:p-8 shadow-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-6"
                 >
                     <div>
                         <div className="flex flex-wrap gap-2 mb-3">

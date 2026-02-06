@@ -62,28 +62,28 @@ export function BeautyHero({
         </motion.p>
 
         <div className="w-full flex flex-col items-center gap-6">
-          <div className="w-full max-w-3xl relative bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-full shadow-2xl p-2.5 flex flex-col md:flex-row items-center gap-2 border border-white/20 dark:border-zinc-800">
+          <div className="w-full max-w-3xl relative bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-2xl md:rounded-full shadow-2xl p-2.5 flex flex-col md:flex-row items-center gap-1 md:gap-2 border border-white/20 dark:border-zinc-800">
             <div className="flex-1 flex items-center px-4 h-12 w-full group">
-              <Search className="w-5 h-5 text-slate-400 mr-3 shrink-0 group-focus-within:text-orange-500 transition-colors" />
+              <Search className="w-5 h-5 text-slate-400 mr-3 shrink-0 group-focus-within:text-[#FF5E1F] transition-colors" />
               <input
                 type="text"
                 placeholder="Service or Salon name..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && onSearch()}
-                className="bg-transparent w-full h-full outline-none text-slate-900 dark:text-white placeholder:text-slate-500 font-medium"
+                className="bg-transparent w-full h-full outline-none text-slate-900 dark:text-white placeholder:text-slate-500 font-medium text-sm md:text-base"
               />
             </div>
-            <div className="hidden md:block w-[1px] h-8 bg-slate-200 dark:bg-zinc-700"></div>
+            <div className="w-full md:w-[1px] h-[1px] md:h-8 bg-slate-200 dark:bg-zinc-700 mx-2 md:mx-0"></div>
             <div className="flex-1 flex items-center px-4 h-12 w-full group">
-              <MapPin className="w-5 h-5 text-slate-400 mr-3 shrink-0 group-focus-within:text-orange-500 transition-colors" />
+              <MapPin className="w-5 h-5 text-slate-400 mr-3 shrink-0 group-focus-within:text-[#FF5E1F] transition-colors" />
               <input
                 type="text"
                 placeholder="Location (e.g. Da Nang, Hanoi)"
                 value={locationQuery}
                 onChange={(e) => setLocationQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && onSearch()}
-                className="bg-transparent w-full h-full outline-none text-slate-900 dark:text-white placeholder:text-slate-500 font-medium"
+                className="bg-transparent w-full h-full outline-none text-slate-900 dark:text-white placeholder:text-slate-500 font-medium text-sm md:text-base"
               />
             </div>
             {hasActiveFilters && (
@@ -99,7 +99,7 @@ export function BeautyHero({
             <button
               type="button"
               onClick={onSearch}
-              className="w-full md:w-auto px-8 h-12 bg-[#FF5E1F] rounded-full text-white font-bold hover:bg-[#e04f18] transition-all shadow-lg hover:shadow-orange-500/25 active:scale-95"
+              className="w-full md:w-auto px-8 h-12 bg-[#FF5E1F] rounded-xl md:rounded-full text-white font-bold hover:bg-[#e04f18] transition-all shadow-lg hover:shadow-orange-500/25 active:scale-95"
             >
               Search
             </button>
