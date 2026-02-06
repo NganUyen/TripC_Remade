@@ -15,18 +15,18 @@ export function MoodFilters() {
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-8 text-center">Browse by Mood</h2>
 
-            <div className="flex flex-wrap justify-center gap-8">
+            <div className="flex flex-nowrap overflow-x-auto md:flex-wrap justify-start md:justify-center gap-6 md:gap-8 px-4 pb-8 -mx-4 md:mx-0 scrollbar-hide snap-x">
                 {moods.map((mood, index) => (
                     <motion.button
                         key={mood.name}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
-                        className="flex flex-col items-center gap-3 group"
+                        className="flex flex-col items-center gap-3 group min-w-[80px] snap-center shrink-0"
                     >
-                        <div className={`w-20 h-20 rounded-full flex items-center justify-center ${mood.color} shadow-sm group-hover:shadow-md transition-all`}>
+                        <div className={`w-16 h-16 md:w-20 md:h-20 rounded-full flex items-center justify-center ${mood.color} shadow-sm group-hover:shadow-md transition-all`}>
                             {mood.icon}
                         </div>
-                        <span className="font-semibold text-slate-700 dark:text-slate-300 group-hover:text-orange-500 transition-colors">
+                        <span className="font-semibold text-sm md:text-base text-slate-700 dark:text-slate-300 group-hover:text-orange-500 transition-colors">
                             {mood.name}
                         </span>
                     </motion.button>

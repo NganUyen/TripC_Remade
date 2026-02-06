@@ -147,7 +147,7 @@ export function ActivitiesHero({ allActivities }: ActivitiesHeroProps) {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 }}
-                    className="flex flex-wrap justify-center gap-2"
+                    className="flex flex-nowrap overflow-x-auto justify-start md:justify-center gap-3 px-4 pb-4 w-full md:w-auto snap-x scrollbar-hide -mx-4 md:mx-0 mask-gradient"
                 >
                     {CATEGORIES.map((cat) => {
                         const isActive = currentCategory === cat
@@ -156,7 +156,7 @@ export function ActivitiesHero({ allActivities }: ActivitiesHeroProps) {
                                 key={cat}
                                 onClick={() => handleCategoryClick(cat)}
                                 className={cn(
-                                    "px-4 py-2 rounded-full text-sm font-bold backdrop-blur-md transition-all duration-300 border",
+                                    "px-5 py-2.5 rounded-full text-sm font-bold backdrop-blur-md transition-all duration-300 border whitespace-nowrap snap-center shrink-0",
                                     isActive
                                         ? "bg-[#FF5E1F] text-white border-[#FF5E1F] shadow-lg shadow-[#FF5E1F]/20"
                                         : "bg-white/10 text-white border-white/20 hover:bg-white/20 hover:border-white/40"
