@@ -33,7 +33,7 @@ export function MobilePushListener() {
             console.log("Push Registration Token: ", token.value);
             // In a real app, you send this token to your backend (Supabase/Database)
             // For now, we alert it so the user can see it works
-            // alert('Push Token: ' + token.value); 
+            alert('Push Token: ' + token.value);
         });
 
         PushNotifications.addListener("registrationError", (error) => {
