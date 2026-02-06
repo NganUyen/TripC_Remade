@@ -6,6 +6,7 @@ import { Providers } from "@/components/Providers";
 import { SyncSupabaseUser } from "@/components/SyncSupabaseUser";
 import { Toaster } from "@/components/ui/sonner";
 import { ConditionalLayout } from "@/components/ConditionalLayout";
+import { MobilePushListener } from "@/components/MobilePushListener";
 
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -50,6 +51,7 @@ export default function RootLayout({
       <body className="bg-background-light dark:bg-background-dark font-display min-h-screen flex flex-col text-slate-900 dark:text-slate-100 antialiased overflow-x-hidden">
         <Providers>
           <SyncSupabaseUser />
+          <MobilePushListener />
           <ConditionalLayout>{children}</ConditionalLayout>
         </Providers>
         <Toaster

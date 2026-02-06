@@ -17,10 +17,14 @@ const config: CapacitorConfig = {
       overlaysWebView: false,
       style: 'DARK',
       backgroundColor: '#ffffffff'
+    },
+    PushNotifications: {
+      presentationOptions: ["badge", "sound", "alert"]
     }
   },
   android: {
-    allowMixedContent: true
+    allowMixedContent: true,
+    overrideUserAgent: "Mozilla/5.0 (Linux; Android 14; Mobile; rv:109.0) Gecko/113.0 Firefox/113.0" // Spoof as Firefox/Chrome to allow Google Auth
   }
 };
 
