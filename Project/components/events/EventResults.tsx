@@ -55,7 +55,7 @@ export function EventResults({ city, category, search, limit = 20 }: EventResult
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
       {events.map((event, i) => (
         <EventCard key={event.id} event={event} index={i} />
       ))}
@@ -91,11 +91,11 @@ function EventCard({ event, index }: EventCardProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: Math.min(index * 0.05, 0.3) }}
-      className="group bg-white dark:bg-[#18181b] rounded-[2rem] overflow-hidden border border-slate-100 dark:border-zinc-800 hover:shadow-xl transition-all hover:-translate-y-1"
+      className="group bg-white dark:bg-[#18181b] rounded-xl md:rounded-[2rem] overflow-hidden border border-slate-100 dark:border-zinc-800 hover:shadow-xl transition-all hover:-translate-y-1"
     >
       <Link href={`/events/${event.slug || event.id}`} className="block h-full">
         {/* Image */}
-        <div className="h-48 relative overflow-hidden">
+        <div className="h-32 md:h-48 relative overflow-hidden">
           {event.cover_image_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -137,22 +137,22 @@ function EventCard({ event, index }: EventCardProps) {
 
           {/* Category badge */}
           {event.category && (
-            <div className="absolute bottom-4 left-4 bg-black/50 backdrop-blur-md text-white px-3 py-1 rounded-full text-xs font-medium capitalize">
+            <div className="absolute bottom-3 left-3 md:bottom-4 md:left-4 bg-black/50 backdrop-blur-md text-white px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-medium capitalize">
               {event.category}
             </div>
           )}
         </div>
 
         {/* Content */}
-        <div className="p-5">
+        <div className="p-3 md:p-5">
           <div className="flex items-start justify-between mb-3">
-            <h4 className="font-bold text-slate-900 dark:text-white text-lg leading-tight line-clamp-2">
+            <h4 className="font-bold text-slate-900 dark:text-white text-sm md:text-lg leading-tight line-clamp-2">
               {event.title}
             </h4>
           </div>
 
           {event.short_description && (
-            <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2 mb-3">
+            <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 line-clamp-2 mb-2 md:mb-3">
               {event.short_description}
             </p>
           )}
@@ -173,13 +173,13 @@ function EventCard({ event, index }: EventCardProps) {
 
           <div className="flex items-center justify-between pt-4 border-t border-slate-50 dark:border-zinc-800">
             <div>
-              <span className="text-[#FF5E1F] font-black text-lg">{displayPrice}</span>
+              <span className="text-[#FF5E1F] font-black text-base md:text-lg">{displayPrice}</span>
               {cheapestTicket && (
-                <span className="text-xs text-slate-400 ml-1">from</span>
+                <span className="text-[10px] md:text-xs text-slate-400 ml-1">from</span>
               )}
             </div>
-            <span className="bg-slate-900 dark:bg-white text-white dark:text-black px-4 py-2 rounded-full text-xs font-bold hover:opacity-90 transition-opacity">
-              View Event
+            <span className="bg-slate-900 dark:bg-white text-white dark:text-black px-2 py-1 md:px-4 md:py-2 rounded-full text-[10px] md:text-xs font-bold hover:opacity-90 transition-opacity block">
+              View
             </span>
           </div>
         </div>
