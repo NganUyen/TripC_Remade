@@ -23,6 +23,15 @@ export function MobilePushListener() {
                 return;
             }
 
+            await PushNotifications.createChannel({
+                id: 'default',
+                name: 'Default Channel',
+                description: 'General Notifications',
+                importance: 5,
+                visibility: 1,
+                vibration: true,
+            });
+
             await PushNotifications.register();
         };
 
