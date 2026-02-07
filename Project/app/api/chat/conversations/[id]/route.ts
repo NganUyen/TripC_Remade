@@ -15,16 +15,15 @@ const supabase = createClient(
 // DELETE /api/chat/conversations/:id - Delete a specific conversation
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const { id: conversationId } = await params;
     const { userId } = await auth();
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
-    const conversationId = params.id;
 
     // Get user from database
     const { data: userData } = await supabase
@@ -87,16 +86,15 @@ export async function DELETE(
 // GET /api/chat/conversations/:id - Get a specific conversation with messages
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const { id: conversationId } = await params;
     const { userId } = await auth();
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
-    const conversationId = params.id;
 
     // Get user from database
     const { data: userData } = await supabase

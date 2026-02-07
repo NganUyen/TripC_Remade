@@ -14,9 +14,10 @@ import { auth } from "@clerk/nextjs/server";
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { itemId: string } },
+  { params }: { params: Promise<{ itemId: string }> },
 ) {
   try {
+    const { itemId } = await params;
     const { userId } = await auth();
 
     if (!userId) {
@@ -27,7 +28,6 @@ export async function DELETE(
     }
 
     const supabase = createServiceSupabaseClient();
-    const itemId = params.itemId;
 
     // Remove from waitlist (soft delete by updating status)
     const { data, error } = await supabase

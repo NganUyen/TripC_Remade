@@ -15,13 +15,19 @@ import {
   Star,
 } from "lucide-react";
 import Link from "next/link";
-import { WeatherForecast } from "./WeatherForecast";
+import { AIInsights } from "./AIInsights";
+import { useSearchParams } from "next/navigation";
 
 interface HotelContentProps {
   hotel: any;
 }
 
 export function HotelContent({ hotel }: HotelContentProps) {
+  const searchParams = useSearchParams();
+  const checkIn = searchParams.get("checkIn") || undefined;
+  const checkOut = searchParams.get("checkOut") || undefined;
+  const guests = searchParams.get("guests") ? parseInt(searchParams.get("guests")!) : undefined;
+  
   return (
     <div className="space-y-12">
       {/* Hotel Description */}
@@ -41,74 +47,13 @@ export function HotelContent({ hotel }: HotelContentProps) {
         </motion.div>
       )}
 
-      {/* AI Insight Magic Card */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        whileInView={{ opacity: 1, scale: 1 }}
-        viewport={{ once: true }}
-        className="relative overflow-hidden rounded-[2rem] p-px bg-gradient-to-r from-orange-400 to-purple-500 shadow-xl"
-      >
-        <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-3xl rounded-[1.9rem] p-6 relative">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-
-          <div className="flex items-start gap-4 relatie z-10">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-purple-600 flex items-center justify-center shrink-0 shadow-lg text-white">
-              <Sparkles className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-purple-600 mb-2">
-                AI Insight: Perfect for Couples
-              </h3>
-              <p className="text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
-                "Guests rave about the{" "}
-                <span className="text-orange-500 font-bold">
-                  Sunset Ocean Suites
-                </span>{" "}
-                for their privacy and direct beach access. The{" "}
-                <span className="text-purple-500 font-bold">
-                  Couples Spa Package
-                </span>{" "}
-                is highly recommended for rainy afternoons. Note that the main
-                pool gets busy around 2 PM, so try the adult-only infinity pool
-                for quiet time."
-              </p>
-            </div>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Widgets Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Weather */}
-        <WeatherForecast
-          latitude={hotel.address?.lat || 10.8231}
-          longitude={hotel.address?.lng || 106.6297}
-        />
-
-        {/* Packing List */}
-        <div className="bg-orange-50 dark:bg-orange-900/10 rounded-[2rem] p-6 border border-orange-100 dark:border-orange-800/30">
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="font-bold text-orange-900 dark:text-orange-300 flex items-center gap-2">
-              <Briefcase className="w-5 h-5 text-orange-500" />
-              Smart Packing
-            </h4>
-          </div>
-          <ul className="space-y-2">
-            <li className="flex items-center gap-3 text-sm font-medium text-slate-700 dark:text-slate-300">
-              <div className="w-1.5 h-1.5 rounded-full bg-orange-400" /> Light
-              rain jacket (Sunday)
-            </li>
-            <li className="flex items-center gap-3 text-sm font-medium text-slate-700 dark:text-slate-300">
-              <div className="w-1.5 h-1.5 rounded-full bg-orange-400" />{" "}
-              Sunscreen & Hat (High UV)
-            </li>
-            <li className="flex items-center gap-3 text-sm font-medium text-slate-700 dark:text-slate-300">
-              <div className="w-1.5 h-1.5 rounded-full bg-orange-400" /> Formal
-              wear for Gala Dinner
-            </li>
-          </ul>
-        </div>
-      </div>
+      {/* AI Insights - Dynamic */}
+      <AIInsights 
+        hotel={hotel}
+        checkIn={checkIn}
+        checkOut={checkOut}
+        guests={guests}
+      />
 
       {/* Amenities */}
       {hotel?.amenities && hotel.amenities.length > 0 && (

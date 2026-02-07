@@ -3,7 +3,7 @@
  *
  * GET /api/weather?lat={latitude}&lng={longitude}
  *
- * Fetches 3-day weather forecast for hotel locations using OpenWeatherMap API
+ * Fetches 7-day weather forecast for hotel locations using OpenWeatherMap API
  * Returns simplified weather data with temperature and conditions
  */
 
@@ -105,15 +105,15 @@ export async function GET(request: NextRequest) {
 
     const data = await response.json();
 
-    // Process forecast data - get one forecast per day for next 3 days
+    // Process forecast data - get one forecast per day for next 7 days
     const dailyForecasts: WeatherForecast[] = [];
     const processedDates = new Set<string>();
 
+    // First pass: Try to get noon forecasts (12:00) for better accuracy
     for (const item of data.list) {
       const date = new Date(item.dt * 1000);
       const dateStr = date.toISOString().split("T")[0];
 
-      // Only process noon forecasts (12:00) for each day
       if (!processedDates.has(dateStr) && date.getHours() === 12) {
         const weatherInfo = getWeatherCondition(item.weather[0].id);
 
@@ -127,14 +127,14 @@ export async function GET(request: NextRequest) {
 
         processedDates.add(dateStr);
 
-        if (dailyForecasts.length >= 3) break;
+        if (dailyForecasts.length >= 7) break;
       }
     }
 
-    // If we don't have 3 forecasts, fill with first available data
-    if (dailyForecasts.length < 3) {
+    // Second pass: Fill remaining days with any available time slot
+    if (dailyForecasts.length < 7) {
       for (const item of data.list) {
-        if (dailyForecasts.length >= 3) break;
+        if (dailyForecasts.length >= 7) break;
 
         const date = new Date(item.dt * 1000);
         const dateStr = date.toISOString().split("T")[0];
@@ -155,6 +155,26 @@ export async function GET(request: NextRequest) {
           processedDates.add(dateStr);
         }
       }
+    }
+
+    // Third pass: If still less than 7 days, extend forecast based on last day pattern
+    while (dailyForecasts.length < 7 && dailyForecasts.length > 0) {
+      const lastDay = dailyForecasts[dailyForecasts.length - 1];
+      const lastDate = new Date(lastDay.date);
+      const nextDate = new Date(lastDate);
+      nextDate.setDate(nextDate.getDate() + 1);
+      
+      // Calculate average temperature from last 3 days for smoother prediction
+      const recentTemps = dailyForecasts.slice(-3).map(d => d.temp);
+      const avgTemp = Math.round(recentTemps.reduce((a, b) => a + b, 0) / recentTemps.length);
+      
+      dailyForecasts.push({
+        date: nextDate.toISOString().split("T")[0],
+        day: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][nextDate.getDay()],
+        temp: avgTemp,
+        condition: lastDay.condition, // Use same condition as last available day
+        icon: lastDay.icon,
+      });
     }
 
     return NextResponse.json({

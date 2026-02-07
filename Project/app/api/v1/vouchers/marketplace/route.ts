@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createServiceSupabaseClient } from '@/lib/supabase-server'
+import { auth } from '@clerk/nextjs/server'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -8,8 +9,8 @@ export async function GET() {
     try {
         const supabase = createServiceSupabaseClient()
 
-        // Get current user if authenticated
-        const { data: { user } } = await supabase.auth.getUser()
+        // Get current user if authenticated (using Clerk)
+        const { userId } = await auth()
 
         const { data: vouchers, error } = await supabase
             .from('vouchers')
@@ -31,12 +32,12 @@ export async function GET() {
         console.log('[MARKETPLACE API] Active vouchers count:', activeVouchers.length)
 
         // If user is authenticated, filter out vouchers they've already redeemed
-        if (user) {
-            console.log('[MARKETPLACE API] User authenticated:', user.id)
+        if (userId) {
+            console.log('[MARKETPLACE API] User authenticated:', userId)
             const { data: userProfile } = await supabase
                 .from('users')
                 .select('id')
-                .eq('clerk_id', user.id)
+                .eq('clerk_id', userId)
                 .single()
 
             if (userProfile) {

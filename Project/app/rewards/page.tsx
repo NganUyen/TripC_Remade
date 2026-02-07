@@ -31,6 +31,9 @@ export default function RewardsPage() {
                 if (res.ok) {
                     const data = await res.json()
                     setUserData(data)
+                } else if (res.status === 401) {
+                    // User not authenticated - set null or default data
+                    setUserData(null)
                 }
             } catch (error) {
                 console.error('Failed to fetch user status', error)
