@@ -259,7 +259,7 @@ export function VoucherSection({ onSelect }: { onSelect: (v: Voucher) => void })
                 ))}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-2 gap-3 md:gap-4">
                 {loading ? (
                     <div className="col-span-full h-40 flex items-center justify-center">
                         <Loader2 className="w-8 h-8 animate-spin text-slate-300" />

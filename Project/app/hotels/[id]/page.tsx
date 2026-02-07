@@ -61,9 +61,10 @@ async function getHotelData(slug: string) {
 export async function generateMetadata({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }): Promise<Metadata> {
-  const hotel = await getHotelData(params.id);
+  const { id } = await params;
+  const hotel = await getHotelData(id);
 
   if (!hotel) {
     return {
@@ -82,9 +83,10 @@ export async function generateMetadata({
 export default async function HotelDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const hotel = await getHotelData(params.id);
+  const { id } = await params;
+  const hotel = await getHotelData(id);
 
   if (!hotel) {
     notFound();

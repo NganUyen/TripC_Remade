@@ -7,8 +7,8 @@ import { RestaurantContent } from '@/components/dining/RestaurantContent'
 import { ReviewSection } from '@/components/shared/reviews/ReviewSection'
 import { Footer } from '@/components/Footer'
 
-export default function RestaurantDetailPage({ params }: { params: { id: string } }) {
-    const venueId = params.id
+export default function RestaurantDetailPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id: venueId } = React.use(params)
     return (
         <main className="min-h-screen bg-[#fcfaf8] dark:bg-[#0a0a0a] font-display text-[#1c140d] dark:text-white">
 

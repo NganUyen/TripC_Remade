@@ -6,25 +6,34 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 
+// Set maximum duration for this API route (60 seconds)
+export const maxDuration = 60;
+
 const deepseek = new OpenAI({
   apiKey: process.env.DEEPSEEK_API_KEY,
   baseURL: "https://api.deepseek.com/v1",
 });
 
+// Match actual database schema
 interface Hotel {
-  id: number;
+  id: string; // UUID from database
+  slug?: string;
   name: string;
-  location: string;
-  rating: number;
-  ratingLabel: string;
-  reviews: number;
-  stars: number;
-  priceNew: number;
-  priceOld: number;
-  amenities: string[];
-  wellness?: number;
-  roomSize?: number;
-  distance?: number;
+  description?: string;
+  address?: {
+    city?: string;
+    country?: string;
+    street?: string;
+  };
+  star_rating: number; // 0-5 from database
+  images?: Array<{ url: string; caption?: string }>;
+  amenities?: string[];
+  best_price?: number; // in cents from database
+  // Calculated/derived fields
+  reviews_count?: number;
+  average_rating?: number;
+  // From hotel_rooms
+  room_size_sqm?: number;
 }
 
 interface ComparisonRequest {
@@ -48,22 +57,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Prepare hotel data for AI analysis
+    // Prepare hotel data for AI analysis (optimized)
     const hotelSummaries = hotels
       .map(
-        (hotel, index) => `
-Hotel ${index + 1}: ${hotel.name}
-- Location: ${hotel.location}
-- Price: $${hotel.priceNew}/night (${hotel.priceOld ? `was $${hotel.priceOld}` : "no discount"})
-- Rating: ${hotel.rating}/10 (${hotel.reviews} reviews)
-- Stars: ${hotel.stars}-star
-- Wellness Score: ${hotel.wellness || "N/A"}/10
-- Room Size: ${hotel.roomSize || "N/A"} sqft
-- Distance from center: ${hotel.distance || "N/A"} miles
-- Top Amenities: ${hotel.amenities.slice(0, 5).join(", ")}
-`,
+        (hotel, index) => {
+          const location = hotel.address?.city || "Unknown";
+          const pricePerNight = hotel.best_price
+            ? `$${(hotel.best_price / 100).toFixed(0)}`
+            : "N/A";
+          return `Hotel ${index + 1}: ${hotel.name}
+- Location: ${location}
+- Price: ${pricePerNight}/night
+- Star Rating: ${hotel.star_rating}/5
+- Guest Rating: ${hotel.average_rating?.toFixed(1) || "N/A"}/10 (${hotel.reviews_count || 0} reviews)
+- Amenities: ${(hotel.amenities || []).slice(0, 5).join(", ")}`;
+        }
       )
-      .join("\n");
+      .join("\n\n");
 
     const userContext = userPreferences
       ? `
@@ -74,84 +84,103 @@ User Preferences:
 `
       : "";
 
-    const prompt = `You are an elite hospitality consultant and travel advisor with expertise in luxury hotel analysis. Provide a sophisticated, professional comparison analysis with refined language and expert insights.
+    const prompt = `Compare these hotels as an expert travel advisor. Use data-driven analysis:
 
 ${hotelSummaries}
 ${userContext}
 
-Provide a detailed JSON response with the following structure:
+Return ONLY a valid JSON object (no markdown, no code blocks) with this exact structure:
 {
-  "verdict": "A polished, professional 2-3 sentence executive summary identifying the superior choice with compelling rationale. Use sophisticated language, avoid casual phrases, and focus on unique differentiators, guest experience quality, and tangible value propositions.",
-  "bestValue": "Hotel name with an elegant explanation of its value proposition",
-  "bestRated": "Hotel name with refined reasoning for its quality distinction",
+  "verdict": "2-3 sentences identifying the best choice and why",
+  "bestValue": "Hotel name + value explanation",
+  "bestRated": "Hotel name + quality reasoning",
+  "bestHotelName": "Exact name of the best hotel from the list",
   "bestFor": {
-    "families": "Hotel name with sophisticated analysis of family-friendly attributes",
-    "business": "Hotel name with professional insight on business travel suitability",
-    "luxury": "Hotel name with refined evaluation of luxury experience elements",
-    "budget": "Hotel name with tactful assessment of value-conscious appeal"
+    "families": "Hotel name + family-friendly features",
+    "business": "Hotel name + business amenities",
+    "luxury": "Hotel name + luxury elements",
+    "budget": "Hotel name + budget appeal"
   },
-  "insights": [
-    "Professional insight highlighting distinctive competitive advantages",
-    "Expert observation on service excellence or facility differentiation",
-    "Strategic analysis of guest satisfaction patterns or operational excellence"
-  ],
-  "warnings": [
-    "Tactfully worded considerations or potential limitations to be aware of"
-  ],
-  "recommendation": "Refined, personalized closing recommendation (1-2 sentences) with sophisticated reasoning"
+  "insights": ["Key advantage 1", "Key advantage 2", "Key advantage 3"],
+  "warnings": ["Important consideration"],
+  "recommendation": "Final recommendation (1-2 sentences)"
 }
 
-Guidelines for professional tone:
-- Use elevated vocabulary: "distinguished," "exemplary," "noteworthy," "exceptional," "refined"
-- Avoid casual language: Replace "good" with "excellent," "nice" with "sophisticated," "great" with "outstanding"
-- Be specific and data-driven: Reference actual metrics (review counts, ratings, amenities)
-- Maintain objectivity: Present balanced analysis while highlighting clear differentiators
-- Use industry terminology: "operational excellence," "guest satisfaction metrics," "service standards," "hospitality portfolio"
-- Write with authority: Sound like a seasoned consultant providing expert guidance
+IMPORTANT: 
+- Include EXACT hotel names from the list in bestHotelName field
+- Return raw JSON only, NO markdown formatting
+- Be concise, professional, and reference specific data points`;
 
-Be specific, use actual hotel names, and provide actionable, professionally articulated insights that reflect deep industry knowledge.`;
+    // Call Deepseek AI with timeout handling
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 55000); // 55 second timeout
 
-    // Call Deepseek AI
-    const response = await deepseek.chat.completions.create({
-      model: "deepseek-chat",
-      messages: [
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-      temperature: 0.7,
-      max_tokens: 1000,
-    });
-
-    const content = response.choices[0]?.message?.content || "";
-
-    // Parse AI response
-    let analysis;
     try {
-      // Try to extract JSON from markdown code blocks if present
-      const jsonMatch =
-        content.match(/```json\n([\s\S]*?)\n```/) ||
-        content.match(/```\n([\s\S]*?)\n```/);
-      const jsonString = jsonMatch ? jsonMatch[1] : content;
-      analysis = JSON.parse(jsonString);
-    } catch (parseError) {
-      console.error("Failed to parse AI response:", parseError);
-      // Fallback response
-      analysis = {
-        verdict: content.substring(0, 300),
-        bestValue: hotels[0].name,
-        bestRated: hotels[0].name,
-        insights: ["AI analysis in progress..."],
-        recommendation: "Please compare the options based on your preferences.",
-      };
+      const response = await deepseek.chat.completions.create({
+        model: "deepseek-chat",
+        messages: [
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+        temperature: 0.5, // Reduced from 0.7 for faster, more focused responses
+        max_tokens: 600, // Reduced from 1000 for faster response
+      });
+      clearTimeout(timeoutId);
+
+      const content = response.choices[0]?.message?.content || "";
+      console.log("[AI Response] Raw content:", content.substring(0, 200) + "...");
+
+      // Parse AI response
+      let analysis;
+      try {
+        // Try to extract JSON from markdown code blocks if present
+        // Handle multiple formats: ```json, ```, or raw JSON
+        let jsonString = content.trim();
+        
+        // Remove markdown code blocks if present
+        const codeBlockMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+        if (codeBlockMatch) {
+          jsonString = codeBlockMatch[1].trim();
+          console.log("[AI Response] Extracted from code block");
+        }
+        
+        analysis = JSON.parse(jsonString);
+        console.log("[AI Response] Successfully parsed, best hotel:", analysis.bestHotelName || "Not specified");
+      } catch (parseError) {
+        console.error("Failed to parse AI response:", parseError);
+        console.error("Content that failed to parse:", content);
+        // Fallback response
+        analysis = {
+          verdict: content.substring(0, 300),
+          bestValue: hotels[0].name,
+          bestRated: hotels[0].name,
+          bestHotelName: hotels[0].name,
+          insights: ["AI analysis in progress..."],
+          recommendation: "Please compare the options based on your preferences.",
+        };
+      }
+
+      return NextResponse.json({
+        success: true,
+        analysis,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (aiError) {
+      clearTimeout(timeoutId);
+      if (aiError instanceof Error && aiError.name === 'AbortError') {
+        return NextResponse.json(
+          {
+            error: "AI request timed out",
+            details: "The AI analysis took too long. Please try again.",
+          },
+          { status: 504 },
+        );
+      }
+      throw aiError;
     }
 
-    return NextResponse.json({
-      success: true,
-      analysis,
-      timestamp: new Date().toISOString(),
-    });
   } catch (error) {
     console.error("AI comparison analysis error:", error);
     return NextResponse.json(

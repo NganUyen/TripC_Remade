@@ -45,11 +45,10 @@ export function BeautyCategories({ onCategorySelect, selectedCategoryId }: Beaut
             transition={{ delay: i * 0.03 }}
             type="button"
             onClick={() => onCategorySelect(cat.id)}
-            className={`whitespace-nowrap px-6 py-3 rounded-2xl text-sm font-bold transition-all shadow-sm border-2 ${
-              selectedCategoryId === cat.id
-                ? 'bg-[#FF5E1F] text-white border-[#FF5E1F] scale-105'
-                : 'bg-white dark:bg-zinc-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-zinc-700 hover:border-[#FF5E1F] hover:text-[#FF5E1F] dark:hover:border-[#FF5E1F] dark:hover:text-[#FF5E1F]'
-            }`}
+            className={`whitespace-nowrap px-4 py-2 md:px-6 md:py-3 rounded-xl md:rounded-2xl text-[10px] md:text-sm font-bold transition-all shadow-sm border-2 ${selectedCategoryId === cat.id
+                ? 'bg-[#FF5E1F] text-white border-[#FF5E1F] scale-105 shadow-orange-500/25'
+                : 'bg-white dark:bg-zinc-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-zinc-700 hover:border-[#FF5E1F] hover:text-[#FF5E1F]'
+              }`}
           >
             {cat.label}
           </motion.button>

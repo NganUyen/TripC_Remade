@@ -8,14 +8,15 @@ import { getServerWishlistIds } from '@/lib/actions/wishlist'
 export const dynamic = 'force-dynamic'
 
 interface PageProps {
-    searchParams: {
+    searchParams: Promise<{
         search?: string
         category?: string
-    }
+    }>
 }
 
 export default async function ActivitiesPage({ searchParams }: PageProps) {
-    const activities = await getActivities(searchParams.search, searchParams.category)
+    const { search, category } = await searchParams
+    const activities = await getActivities(search, category)
     const allActivities = await getActivities() // Fetch all for search autocomplete
     const wishlistIds = await getServerWishlistIds()
 

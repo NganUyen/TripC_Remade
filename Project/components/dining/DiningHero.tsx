@@ -37,35 +37,36 @@ export function DiningHero() {
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: 0.2 }}
-                        className="bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md p-2 rounded-full shadow-2xl flex flex-col md:flex-row items-center gap-2"
+                        className="bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md p-2.5 rounded-2xl md:rounded-full shadow-2xl flex flex-col md:flex-row items-center gap-1 md:gap-2"
                     >
                         {/* Input Area */}
                         <div className="flex-1 w-full flex items-center px-4 h-12">
                             <Search className="w-5 h-5 text-slate-400 mr-3 shrink-0" />
                             <input
                                 type="text"
-                                placeholder="Search restaurants, cuisines..."
-                                className="bg-transparent w-full h-full outline-none text-slate-900 dark:text-white placeholder:text-slate-500 text-lg font-medium"
+                                placeholder="Search restaurants..."
+                                className="bg-transparent w-full h-full outline-none text-slate-900 dark:text-white placeholder:text-slate-500 text-base md:text-lg font-medium"
                             />
                         </div>
 
-                        {/* Divider (Hidden on mobile) */}
-                        <div className="hidden md:block w-[1px] h-8 bg-slate-200 dark:bg-zinc-700"></div>
+                        {/* Divider */}
+                        <div className="w-full md:w-[1px] h-[1px] md:h-8 bg-slate-200 dark:bg-zinc-700 mx-2 md:mx-0"></div>
 
                         {/* Date/Guests Selector */}
-                        <button className="w-full md:w-auto flex items-center justify-between md:justify-start gap-4 px-4 h-12 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors group text-left">
+                        <button className="w-full md:w-auto flex items-center justify-between md:justify-start gap-4 px-4 h-12 hover:bg-black/5 dark:hover:bg-white/5 rounded-xl md:rounded-full transition-colors group text-left">
                             <div className="flex flex-col">
                                 <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Date & Guests</span>
                                 <span className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-[#FF5E1F] transition-colors flex items-center gap-1">
                                     Tonight, 2 People <ChevronDown className="w-3 h-3" />
                                 </span>
                             </div>
-                            <Calendar className="w-5 h-5 text-slate-400 md:hidden" />
+                            <Calendar className="w-5 h-5 text-slate-400" />
                         </button>
 
                         {/* Search Button */}
-                        <button className="w-full md:w-12 h-12 bg-[#FF5E1F] rounded-full flex items-center justify-center text-white shadow-lg hover:bg-[#e04f18] hover:scale-105 transition-all shrink-0">
-                            <ArrowRight className="w-5 h-5" />
+                        <button className="w-full md:w-12 h-12 bg-[#FF5E1F] rounded-xl md:rounded-full flex items-center justify-center text-white shadow-lg hover:bg-[#e04f18] transition-all md:shrink-0">
+                            <span className="md:hidden font-bold">Search Now</span>
+                            <ArrowRight className="hidden md:block w-5 h-5" />
                         </button>
                     </motion.div>
 

@@ -14,11 +14,11 @@ import { createServiceSupabaseClient } from "@/lib/supabase-server";
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { itemId: string } },
+  { params }: { params: Promise<{ itemId: string }> },
 ) {
   try {
+    const { itemId } = await params;
     const supabase = createServiceSupabaseClient();
-    const itemId = params.itemId;
 
     // Get urgency signals from cache
     const { data: signals, error } = await supabase

@@ -4,10 +4,11 @@ import { canCancelAppointment } from "@/lib/beauty/bookingLogic";
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const appointment = await appointmentService.getAppointmentById(params.id);
+    const { id } = await params;
+    const appointment = await appointmentService.getAppointmentById(id);
     if (!appointment) {
       return NextResponse.json(
         { success: false, error: "Appointment not found" },
@@ -25,10 +26,11 @@ export async function GET(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const appointment = await appointmentService.getAppointmentById(params.id);
+    const { id } = await params;
+    const appointment = await appointmentService.getAppointmentById(id);
     if (!appointment) {
       return NextResponse.json(
         { success: false, error: "Appointment not found" },
@@ -46,7 +48,7 @@ export async function DELETE(
       );
     }
     const reason = request.nextUrl.searchParams.get("reason") ?? undefined;
-    const success = await appointmentService.cancelAppointment(params.id, reason);
+    const success = await appointmentService.cancelAppointment(id, reason);
     if (!success) {
       return NextResponse.json(
         { success: false, error: "Failed to cancel appointment" },

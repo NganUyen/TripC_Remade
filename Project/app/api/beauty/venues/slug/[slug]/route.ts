@@ -3,10 +3,11 @@ import { venueService } from "@/lib/beauty";
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { slug: string } },
+  { params }: { params: Promise<{ slug: string }> },
 ) {
   try {
-    const venue = await venueService.getVenueBySlug(params.slug);
+    const { slug } = await params;
+    const venue = await venueService.getVenueBySlug(slug);
     if (!venue) {
       return NextResponse.json(
         { success: false, error: "Venue not found" },

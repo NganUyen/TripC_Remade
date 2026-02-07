@@ -108,16 +108,16 @@ export function BeautyList({ appliedFilters }: { appliedFilters: VenueSearchPara
             </div>
 
             {loading ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
                     {[1, 2, 3, 4].map((i) => (
-                        <div key={i} className="aspect-[4/5] rounded-[2rem] bg-slate-200 dark:bg-zinc-800 animate-pulse" />
+                        <div key={i} className="aspect-[4/5] rounded-3xl md:rounded-[2rem] bg-slate-200 dark:bg-zinc-800 animate-pulse" />
                     ))}
                 </div>
             ) : isSearchMode ? (
                 venueItems.length === 0 ? (
                     <p className="text-slate-500 dark:text-slate-400 text-center py-12">No venues match your search. Try different keywords or location.</p>
                 ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
                         {venueItems.map((v, i) => (
                             <motion.div
                                 key={v.id}
@@ -125,17 +125,17 @@ export function BeautyList({ appliedFilters }: { appliedFilters: VenueSearchPara
                                 whileInView={{ opacity: 1, y: 0 }}
                                 viewport={{ once: true }}
                                 transition={{ delay: i * 0.05 }}
-                                className="group relative flex flex-col gap-4 rounded-[2rem] cursor-pointer"
+                                className="group relative flex flex-col gap-3 md:gap-4 rounded-3xl md:rounded-[2rem] cursor-pointer"
                                 onClick={() => router.push(`/beauty/venue/${v.id}`)}
                             >
-                                <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[2rem] bg-slate-200 dark:bg-zinc-800 shadow-md ring-1 ring-black/5 dark:ring-white/10">
+                                <div className="relative aspect-[4/5] w-full overflow-hidden rounded-3xl md:rounded-[2rem] bg-slate-200 dark:bg-zinc-800 shadow-md ring-1 ring-black/5 dark:ring-white/10">
                                     <img
                                         src={v.image}
                                         alt={v.name}
                                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                                     />
                                     <div
-                                        className="absolute top-4 right-4 z-20"
+                                        className="absolute top-2 right-2 md:top-4 md:right-4 z-20 scale-90 md:scale-100"
                                         onClick={(e) => {
                                             e.preventDefault();
                                             e.stopPropagation();
@@ -151,24 +151,24 @@ export function BeautyList({ appliedFilters }: { appliedFilters: VenueSearchPara
                                     </div>
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-8 px-4">
                                         <motion.span
-                                            className="w-full bg-[#FF5E1F] text-white py-3.5 rounded-full font-bold shadow-xl text-center translate-y-8 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-300"
+                                            className="w-full bg-[#FF5E1F] text-white py-3.5 rounded-full font-bold shadow-xl text-center translate-y-8 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-300 hidden md:block"
                                         >
                                             View services
                                         </motion.span>
                                     </div>
                                 </div>
-                                <div className="px-2">
-                                    <h4 className="font-bold text-slate-900 dark:text-white text-lg truncate mb-1">{v.name}</h4>
+                                <div className="px-1 md:px-2">
+                                    <h4 className="font-bold text-slate-900 dark:text-white text-base md:text-lg truncate mb-0.5 md:mb-1">{v.name}</h4>
                                     {(v.city || v.district) && (
-                                        <p className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-1 mb-2">
-                                            <MapPin className="w-4 h-4 shrink-0" />
-                                            {[v.district, v.city].filter(Boolean).join(', ')}
+                                        <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 flex items-center gap-1 mb-1.5 md:mb-2">
+                                            <MapPin className="w-3 h-3 md:w-4 md:h-4 shrink-0" />
+                                            <span className="truncate">{[v.district, v.city].filter(Boolean).join(', ')}</span>
                                         </p>
                                     )}
-                                    <div className="flex items-center gap-1.5">
-                                        <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
-                                        <span className="text-sm font-bold text-slate-900 dark:text-white">{v.rating}</span>
-                                        <span className="text-sm text-slate-400">({v.reviews} reviews)</span>
+                                    <div className="flex items-center gap-1 md:gap-1.5">
+                                        <Star className="w-3 h-3 md:w-4 md:h-4 text-amber-400 fill-amber-400" />
+                                        <span className="text-xs md:text-sm font-bold text-slate-900 dark:text-white">{v.rating}</span>
+                                        <span className="text-[10px] md:text-sm text-slate-400 font-medium md:font-normal">({v.reviews})</span>
                                     </div>
                                 </div>
                             </motion.div>
@@ -176,7 +176,7 @@ export function BeautyList({ appliedFilters }: { appliedFilters: VenueSearchPara
                     </div>
                 )
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
                     {list.map((item, i) => (
                         <motion.div
                             key={item.id}
@@ -184,22 +184,23 @@ export function BeautyList({ appliedFilters }: { appliedFilters: VenueSearchPara
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
                             transition={{ delay: i * 0.05 }}
-                            className="group relative flex flex-col gap-4 rounded-[2rem] cursor-pointer"
+                            className="group relative flex flex-col gap-3 md:gap-4 rounded-3xl md:rounded-[2rem] cursor-pointer"
                             onClick={() => router.push(`/beauty/${item.id}`)}
                         >
-                            <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[2rem] bg-slate-200 dark:bg-zinc-800 shadow-md ring-1 ring-black/5 dark:ring-white/10">
+                            <div className="relative aspect-[4/5] w-full overflow-hidden rounded-3xl md:rounded-[2rem] bg-slate-200 dark:bg-zinc-800 shadow-md ring-1 ring-black/5 dark:ring-white/10">
                                 <img
                                     src={item.image}
                                     alt={item.service}
                                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                                 />
-                                <div className="absolute top-4 left-4 right-4 flex justify-between items-start z-10">
+                                <div className="absolute top-2 left-2 right-2 md:top-4 md:left-4 md:right-4 flex justify-between items-start z-10">
                                     {item.badge ? (
-                                        <div className="bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-full text-[10px] font-bold text-slate-900 shadow-sm flex items-center gap-1 uppercase tracking-wider">
-                                            <Sparkles className="w-3 h-3 text-[#FF5E1F]" /> {item.badge}
+                                        <div className="bg-white/90 backdrop-blur-md px-2 py-1 md:px-3 md:py-1.5 rounded-full text-[8px] md:text-[10px] font-bold text-slate-900 shadow-sm flex items-center gap-1 uppercase tracking-wider">
+                                            <Sparkles className="w-2.5 h-2.5 md:w-3 md:h-3 text-[#FF5E1F]" /> {item.badge}
                                         </div>
                                     ) : <div></div>}
                                     <div
+                                        className="scale-90 md:scale-100"
                                         onClick={(e) => {
                                             e.preventDefault();
                                             e.stopPropagation();
@@ -219,22 +220,22 @@ export function BeautyList({ appliedFilters }: { appliedFilters: VenueSearchPara
                                     <motion.button
                                         whileHover={{ scale: 1.02 }}
                                         whileTap={{ scale: 0.98 }}
-                                        className="w-full bg-[#FF5E1F] text-white py-3.5 rounded-full font-bold shadow-xl translate-y-8 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center gap-2"
+                                        className="w-full bg-[#FF5E1F] text-white py-3.5 rounded-full font-bold shadow-xl translate-y-8 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-300 hidden md:flex items-center justify-center gap-2"
                                     >
                                         <Calendar className="w-4 h-4" /> Book Now
                                     </motion.button>
                                 </div>
                             </div>
-                            <div className="px-2">
-                                <div className="flex items-center justify-between mb-1">
-                                    <h4 className="font-bold text-slate-900 dark:text-white text-lg truncate pr-2">{item.salon}</h4>
-                                    <span className="text-xl font-black text-[#FF5E1F]">${item.price}</span>
+                            <div className="px-1 md:px-2">
+                                <div className="flex items-center justify-between mb-0.5 md:mb-1">
+                                    <h4 className="font-bold text-slate-900 dark:text-white text-base md:text-lg truncate pr-2">{item.salon}</h4>
+                                    <span className="text-lg md:text-xl font-black text-[#FF5E1F]">${item.price}</span>
                                 </div>
-                                <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2 truncate">{item.service}</p>
-                                <div className="flex items-center gap-1.5">
-                                    <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
-                                    <span className="text-sm font-bold text-slate-900 dark:text-white">{item.rating}</span>
-                                    <span className="text-sm text-slate-400">({item.reviews} reviews)</span>
+                                <p className="text-xs md:text-sm font-medium text-slate-500 dark:text-slate-400 mb-1.5 md:mb-2 truncate">{item.service}</p>
+                                <div className="flex items-center gap-1 md:gap-1.5">
+                                    <Star className="w-3 h-3 md:w-4 md:h-4 text-amber-400 fill-amber-400" />
+                                    <span className="text-xs md:text-sm font-bold text-slate-900 dark:text-white">{item.rating}</span>
+                                    <span className="text-[10px] md:text-sm text-slate-400 font-medium md:font-normal">({item.reviews})</span>
                                 </div>
                             </div>
                         </motion.div>

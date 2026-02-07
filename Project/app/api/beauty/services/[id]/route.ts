@@ -3,10 +3,11 @@ import { serviceService } from "@/lib/beauty";
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const service = await serviceService.getServiceById(params.id);
+    const { id } = await params;
+    const service = await serviceService.getServiceById(id);
     if (!service) {
       return NextResponse.json(
         { success: false, error: "Service not found" },

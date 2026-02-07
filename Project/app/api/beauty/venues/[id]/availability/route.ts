@@ -3,10 +3,11 @@ import { getAvailableSlots } from "@/lib/beauty/services/availabilityService";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const venueId = params.id;
+    const { id } = await params;
+    const venueId = id;
     const date = request.nextUrl.searchParams.get("date");
     const serviceId = request.nextUrl.searchParams.get("service_id") ?? undefined;
 

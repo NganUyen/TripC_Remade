@@ -100,8 +100,8 @@ export function ReservationSidebar({ venueId }: ReservationSidebarProps) {
 
             <div className="space-y-4 mb-6">
                 {/* Date & Time Row */}
-                <div className="grid grid-cols-2 gap-3">
-                    <button className="flex items-center justify-between px-4 py-3 bg-slate-50 dark:bg-zinc-900 rounded-full border border-slate-200 dark:border-zinc-700 hover:border-[#FF5E1F] transition-colors group">
+                <div className="flex flex-col sm:grid sm:grid-cols-2 gap-3">
+                    <button className="flex items-center justify-between px-4 py-3 bg-slate-50 dark:bg-zinc-900 rounded-2xl md:rounded-full border border-slate-200 dark:border-zinc-700 hover:border-[#FF5E1F] transition-colors group">
                         <div className="flex items-center gap-2 overflow-hidden">
                             <Calendar className="w-4 h-4 text-slate-400 group-hover:text-[#FF5E1F]" />
                             <input
@@ -114,7 +114,7 @@ export function ReservationSidebar({ venueId }: ReservationSidebarProps) {
                         </div>
                         <ChevronDown className="w-3 h-3 text-slate-400" />
                     </button>
-                    <div className="flex items-center justify-between px-4 py-3 bg-slate-50 dark:bg-zinc-900 rounded-full border border-slate-200 dark:border-zinc-700 hover:border-[#FF5E1F] transition-colors group">
+                    <div className="flex items-center justify-between px-4 py-3 bg-slate-50 dark:bg-zinc-900 rounded-2xl md:rounded-full border border-slate-200 dark:border-zinc-700 hover:border-[#FF5E1F] transition-colors group">
                         <div className="flex items-center gap-2 overflow-hidden w-full">
                             <Clock className="w-4 h-4 text-slate-400 group-hover:text-[#FF5E1F]" />
                             <select

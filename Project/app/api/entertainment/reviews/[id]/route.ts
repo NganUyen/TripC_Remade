@@ -16,7 +16,7 @@ import { auth } from "@clerk/nextjs/server";
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { userId } = await auth();
@@ -28,8 +28,9 @@ export async function PUT(
       );
     }
 
+    const { id } = await params;
     const supabase = createServiceSupabaseClient();
-    const reviewId = params.id;
+    const reviewId = id;
     const body = await request.json();
 
     // Validate rating if provided
@@ -88,7 +89,7 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { userId } = await auth();
@@ -100,8 +101,9 @@ export async function DELETE(
       );
     }
 
+    const { id } = await params;
     const supabase = createServiceSupabaseClient();
-    const reviewId = params.id;
+    const reviewId = id;
 
     // Delete review (only owner can delete)
     const { data, error } = await supabase
