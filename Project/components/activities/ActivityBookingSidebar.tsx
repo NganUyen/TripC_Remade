@@ -320,24 +320,33 @@ export function ActivityBookingSidebar({ activity }: ActivityBookingSidebarProps
                                 </div>
 
                                 {/* Promo Code */}
-                                <div className="flex gap-2 items-stretch">
-                                    <div className="relative flex-1">
-                                        <Ticket className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                                        <input
-                                            type="text"
-                                            placeholder="Promo code"
-                                            value={promoCode}
-                                            onChange={(e) => setPromoCode(e.target.value)}
-                                            className="w-full h-10 bg-white dark:bg-slate-800/50 border border-slate-200/60 dark:border-white/10 rounded-xl pl-9 pr-3 text-sm focus:ring-2 focus:ring-[#FF5E1F]/20 focus:border-[#FF5E1F]/50 dark:text-white transition-all outline-none"
-                                        />
+                                <div className="space-y-2">
+                                    <div className="flex gap-2 items-stretch">
+                                        <div className="relative flex-1">
+                                            <Ticket className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                            <input
+                                                type="text"
+                                                placeholder="Promo code"
+                                                value={voucherCode}
+                                                onChange={(e) => setVoucherCode(e.target.value.toUpperCase())}
+                                                className="w-full h-10 bg-white dark:bg-slate-800/50 border border-slate-200/60 dark:border-white/10 rounded-xl pl-9 pr-3 text-sm focus:ring-2 focus:ring-[#FF5E1F]/20 focus:border-[#FF5E1F]/50 dark:text-white transition-all outline-none"
+                                            />
+                                        </div>
+                                        <button
+                                            className="h-10 px-4 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-xl font-bold text-xs hover:opacity-90 transition-opacity whitespace-nowrap disabled:opacity-50"
+                                            type="button"
+                                            onClick={handleApplyVoucher}
+                                            disabled={isValidating || !voucherCode}
+                                        >
+                                            {isValidating ? '...' : 'Apply'}
+                                        </button>
                                     </div>
-                                    <button
-                                        className="h-10 px-4 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-xl font-bold text-xs hover:opacity-90 transition-opacity whitespace-nowrap"
-                                        type="button"
-                                        onClick={() => toast.success("Promo code applied!")}
-                                    >
-                                        Apply
-                                    </button>
+                                    {discountAmount > 0 && (
+                                        <div className="flex justify-between items-center px-2 text-xs text-emerald-600 font-medium">
+                                            <span>Discount applied</span>
+                                            <span>-${discountAmount.toLocaleString()}</span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -362,14 +371,26 @@ export function ActivityBookingSidebar({ activity }: ActivityBookingSidebarProps
                     <div className="pt-5 border-t border-slate-200/60 dark:border-white/10 space-y-4">
                         <div className="flex items-center justify-between">
                             <span className="font-bold text-sm text-slate-500">Total Price</span>
-                            <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">${totalPrice.toLocaleString()}</span>
+                            <div className="text-right">
+                                {discountAmount > 0 && (
+                                    <span className="block text-xs text-slate-400 line-through decoration-slate-400/50">
+                                        ${totalPrice.toLocaleString()}
+                                    </span>
+                                )}
+                                <span className={cn(
+                                    "text-2xl font-black tracking-tight",
+                                    discountAmount > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-slate-900 dark:text-white"
+                                )}>
+                                    ${Math.max(0, totalPrice - discountAmount).toLocaleString()}
+                                </span>
+                            </div>
                         </div>
                         <button
                             onClick={handleBook}
-                            disabled={isBooking || !showDetails}
+                            disabled={isBooking || !showDetails || isMissingAdult}
                             className={cn(
                                 "w-full h-12 bg-[#FF5E1F] text-white text-base font-bold rounded-xl shadow-lg shadow-[#FF5E1F]/20 hover:shadow-xl hover:shadow-[#FF5E1F]/30 hover:-translate-y-0.5 transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2",
-                                !showDetails && "opacity-50 cursor-not-allowed bg-slate-200 dark:bg-slate-800 text-slate-400 shadow-none hover:shadow-none hover:translate-y-0"
+                                (!showDetails || isMissingAdult) && "opacity-50 cursor-not-allowed bg-slate-200 dark:bg-slate-800 text-slate-400 shadow-none hover:shadow-none hover:translate-y-0"
                             )}
                         >
                             {isBooking ? (

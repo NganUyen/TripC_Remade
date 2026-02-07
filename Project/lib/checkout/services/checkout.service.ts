@@ -58,7 +58,7 @@ export class CheckoutService {
       if (!isBuyNow && cartId) {
         // Cart mode: Fetch items from database with full variant details
         console.log('[CheckoutService] Fetching cart items for cartId:', cartId);
-        
+
         const { data: cartItems, error: cartError } = await this.supabase
           .from('cart_items')
           .select(`
@@ -92,7 +92,7 @@ export class CheckoutService {
         (payload as any).cartItemsSnapshot = cartItems;
 
         // Calculate total from database items (authoritative)
-        totalAmount = cartItems.reduce((sum: number, item: any) => 
+        totalAmount = cartItems.reduce((sum: number, item: any) =>
           sum + (item.unit_price * item.qty), 0
         );
 
@@ -503,55 +503,28 @@ export class CheckoutService {
   }
 
   private async markVoucherAsUsed(userId: string, code: string) {
-    console.log(`[CheckoutService] Marking voucher '${code}' as used for user ${userId}`);
+    console.log(`[CheckoutService] Processing usage (deletion) for voucher '${code}' user ${userId}`);
 
     const { data: voucher } = await this.supabase
       .from('vouchers')
-      .select('id, code, is_public') // Check is_public or implicit logic
+      .select('id, code')
       .eq('code', code)
       .single();
 
     if (!voucher) return;
 
-    // Check if user already has a record
-    const { data: userVoucher } = await this.supabase
+    // Delete the user_voucher record to mark as consumed/used
+    // This removes it from the user's wallet effectively
+    const { error: deleteError } = await this.supabase
       .from('user_vouchers')
-      .select('id')
+      .delete()
       .eq('user_id', userId)
-      .eq('voucher_id', voucher.id)
-      .eq('status', 'AVAILABLE')
-      .limit(1)
-      .maybeSingle();
+      .eq('voucher_id', voucher.id);
 
-    if (userVoucher) {
-      // Update existing record
-      const { error: updateError } = await this.supabase
-        .from('user_vouchers')
-        .update({ status: 'USED', used_at: new Date().toISOString() })
-        .eq('id', userVoucher.id);
-
-      if (updateError) {
-        console.error(`[CheckoutService] Failed to mark voucher USED: ${updateError.message}`, updateError);
-      } else {
-        console.log(`[CheckoutService] Successfully marked voucher ${userVoucher.id} as USED`);
-      }
+    if (deleteError) {
+      console.error(`[CheckoutService] Failed to delete voucher record: ${deleteError.message}`);
     } else {
-      // Insert new usage record (for public vouchers)
-      const { error: insertError } = await this.supabase
-        .from('user_vouchers')
-        .insert({
-          user_id: userId,
-          voucher_id: voucher.id,
-          status: 'USED',
-          used_at: new Date().toISOString(),
-          acquired_at: new Date().toISOString()
-        });
-
-      if (insertError) {
-        console.error(`[CheckoutService] Failed to insert USED voucher record: ${insertError.message}`, insertError);
-      } else {
-        console.log(`[CheckoutService] Successfully inserted USED voucher record for ${code}`);
-      }
+      console.log(`[CheckoutService] Successfully deleted voucher ${code} record for user ${userId}`);
     }
   }
 }
