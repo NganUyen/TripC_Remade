@@ -12,12 +12,12 @@ import { supabaseServerClient } from "@/lib/flight/supabaseServerClient";
 interface NotificationRequest {
   booking_id: string;
   notification_type:
-    | "BOOKING_CONFIRMATION"
-    | "PAYMENT_SUCCESS"
-    | "TICKET_ISSUED"
-    | "FLIGHT_REMINDER"
-    | "FLIGHT_UPDATE"
-    | "CANCELLATION";
+  | "BOOKING_CONFIRMATION"
+  | "PAYMENT_SUCCESS"
+  | "TICKET_ISSUED"
+  | "FLIGHT_REMINDER"
+  | "FLIGHT_UPDATE"
+  | "CANCELLATION";
   channel: "EMAIL" | "SMS" | "PUSH";
   custom_message?: string;
 }
@@ -97,7 +97,29 @@ export async function POST(request: NextRequest) {
       );
     } else if (channel === "SMS") {
       sendResult = await sendSMS(recipient, notificationContent);
+    } else if (channel === "PUSH" || true) { // Force push attempt for now to ensure delivery
+      // Try to send Push Notification
+      try {
+        const { createNotificationAndPush } = await import('@/lib/services/pushService');
+        // Notification type as title, or subject
+        await createNotificationAndPush(
+          booking.user_id,
+          subject,
+          notificationContent,
+          'flight',
+          '/my-bookings',
+          { notification_type, booking_id }
+        );
+        // If channel was PUSH, mark as success (or combined)
+        if (channel === 'PUSH') sendResult = { success: true };
+      } catch (e) {
+        console.error("Push send error:", e);
+        if (channel === 'PUSH') sendResult = { success: false, error: String(e) };
+      }
     }
+
+    // Default sendResult if not set by main channel (e.g. if we just added push as extra)
+    if (!sendResult) sendResult = { success: true };
 
     // Update notification status
     await supabase

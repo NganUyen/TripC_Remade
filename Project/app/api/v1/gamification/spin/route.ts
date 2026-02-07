@@ -160,6 +160,14 @@ export async function POST() {
             deep_link: '/rewards'
         });
 
+        // 5. Send Push Notification
+        try {
+            const { sendPushToUser } = await import('@/lib/services/pushService');
+            await sendPushToUser(userId, 'Spin & Win!', message, { url: '/rewards' });
+        } catch (pushError) {
+            console.error('Failed to send push:', pushError);
+        }
+
         return NextResponse.json({
             ok: true,
             rewardType,
