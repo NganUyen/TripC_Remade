@@ -38,11 +38,24 @@ export function MobilePushListener() {
         registerPush();
 
         // Listeners
-        PushNotifications.addListener("registration", (token) => {
+        PushNotifications.addListener("registration", async (token) => {
             console.log("Push Registration Token: ", token.value);
-            // In a real app, you send this token to your backend (Supabase/Database)
-            // For now, we alert it so the user can see it works
             alert('Push Token: ' + token.value);
+
+            // Save token to backend
+            try {
+                await fetch('/api/v1/user/push-token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        token: token.value,
+                        platform: Capacitor.getPlatform()
+                    })
+                });
+                console.log("Push token saved to backend");
+            } catch (e) {
+                console.error("Failed to save push token", e);
+            }
         });
 
         PushNotifications.addListener("registrationError", (error) => {
