@@ -321,6 +321,20 @@ export async function POST(request: NextRequest) {
     // - Deduct tcent_to_use from balance
     // - Add tcent_earned to pending balance (credited after checkout)
 
+    // Send Notification
+    try {
+      const { createNotificationAndPush } = await import('@/lib/services/pushService');
+      await createNotificationAndPush(
+        user.id,
+        "Booking Confirmed!",
+        `Your hotel booking at ${hotel.title} is confirmed!`,
+        'booking',
+        `/my-bookings`
+      );
+    } catch (e) {
+      console.error("Failed to send notification", e);
+    }
+
     return NextResponse.json(
       {
         success: true,
