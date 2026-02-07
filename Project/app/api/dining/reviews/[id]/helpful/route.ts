@@ -5,10 +5,10 @@ import { reviewService } from "@/lib/dining/services/reviewService";
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     const success = await reviewService.markReviewHelpful(id);
 

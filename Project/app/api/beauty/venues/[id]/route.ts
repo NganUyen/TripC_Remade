@@ -4,10 +4,11 @@ import type { CreateVenueRequest } from "@/lib/beauty/types";
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const venue = await venueService.getVenueById(params.id);
+    const { id } = await params;
+    const venue = await venueService.getVenueById(id);
     if (!venue) {
       return NextResponse.json(
         { success: false, error: "Venue not found" },
@@ -24,11 +25,12 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const { id } = await params;
     const updates: Partial<CreateVenueRequest> = await request.json();
-    const venue = await venueService.updateVenue(params.id, updates);
+    const venue = await venueService.updateVenue(id, updates);
     if (!venue) {
       return NextResponse.json(
         { success: false, error: "Failed to update venue" },
@@ -45,10 +47,11 @@ export async function PUT(
 
 export async function DELETE(
   _request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const success = await venueService.deleteVenue(params.id);
+    const { id } = await params;
+    const success = await venueService.deleteVenue(id);
     if (!success) {
       return NextResponse.json(
         { success: false, error: "Failed to delete venue" },

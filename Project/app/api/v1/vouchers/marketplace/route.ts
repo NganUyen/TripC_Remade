@@ -1,11 +1,16 @@
 import { NextResponse } from 'next/server'
 import { createServiceSupabaseClient } from '@/lib/supabase-server'
+import { auth } from '@clerk/nextjs/server'
 
 export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 export async function GET() {
     try {
         const supabase = createServiceSupabaseClient()
+
+        // Get current user if authenticated (using Clerk)
+        const { userId } = await auth()
 
         const { data: vouchers, error } = await supabase
             .from('vouchers')
@@ -23,7 +28,38 @@ export async function GET() {
         }
 
         // Filter in JS since DB filtering was behaving inconsistently
-        const activeVouchers = (vouchers || []).filter(v => v.is_active === true && v.is_purchasable === true)
+        let activeVouchers = (vouchers || []).filter(v => v.is_active === true && v.is_purchasable === true)
+        console.log('[MARKETPLACE API] Active vouchers count:', activeVouchers.length)
+
+        // If user is authenticated, filter out vouchers they've already redeemed
+        if (userId) {
+            console.log('[MARKETPLACE API] User authenticated:', userId)
+            const { data: userProfile } = await supabase
+                .from('users')
+                .select('id')
+                .eq('clerk_id', userId)
+                .single()
+
+            if (userProfile) {
+                console.log('[MARKETPLACE API] User profile found:', userProfile.id)
+                const { data: redeemedVouchers } = await supabase
+                    .from('user_vouchers')
+                    .select('voucher_id')
+                    .eq('user_id', userProfile.id)
+
+                console.log('[MARKETPLACE API] Redeemed vouchers:', redeemedVouchers?.length || 0)
+                const redeemedIds = new Set(redeemedVouchers?.map(v => v.voucher_id) || [])
+                console.log('[MARKETPLACE API] Redeemed IDs:', Array.from(redeemedIds))
+
+                // Filter out redeemed vouchers completely
+                activeVouchers = activeVouchers.filter(v => !redeemedIds.has(v.id))
+                console.log('[MARKETPLACE API] After filtering redeemed:', activeVouchers.length)
+            } else {
+                console.log('[MARKETPLACE API] User profile not found')
+            }
+        } else {
+            console.log('[MARKETPLACE API] User not authenticated')
+        }
 
         // Process stock calculation
         const processedVouchers = activeVouchers.map(v => ({

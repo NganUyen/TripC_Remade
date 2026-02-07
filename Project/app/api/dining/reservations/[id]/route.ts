@@ -8,10 +8,11 @@ import type { DiningReservation } from '@/lib/dining/types'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const reservation = await reservationService.getReservationById(params.id)
+    const { id } = await params;
+    const reservation = await reservationService.getReservationById(id);
 
     if (!reservation) {
       return NextResponse.json(
@@ -41,9 +42,10 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await request.json()
     const { status, ...metadata } = body
 
@@ -58,7 +60,7 @@ export async function PUT(
     }
 
     const reservation = await reservationService.updateReservationStatus(
-      params.id,
+      id,
       status as DiningReservation['status'],
       metadata
     )
@@ -91,13 +93,14 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const searchParams = request.nextUrl.searchParams
     const reason = searchParams.get('reason') || undefined
 
-    const success = await reservationService.cancelReservation(params.id, reason)
+    const success = await reservationService.cancelReservation(id, reason)
 
     if (!success) {
       return NextResponse.json(

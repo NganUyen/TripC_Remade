@@ -4,10 +4,11 @@ import React from 'react'
 import { RestaurantHero } from '@/components/dining/RestaurantHero'
 import { ReservationSidebar } from '@/components/dining/ReservationSidebar'
 import { RestaurantContent } from '@/components/dining/RestaurantContent'
+import { ReviewSection } from '@/components/shared/reviews/ReviewSection'
 import { Footer } from '@/components/Footer'
 
-export default function RestaurantDetailPage({ params }: { params: { id: string } }) {
-    const venueId = params.id
+export default function RestaurantDetailPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id: venueId } = React.use(params)
     return (
         <main className="min-h-screen bg-[#fcfaf8] dark:bg-[#0a0a0a] font-display text-[#1c140d] dark:text-white">
 
@@ -19,8 +20,15 @@ export default function RestaurantDetailPage({ params }: { params: { id: string 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
 
                     {/* Left Content (Span 2) */}
-                    <div className="lg:col-span-2">
+                    <div className="lg:col-span-2 space-y-12">
                         <RestaurantContent />
+
+                        <ReviewSection
+                            entityId={venueId}
+                            entityType="dining_venue"
+                            title="Guest Reviews"
+                            className="bg-white dark:bg-zinc-900 rounded-3xl p-8 border border-zinc-100 dark:border-zinc-800 shadow-sm"
+                        />
                     </div>
 
                     {/* Right Sidebar (Sticky) */}
