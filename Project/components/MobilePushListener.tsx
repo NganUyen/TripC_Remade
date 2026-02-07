@@ -43,8 +43,9 @@ export function MobilePushListener() {
             alert('Push Token: ' + token.value);
 
             // Save token to backend
+            // Save token to backend
             try {
-                await fetch('/api/v1/user/push-token', {
+                const response = await fetch('/api/v1/user/push-token', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -52,8 +53,16 @@ export function MobilePushListener() {
                         platform: Capacitor.getPlatform()
                     })
                 });
+
+                if (response.ok) {
+                    alert('Backend Success: Token Saved!');
+                } else {
+                    const err = await response.text();
+                    alert('Backend Error: ' + err);
+                }
                 console.log("Push token saved to backend");
             } catch (e) {
+                alert('Network Error saving token: ' + String(e));
                 console.error("Failed to save push token", e);
             }
         });
