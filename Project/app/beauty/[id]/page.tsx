@@ -121,7 +121,7 @@ export default function BeautyDetailPage() {
     return (
         <div className="bg-background-light dark:bg-background-dark text-[#181210] dark:text-[#f5f1f0] min-h-screen pb-safe">
             {/* Hero Section */}
-            <section className="relative w-full h-[50vh] min-h-[400px] md:h-[600px] overflow-hidden rounded-b-[2.5rem] md:rounded-b-[4rem] shadow-2xl z-0">
+            <section className="relative w-full h-[40vh] min-h-[350px] md:h-[600px] overflow-hidden rounded-b-3xl md:rounded-b-[4rem] shadow-2xl z-0">
                 <div
                     className="absolute inset-0 w-full h-full bg-center bg-no-repeat bg-cover transition-transform duration-1000 hover:scale-105"
                     style={{ backgroundImage: `url("${heroImage}")` }}
@@ -132,16 +132,16 @@ export default function BeautyDetailPage() {
                 {/* Back Button */}
                 <button
                     onClick={() => router.back()}
-                    className="absolute top-6 left-6 md:top-10 md:left-10 z-20 flex items-center justify-center w-12 h-12 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white hover:bg-white/40 transition-all drop-shadow-md hover:scale-105 active:scale-95"
+                    className="absolute top-4 left-4 md:top-10 md:left-10 z-20 flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white hover:bg-white/40 transition-all drop-shadow-md hover:scale-105 active:scale-95"
                 >
-                    <span className="material-symbols-outlined">arrow_back</span>
+                    <span className="material-symbols-outlined text-xl md:text-2xl">arrow_back</span>
                 </button>
 
-                <div className="absolute bottom-8 left-6 md:bottom-12 md:left-12 lg:left-40 max-w-3xl pr-6">
+                <div className="absolute bottom-6 left-4 md:bottom-12 md:left-12 lg:left-40 max-w-3xl pr-6">
                     <motion.h1
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="font-display text-4xl md:text-6xl lg:text-7xl font-black text-white leading-[1.1] tracking-tight mb-4"
+                        className="font-display text-3xl md:text-6xl lg:text-7xl font-black text-white leading-[1.1] tracking-tight mb-2 md:mb-4"
                     >
                         {title}
                     </motion.h1>
@@ -221,20 +221,22 @@ export default function BeautyDetailPage() {
 
                         {/* Ritual Steps */}
                         <section>
-                            <h2 className="font-display text-2xl md:text-3xl font-bold mb-8 text-center">The Beauty Ritual</h2>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
+                            <h2 className="font-display text-2xl md:text-3xl font-bold mb-6 md:mb-8 text-center child:flex child:items-center child:gap-3">
+                                <span className="justify-center">The Beauty Ritual</span>
+                            </h2>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
                                 {[
                                     { icon: 'water_drop', label: 'Cleansing' },
                                     { icon: 'layers', label: 'Exfoliation' },
                                     { icon: 'auto_fix_high', label: 'Infusion' },
                                     { icon: 'face_6', label: 'Masking' }
                                 ].map((step, idx) => (
-                                    <div key={idx} className="flex flex-col items-center group cursor-default">
-                                        <div className="w-16 h-16 md:w-20 md:h-20 mb-4 rounded-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 flex items-center justify-center group-hover:border-primary/50 group-hover:shadow-lg group-hover:shadow-primary/10 transition-all duration-300">
-                                            <span className="material-symbols-outlined text-2xl text-zinc-400 group-hover:text-primary transition-colors">{step.icon}</span>
+                                    <div key={idx} className="flex flex-col items-center group cursor-default p-4 bg-zinc-50/50 dark:bg-zinc-800/30 rounded-2xl md:bg-transparent md:dark:bg-transparent">
+                                        <div className="w-12 h-12 md:w-20 md:h-20 mb-3 md:mb-4 rounded-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 flex items-center justify-center group-hover:border-primary/50 group-hover:shadow-lg group-hover:shadow-primary/10 transition-all duration-300">
+                                            <span className="material-symbols-outlined text-xl md:text-2xl text-zinc-400 group-hover:text-primary transition-colors">{step.icon}</span>
                                         </div>
-                                        <span className="text-xs md:text-sm font-bold uppercase tracking-widest text-zinc-600 dark:text-zinc-400 group-hover:text-primary transition-colors">{step.label}</span>
-                                        <span className="text-[10px] text-zinc-400 mt-1 font-mono">STEP 0{idx + 1}</span>
+                                        <span className="text-[10px] md:text-sm font-bold uppercase tracking-widest text-zinc-600 dark:text-zinc-400 group-hover:text-primary transition-colors text-center">{step.label}</span>
+                                        <span className="text-[8px] md:text-[10px] text-zinc-400 mt-1 font-mono">STEP 0{idx + 1}</span>
                                     </div>
                                 ))}
                             </div>
@@ -262,8 +264,8 @@ export default function BeautyDetailPage() {
                     {/* Sidebar Column */}
                     <div className="lg:w-[380px] xl:w-[420px] shrink-0">
                         <div className="sticky top-24 space-y-6">
-                            <div className="p-6 md:p-8 bg-white dark:bg-zinc-900 rounded-[2rem] border border-zinc-100 dark:border-zinc-800 shadow-xl shadow-zinc-200/50 dark:shadow-none">
-                                <div className="flex justify-between items-start mb-8 pb-8 border-b border-zinc-100 dark:border-zinc-800">
+                            <div className="p-5 md:p-8 bg-white dark:bg-zinc-900 rounded-3xl md:rounded-[2rem] border border-zinc-100 dark:border-zinc-800 shadow-xl shadow-zinc-200/50 dark:shadow-none">
+                                <div className="flex justify-between items-start mb-6 md:mb-8 pb-6 md:pb-8 border-b border-zinc-100 dark:border-zinc-800">
                                     <div>
                                         <p className="text-xs text-zinc-500 uppercase tracking-widest font-bold mb-1">Total Price</p>
                                         <div className="flex items-baseline gap-1">

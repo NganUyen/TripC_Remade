@@ -41,15 +41,15 @@ export default function BookingTabs({
       <motion.div
         initial={{ opacity: 0, y: 5 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex items-center bg-white dark:bg-zinc-800 p-1 rounded-full shadow-lg border border-slate-100 dark:border-zinc-700 flex-wrap md:flex-nowrap"
+        className="w-full md:w-auto flex items-center bg-white dark:bg-zinc-800 p-1 md:rounded-full rounded-2xl shadow-lg border border-slate-100 dark:border-zinc-700 overflow-x-auto no-scrollbar"
       >
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
-            className={`relative flex items-center gap-2 whitespace-nowrap px-6 py-2 rounded-full text-sm font-bold transition-all duration-300 ${activeTab === tab.id
-                ? "text-white"
-                : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+            className={`relative flex-shrink-0 flex items-center gap-2 whitespace-nowrap px-6 py-2 rounded-full text-sm font-bold transition-all duration-300 ${activeTab === tab.id
+              ? "text-white"
+              : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
               }`}
           >
             {activeTab === tab.id && (

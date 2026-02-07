@@ -47,13 +47,13 @@ export function RestaurantList() {
                 <div className="flex items-center justify-between mb-8">
                     <h3 className="text-3xl font-black text-[#1c140d] dark:text-white">Popular Spots</h3>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                     {[1, 2, 3, 4].map((i) => (
-                        <div key={i} className="bg-white dark:bg-[#18181b] rounded-[2rem] overflow-hidden border border-slate-100 dark:border-zinc-800 animate-pulse">
+                        <div key={i} className="bg-white dark:bg-[#18181b] rounded-3xl md:rounded-[2rem] overflow-hidden border border-slate-100 dark:border-zinc-800 animate-pulse">
                             <div className="aspect-[4/3] bg-slate-200 dark:bg-zinc-800" />
-                            <div className="p-5 space-y-3">
-                                <div className="h-5 bg-slate-200 dark:bg-zinc-800 rounded w-3/4" />
-                                <div className="h-4 bg-slate-200 dark:bg-zinc-800 rounded w-1/2" />
+                            <div className="p-3 md:p-5 space-y-2 md:space-y-3">
+                                <div className="h-4 md:h-5 bg-slate-200 dark:bg-zinc-800 rounded w-3/4" />
+                                <div className="h-3 md:h-4 bg-slate-200 dark:bg-zinc-800 rounded w-1/2" />
                             </div>
                         </div>
                     ))}
@@ -64,8 +64,8 @@ export function RestaurantList() {
 
     return (
         <section>
-            <div className="flex items-center justify-between mb-8">
-                <h3 className="text-3xl font-black text-[#1c140d] dark:text-white">Popular Spots</h3>
+            <div className="flex items-center justify-between mb-6 md:mb-8">
+                <h3 className="text-2xl md:text-3xl font-black text-[#1c140d] dark:text-white">Popular Spots</h3>
                 <Link href="/dining" className="text-sm font-bold text-[#FF5E1F] hover:underline">View All</Link>
             </div>
 
@@ -74,7 +74,7 @@ export function RestaurantList() {
                     <p>No restaurants found. Check back later!</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                     {restaurants.map((place, i) => (
                         <Link key={place.id} href={`/dining/${place.id}`}>
                             <motion.div
@@ -83,7 +83,7 @@ export function RestaurantList() {
                                 viewport={{ once: true }}
                                 transition={{ delay: i * 0.05 }}
                                 whileHover={{ y: -5 }}
-                                className="group bg-white dark:bg-[#18181b] rounded-[2rem] overflow-hidden border border-slate-100 dark:border-zinc-800 shadow-sm hover:shadow-xl transition-all cursor-pointer"
+                                className="group bg-white dark:bg-[#18181b] rounded-3xl md:rounded-[2rem] overflow-hidden border border-slate-100 dark:border-zinc-800 shadow-sm hover:shadow-xl transition-all cursor-pointer"
                             >
                                 {/* Image Area - Taller 4:3 */}
                                 <div className="relative aspect-[4/3] w-full overflow-hidden">
@@ -95,13 +95,13 @@ export function RestaurantList() {
 
                                     {/* Featured Badge */}
                                     {place.is_featured && (
-                                        <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-emerald-600 shadow-sm">
+                                        <div className="absolute top-2 left-2 md:top-4 md:left-4 bg-white/90 backdrop-blur-md px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-bold text-emerald-600 shadow-sm">
                                             Featured
                                         </div>
                                     )}
 
                                     {/* Wishlist Button */}
-                                    <div className="absolute top-4 right-4 z-10">
+                                    <div className="absolute top-2 right-2 md:top-4 md:right-4 z-10 scale-90 md:scale-100">
                                         <WishlistButton
                                             itemId={place.id}
                                             itemType="dining"
@@ -112,7 +112,7 @@ export function RestaurantList() {
                                     </div>
 
                                     {/* Floating Book Button - Appears on Hover */}
-                                    <div className="absolute bottom-4 right-4 translate-y-12 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
+                                    <div className="absolute bottom-4 right-4 translate-y-12 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 hidden md:block">
                                         <div className="w-12 h-12 bg-[#FF5E1F] rounded-full flex items-center justify-center text-white shadow-lg">
                                             <BookOpen className="w-5 h-5" />
                                         </div>
@@ -120,18 +120,18 @@ export function RestaurantList() {
                                 </div>
 
                                 {/* Details */}
-                                <div className="p-5">
-                                    <h4 className="text-xl font-bold text-slate-900 dark:text-white mb-2 line-clamp-1">{place.name}</h4>
+                                <div className="p-3 md:p-5">
+                                    <h4 className="text-base md:text-xl font-bold text-slate-900 dark:text-white mb-1 md:mb-2 line-clamp-1">{place.name}</h4>
 
-                                    <div className="flex items-center gap-3 text-sm font-medium text-slate-500 dark:text-slate-400">
-                                        <div className="flex items-center gap-1 text-amber-500">
-                                            <Star className="w-4 h-4 fill-current" />
+                                    <div className="flex flex-wrap items-center gap-1.5 md:gap-3 text-[10px] md:text-sm font-medium text-slate-500 dark:text-slate-400">
+                                        <div className="flex items-center gap-0.5 md:gap-1 text-amber-500">
+                                            <Star className="w-3 h-3 md:w-4 md:h-4 fill-current" />
                                             <span className="text-slate-900 dark:text-white">{place.average_rating.toFixed(1)}</span>
                                         </div>
-                                        <span>•</span>
+                                        <span className="hidden md:inline">•</span>
                                         <span className="text-slate-900 dark:text-white">{getPriceRangeDisplay(place.price_range)}</span>
-                                        <span>•</span>
-                                        <span className="truncate">{getCuisineDisplay(place.cuisine_type)}</span>
+                                        <span className="hidden md:inline">•</span>
+                                        <span className="truncate max-w-[60px] md:max-w-none">{getCuisineDisplay(place.cuisine_type)}</span>
                                     </div>
                                 </div>
                             </motion.div>
