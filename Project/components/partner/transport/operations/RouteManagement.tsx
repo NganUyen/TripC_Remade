@@ -18,12 +18,7 @@ import {
     X,
     Save
 } from 'lucide-react'
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+import { useSupabaseClient } from '@/lib/supabase'
 
 interface TransportRoute {
     id: string
@@ -66,8 +61,7 @@ interface TransportProvider {
     logo_url: string
 }
 
-export function RouteManagement() {
-    const [loading, setLoading] = useState(true)
+export function RouteManagement() {    const supabase = useSupabaseClient()    const [loading, setLoading] = useState(true)
     const [routes, setRoutes] = useState<TransportRoute[]>([])
     const [providers, setProviders] = useState<TransportProvider[]>([])
     const [vehicles, setVehicles] = useState<Vehicle[]>([])

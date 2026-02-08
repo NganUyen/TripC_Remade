@@ -11,12 +11,7 @@ import {
     Check,
     X
 } from 'lucide-react'
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+import { useSupabaseClient } from '@/lib/supabase'
 
 interface RouteSeats {
     id: string
@@ -30,6 +25,7 @@ interface RouteSeats {
 }
 
 export function SeatManagement() {
+    const supabase = useSupabaseClient()
     const [loading, setLoading] = useState(true)
     const [routes, setRoutes] = useState<RouteSeats[]>([])
     const [searchTerm, setSearchTerm] = useState('')

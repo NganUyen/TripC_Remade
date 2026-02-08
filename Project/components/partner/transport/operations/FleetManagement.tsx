@@ -19,12 +19,7 @@ import {
     Save,
     Image as ImageIcon
 } from 'lucide-react'
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+import { useSupabaseClient } from '@/lib/supabase'
 
 interface Vehicle {
     id: string
@@ -51,6 +46,7 @@ interface TransportProvider {
 }
 
 export function FleetManagement() {
+    const supabase = useSupabaseClient()
     const [loading, setLoading] = useState(true)
     const [vehicles, setVehicles] = useState<Vehicle[]>([])
     const [providers, setProviders] = useState<TransportProvider[]>([])

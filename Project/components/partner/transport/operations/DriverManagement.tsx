@@ -16,7 +16,7 @@ import {
     CheckCircle,
     Clock
 } from 'lucide-react'
-import { createClient } from '@supabase/supabase-js'
+import { useSupabaseClient } from '@/lib/supabase'
 
 interface Driver {
     id: string
@@ -35,6 +35,7 @@ interface Driver {
 
 
 export function DriverManagement() {
+    const supabase = useSupabaseClient()
     const [loading, setLoading] = useState(true)
     const [drivers, setDrivers] = useState<Driver[]>([])
     const [searchTerm, setSearchTerm] = useState('')
@@ -55,12 +56,6 @@ export function DriverManagement() {
         totalTrips: 0,
         provider_id: ''
     })
-
-    // Initialize Supabase client
-    const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
 
     useEffect(() => {
         fetchData()

@@ -12,12 +12,7 @@ import {
     Calendar,
     User
 } from 'lucide-react'
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+import { useSupabaseClient } from '@/lib/supabase'
 
 interface Review {
     id: string
@@ -35,6 +30,7 @@ interface Review {
 }
 
 export function Reviews() {
+    const supabase = useSupabaseClient()
     const [loading, setLoading] = useState(true)
     const [reviews, setReviews] = useState<Review[]>([])
     const [filterRating, setFilterRating] = useState<number | 'all'>('all')

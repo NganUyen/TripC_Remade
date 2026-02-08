@@ -11,12 +11,7 @@ import {
     MapPin,
     Users
 } from 'lucide-react'
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+import { useSupabaseClient } from '@/lib/supabase'
 
 interface ScheduleEvent {
     id: string
@@ -31,6 +26,7 @@ interface ScheduleEvent {
 }
 
 export function VehicleSchedule() {
+    const supabase = useSupabaseClient()
     const [loading, setLoading] = useState(true)
     const [events, setEvents] = useState<ScheduleEvent[]>([])
     const [currentDate, setCurrentDate] = useState(new Date())

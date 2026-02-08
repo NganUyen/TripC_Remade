@@ -14,12 +14,7 @@ import {
     Edit,
     Check
 } from 'lucide-react'
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+import { useSupabaseClient } from '@/lib/supabase'
 
 interface ProviderData {
     id: string
@@ -33,6 +28,7 @@ interface ProviderData {
 }
 
 export function ProviderSettings() {
+    const supabase = useSupabaseClient()
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [providers, setProviders] = useState<ProviderData[]>([])

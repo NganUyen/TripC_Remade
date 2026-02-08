@@ -12,12 +12,7 @@ import {
     MapPin,
     Users
 } from 'lucide-react'
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+import { useSupabaseClient } from '@/lib/supabase'
 
 interface PerformanceData {
     totalTrips: number
@@ -34,6 +29,7 @@ interface PerformanceData {
 }
 
 export function Performance() {
+    const supabase = useSupabaseClient()
     const [loading, setLoading] = useState(true)
     const [data, setData] = useState<PerformanceData>({
         totalTrips: 0,

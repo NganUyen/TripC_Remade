@@ -14,12 +14,7 @@ import {
     Calendar,
     TrendingUp
 } from 'lucide-react'
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+import { useSupabaseClient } from '@/lib/supabase'
 
 interface RoutePrice {
     id: string
@@ -33,6 +28,7 @@ interface RoutePrice {
 }
 
 export function PricingManagement() {
+    const supabase = useSupabaseClient()
     const [loading, setLoading] = useState(true)
     const [prices, setPrices] = useState<RoutePrice[]>([])
     const [searchTerm, setSearchTerm] = useState('')
