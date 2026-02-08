@@ -37,17 +37,33 @@ export class ActivitySettlementHandler implements ISettlementHandler {
         let clerkId: string | null = null;
 
         if (booking.user_id && booking.user_id !== 'GUEST') {
-            userUuid = booking.user_id;
+            if (booking.user_id.startsWith('user_')) {
+                // It's a Clerk ID
+                clerkId = booking.user_id;
+                const { data: userData } = await this.supabase
+                    .from('users')
+                    .select('id')
+                    .eq('clerk_id', clerkId)
+                    .single();
 
-            // Fetch Clerk ID for external reference
-            const { data: userData } = await this.supabase
-                .from('users')
-                .select('clerk_id')
-                .eq('id', userUuid)
-                .single();
+                if (userData) {
+                    userUuid = userData.id;
+                } else {
+                    console.warn(`[ACTIVITY_SETTLEMENT] Clerk user ${clerkId} not found in DB`);
+                }
+            } else {
+                // It's likely a UUID
+                userUuid = booking.user_id;
+                // Fetch Clerk ID for external reference (optional but good for consistency)
+                const { data: userData } = await this.supabase
+                    .from('users')
+                    .select('clerk_id')
+                    .eq('id', userUuid)
+                    .maybeSingle(); // Use maybeSingle to avoid error if ID is invalid UUID
 
-            if (userData) {
-                clerkId = userData.clerk_id;
+                if (userData) {
+                    clerkId = userData.clerk_id;
+                }
             }
         }
 
