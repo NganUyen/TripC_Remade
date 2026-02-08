@@ -13,14 +13,8 @@ import {
     Users,
     Route
 } from 'lucide-react'
-import { createClient } from '@supabase/supabase-js'
+import { useSupabaseClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
-
-// Initialize Supabase client
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
 
 interface StatCardProps {
     title: string
@@ -90,6 +84,7 @@ interface DashboardStats {
 
 export function TransportDashboard() {
     const router = useRouter()
+    const supabase = useSupabaseClient()
     const [loading, setLoading] = useState(true)
     const [stats, setStats] = useState<DashboardStats>({
         totalRevenue: 0,
