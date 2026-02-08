@@ -6,14 +6,24 @@ import { DollarSign, Ticket, Calendar, TrendingUp } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { DashboardCharts } from '@/components/partner/DashboardCharts'
 
+interface Stats {
+    revenue: number
+    totalBookings: number
+    averageRating: number
+    activeListings: number
+    chartData: any[]
+    revenueByCategory: any[]
+}
+
 export default function PartnerDashboard() {
     const [days, setDays] = useState(7)
-    const [stats, setStats] = useState({
+    const [stats, setStats] = useState<Stats>({
         revenue: 0,
         totalBookings: 0,
         averageRating: 0,
         activeListings: 0,
-        chartData: []
+        chartData: [],
+        revenueByCategory: []
     })
     const [loading, setLoading] = useState(true)
 
@@ -98,7 +108,11 @@ export default function PartnerDashboard() {
                 </Card>
             </div>
 
-            <DashboardCharts data={stats.chartData || []} days={days} />
+            <DashboardCharts
+                data={stats.chartData || []}
+                days={days}
+                revenueByCategory={stats.revenueByCategory || []}
+            />
         </div>
     )
 }

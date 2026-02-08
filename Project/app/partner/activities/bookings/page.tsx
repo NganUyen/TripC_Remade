@@ -44,7 +44,8 @@ export default function PartnerBookings() {
                     <TableHeader>
                         <TableRow>
                             <TableHead>Booking Ref</TableHead>
-                            <TableHead>Activity</TableHead>
+                            <TableHead>Item</TableHead>
+                            <TableHead>Type</TableHead>
                             <TableHead>Guest</TableHead>
                             <TableHead>Date</TableHead>
                             <TableHead>Amount</TableHead>
@@ -54,29 +55,47 @@ export default function PartnerBookings() {
                     <TableBody>
                         {bookings.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={6} className="text-center py-8 text-slate-500">
+                                <TableCell colSpan={7} className="text-center py-8 text-slate-500">
                                     No bookings found yet.
                                 </TableCell>
                             </TableRow>
                         ) : (
                             bookings.map((booking) => (
                                 <TableRow key={booking.id}>
-                                    <TableCell className="font-mono text-xs">{booking.confirmation_code}</TableCell>
-                                    <TableCell className="font-medium">{booking.activity_title}</TableCell>
+                                    <TableCell className="font-mono text-xs">{booking.booking_reference || booking.confirmation_code}</TableCell>
+                                    <TableCell className="font-medium">{booking.item_title}</TableCell>
+                                    <TableCell>
+                                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize
+                                            ${booking.type === 'activity' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' :
+                                                booking.type === 'event' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400' :
+                                                    'bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-400'}`}>
+                                            {booking.type}
+                                        </span>
+                                    </TableCell>
                                     <TableCell>
                                         <div className="flex flex-col">
-                                            <span>{booking.guest_name}</span>
-                                            <span className="text-xs text-slate-500">{booking.guest_email}</span>
+                                            <span>{booking.customer_name || booking.guest_name}</span>
+                                            <span className="text-xs text-slate-500">{booking.customer_email || booking.guest_email}</span>
                                         </div>
                                     </TableCell>
-                                    <TableCell>{format(new Date(booking.booking_date), 'PPP')}</TableCell>
+                                    <TableCell>
+                                        {(() => {
+                                            try {
+                                                const dateVal = booking.created_at || booking.booking_date
+                                                return dateVal ? format(new Date(dateVal), 'PPP') : 'N/A'
+                                            } catch (e) {
+                                                console.error("Date Error:", e)
+                                                return 'Invalid Date'
+                                            }
+                                        })()}
+                                    </TableCell>
                                     <TableCell>${booking.total_amount}</TableCell>
                                     <TableCell>
-                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${booking.payment_status === 'paid'
-                                                ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                                                : 'bg-yellow-100 text-yellow-800'
+                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${booking.booking_status === 'confirmed' || booking.status === 'confirmed'
+                                            ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                                            : 'bg-yellow-100 text-yellow-800'
                                             }`}>
-                                            {booking.status}
+                                            {booking.status || booking.booking_status}
                                         </span>
                                     </TableCell>
                                 </TableRow>

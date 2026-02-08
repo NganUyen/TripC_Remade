@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { createServiceSupabaseClient } from '@/lib/supabase-server'
+import { convertVndToUsd } from '@/lib/utils/currency'
 
 export async function GET(request: Request) {
     try {
@@ -22,85 +23,154 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: 'Forbidden: Partner access required' }, { status: 403 })
         }
 
-        // 2. Get Activities owned by partner
-        const { data: activities } = await supabase
-            .from('activities')
-            .select('id, title, price, rating')
-            .eq('partner_id', user.id)
+        // 2. Fetch all owned items with categories
+        const [
+            { data: activities },
+            { data: events },
+            { data: organizers },
+            { data: entCategories }
+        ] = await Promise.all([
+            supabase.from('activities').select('id, price, rating, category').eq('partner_id', user.id),
+            supabase.from('events').select('id, average_rating, category').eq('partner_id', user.id),
+            supabase.from('entertainment_organizers').select('id').eq('partner_id', user.id),
+            supabase.from('entertainment_categories').select('id, name')
+        ])
 
-        if (!activities || activities.length === 0) {
-            return NextResponse.json({
-                revenue: 0,
-                totalBookings: 0,
-                averageRating: 0,
-                activeListings: 0
-            })
+        const activityIds = activities?.map(a => a.id) || []
+        const eventIds = events?.map(e => e.id) || []
+        const organizerIds = organizers?.map(o => o.id) || []
+
+        console.log('Stats Debug:', {
+            userId,
+            activityCount: activityIds.length,
+            eventCount: eventIds.length,
+            organizerCount: organizerIds.length
+        })
+
+        // Map ItemId -> CategoryName
+        const itemCategoryMap = new Map<string, string>()
+
+        activities?.forEach(a => itemCategoryMap.set(a.id, a.category || 'Activity'))
+        events?.forEach(e => itemCategoryMap.set(e.id, e.category || 'Event'))
+
+        // Map CategoryId -> CategoryName for Entertainment
+        const entCategoryNameMap = new Map<string, string>()
+        entCategories?.forEach(c => entCategoryNameMap.set(c.id, c.name))
+
+        let entertainmentIds: string[] = []
+        let entertainmentItems: any[] = []
+        if (organizerIds.length > 0) {
+            const { data: entItems } = await supabase
+                .from('entertainment_items')
+                .select('id, rating_average, category_id, type')
+                .in('organizer_id', organizerIds)
+
+            if (entItems) {
+                entertainmentItems = entItems
+                entertainmentIds = entItems.map(e => e.id)
+                entItems.forEach(e => {
+                    const catName = entCategoryNameMap.get(e.category_id) || e.type || 'Entertainment'
+                    itemCategoryMap.set(e.id, catName)
+                })
+            }
         }
 
-        const activityIds = activities.map(a => a.id)
+        // Calculate Average Rating
+        let totalRatingSum = 0;
+        let totalRatedItems = 0;
 
-        // Calculate average rating
-        const ratedActivities = activities.filter(a => a.rating > 0)
-        const averageRating = ratedActivities.length > 0
-            ? ratedActivities.reduce((sum, a) => sum + (a.rating || 0), 0) / ratedActivities.length
-            : 0
+        activities?.forEach(a => { if (a.rating) { totalRatingSum += a.rating; totalRatedItems++; } })
+        events?.forEach(e => { if (e.average_rating) { totalRatingSum += e.average_rating; totalRatedItems++; } })
+        entertainmentItems.forEach(e => { if (e.rating_average) { totalRatingSum += e.rating_average; totalRatedItems++; } })
 
+        const averageRating = totalRatedItems > 0 ? (totalRatingSum / totalRatedItems) : 0;
+        const activeListings = activityIds.length + eventIds.length + entertainmentIds.length;
+
+        // 3. Date Range Setup
         const { searchParams } = new URL(request.url)
         const days = parseInt(searchParams.get('days') || '7')
         const startDate = new Date()
         startDate.setDate(startDate.getDate() - days)
         startDate.setHours(0, 0, 0, 0)
 
-        // 3. Get All Time Bookings (for totals)
-        const { data: allBookings } = await supabase
-            .from('activity_bookings')
-            .select('total_amount, status, created_at')
-            .in('activity_id', activityIds)
-            .eq('status', 'confirmed')
+        // 4. Fetch Bookings
+        const fetchBookings = async (table: string, idColumn: string, ids: string[]) => {
+            if (ids.length === 0) return []
+            const { data } = await supabase
+                .from(table)
+                .select(`total_amount, created_at, status, currency, ${idColumn}`)
+                .in(idColumn, ids)
+                .eq('status', 'confirmed')
+            return data || []
+        }
 
-        // 4. Get Chart Bookings (filtered by date)
-        const { data: chartBookings } = await supabase
-            .from('activity_bookings')
-            .select('total_amount, status, created_at')
-            .in('activity_id', activityIds)
-            .eq('status', 'confirmed')
-            .gte('created_at', startDate.toISOString())
-            .order('created_at', { ascending: true })
+        const [activityBookings, eventBookings, entertainmentBookings] = await Promise.all([
+            fetchBookings('activity_bookings', 'activity_id', activityIds),
+            fetchBookings('event_bookings', 'event_id', eventIds),
+            fetchBookings('entertainment_bookings', 'entertainment_id', entertainmentIds)
+        ])
 
-        const totalBookings = allBookings?.length || 0
-        const revenue = allBookings?.reduce((sum, b) => sum + Number(b.total_amount), 0) || 0
+        const normalizedBookings = [
+            ...(activityBookings || []).map((b: any) => ({ ...b, itemId: b.activity_id })),
+            ...(eventBookings || []).map((b: any) => ({ ...b, itemId: b.event_id })),
+            ...(entertainmentBookings || []).map((b: any) => ({ ...b, itemId: b.entertainment_id }))
+        ].map(b => {
+            let amount = Number(b.total_amount || 0)
+            if (b.currency === 'VND') {
+                amount = convertVndToUsd(amount)
+            }
+            return { ...b, total_amount: amount }
+        })
 
-        // Process Chart Data
+
+
+        const totalBookings = normalizedBookings.length
+        const revenue = normalizedBookings.reduce((sum, b) => sum + Number(b.total_amount || 0), 0)
+
+        // 5. Build Chart Data
         const chartDataMap = new Map<string, { date: string, revenue: number, bookings: number }>()
+        const categoryRevenueMap = new Map<string, number>()
 
-        // Initialize map with all dates in range
         for (let i = 0; i < days; i++) {
             const d = new Date()
             d.setDate(d.getDate() - i)
-            const dateStr = d.toISOString().split('T')[0] // YYYY-MM-DD
+            const dateStr = d.toISOString().split('T')[0]
             chartDataMap.set(dateStr, { date: dateStr, revenue: 0, bookings: 0 })
         }
 
-        if (chartBookings) {
-            chartBookings.forEach(b => {
-                const dateStr = new Date(b.created_at).toISOString().split('T')[0]
+        normalizedBookings.forEach(b => {
+            const bookingDate = new Date(b.created_at)
+            const amount = Number(b.total_amount || 0)
+
+            if (bookingDate >= startDate) {
+                // Line/Bar Chart Data
+                const dateStr = bookingDate.toISOString().split('T')[0]
                 if (chartDataMap.has(dateStr)) {
                     const entry = chartDataMap.get(dateStr)!
-                    entry.revenue += Number(b.total_amount)
+                    entry.revenue += amount
                     entry.bookings += 1
                 }
-            })
-        }
 
-        // Convert to array and sort by date
+                // Category Data
+                const catName = itemCategoryMap.get(b.itemId) || 'Other'
+                categoryRevenueMap.set(catName, (categoryRevenueMap.get(catName) || 0) + amount)
+            }
+        })
+
         const chartData = Array.from(chartDataMap.values()).sort((a, b) => a.date.localeCompare(b.date))
+
+        // Format Revenue by Category
+        const revenueByCategory = Array.from(categoryRevenueMap.entries())
+            .map(([name, value]) => ({ name, value }))
+            .sort((a, b) => b.value - a.value)
 
         return NextResponse.json({
             revenue,
             totalBookings,
             averageRating: Number(averageRating.toFixed(1)),
-            activeListings: activities.length,
-            chartData
+            activeListings,
+            chartData,
+            revenueByCategory
         })
 
     } catch (error) {

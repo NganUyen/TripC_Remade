@@ -73,7 +73,16 @@ export default function PartnerLayout({ children }: { children: React.ReactNode 
 
                 <nav className="flex-1 p-4 space-y-1">
                     {navigation.map((item) => {
-                        const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+                        let isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+
+                        // Special handling for "My Activities" to avoid overlap with Dashboard/Bookings
+                        if (item.href === '/partner/activities') {
+                            isActive = pathname === item.href ||
+                                (pathname.startsWith(item.href + '/') &&
+                                    !pathname.startsWith('/partner/activities/dashboard') &&
+                                    !pathname.startsWith('/partner/activities/bookings'))
+                        }
+
                         return (
                             <Link
                                 key={item.name}
