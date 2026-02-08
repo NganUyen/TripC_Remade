@@ -1,46 +1,97 @@
 "use client"
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { 
-    Table2, 
-    Plus, 
-    Edit, 
+import {
+    Table2,
+    Plus,
+    Edit,
     Trash2,
     Users,
     Clock,
     CheckCircle2,
     XCircle,
-    AlertCircle
+    AlertCircle,
+    Loader2
 } from 'lucide-react'
+import { partnerApi } from '@/lib/partner/api'
+import { useUser } from '@clerk/nextjs'
 
 interface Table {
     id: string
-    number: string
+    venue_id?: string
+    table_number: string
     area: string
     capacity: number
     status: 'available' | 'occupied' | 'reserved' | 'cleaning'
-    currentGuests?: number
+    current_guests?: number
     reservationTime?: string
 }
 
 export function TableManagement() {
-    const [tables, setTables] = useState<Table[]>([
-        { id: '1', number: 'T01', area: 'Tầng 1', capacity: 4, status: 'occupied', currentGuests: 3 },
-        { id: '2', number: 'T02', area: 'Tầng 1', capacity: 2, status: 'available' },
-        { id: '3', number: 'T03', area: 'Tầng 1', capacity: 6, status: 'reserved', reservationTime: '19:00' },
-        { id: '4', number: 'V01', area: 'Phòng VIP', capacity: 8, status: 'occupied', currentGuests: 6 },
-        { id: '5', number: 'O01', area: 'Ngoài trời', capacity: 4, status: 'cleaning' }
-    ])
+    const { user } = useUser()
+    const [tables, setTables] = useState<Table[]>([])
+    const [loading, setLoading] = useState(true)
+    const [venueId, setVenueId] = useState<string | null>(null)
 
-    const areas = ['Tầng 1', 'Tầng 2', 'Phòng VIP', 'Ngoài trời']
+    // Areas could be dynamic too, but keeping static for now
+    const areas = ['Tầng 1', 'Tầng 2', 'Phòng VIP', 'Ngoài trời', 'Main']
     const [selectedArea, setSelectedArea] = useState<string>('all')
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [editingTable, setEditingTable] = useState<Table | null>(null)
 
+    useEffect(() => {
+        const loadData = async () => {
+            if (!user) return
+            try {
+                const venues = await partnerApi.getMyVenues(user.id)
+                if (venues.length > 0) {
+                    setVenueId(venues[0].id)
+                    const data = await partnerApi.getTables(venues[0].id, user.id)
+                    // Map API data to UI format if needed, mostly 1:1
+                    setTables(data)
+                }
+            } catch (error) {
+                console.error("Failed to load tables", error)
+            } finally {
+                setLoading(false)
+            }
+        }
+        loadData()
+    }, [user])
+
     const filteredTables = selectedArea === 'all'
         ? tables
         : tables.filter(table => table.area === selectedArea)
+
+    const handleSaveTable = async (tableData: any) => {
+        if (!user || !venueId) return
+        try {
+            if (tableData.id) {
+                // Update
+                const updated = await partnerApi.updateTable(tableData.id, tableData, user.id)
+                setTables(tables.map(t => t.id === updated.id ? updated : t))
+            } else {
+                // Create
+                const created = await partnerApi.createTable({ ...tableData, venue_id: venueId }, user.id)
+                setTables([...tables, created])
+            }
+            setIsModalOpen(false)
+        } catch (error: any) {
+            console.error("Failed to save table", error)
+            alert(`Failed to save table: ${error.message || JSON.stringify(error)}`)
+        }
+    }
+
+    const handleDeleteTable = async (id: string) => {
+        if (!user || !confirm("Delete this table?")) return
+        try {
+            await partnerApi.deleteTable(id, user.id)
+            setTables(tables.filter(t => t.id !== id))
+        } catch (error) {
+            console.error("Failed to delete", error)
+        }
+    }
 
     const getStatusColor = (status: Table['status']) => {
         switch (status) {
@@ -59,18 +110,16 @@ export function TableManagement() {
 
     const getStatusLabel = (status: Table['status']) => {
         switch (status) {
-            case 'available':
-                return 'Trống'
-            case 'occupied':
-                return 'Đang sử dụng'
-            case 'reserved':
-                return 'Đã đặt'
-            case 'cleaning':
-                return 'Đang dọn'
-            default:
-                return status
+            case 'available': return 'Trống'
+            case 'occupied': return 'Đang sử dụng'
+            case 'reserved': return 'Đã đặt'
+            case 'cleaning': return 'Đang dọn'
+            default: return status
         }
     }
+
+    if (loading) return <div className="flex justify-center p-12"><Loader2 className="animate-spin" /></div>
+    if (!venueId) return <div className="p-8 text-center text-slate-500">Please create a venue first.</div>
 
     return (
         <div className="space-y-6">
@@ -80,7 +129,7 @@ export function TableManagement() {
                         Quản lý Sơ đồ Bàn
                     </h1>
                     <p className="text-slate-500 dark:text-slate-400">
-                        Quản lý sơ đồ bàn và trạng thái theo thời gian thực
+                        Quản lý sơ đồ bàn và trạng thái theo thời gian thực (Persistent)
                     </p>
                 </div>
                 <button
@@ -99,11 +148,10 @@ export function TableManagement() {
             <div className="flex gap-2 overflow-x-auto pb-2">
                 <button
                     onClick={() => setSelectedArea('all')}
-                    className={`px-4 py-2 rounded-xl font-semibold whitespace-nowrap transition-colors ${
-                        selectedArea === 'all'
-                            ? 'bg-primary text-white'
-                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
-                    }`}
+                    className={`px-4 py-2 rounded-xl font-semibold whitespace-nowrap transition-colors ${selectedArea === 'all'
+                        ? 'bg-primary text-white'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                        }`}
                 >
                     Tất cả
                 </button>
@@ -111,11 +159,10 @@ export function TableManagement() {
                     <button
                         key={area}
                         onClick={() => setSelectedArea(area)}
-                        className={`px-4 py-2 rounded-xl font-semibold whitespace-nowrap transition-colors ${
-                            selectedArea === area
-                                ? 'bg-primary text-white'
-                                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
-                        }`}
+                        className={`px-4 py-2 rounded-xl font-semibold whitespace-nowrap transition-colors ${selectedArea === area
+                            ? 'bg-primary text-white'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                            }`}
                     >
                         {area}
                     </button>
@@ -133,17 +180,27 @@ export function TableManagement() {
                         className={`
                             bg-white dark:bg-slate-900 rounded-2xl p-6 border-2 
                             ${getStatusColor(table.status)}
-                            hover:shadow-lg transition-all cursor-pointer
+                            hover:shadow-lg transition-all cursor-pointer relative group
                         `}
                         onClick={() => {
                             setEditingTable(table)
                             setIsModalOpen(true)
                         }}
                     >
+                        {/* ID Display (Requested) */}
+                        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                                onClick={(e) => { e.stopPropagation(); handleDeleteTable(table.id) }}
+                                className="p-1 bg-white/50 rounded-full hover:bg-red-500 hover:text-white"
+                            >
+                                <Trash2 className="w-3 h-3" />
+                            </button>
+                        </div>
+
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-2">
                                 <Table2 className="w-5 h-5" />
-                                <span className="font-bold text-lg">{table.number}</span>
+                                <span className="font-bold text-lg">{table.table_number}</span>
                             </div>
                             {table.status === 'occupied' && (
                                 <Users className="w-4 h-4" />
@@ -151,23 +208,15 @@ export function TableManagement() {
                         </div>
 
                         <div className="space-y-2">
+                            <div className="text-xs text-slate-400 font-mono" title="Database ID">
+                                ID: {table.id.slice(0, 8)}...
+                            </div>
                             <div className="text-sm">
                                 <span className="font-semibold">Khu vực:</span> {table.area}
                             </div>
                             <div className="text-sm">
                                 <span className="font-semibold">Sức chứa:</span> {table.capacity} người
                             </div>
-                            {table.currentGuests && (
-                                <div className="text-sm">
-                                    <span className="font-semibold">Khách:</span> {table.currentGuests}/{table.capacity}
-                                </div>
-                            )}
-                            {table.reservationTime && (
-                                <div className="flex items-center gap-1 text-sm">
-                                    <Clock className="w-3 h-3" />
-                                    <span>{table.reservationTime}</span>
-                                </div>
-                            )}
                         </div>
 
                         <div className="mt-4 pt-4 border-t border-current/20">
@@ -179,42 +228,13 @@ export function TableManagement() {
                 ))}
             </div>
 
-            {/* Stats Summary */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-                {[
-                    { label: 'Trống', count: tables.filter(t => t.status === 'available').length, color: 'green' },
-                    { label: 'Đang dùng', count: tables.filter(t => t.status === 'occupied').length, color: 'red' },
-                    { label: 'Đã đặt', count: tables.filter(t => t.status === 'reserved').length, color: 'amber' },
-                    { label: 'Đang dọn', count: tables.filter(t => t.status === 'cleaning').length, color: 'blue' }
-                ].map((stat) => (
-                    <div
-                        key={stat.label}
-                        className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800"
-                    >
-                        <div className={`text-2xl font-bold text-${stat.color}-600 dark:text-${stat.color}-400 mb-1`}>
-                            {stat.count}
-                        </div>
-                        <div className="text-sm text-slate-500 dark:text-slate-400">
-                            {stat.label}
-                        </div>
-                    </div>
-                ))}
-            </div>
-
             {/* Add/Edit Modal */}
             {isModalOpen && (
                 <TableModal
                     table={editingTable}
                     areas={areas}
                     onClose={() => setIsModalOpen(false)}
-                    onSave={(table) => {
-                        if (editingTable) {
-                            setTables(tables.map(t => t.id === table.id ? table : t))
-                        } else {
-                            setTables([...tables, { ...table, id: Date.now().toString() }])
-                        }
-                        setIsModalOpen(false)
-                    }}
+                    onSave={handleSaveTable}
                 />
             )}
         </div>
@@ -230,7 +250,7 @@ interface TableModalProps {
 
 function TableModal({ table, areas, onClose, onSave }: TableModalProps) {
     const [formData, setFormData] = useState({
-        number: table?.number || '',
+        table_number: table?.table_number || '',
         area: table?.area || areas[0],
         capacity: table?.capacity || 4,
         status: table?.status || 'available' as const
@@ -250,12 +270,12 @@ function TableModal({ table, areas, onClose, onSave }: TableModalProps) {
                 <div className="space-y-4">
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            Số bàn
+                            Số bàn (Tên bàn)
                         </label>
                         <input
                             type="text"
-                            value={formData.number}
-                            onChange={(e) => setFormData({ ...formData, number: e.target.value })}
+                            value={formData.table_number}
+                            onChange={(e) => setFormData({ ...formData, table_number: e.target.value })}
                             className="w-full px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent"
                         />
                     </div>

@@ -18,16 +18,26 @@ export interface UnifiedBookingEmailData {
 }
 
 export class UnifiedEmailService {
-  private transporter;
+  private transporter: any = null;
 
   constructor() {
-    this.transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD,
-      },
-    });
+    // Lazy initialization in sendBookingEmail
+  }
+
+  private initTransporter() {
+    if (this.transporter) return;
+
+    try {
+      this.transporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASSWORD,
+        },
+      });
+    } catch (error) {
+      console.error("[Email Service] Failed to initialize transporter", error);
+    }
   }
 
   private getTemplate(data: UnifiedBookingEmailData) {
@@ -151,6 +161,10 @@ export class UnifiedEmailService {
     const userType = data.isGuest ? 'guest' : 'user';
 
     try {
+      this.initTransporter();
+      if (!this.transporter) {
+        throw new Error("Email transporter not initialized (Check env vars)");
+      }
       const html = this.getTemplate(data);
       const info = await this.transporter.sendMail({
         from: `"TripC Support" <${process.env.EMAIL_USER}>`,
