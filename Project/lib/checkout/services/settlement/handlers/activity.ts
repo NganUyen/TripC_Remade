@@ -103,7 +103,7 @@ export class ActivitySettlementHandler implements ISettlementHandler {
                 guest_phone: guestDetails?.phone || booking.guest_details?.phone || null,
                 special_requests: specialRequests || null,
                 status: 'confirmed',
-                payment_status: booking.payment_status === 'paid' ? 'paid' : 'pending',
+                payment_status: 'paid',
                 confirmed_at: new Date().toISOString(),
                 metadata: {
                     booking_source: 'checkout',
