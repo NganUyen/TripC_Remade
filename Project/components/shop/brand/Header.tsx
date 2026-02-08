@@ -27,9 +27,13 @@ export function BrandHeader({ brand }: BrandHeaderProps) {
                 </Link>
             </div>
 
-            {/* Banner Area (Gradient since we don't have banner_url yet) */}
+            {/* Banner Area */}
             <div className="h-32 bg-gradient-to-r from-[#FF5E1F] to-[#FF8A00] relative">
-                <div className="absolute inset-0 bg-black/10"></div>
+                {brand.cover_url ? (
+                    <img src={brand.cover_url} alt="" className="w-full h-full object-cover" />
+                ) : (
+                    <div className="absolute inset-0 bg-black/10"></div>
+                )}
             </div>
 
             <div className="px-8 pb-8">
@@ -55,6 +59,9 @@ export function BrandHeader({ brand }: BrandHeaderProps) {
                                 </h1>
                                 {brand.tagline && (
                                     <p className="text-slate-500 text-sm mt-1">{brand.tagline}</p>
+                                )}
+                                {brand.description && (
+                                    <p className="text-slate-500 dark:text-slate-400 text-sm mt-2 line-clamp-2">{brand.description}</p>
                                 )}
                             </div>
 

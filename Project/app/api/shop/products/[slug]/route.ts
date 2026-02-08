@@ -38,7 +38,41 @@ export async function GET(request: NextRequest, { params }: Params) {
         ]);
 
         const category = categories.find((c) => c.id === product.category_id);
-        const brand = brands.find((b) => b.id === product.brand_id);
+        let brand = brands.find((b) => b.id === product.brand_id);
+
+        // For partner products: fetch partner info and use as brand if no brand exists
+        let partnerInfo = null;
+
+        if (product.partner_id) {
+            const { createServiceSupabaseClient } = await import('@/lib/supabase-server');
+            const supabase = createServiceSupabaseClient();
+            const { data: partner } = await supabase
+                .from('shop_partners')
+                .select('id, display_name, logo_url, description')
+                .eq('id', product.partner_id)
+                .single();
+
+            if (partner) {
+                partnerInfo = partner;
+                // If no brand, create a brand-like object from partner info (no mocked values)
+                if (!brand) {
+                    brand = {
+                        id: partner.id,
+                        slug: `partner-${partner.id.slice(0, 8)}`,
+                        name: partner.display_name || 'Partner Store',
+                        logo_url: partner.logo_url || null,
+                        is_active: true,
+                        tagline: partner.description || null,
+                        description: partner.description || null,
+                        follower_count: null,
+                        rating_avg: null,
+                        response_rate: null,
+                        on_time_ship_rate: null,
+                    } as any;
+                    console.log('[Product API] Created brand from partner:', brand);
+                }
+            }
+        }
 
         // Format response
         return successResponse({

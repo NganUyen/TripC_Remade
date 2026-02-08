@@ -370,7 +370,7 @@ export async function getBrands(): Promise<Brand[]> {
 
     const { data, error } = await supabase
         .from('brands')
-        .select('id, slug, name, logo_url, is_active, tagline, follower_count, rating_avg, response_rate, on_time_ship_rate')
+        .select('id, slug, name, logo_url, is_active, tagline, description, cover_url, follower_count, rating_avg, rating_count, response_rate, on_time_ship_rate, product_count, joined_date, response_time')
         .eq('is_active', true);
 
     if (error) return [];
@@ -382,7 +382,7 @@ export async function getBrandBySlug(slug: string): Promise<Brand | null> {
 
     const { data: brand, error } = await supabase
         .from('brands')
-        .select('id, slug, name, logo_url, is_active, tagline, follower_count, rating_avg, response_rate, on_time_ship_rate')
+        .select('id, slug, name, logo_url, is_active, tagline, description, cover_url, follower_count, rating_avg, rating_count, response_rate, on_time_ship_rate, product_count, joined_date, response_time')
         .eq('slug', slug)
         .eq('is_active', true)
         .single();

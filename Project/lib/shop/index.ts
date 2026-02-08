@@ -105,3 +105,71 @@ export {
   // Addresses
   createAddress,
 } from "./queries";
+
+// Partner Queries
+export {
+  // Auth Helpers
+  PartnerError,
+  getPartnerMembership,
+  requirePartnerAccess,
+
+  // Profile
+  applyAsPartner,
+  getPartnerBySlug,
+  updatePartnerProfile,
+
+  // Products
+  getPartnerProducts,
+  getPartnerProductById,
+  createPartnerProduct,
+  updatePartnerProduct,
+  publishPartnerProduct,
+  archivePartnerProduct,
+  deletePartnerProduct,
+
+  // Variants
+  createVariant,
+  updateVariant,
+  deleteVariant,
+
+  // Images
+  addProductImage,
+  deleteProductImage,
+  reorderProductImages,
+
+  // Orders
+  getPartnerOrders,
+  getPartnerOrderById,
+
+  // Analytics
+  getPartnerDashboardStats,
+  getPartnerTopProducts,
+
+  // Team
+  getPartnerTeam,
+  inviteTeamMember,
+  updateTeamMember,
+  removeTeamMember,
+
+  // Admin
+  adminGetPartners,
+  adminReviewPartner,
+} from "./partner-queries";
+
+// Partner Types
+export type {
+  ShopPartner,
+  PartnerMember,
+  PartnerWithMembership,
+  PartnerProduct,
+  PartnerOrder,
+  PartnerOrderItem,
+  DashboardStats,
+  PartnerApplicationData,
+  PartnerStatus,
+  PartnerBusinessType,
+  PartnerMemberRole,
+  PartnerMemberStatus,
+  PartnerMemberPermissions,
+} from "./types";
+
