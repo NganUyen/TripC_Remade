@@ -24,8 +24,9 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  // Mark server-only packages as external for server components
-  serverComponentsExternalPackages: ["firebase-admin"],
+  experimental: {
+    serverComponentsExternalPackages: ["firebase-admin"],
+  },
   webpack: (config, { isServer }) => {
     // Exclude server-only packages from client bundle
     if (!isServer) {
@@ -37,6 +38,11 @@ const nextConfig = {
         "firebase-admin/firestore": false,
         "firebase-admin/messaging": false,
       };
+    }
+    // Also exclude from server bundle to prevent any bundling
+    config.externals = config.externals || [];
+    if (Array.isArray(config.externals)) {
+      config.externals.push("firebase-admin");
     }
     return config;
   },
