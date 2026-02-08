@@ -1,19 +1,19 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Bell, Send, Star } from 'lucide-react';
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import { Bell, Send, Star } from "lucide-react";
 
 export function RespondReviews() {
-  const [response, setResponse] = useState('');
+  const [response, setResponse] = useState("");
   const pendingReviews = [
     {
-      id: '1',
-      guestName: 'Lê Văn C',
+      id: "1",
+      guestName: "Lê Văn C",
       rating: 3,
-      comment: 'Phòng ổn nhưng dịch vụ cần cải thiện',
-      date: '2025-02-08'
-    }
+      comment: "Phòng ổn nhưng dịch vụ cần cải thiện",
+      date: "2025-02-08",
+    },
   ];
 
   return (
@@ -33,23 +33,30 @@ export function RespondReviews() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: index * 0.1 }}
-          className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800">
+          className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800"
+        >
           <div className="mb-4">
             <div className="flex items-start justify-between mb-2">
-              <h3 className="font-bold text-slate-900 dark:text-white">{review.guestName}</h3>
+              <h3 className="font-bold text-slate-900 dark:text-white">
+                {review.guestName}
+              </h3>
               <div className="flex items-center gap-1">
                 {[...Array(5)].map((_, i) => (
                   <Star
                     key={i}
-                    className={`w-4 h-4 ${i < review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-slate-300'}`}
+                    className={`w-4 h-4 ${i < review.rating ? "fill-yellow-400 text-yellow-400" : "text-slate-300"}`}
                   />
                 ))}
               </div>
             </div>
-            <p className="text-slate-700 dark:text-slate-300 mb-4">{review.comment}</p>
+            <p className="text-slate-700 dark:text-slate-300 mb-4">
+              {review.comment}
+            </p>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2">Phản hồi của bạn</label>
+            <label className="block text-sm font-medium mb-2">
+              Phản hồi của bạn
+            </label>
             <textarea
               value={response}
               onChange={(e) => setResponse(e.target.value)}

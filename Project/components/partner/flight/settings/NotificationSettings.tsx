@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Bell, Save } from 'lucide-react';
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import { Bell, Save } from "lucide-react";
 
 export default function NotificationSettings() {
   const [settings, setSettings] = useState({
@@ -14,11 +14,11 @@ export default function NotificationSettings() {
     smsDelays: true,
     pushBookings: true,
     pushDelays: true,
-    pushMaintenance: true
+    pushMaintenance: true,
   });
 
   const toggleSetting = (key: keyof typeof settings) => {
-    setSettings(prev => ({ ...prev, [key]: !prev[key] }));
+    setSettings((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   return (
@@ -43,7 +43,7 @@ export default function NotificationSettings() {
                 <input
                   type="checkbox"
                   checked={settings.emailBookings}
-                  onChange={() => toggleSetting('emailBookings')}
+                  onChange={() => toggleSetting("emailBookings")}
                   className="w-5 h-5 text-primary rounded focus:ring-2 focus:ring-primary/20"
                 />
               </label>
@@ -52,7 +52,7 @@ export default function NotificationSettings() {
                 <input
                   type="checkbox"
                   checked={settings.emailCancellations}
-                  onChange={() => toggleSetting('emailCancellations')}
+                  onChange={() => toggleSetting("emailCancellations")}
                   className="w-5 h-5 text-primary rounded focus:ring-2 focus:ring-primary/20"
                 />
               </label>
@@ -61,7 +61,7 @@ export default function NotificationSettings() {
                 <input
                   type="checkbox"
                   checked={settings.emailDelays}
-                  onChange={() => toggleSetting('emailDelays')}
+                  onChange={() => toggleSetting("emailDelays")}
                   className="w-5 h-5 text-primary rounded focus:ring-2 focus:ring-primary/20"
                 />
               </label>
@@ -70,7 +70,7 @@ export default function NotificationSettings() {
                 <input
                   type="checkbox"
                   checked={settings.emailMaintenance}
-                  onChange={() => toggleSetting('emailMaintenance')}
+                  onChange={() => toggleSetting("emailMaintenance")}
                   className="w-5 h-5 text-primary rounded focus:ring-2 focus:ring-primary/20"
                 />
               </label>
@@ -86,7 +86,7 @@ export default function NotificationSettings() {
                 <input
                   type="checkbox"
                   checked={settings.smsBookings}
-                  onChange={() => toggleSetting('smsBookings')}
+                  onChange={() => toggleSetting("smsBookings")}
                   className="w-5 h-5 text-primary rounded focus:ring-2 focus:ring-primary/20"
                 />
               </label>
@@ -95,7 +95,7 @@ export default function NotificationSettings() {
                 <input
                   type="checkbox"
                   checked={settings.smsDelays}
-                  onChange={() => toggleSetting('smsDelays')}
+                  onChange={() => toggleSetting("smsDelays")}
                   className="w-5 h-5 text-primary rounded focus:ring-2 focus:ring-primary/20"
                 />
               </label>
@@ -111,7 +111,7 @@ export default function NotificationSettings() {
                 <input
                   type="checkbox"
                   checked={settings.pushBookings}
-                  onChange={() => toggleSetting('pushBookings')}
+                  onChange={() => toggleSetting("pushBookings")}
                   className="w-5 h-5 text-primary rounded focus:ring-2 focus:ring-primary/20"
                 />
               </label>
@@ -120,7 +120,7 @@ export default function NotificationSettings() {
                 <input
                   type="checkbox"
                   checked={settings.pushDelays}
-                  onChange={() => toggleSetting('pushDelays')}
+                  onChange={() => toggleSetting("pushDelays")}
                   className="w-5 h-5 text-primary rounded focus:ring-2 focus:ring-primary/20"
                 />
               </label>
@@ -129,7 +129,7 @@ export default function NotificationSettings() {
                 <input
                   type="checkbox"
                   checked={settings.pushMaintenance}
-                  onChange={() => toggleSetting('pushMaintenance')}
+                  onChange={() => toggleSetting("pushMaintenance")}
                   className="w-5 h-5 text-primary rounded focus:ring-2 focus:ring-primary/20"
                 />
               </label>

@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { DollarSign, TrendingUp, Edit, Save } from 'lucide-react';
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import { DollarSign, TrendingUp, Edit, Save } from "lucide-react";
 
 interface PricingRule {
   id: string;
@@ -17,23 +17,23 @@ interface PricingRule {
 export function RateManagement() {
   const [rules, setRules] = useState<PricingRule[]>([
     {
-      id: '1',
-      roomType: 'Deluxe Room',
+      id: "1",
+      roomType: "Deluxe Room",
       basePrice: 1500000,
       weekendMultiplier: 1.3,
       holidayMultiplier: 1.5,
       minStay: 1,
-      maxDiscount: 20
+      maxDiscount: 20,
     },
     {
-      id: '2',
-      roomType: 'Suite Room',
+      id: "2",
+      roomType: "Suite Room",
       basePrice: 2500000,
       weekendMultiplier: 1.4,
       holidayMultiplier: 1.6,
       minStay: 1,
-      maxDiscount: 15
-    }
+      maxDiscount: 15,
+    },
   ]);
 
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -46,7 +46,11 @@ export function RateManagement() {
 
   const handleSave = () => {
     if (editingId) {
-      setRules(prev => prev.map(r => r.id === editingId ? { ...r, ...editForm } as PricingRule : r));
+      setRules((prev) =>
+        prev.map((r) =>
+          r.id === editingId ? ({ ...r, ...editForm } as PricingRule) : r,
+        ),
+      );
       setEditingId(null);
       setEditForm({});
     }
@@ -69,7 +73,7 @@ export function RateManagement() {
         {rules.map((rule, index) => {
           const isEditing = editingId === rule.id;
           const displayRule = isEditing ? { ...rule, ...editForm } : rule;
-          
+
           return (
             <motion.div
               key={rule.id}
@@ -109,13 +113,18 @@ export function RateManagement() {
                   {isEditing ? (
                     <input
                       type="number"
-                      value={editForm.basePrice || ''}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, basePrice: parseInt(e.target.value) }))}
+                      value={editForm.basePrice || ""}
+                      onChange={(e) =>
+                        setEditForm((prev) => ({
+                          ...prev,
+                          basePrice: parseInt(e.target.value),
+                        }))
+                      }
                       className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
                     />
                   ) : (
                     <p className="text-2xl font-bold text-primary">
-                      {displayRule.basePrice?.toLocaleString('vi-VN')}
+                      {displayRule.basePrice?.toLocaleString("vi-VN")}
                     </p>
                   )}
                 </div>
@@ -127,8 +136,13 @@ export function RateManagement() {
                     <input
                       type="number"
                       step="0.1"
-                      value={editForm.weekendMultiplier || ''}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, weekendMultiplier: parseFloat(e.target.value) }))}
+                      value={editForm.weekendMultiplier || ""}
+                      onChange={(e) =>
+                        setEditForm((prev) => ({
+                          ...prev,
+                          weekendMultiplier: parseFloat(e.target.value),
+                        }))
+                      }
                       className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
                     />
                   ) : (
@@ -145,8 +159,13 @@ export function RateManagement() {
                     <input
                       type="number"
                       step="0.1"
-                      value={editForm.holidayMultiplier || ''}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, holidayMultiplier: parseFloat(e.target.value) }))}
+                      value={editForm.holidayMultiplier || ""}
+                      onChange={(e) =>
+                        setEditForm((prev) => ({
+                          ...prev,
+                          holidayMultiplier: parseFloat(e.target.value),
+                        }))
+                      }
                       className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
                     />
                   ) : (
@@ -169,7 +188,8 @@ export function RateManagement() {
               Chiến lược giá thông minh
             </h4>
             <p className="text-sm text-blue-700 dark:text-blue-200">
-              Hệ thống sẽ tự động điều chỉnh giá dựa trên nhu cầu và tỷ lệ lấp đầy
+              Hệ thống sẽ tự động điều chỉnh giá dựa trên nhu cầu và tỷ lệ lấp
+              đầy
             </p>
           </div>
         </div>

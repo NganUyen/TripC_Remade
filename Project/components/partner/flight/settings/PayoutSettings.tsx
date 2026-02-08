@@ -1,24 +1,42 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { CreditCard, Save, Download, Calendar } from 'lucide-react';
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import { CreditCard, Save, Download, Calendar } from "lucide-react";
 
 export default function PayoutSettings() {
   const [bankInfo, setBankInfo] = useState({
-    bankName: 'Vietcombank',
-    accountNumber: '1234567890',
-    accountName: 'VIETNAM AIRLINES',
-    branch: 'Chi nhánh TP.HCM',
-    swiftCode: 'BFTVVNVX'
+    bankName: "Vietcombank",
+    accountNumber: "1234567890",
+    accountName: "VIETNAM AIRLINES",
+    branch: "Chi nhánh TP.HCM",
+    swiftCode: "BFTVVNVX",
   });
 
-  const [payoutSchedule, setPayoutSchedule] = useState('weekly');
+  const [payoutSchedule, setPayoutSchedule] = useState("weekly");
 
   const transactions = [
-    { id: '1', date: '2026-02-01', period: 'Tuần 1 - Tháng 2', amount: 248500000000, status: 'Đã thanh toán' },
-    { id: '2', date: '2026-01-25', period: 'Tuần 4 - Tháng 1', amount: 235000000000, status: 'Đã thanh toán' },
-    { id: '3', date: '2026-01-18', period: 'Tuần 3 - Tháng 1', amount: 220000000000, status: 'Đã thanh toán' }
+    {
+      id: "1",
+      date: "2026-02-01",
+      period: "Tuần 1 - Tháng 2",
+      amount: 248500000000,
+      status: "Đã thanh toán",
+    },
+    {
+      id: "2",
+      date: "2026-01-25",
+      period: "Tuần 4 - Tháng 1",
+      amount: 235000000000,
+      status: "Đã thanh toán",
+    },
+    {
+      id: "3",
+      date: "2026-01-18",
+      period: "Tuần 3 - Tháng 1",
+      amount: 220000000000,
+      status: "Đã thanh toán",
+    },
   ];
 
   return (
@@ -37,29 +55,47 @@ export default function PayoutSettings() {
         <h3 className="text-lg font-semibold mb-4">Thông tin ngân hàng</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <div>
-            <label className="block text-sm font-medium mb-2">Tên ngân hàng</label>
+            <label className="block text-sm font-medium mb-2">
+              Tên ngân hàng
+            </label>
             <input
               type="text"
               value={bankInfo.bankName}
-              onChange={(e) => setBankInfo(prev => ({ ...prev, bankName: e.target.value }))}
+              onChange={(e) =>
+                setBankInfo((prev) => ({ ...prev, bankName: e.target.value }))
+              }
               className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2">Số tài khoản</label>
+            <label className="block text-sm font-medium mb-2">
+              Số tài khoản
+            </label>
             <input
               type="text"
               value={bankInfo.accountNumber}
-              onChange={(e) => setBankInfo(prev => ({ ...prev, accountNumber: e.target.value }))}
+              onChange={(e) =>
+                setBankInfo((prev) => ({
+                  ...prev,
+                  accountNumber: e.target.value,
+                }))
+              }
               className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2">Tên tài khoản</label>
+            <label className="block text-sm font-medium mb-2">
+              Tên tài khoản
+            </label>
             <input
               type="text"
               value={bankInfo.accountName}
-              onChange={(e) => setBankInfo(prev => ({ ...prev, accountName: e.target.value }))}
+              onChange={(e) =>
+                setBankInfo((prev) => ({
+                  ...prev,
+                  accountName: e.target.value,
+                }))
+              }
               className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
             />
           </div>
@@ -68,7 +104,9 @@ export default function PayoutSettings() {
             <input
               type="text"
               value={bankInfo.branch}
-              onChange={(e) => setBankInfo(prev => ({ ...prev, branch: e.target.value }))}
+              onChange={(e) =>
+                setBankInfo((prev) => ({ ...prev, branch: e.target.value }))
+              }
               className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
             />
           </div>
@@ -77,7 +115,9 @@ export default function PayoutSettings() {
             <input
               type="text"
               value={bankInfo.swiftCode}
-              onChange={(e) => setBankInfo(prev => ({ ...prev, swiftCode: e.target.value }))}
+              onChange={(e) =>
+                setBankInfo((prev) => ({ ...prev, swiftCode: e.target.value }))
+              }
               className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
             />
           </div>
@@ -92,19 +132,19 @@ export default function PayoutSettings() {
       <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800">
         <h3 className="text-lg font-semibold mb-4">Lịch thanh toán</h3>
         <div className="flex gap-3">
-          {['weekly', 'biweekly', 'monthly'].map(schedule => (
+          {["weekly", "biweekly", "monthly"].map((schedule) => (
             <button
               key={schedule}
               onClick={() => setPayoutSchedule(schedule)}
               className={`px-4 py-2 rounded-xl transition-colors ${
                 payoutSchedule === schedule
-                  ? 'bg-primary text-white'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+                  ? "bg-primary text-white"
+                  : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
               }`}
             >
-              {schedule === 'weekly' && 'Hàng tuần'}
-              {schedule === 'biweekly' && '2 tuần/lần'}
-              {schedule === 'monthly' && 'Hàng tháng'}
+              {schedule === "weekly" && "Hàng tuần"}
+              {schedule === "biweekly" && "2 tuần/lần"}
+              {schedule === "monthly" && "Hàng tháng"}
             </button>
           ))}
         </div>
@@ -135,7 +175,9 @@ export default function PayoutSettings() {
                 >
                   <td className="py-3 px-4">{tx.date}</td>
                   <td className="py-3 px-4">{tx.period}</td>
-                  <td className="py-3 px-4 font-semibold">{(tx.amount / 1000000000).toFixed(1)}B ₫</td>
+                  <td className="py-3 px-4 font-semibold">
+                    {(tx.amount / 1000000000).toFixed(1)}B ₫
+                  </td>
                   <td className="py-3 px-4">
                     <span className="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-sm font-semibold">
                       {tx.status}

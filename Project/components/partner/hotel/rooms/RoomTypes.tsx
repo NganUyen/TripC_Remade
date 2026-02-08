@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   BedDouble,
   Plus,
@@ -15,8 +15,8 @@ import {
   Wind,
   X,
   Save,
-  Image as ImageIcon
-} from 'lucide-react';
+  Image as ImageIcon,
+} from "lucide-react";
 
 interface RoomType {
   id: string;
@@ -33,47 +33,51 @@ interface RoomType {
 export function RoomTypes() {
   const [roomTypes, setRoomTypes] = useState<RoomType[]>([
     {
-      id: '1',
-      name: 'Deluxe Room',
+      id: "1",
+      name: "Deluxe Room",
       capacity: 2,
       size: 30,
-      beds: '1 King Bed',
+      beds: "1 King Bed",
       basePrice: 1500000,
-      amenities: ['wifi', 'ac', 'tv', 'minibar'],
-      description: 'Phòng rộng rãi với view đẹp',
-      images: []
-    }
+      amenities: ["wifi", "ac", "tv", "minibar"],
+      description: "Phòng rộng rãi với view đẹp",
+      images: [],
+    },
   ]);
-  
+
   const [showModal, setShowModal] = useState(false);
   const [editingRoom, setEditingRoom] = useState<RoomType | null>(null);
   const [formData, setFormData] = useState<Partial<RoomType>>({
-    amenities: []
+    amenities: [],
   });
 
   const amenityOptions = [
-    { id: 'wifi', label: 'WiFi', icon: Wifi },
-    { id: 'ac', label: 'Điều hòa', icon: Wind },
-    { id: 'tv', label: 'TV', icon: Tv },
-    { id: 'minibar', label: 'Minibar', icon: Coffee }
+    { id: "wifi", label: "WiFi", icon: Wifi },
+    { id: "ac", label: "Điều hòa", icon: Wind },
+    { id: "tv", label: "TV", icon: Tv },
+    { id: "minibar", label: "Minibar", icon: Coffee },
   ];
 
   const handleSave = () => {
     if (editingRoom) {
-      setRoomTypes(prev => prev.map(r => r.id === editingRoom.id ? { ...editingRoom, ...formData } : r));
+      setRoomTypes((prev) =>
+        prev.map((r) =>
+          r.id === editingRoom.id ? { ...editingRoom, ...formData } : r,
+        ),
+      );
     } else {
       const newRoom: RoomType = {
         id: Date.now().toString(),
-        name: formData.name || '',
+        name: formData.name || "",
         capacity: formData.capacity || 2,
         size: formData.size || 20,
-        beds: formData.beds || '1 King Bed',
+        beds: formData.beds || "1 King Bed",
         basePrice: formData.basePrice || 1000000,
         amenities: formData.amenities || [],
-        description: formData.description || '',
-        images: []
+        description: formData.description || "",
+        images: [],
       };
-      setRoomTypes(prev => [...prev, newRoom]);
+      setRoomTypes((prev) => [...prev, newRoom]);
     }
     setShowModal(false);
     setEditingRoom(null);
@@ -87,17 +91,17 @@ export function RoomTypes() {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm('Bạn có chắc muốn xóa loại phòng này?')) {
-      setRoomTypes(prev => prev.filter(r => r.id !== id));
+    if (confirm("Bạn có chắc muốn xóa loại phòng này?")) {
+      setRoomTypes((prev) => prev.filter((r) => r.id !== id));
     }
   };
 
   const toggleAmenity = (amenityId: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       amenities: prev.amenities?.includes(amenityId)
-        ? prev.amenities.filter(a => a !== amenityId)
-        : [...(prev.amenities || []), amenityId]
+        ? prev.amenities.filter((a) => a !== amenityId)
+        : [...(prev.amenities || []), amenityId],
     }));
   };
 
@@ -114,7 +118,11 @@ export function RoomTypes() {
           </p>
         </div>
         <button
-          onClick={() => { setShowModal(true); setEditingRoom(null); setFormData({ amenities: [] }); }}
+          onClick={() => {
+            setShowModal(true);
+            setEditingRoom(null);
+            setFormData({ amenities: [] });
+          }}
           className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl hover:bg-primary/90 transition-colors"
         >
           <Plus className="w-5 h-5" />
@@ -135,7 +143,7 @@ export function RoomTypes() {
             <div className="h-48 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
               <BedDouble className="w-20 h-20 text-primary" />
             </div>
-            
+
             <div className="p-6">
               <div className="flex items-start justify-between mb-4">
                 <div>
@@ -174,12 +182,17 @@ export function RoomTypes() {
               </div>
 
               <div className="flex flex-wrap gap-2 mb-4">
-                {room.amenities.map(amenityId => {
-                  const amenity = amenityOptions.find(a => a.id === amenityId);
+                {room.amenities.map((amenityId) => {
+                  const amenity = amenityOptions.find(
+                    (a) => a.id === amenityId,
+                  );
                   if (!amenity) return null;
                   const Icon = amenity.icon;
                   return (
-                    <div key={amenityId} className="flex items-center gap-1 px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg text-xs">
+                    <div
+                      key={amenityId}
+                      className="flex items-center gap-1 px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg text-xs"
+                    >
                       <Icon className="w-3 h-3" />
                       <span>{amenity.label}</span>
                     </div>
@@ -189,9 +202,11 @@ export function RoomTypes() {
 
               <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
                 <p className="text-lg font-bold text-primary">
-                  {room.basePrice.toLocaleString('vi-VN')} VNĐ
+                  {room.basePrice.toLocaleString("vi-VN")} VNĐ
                 </p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Giá cơ bản/đêm</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Giá cơ bản/đêm
+                </p>
               </div>
             </div>
           </motion.div>
@@ -210,20 +225,27 @@ export function RoomTypes() {
             >
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-                  {editingRoom ? 'Chỉnh sửa' : 'Thêm'} Loại Phòng
+                  {editingRoom ? "Chỉnh sửa" : "Thêm"} Loại Phòng
                 </h2>
-                <button onClick={() => setShowModal(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
+                >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2">Tên loại phòng</label>
+                  <label className="block text-sm font-medium mb-2">
+                    Tên loại phòng
+                  </label>
                   <input
                     type="text"
-                    value={formData.name || ''}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    value={formData.name || ""}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, name: e.target.value }))
+                    }
                     className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
                     placeholder="VD: Deluxe Room"
                   />
@@ -231,48 +253,75 @@ export function RoomTypes() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2">Sức chứa</label>
+                    <label className="block text-sm font-medium mb-2">
+                      Sức chứa
+                    </label>
                     <input
                       type="number"
-                      value={formData.capacity || ''}
-                      onChange={(e) => setFormData(prev => ({ ...prev, capacity: parseInt(e.target.value) }))}
+                      value={formData.capacity || ""}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          capacity: parseInt(e.target.value),
+                        }))
+                      }
                       className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">Diện tích (m²)</label>
+                    <label className="block text-sm font-medium mb-2">
+                      Diện tích (m²)
+                    </label>
                     <input
                       type="number"
-                      value={formData.size || ''}
-                      onChange={(e) => setFormData(prev => ({ ...prev, size: parseInt(e.target.value) }))}
+                      value={formData.size || ""}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          size: parseInt(e.target.value),
+                        }))
+                      }
                       className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Loại giường</label>
+                  <label className="block text-sm font-medium mb-2">
+                    Loại giường
+                  </label>
                   <input
                     type="text"
-                    value={formData.beds || ''}
-                    onChange={(e) => setFormData(prev => ({ ...prev, beds: e.target.value }))}
+                    value={formData.beds || ""}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, beds: e.target.value }))
+                    }
                     className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
                     placeholder="VD: 1 King Bed hoặc 2 Single Beds"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Giá cơ bản (VNĐ/đêm)</label>
+                  <label className="block text-sm font-medium mb-2">
+                    Giá cơ bản (VNĐ/đêm)
+                  </label>
                   <input
                     type="number"
-                    value={formData.basePrice || ''}
-                    onChange={(e) => setFormData(prev => ({ ...prev, basePrice: parseInt(e.target.value) }))}
+                    value={formData.basePrice || ""}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        basePrice: parseInt(e.target.value),
+                      }))
+                    }
                     className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Tiện nghi</label>
+                  <label className="block text-sm font-medium mb-2">
+                    Tiện nghi
+                  </label>
                   <div className="grid grid-cols-2 gap-2">
                     {amenityOptions.map(({ id, label, icon: Icon }) => (
                       <button
@@ -281,8 +330,8 @@ export function RoomTypes() {
                         onClick={() => toggleAmenity(id)}
                         className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border transition-colors ${
                           formData.amenities?.includes(id)
-                            ? 'bg-primary/10 border-primary text-primary'
-                            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'
+                            ? "bg-primary/10 border-primary text-primary"
+                            : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700"
                         }`}
                       >
                         <Icon className="w-4 h-4" />
@@ -293,10 +342,17 @@ export function RoomTypes() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Mô tả</label>
+                  <label className="block text-sm font-medium mb-2">
+                    Mô tả
+                  </label>
                   <textarea
-                    value={formData.description || ''}
-                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                    value={formData.description || ""}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        description: e.target.value,
+                      }))
+                    }
                     rows={3}
                     className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
                     placeholder="Mô tả chi tiết về loại phòng..."

@@ -1,52 +1,82 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Activity, Clock, CheckCircle, AlertCircle, TrendingUp } from 'lucide-react';
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import {
+  Activity,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  TrendingUp,
+} from "lucide-react";
 
 export default function PerformanceMetrics() {
-  const [timeframe, setTimeframe] = useState('month');
+  const [timeframe, setTimeframe] = useState("month");
 
   const metrics = [
     {
-      label: 'Đúng giờ',
-      value: '92.5%',
-      change: '+2.3%',
+      label: "Đúng giờ",
+      value: "92.5%",
+      change: "+2.3%",
       icon: CheckCircle,
-      color: 'green',
-      description: 'Chuyến bay khởi hành đúng giờ'
+      color: "green",
+      description: "Chuyến bay khởi hành đúng giờ",
     },
     {
-      label: 'Thời gian chờ TB',
-      value: '12 phút',
-      change: '-3 phút',
+      label: "Thời gian chờ TB",
+      value: "12 phút",
+      change: "-3 phút",
       icon: Clock,
-      color: 'blue',
-      description: 'Thời gian chờ trung bình của hành khách'
+      color: "blue",
+      description: "Thời gian chờ trung bình của hành khách",
     },
     {
-      label: 'Hành khách hài lòng',
-      value: '4.6/5',
-      change: '+0.2',
+      label: "Hành khách hài lòng",
+      value: "4.6/5",
+      change: "+0.2",
       icon: TrendingUp,
-      color: 'purple',
-      description: 'Đánh giá hài lòng trung bình'
+      color: "purple",
+      description: "Đánh giá hài lòng trung bình",
     },
     {
-      label: 'Tỷ lệ hủy chuyến',
-      value: '1.2%',
-      change: '-0.5%',
+      label: "Tỷ lệ hủy chuyến",
+      value: "1.2%",
+      change: "-0.5%",
       icon: AlertCircle,
-      color: 'orange',
-      description: 'Chuyến bay bị hủy'
-    }
+      color: "orange",
+      description: "Chuyến bay bị hủy",
+    },
   ];
 
   const performanceByRoute = [
-    { route: 'HAN - SGN', onTime: 95, avgDelay: 8, cancellation: 0.8, satisfaction: 4.7 },
-    { route: 'SGN - DAD', onTime: 91, avgDelay: 14, cancellation: 1.2, satisfaction: 4.6 },
-    { route: 'HAN - DAD', onTime: 93, avgDelay: 10, cancellation: 1.0, satisfaction: 4.5 },
-    { route: 'SGN - PQC', onTime: 88, avgDelay: 18, cancellation: 1.8, satisfaction: 4.4 }
+    {
+      route: "HAN - SGN",
+      onTime: 95,
+      avgDelay: 8,
+      cancellation: 0.8,
+      satisfaction: 4.7,
+    },
+    {
+      route: "SGN - DAD",
+      onTime: 91,
+      avgDelay: 14,
+      cancellation: 1.2,
+      satisfaction: 4.6,
+    },
+    {
+      route: "HAN - DAD",
+      onTime: 93,
+      avgDelay: 10,
+      cancellation: 1.0,
+      satisfaction: 4.5,
+    },
+    {
+      route: "SGN - PQC",
+      onTime: 88,
+      avgDelay: 18,
+      cancellation: 1.8,
+      satisfaction: 4.4,
+    },
   ];
 
   return (
@@ -61,17 +91,21 @@ export default function PerformanceMetrics() {
           </p>
         </div>
         <div className="flex gap-2">
-          {['week', 'month', 'year'].map(period => (
+          {["week", "month", "year"].map((period) => (
             <button
               key={period}
               onClick={() => setTimeframe(period)}
               className={`px-4 py-2 rounded-xl transition-colors ${
                 timeframe === period
-                  ? 'bg-primary text-white'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+                  ? "bg-primary text-white"
+                  : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
               }`}
             >
-              {period === 'week' ? 'Tuần' : period === 'month' ? 'Tháng' : 'Năm'}
+              {period === "week"
+                ? "Tuần"
+                : period === "month"
+                  ? "Tháng"
+                  : "Năm"}
             </button>
           ))}
         </div>
@@ -89,17 +123,25 @@ export default function PerformanceMetrics() {
           >
             <div className="flex items-center justify-between mb-3">
               <metric.icon className={`w-8 h-8 text-${metric.color}-500`} />
-              <span className={`text-sm font-semibold ${
-                metric.change.startsWith('+') || metric.change.startsWith('-') && parseFloat(metric.change) < 0
-                  ? 'text-green-600'
-                  : 'text-slate-500'
-              }`}>
+              <span
+                className={`text-sm font-semibold ${
+                  metric.change.startsWith("+") ||
+                  (metric.change.startsWith("-") &&
+                    parseFloat(metric.change) < 0)
+                    ? "text-green-600"
+                    : "text-slate-500"
+                }`}
+              >
                 {metric.change}
               </span>
             </div>
             <p className="text-2xl font-bold mb-1">{metric.value}</p>
-            <p className="text-sm font-medium text-slate-900 dark:text-white mb-1">{metric.label}</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400">{metric.description}</p>
+            <p className="text-sm font-medium text-slate-900 dark:text-white mb-1">
+              {metric.label}
+            </p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              {metric.description}
+            </p>
           </motion.div>
         ))}
       </div>
@@ -129,11 +171,13 @@ export default function PerformanceMetrics() {
                 >
                   <td className="py-3 px-4 font-semibold">{route.route}</td>
                   <td className="py-3 px-4">
-                    <span className={`px-2 py-1 rounded-full text-sm font-semibold ${
-                      route.onTime >= 90
-                        ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                        : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
-                    }`}>
+                    <span
+                      className={`px-2 py-1 rounded-full text-sm font-semibold ${
+                        route.onTime >= 90
+                          ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                          : "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400"
+                      }`}
+                    >
                       {route.onTime}%
                     </span>
                   </td>
@@ -141,7 +185,9 @@ export default function PerformanceMetrics() {
                   <td className="py-3 px-4">{route.cancellation}%</td>
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-1">
-                      <span className="font-semibold">{route.satisfaction}</span>
+                      <span className="font-semibold">
+                        {route.satisfaction}
+                      </span>
                       <span className="text-yellow-500">★</span>
                     </div>
                   </td>

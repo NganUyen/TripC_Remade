@@ -1,21 +1,21 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { DollarSign, Save, Download } from 'lucide-react';
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import { DollarSign, Save, Download } from "lucide-react";
 
 export function PayoutSettings() {
   const [bankInfo, setBankInfo] = useState({
-    bankName: 'Vietcombank',
-    accountNumber: '1234567890',
-    accountName: 'GRAND HOTEL',
-    branch: 'Chi nhánh TP.HCM'
+    bankName: "Vietcombank",
+    accountNumber: "1234567890",
+    accountName: "GRAND HOTEL",
+    branch: "Chi nhánh TP.HCM",
   });
 
   const transactions = [
-    { id: '1', date: '2025-02-01', amount: 50000000, status: 'Đã thanh toán' },
-    { id: '2', date: '2025-01-15', amount: 45000000, status: 'Đã thanh toán' },
-    { id: '3', date: '2025-01-01', amount: 38000000, status: 'Đã thanh toán' }
+    { id: "1", date: "2025-02-01", amount: 50000000, status: "Đã thanh toán" },
+    { id: "2", date: "2025-01-15", amount: 45000000, status: "Đã thanh toán" },
+    { id: "3", date: "2025-01-01", amount: 38000000, status: "Đã thanh toán" },
   ];
 
   return (
@@ -33,29 +33,47 @@ export function PayoutSettings() {
         <h3 className="text-lg font-semibold mb-4">Thông tin ngân hàng</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <div>
-            <label className="block text-sm font-medium mb-2">Tên ngân hàng</label>
+            <label className="block text-sm font-medium mb-2">
+              Tên ngân hàng
+            </label>
             <input
               type="text"
               value={bankInfo.bankName}
-              onChange={(e) => setBankInfo(prev => ({ ...prev, bankName: e.target.value }))}
+              onChange={(e) =>
+                setBankInfo((prev) => ({ ...prev, bankName: e.target.value }))
+              }
               className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2">Số tài khoản</label>
+            <label className="block text-sm font-medium mb-2">
+              Số tài khoản
+            </label>
             <input
               type="text"
               value={bankInfo.accountNumber}
-              onChange={(e) => setBankInfo(prev => ({ ...prev, accountNumber: e.target.value }))}
+              onChange={(e) =>
+                setBankInfo((prev) => ({
+                  ...prev,
+                  accountNumber: e.target.value,
+                }))
+              }
               className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2">Tên tài khoản</label>
+            <label className="block text-sm font-medium mb-2">
+              Tên tài khoản
+            </label>
             <input
               type="text"
               value={bankInfo.accountName}
-              onChange={(e) => setBankInfo(prev => ({ ...prev, accountName: e.target.value }))}
+              onChange={(e) =>
+                setBankInfo((prev) => ({
+                  ...prev,
+                  accountName: e.target.value,
+                }))
+              }
               className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
             />
           </div>
@@ -64,7 +82,9 @@ export function PayoutSettings() {
             <input
               type="text"
               value={bankInfo.branch}
-              onChange={(e) => setBankInfo(prev => ({ ...prev, branch: e.target.value }))}
+              onChange={(e) =>
+                setBankInfo((prev) => ({ ...prev, branch: e.target.value }))
+              }
               className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
             />
           </div>
@@ -94,9 +114,12 @@ export function PayoutSettings() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: index * 0.1 }}
-                  className="border-b border-slate-100 dark:border-slate-800">
+                  className="border-b border-slate-100 dark:border-slate-800"
+                >
                   <td className="py-3 px-4">{tx.date}</td>
-                  <td className="py-3 px-4 font-semibold">{tx.amount.toLocaleString('vi-VN')} ₫</td>
+                  <td className="py-3 px-4 font-semibold">
+                    {tx.amount.toLocaleString("vi-VN")} ₫
+                  </td>
                   <td className="py-3 px-4">
                     <span className="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-sm">
                       {tx.status}

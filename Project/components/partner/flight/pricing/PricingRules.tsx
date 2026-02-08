@@ -1,15 +1,15 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { DollarSign, Plus, Edit, Trash2, Save, X } from 'lucide-react';
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import { DollarSign, Plus, Edit, Trash2, Save, X } from "lucide-react";
 
 interface PricingRule {
   id: string;
   name: string;
   route: string;
   basePrice: number;
-  class: 'economy' | 'business' | 'first';
+  class: "economy" | "business" | "first";
   weekendMultiplier: number;
   holidayMultiplier: number;
   advanceBookingDiscount: number;
@@ -18,25 +18,25 @@ interface PricingRule {
 export default function PricingRules() {
   const [rules, setRules] = useState<PricingRule[]>([
     {
-      id: '1',
-      name: 'HAN-SGN Economy Standard',
-      route: 'HAN - SGN',
+      id: "1",
+      name: "HAN-SGN Economy Standard",
+      route: "HAN - SGN",
       basePrice: 2000000,
-      class: 'economy',
+      class: "economy",
       weekendMultiplier: 1.2,
       holidayMultiplier: 1.5,
-      advanceBookingDiscount: 15
+      advanceBookingDiscount: 15,
     },
     {
-      id: '2',
-      name: 'HAN-SGN Business Premium',
-      route: 'HAN - SGN',
+      id: "2",
+      name: "HAN-SGN Business Premium",
+      route: "HAN - SGN",
       basePrice: 5000000,
-      class: 'business',
+      class: "business",
       weekendMultiplier: 1.15,
       holidayMultiplier: 1.3,
-      advanceBookingDiscount: 10
-    }
+      advanceBookingDiscount: 10,
+    },
   ]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -74,7 +74,9 @@ export default function PricingRules() {
             <div className="flex items-start justify-between mb-4">
               <div>
                 <h3 className="font-bold text-lg mb-1">{rule.name}</h3>
-                <p className="text-slate-500 dark:text-slate-400">{rule.route}</p>
+                <p className="text-slate-500 dark:text-slate-400">
+                  {rule.route}
+                </p>
               </div>
               <div className="flex items-center gap-2">
                 {editingId === rule.id ? (
@@ -110,24 +112,38 @@ export default function PricingRules() {
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl">
-                <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">Giá cơ bản</p>
-                <p className="text-xl font-bold text-primary">{rule.basePrice.toLocaleString('vi-VN')} ₫</p>
-              </div>
-              <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl">
-                <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">Hạng vé</p>
-                <p className="text-lg font-semibold capitalize">
-                  {rule.class === 'economy' && 'Phổ thông'}
-                  {rule.class === 'business' && 'Thương gia'}
-                  {rule.class === 'first' && 'Hạng nhất'}
+                <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">
+                  Giá cơ bản
+                </p>
+                <p className="text-xl font-bold text-primary">
+                  {rule.basePrice.toLocaleString("vi-VN")} ₫
                 </p>
               </div>
               <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl">
-                <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">Cuối tuần</p>
-                <p className="text-lg font-semibold">x{rule.weekendMultiplier}</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">
+                  Hạng vé
+                </p>
+                <p className="text-lg font-semibold capitalize">
+                  {rule.class === "economy" && "Phổ thông"}
+                  {rule.class === "business" && "Thương gia"}
+                  {rule.class === "first" && "Hạng nhất"}
+                </p>
               </div>
               <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl">
-                <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">Ngày lễ</p>
-                <p className="text-lg font-semibold">x{rule.holidayMultiplier}</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">
+                  Cuối tuần
+                </p>
+                <p className="text-lg font-semibold">
+                  x{rule.weekendMultiplier}
+                </p>
+              </div>
+              <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl">
+                <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">
+                  Ngày lễ
+                </p>
+                <p className="text-lg font-semibold">
+                  x{rule.holidayMultiplier}
+                </p>
               </div>
             </div>
           </motion.div>

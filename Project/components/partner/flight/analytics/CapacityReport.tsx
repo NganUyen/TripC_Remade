@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { PieChart, Plane, Users, Percent } from 'lucide-react';
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import { PieChart, Plane, Users, Percent } from "lucide-react";
 
 interface CapacityData {
   route: string;
@@ -15,33 +15,33 @@ interface CapacityData {
 export default function CapacityReport() {
   const [capacityData] = useState<CapacityData[]>([
     {
-      route: 'HAN - SGN',
+      route: "HAN - SGN",
       totalSeats: 21600,
       bookedSeats: 18360,
       availableSeats: 3240,
-      occupancyRate: 85
+      occupancyRate: 85,
     },
     {
-      route: 'SGN - DAD',
+      route: "SGN - DAD",
       totalSeats: 13500,
       bookedSeats: 10530,
       availableSeats: 2970,
-      occupancyRate: 78
+      occupancyRate: 78,
     },
     {
-      route: 'HAN - DAD',
+      route: "HAN - DAD",
       totalSeats: 11250,
       bookedSeats: 9225,
       availableSeats: 2025,
-      occupancyRate: 82
+      occupancyRate: 82,
     },
     {
-      route: 'SGN - PQC',
+      route: "SGN - PQC",
       totalSeats: 9000,
       bookedSeats: 6750,
       availableSeats: 2250,
-      occupancyRate: 75
-    }
+      occupancyRate: 75,
+    },
   ]);
 
   const totalSeats = capacityData.reduce((sum, d) => sum + d.totalSeats, 0);
@@ -49,9 +49,10 @@ export default function CapacityReport() {
   const avgOccupancy = ((totalBooked / totalSeats) * 100).toFixed(1);
 
   const getOccupancyColor = (rate: number) => {
-    if (rate >= 80) return 'text-green-600 bg-green-100 dark:bg-green-900/30';
-    if (rate >= 60) return 'text-yellow-600 bg-yellow-100 dark:bg-yellow-900/30';
-    return 'text-red-600 bg-red-100 dark:bg-red-900/30';
+    if (rate >= 80) return "text-green-600 bg-green-100 dark:bg-green-900/30";
+    if (rate >= 60)
+      return "text-yellow-600 bg-yellow-100 dark:bg-yellow-900/30";
+    return "text-red-600 bg-red-100 dark:bg-red-900/30";
   };
 
   return (
@@ -68,10 +69,30 @@ export default function CapacityReport() {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
-          { label: 'Tổng ghế', value: totalSeats.toLocaleString('vi-VN'), icon: Plane, color: 'blue' },
-          { label: 'Đã đặt', value: totalBooked.toLocaleString('vi-VN'), icon: Users, color: 'green' },
-          { label: 'Còn trống', value: (totalSeats - totalBooked).toLocaleString('vi-VN'), icon: Plane, color: 'orange' },
-          { label: 'Tỷ lệ TB', value: `${avgOccupancy}%`, icon: Percent, color: 'purple' }
+          {
+            label: "Tổng ghế",
+            value: totalSeats.toLocaleString("vi-VN"),
+            icon: Plane,
+            color: "blue",
+          },
+          {
+            label: "Đã đặt",
+            value: totalBooked.toLocaleString("vi-VN"),
+            icon: Users,
+            color: "green",
+          },
+          {
+            label: "Còn trống",
+            value: (totalSeats - totalBooked).toLocaleString("vi-VN"),
+            icon: Plane,
+            color: "orange",
+          },
+          {
+            label: "Tỷ lệ TB",
+            value: `${avgOccupancy}%`,
+            icon: Percent,
+            color: "purple",
+          },
         ].map((metric, index) => (
           <motion.div
             key={metric.label}
@@ -82,7 +103,9 @@ export default function CapacityReport() {
           >
             <metric.icon className={`w-8 h-8 text-${metric.color}-500 mb-3`} />
             <p className="text-2xl font-bold mb-1">{metric.value}</p>
-            <p className="text-sm text-slate-500 dark:text-slate-400">{metric.label}</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              {metric.label}
+            </p>
           </motion.div>
         ))}
       </div>
@@ -103,10 +126,13 @@ export default function CapacityReport() {
                 <div>
                   <h4 className="font-bold text-lg">{data.route}</h4>
                   <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                    {data.bookedSeats.toLocaleString('vi-VN')} / {data.totalSeats.toLocaleString('vi-VN')} ghế
+                    {data.bookedSeats.toLocaleString("vi-VN")} /{" "}
+                    {data.totalSeats.toLocaleString("vi-VN")} ghế
                   </p>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getOccupancyColor(data.occupancyRate)}`}>
+                <span
+                  className={`px-3 py-1 rounded-full text-sm font-semibold ${getOccupancyColor(data.occupancyRate)}`}
+                >
                   {data.occupancyRate}%
                 </span>
               </div>
@@ -118,16 +144,20 @@ export default function CapacityReport() {
                     transition={{ delay: index * 0.1 + 0.2, duration: 0.5 }}
                     className={`h-full rounded-full ${
                       data.occupancyRate >= 80
-                        ? 'bg-gradient-to-r from-green-500 to-green-400'
+                        ? "bg-gradient-to-r from-green-500 to-green-400"
                         : data.occupancyRate >= 60
-                        ? 'bg-gradient-to-r from-yellow-500 to-yellow-400'
-                        : 'bg-gradient-to-r from-red-500 to-red-400'
+                          ? "bg-gradient-to-r from-yellow-500 to-yellow-400"
+                          : "bg-gradient-to-r from-red-500 to-red-400"
                     }`}
                   />
                 </div>
                 <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-                  <span>Đã đặt: {data.bookedSeats.toLocaleString('vi-VN')}</span>
-                  <span>Còn trống: {data.availableSeats.toLocaleString('vi-VN')}</span>
+                  <span>
+                    Đã đặt: {data.bookedSeats.toLocaleString("vi-VN")}
+                  </span>
+                  <span>
+                    Còn trống: {data.availableSeats.toLocaleString("vi-VN")}
+                  </span>
                 </div>
               </div>
             </motion.div>

@@ -1,17 +1,21 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { motion } from 'framer-motion';
-import { BedDouble, TrendingUp } from 'lucide-react';
+import React from "react";
+import { motion } from "framer-motion";
+import { BedDouble, TrendingUp } from "lucide-react";
 
 export function OccupancyReport() {
   const roomTypes = [
-    { name: 'Deluxe Room', total: 20, occupied: 18, rate: 90 },
-    { name: 'Suite Room', total: 10, occupied: 8, rate: 80 },
-    { name: 'Family Room', total: 15, occupied: 12, rate: 80 }
+    { name: "Deluxe Room", total: 20, occupied: 18, rate: 90 },
+    { name: "Suite Room", total: 10, occupied: 8, rate: 80 },
+    { name: "Family Room", total: 15, occupied: 12, rate: 80 },
   ];
 
-  const overallRate = (roomTypes.reduce((sum, r) => sum + r.occupied, 0) / roomTypes.reduce((sum, r) => sum + r.total, 0) * 100).toFixed(0);
+  const overallRate = (
+    (roomTypes.reduce((sum, r) => sum + r.occupied, 0) /
+      roomTypes.reduce((sum, r) => sum + r.total, 0)) *
+    100
+  ).toFixed(0);
 
   return (
     <div className="space-y-6">
@@ -39,17 +43,27 @@ export function OccupancyReport() {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.1 }}
-            className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800">
+            className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800"
+          >
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white">{room.name}</h3>
-              <span className="text-2xl font-bold text-primary">{room.rate}%</span>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                {room.name}
+              </h3>
+              <span className="text-2xl font-bold text-primary">
+                {room.rate}%
+              </span>
             </div>
             <div className="flex items-center gap-4 text-sm text-slate-600 dark:text-slate-400 mb-3">
-              <span>Đang sử dụng: {room.occupied}/{room.total}</span>
+              <span>
+                Đang sử dụng: {room.occupied}/{room.total}
+              </span>
               <span>Còn trống: {room.total - room.occupied}</span>
             </div>
             <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-              <div className="h-full bg-primary transition-all duration-500" style={{ width: `${room.rate}%` }} />
+              <div
+                className="h-full bg-primary transition-all duration-500"
+                style={{ width: `${room.rate}%` }}
+              />
             </div>
           </motion.div>
         ))}

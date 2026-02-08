@@ -1,8 +1,16 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Users, Search, Filter, User, Mail, Phone, Calendar } from 'lucide-react';
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import {
+  Users,
+  Search,
+  Filter,
+  User,
+  Mail,
+  Phone,
+  Calendar,
+} from "lucide-react";
 
 interface Passenger {
   id: string;
@@ -13,48 +21,53 @@ interface Passenger {
   seatNumber: string;
   bookingRef: string;
   date: string;
-  status: 'checked-in' | 'booked' | 'boarded';
+  status: "checked-in" | "booked" | "boarded";
 }
 
 export default function PassengerManagement() {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [passengers] = useState<Passenger[]>([
     {
-      id: '1',
-      name: 'Nguyễn Văn A',
-      email: 'nguyenvana@email.com',
-      phone: '0901234567',
-      flightNumber: 'VN123',
-      seatNumber: '12A',
-      bookingRef: 'ABC123',
-      date: '2026-02-08',
-      status: 'checked-in'
+      id: "1",
+      name: "Nguyễn Văn A",
+      email: "nguyenvana@email.com",
+      phone: "0901234567",
+      flightNumber: "VN123",
+      seatNumber: "12A",
+      bookingRef: "ABC123",
+      date: "2026-02-08",
+      status: "checked-in",
     },
     {
-      id: '2',
-      name: 'Trần Thị B',
-      email: 'tranthib@email.com',
-      phone: '0907654321',
-      flightNumber: 'VN456',
-      seatNumber: '15C',
-      bookingRef: 'DEF456',
-      date: '2026-02-08',
-      status: 'booked'
-    }
+      id: "2",
+      name: "Trần Thị B",
+      email: "tranthib@email.com",
+      phone: "0907654321",
+      flightNumber: "VN456",
+      seatNumber: "15C",
+      bookingRef: "DEF456",
+      date: "2026-02-08",
+      status: "booked",
+    },
   ]);
 
-  const filteredPassengers = passengers.filter(p =>
-    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.bookingRef.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.flightNumber.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredPassengers = passengers.filter(
+    (p) =>
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.bookingRef.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.flightNumber.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'checked-in': return 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400';
-      case 'booked': return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400';
-      case 'boarded': return 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400';
-      default: return 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-400';
+      case "checked-in":
+        return "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400";
+      case "booked":
+        return "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400";
+      case "boarded":
+        return "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400";
+      default:
+        return "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-400";
     }
   };
 
@@ -116,15 +129,32 @@ export default function PassengerManagement() {
                 </div>
               </div>
               <div className="text-right">
-                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(passenger.status)}`}>
-                  {passenger.status === 'checked-in' && 'Đã check-in'}
-                  {passenger.status === 'booked' && 'Đã đặt'}
-                  {passenger.status === 'boarded' && 'Đã lên máy bay'}
+                <span
+                  className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(passenger.status)}`}
+                >
+                  {passenger.status === "checked-in" && "Đã check-in"}
+                  {passenger.status === "booked" && "Đã đặt"}
+                  {passenger.status === "boarded" && "Đã lên máy bay"}
                 </span>
                 <div className="mt-4 space-y-1 text-sm">
-                  <p><span className="text-slate-500">Chuyến bay:</span> <span className="font-semibold">{passenger.flightNumber}</span></p>
-                  <p><span className="text-slate-500">Ghế:</span> <span className="font-semibold">{passenger.seatNumber}</span></p>
-                  <p><span className="text-slate-500">Mã đặt chỗ:</span> <span className="font-semibold">{passenger.bookingRef}</span></p>
+                  <p>
+                    <span className="text-slate-500">Chuyến bay:</span>{" "}
+                    <span className="font-semibold">
+                      {passenger.flightNumber}
+                    </span>
+                  </p>
+                  <p>
+                    <span className="text-slate-500">Ghế:</span>{" "}
+                    <span className="font-semibold">
+                      {passenger.seatNumber}
+                    </span>
+                  </p>
+                  <p>
+                    <span className="text-slate-500">Mã đặt chỗ:</span>{" "}
+                    <span className="font-semibold">
+                      {passenger.bookingRef}
+                    </span>
+                  </p>
                 </div>
               </div>
             </div>

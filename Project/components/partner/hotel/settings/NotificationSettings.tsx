@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Bell, Save } from 'lucide-react';
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import { Bell, Save } from "lucide-react";
 
 export function NotificationSettings() {
   const [settings, setSettings] = useState({
@@ -13,11 +13,11 @@ export function NotificationSettings() {
     smsReviews: false,
     pushBookings: true,
     pushReviews: true,
-    pushPayments: true
+    pushPayments: true,
   });
 
   const toggleSetting = (key: keyof typeof settings) => {
-    setSettings(prev => ({ ...prev, [key]: !prev[key] }));
+    setSettings((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   return (
@@ -41,7 +41,7 @@ export function NotificationSettings() {
                 <input
                   type="checkbox"
                   checked={settings.emailBookings}
-                  onChange={() => toggleSetting('emailBookings')}
+                  onChange={() => toggleSetting("emailBookings")}
                   className="w-5 h-5 text-primary rounded focus:ring-2 focus:ring-primary/20"
                 />
               </label>
@@ -50,7 +50,7 @@ export function NotificationSettings() {
                 <input
                   type="checkbox"
                   checked={settings.emailReviews}
-                  onChange={() => toggleSetting('emailReviews')}
+                  onChange={() => toggleSetting("emailReviews")}
                   className="w-5 h-5 text-primary rounded focus:ring-2 focus:ring-primary/20"
                 />
               </label>
@@ -59,7 +59,7 @@ export function NotificationSettings() {
                 <input
                   type="checkbox"
                   checked={settings.emailPayments}
-                  onChange={() => toggleSetting('emailPayments')}
+                  onChange={() => toggleSetting("emailPayments")}
                   className="w-5 h-5 text-primary rounded focus:ring-2 focus:ring-primary/20"
                 />
               </label>
@@ -74,7 +74,7 @@ export function NotificationSettings() {
                 <input
                   type="checkbox"
                   checked={settings.smsBookings}
-                  onChange={() => toggleSetting('smsBookings')}
+                  onChange={() => toggleSetting("smsBookings")}
                   className="w-5 h-5 text-primary rounded focus:ring-2 focus:ring-primary/20"
                 />
               </label>
@@ -83,7 +83,7 @@ export function NotificationSettings() {
                 <input
                   type="checkbox"
                   checked={settings.smsReviews}
-                  onChange={() => toggleSetting('smsReviews')}
+                  onChange={() => toggleSetting("smsReviews")}
                   className="w-5 h-5 text-primary rounded focus:ring-2 focus:ring-primary/20"
                 />
               </label>
@@ -98,7 +98,7 @@ export function NotificationSettings() {
                 <input
                   type="checkbox"
                   checked={settings.pushBookings}
-                  onChange={() => toggleSetting('pushBookings')}
+                  onChange={() => toggleSetting("pushBookings")}
                   className="w-5 h-5 text-primary rounded focus:ring-2 focus:ring-primary/20"
                 />
               </label>
@@ -107,7 +107,7 @@ export function NotificationSettings() {
                 <input
                   type="checkbox"
                   checked={settings.pushReviews}
-                  onChange={() => toggleSetting('pushReviews')}
+                  onChange={() => toggleSetting("pushReviews")}
                   className="w-5 h-5 text-primary rounded focus:ring-2 focus:ring-primary/20"
                 />
               </label>
@@ -116,7 +116,7 @@ export function NotificationSettings() {
                 <input
                   type="checkbox"
                   checked={settings.pushPayments}
-                  onChange={() => toggleSetting('pushPayments')}
+                  onChange={() => toggleSetting("pushPayments")}
                   className="w-5 h-5 text-primary rounded focus:ring-2 focus:ring-primary/20"
                 />
               </label>

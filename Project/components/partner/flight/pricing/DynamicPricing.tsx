@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Zap, TrendingUp, TrendingDown, Activity } from 'lucide-react';
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import { Zap, TrendingUp, TrendingDown, Activity } from "lucide-react";
 
 interface DynamicPriceData {
   route: string;
   currentPrice: number;
   basePrice: number;
-  demandLevel: 'low' | 'medium' | 'high';
+  demandLevel: "low" | "medium" | "high";
   occupancyRate: number;
   priceChange: number;
   recommendedPrice: number;
@@ -18,40 +18,44 @@ export default function DynamicPricing() {
   const [autoAdjust, setAutoAdjust] = useState(true);
   const [priceData] = useState<DynamicPriceData[]>([
     {
-      route: 'HAN - SGN',
+      route: "HAN - SGN",
       currentPrice: 2400000,
       basePrice: 2000000,
-      demandLevel: 'high',
+      demandLevel: "high",
       occupancyRate: 85,
       priceChange: 20,
-      recommendedPrice: 2500000
+      recommendedPrice: 2500000,
     },
     {
-      route: 'SGN - DAD',
+      route: "SGN - DAD",
       currentPrice: 1500000,
       basePrice: 1600000,
-      demandLevel: 'low',
+      demandLevel: "low",
       occupancyRate: 45,
       priceChange: -6.25,
-      recommendedPrice: 1400000
+      recommendedPrice: 1400000,
     },
     {
-      route: 'HAN - DAD',
+      route: "HAN - DAD",
       currentPrice: 1800000,
       basePrice: 1800000,
-      demandLevel: 'medium',
+      demandLevel: "medium",
       occupancyRate: 68,
       priceChange: 0,
-      recommendedPrice: 1850000
-    }
+      recommendedPrice: 1850000,
+    },
   ]);
 
   const getDemandColor = (level: string) => {
     switch (level) {
-      case 'high': return 'text-red-600 bg-red-100 dark:bg-red-900/30';
-      case 'medium': return 'text-yellow-600 bg-yellow-100 dark:bg-yellow-900/30';
-      case 'low': return 'text-green-600 bg-green-100 dark:bg-green-900/30';
-      default: return 'text-slate-600 bg-slate-100 dark:bg-slate-800';
+      case "high":
+        return "text-red-600 bg-red-100 dark:bg-red-900/30";
+      case "medium":
+        return "text-yellow-600 bg-yellow-100 dark:bg-yellow-900/30";
+      case "low":
+        return "text-green-600 bg-green-100 dark:bg-green-900/30";
+      default:
+        return "text-slate-600 bg-slate-100 dark:bg-slate-800";
     }
   };
 
@@ -80,9 +84,24 @@ export default function DynamicPricing() {
       {/* Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {[
-          { label: 'Giá trung bình', value: '1,900,000 ₫', change: '+8%', icon: Activity },
-          { label: 'Doanh thu dự kiến', value: '95.2B ₫', change: '+12%', icon: TrendingUp },
-          { label: 'Tỷ lệ lấp đầy', value: '66%', change: '+5%', icon: Activity }
+          {
+            label: "Giá trung bình",
+            value: "1,900,000 ₫",
+            change: "+8%",
+            icon: Activity,
+          },
+          {
+            label: "Doanh thu dự kiến",
+            value: "95.2B ₫",
+            change: "+12%",
+            icon: TrendingUp,
+          },
+          {
+            label: "Tỷ lệ lấp đầy",
+            value: "66%",
+            change: "+5%",
+            icon: Activity,
+          },
         ].map((metric, index) => (
           <motion.div
             key={metric.label}
@@ -93,10 +112,14 @@ export default function DynamicPricing() {
           >
             <div className="flex items-center justify-between mb-3">
               <metric.icon className="w-8 h-8 text-primary" />
-              <span className="text-green-600 text-sm font-semibold">{metric.change}</span>
+              <span className="text-green-600 text-sm font-semibold">
+                {metric.change}
+              </span>
             </div>
             <p className="text-2xl font-bold mb-1">{metric.value}</p>
-            <p className="text-sm text-slate-500 dark:text-slate-400">{metric.label}</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              {metric.label}
+            </p>
           </motion.div>
         ))}
       </div>
@@ -117,13 +140,17 @@ export default function DynamicPricing() {
                 <div>
                   <h4 className="font-bold text-lg">{data.route}</h4>
                   <div className="flex items-center gap-2 mt-1">
-                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getDemandColor(data.demandLevel)}`}>
-                      {data.demandLevel === 'high' && 'Nhu cầu cao'}
-                      {data.demandLevel === 'medium' && 'Nhu cầu trung bình'}
-                      {data.demandLevel === 'low' && 'Nhu cầu thấp'}
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-semibold ${getDemandColor(data.demandLevel)}`}
+                    >
+                      {data.demandLevel === "high" && "Nhu cầu cao"}
+                      {data.demandLevel === "medium" && "Nhu cầu trung bình"}
+                      {data.demandLevel === "low" && "Nhu cầu thấp"}
                     </span>
                     <span className="text-sm text-slate-500">•</span>
-                    <span className="text-sm text-slate-500">Lấp đầy {data.occupancyRate}%</span>
+                    <span className="text-sm text-slate-500">
+                      Lấp đầy {data.occupancyRate}%
+                    </span>
                   </div>
                 </div>
                 <div className="text-right">
@@ -133,26 +160,45 @@ export default function DynamicPricing() {
                     ) : data.priceChange < 0 ? (
                       <TrendingDown className="w-5 h-5 text-red-600" />
                     ) : null}
-                    <span className={`text-sm font-semibold ${
-                      data.priceChange > 0 ? 'text-green-600' : data.priceChange < 0 ? 'text-red-600' : 'text-slate-500'
-                    }`}>
-                      {data.priceChange > 0 ? '+' : ''}{data.priceChange}%
+                    <span
+                      className={`text-sm font-semibold ${
+                        data.priceChange > 0
+                          ? "text-green-600"
+                          : data.priceChange < 0
+                            ? "text-red-600"
+                            : "text-slate-500"
+                      }`}
+                    >
+                      {data.priceChange > 0 ? "+" : ""}
+                      {data.priceChange}%
                     </span>
                   </div>
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Giá cơ bản</p>
-                  <p className="font-semibold">{data.basePrice.toLocaleString('vi-VN')} ₫</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">
+                    Giá cơ bản
+                  </p>
+                  <p className="font-semibold">
+                    {data.basePrice.toLocaleString("vi-VN")} ₫
+                  </p>
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Giá hiện tại</p>
-                  <p className="font-semibold text-primary">{data.currentPrice.toLocaleString('vi-VN')} ₫</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">
+                    Giá hiện tại
+                  </p>
+                  <p className="font-semibold text-primary">
+                    {data.currentPrice.toLocaleString("vi-VN")} ₫
+                  </p>
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Giá đề xuất</p>
-                  <p className="font-semibold">{data.recommendedPrice.toLocaleString('vi-VN')} ₫</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">
+                    Giá đề xuất
+                  </p>
+                  <p className="font-semibold">
+                    {data.recommendedPrice.toLocaleString("vi-VN")} ₫
+                  </p>
                 </div>
               </div>
             </motion.div>
