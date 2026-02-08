@@ -1,15 +1,15 @@
-import { Footer } from "@/components/Footer"
-import { Hero } from "@/components/Hero"
-import { DestinationCard } from "@/components/DestinationCard"
-import Link from 'next/link'
-import { TrendingCollections } from '@/components/home/TrendingCollections'
-import { CategoryGrid } from '@/components/home/CategoryGrid'
-import { TrustBenefits } from '@/components/home/TrustBenefits'
-import { Newsletter } from '@/components/home/Newsletter'
-import { DownloadApp } from '@/components/home/DownloadApp'
-import { ArrowRight, MapPin } from 'lucide-react'
+import { Footer } from "@/components/Footer";
+import { Hero } from "@/components/Hero";
+import { DestinationCard } from "@/components/DestinationCard";
+import Link from "next/link";
+import { TrendingCollections } from "@/components/home/TrendingCollections";
+import { CategoryGrid } from "@/components/home/CategoryGrid";
+import { TrustBenefits } from "@/components/home/TrustBenefits";
+import { Newsletter } from "@/components/home/Newsletter";
+import { DownloadApp } from "@/components/home/DownloadApp";
+import { ArrowRight, MapPin } from "lucide-react";
 
-import { getPopularActivities } from "@/lib/actions/activities"
+import { getPopularActivities } from "@/lib/actions/activities";
 
 export default async function Home() {
   const popularActivities = await getPopularActivities(3);
@@ -32,9 +32,14 @@ export default async function Home() {
               <h2 className="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <MapPin className="w-6 h-6 text-[#FF5E1F]" /> Điểm Đến Phổ Biến
               </h2>
-              <p className="text-slate-500 dark:text-slate-400 mt-2 text-lg">Những thành phố được yêu thích nhất mùa này</p>
+              <p className="text-slate-500 dark:text-slate-400 mt-2 text-lg">
+                Những thành phố được yêu thích nhất mùa này
+              </p>
             </div>
-            <Link href="/activities" className="hidden sm:flex items-center text-slate-900 dark:text-white font-bold text-sm hover:text-[#FF5E1F] transition-colors gap-2 cursor-pointer group">
+            <Link
+              href="/activities"
+              className="hidden sm:flex items-center text-slate-900 dark:text-white font-bold text-sm hover:text-[#FF5E1F] transition-colors gap-2 cursor-pointer group"
+            >
               Xem tất cả
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
@@ -44,8 +49,8 @@ export default async function Home() {
               <DestinationCard
                 key={activity.id}
                 image={activity.image_url}
-                location={activity.location.split(',')[0]} // Take city from location
-                country={activity.location.split(',').slice(-1)[0].trim()} // Take country from end of location string
+                location={activity.location.split(",")[0]} // Take city from location
+                country={activity.location.split(",").slice(-1)[0].trim()} // Take country from end of location string
                 title={activity.title}
                 rating={activity.rating.toString()}
                 description={activity.description}
@@ -54,7 +59,9 @@ export default async function Home() {
               />
             ))}
             {popularActivities.length === 0 && (
-              <p className="text-slate-500 col-span-full text-center py-8">Không tìm thấy điểm đến phổ biến nào.</p>
+              <p className="text-slate-500 col-span-full text-center py-8">
+                Không tìm thấy điểm đến phổ biến nào.
+              </p>
             )}
           </div>
         </div>
