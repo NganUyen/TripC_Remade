@@ -8,7 +8,7 @@ import { User, Mail, Phone, Briefcase, Shield, SquareEqual, Utensils } from "luc
 import { FlightDetailsSummary } from "../FlightDetailsSummary"
 
 export function StepReview() {
-    const { setStep, passengers, contact, seats, extras, insurance, trip, useTcent, selectedFlights, discountAmount } = useBookingStore()
+    const { setStep, passengers, contact, seats, extras, insurance, trip, useTcent, selectedFlights, discountAmount, promoCode } = useBookingStore()
     const router = useRouter()
     const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -49,6 +49,7 @@ export function StepReview() {
                 endDate: returnFlight?.rawDepartureAt || returnFlight?.rawArrivalAt || trip.returnDate || trip.date,
                 totalAmount: total,
                 currency: 'USD',
+                couponCode: promoCode, // Pass the voucher code
                 guestDetails: {
                     contact,
                     passengers: passengers.map(p => ({
@@ -62,7 +63,7 @@ export function StepReview() {
                     })),
                     insurance,
                     flights: selectedFlights,
-                    discountAmount // Track it
+                    discountAmount
                 },
                 metadata: {
                     trip,
@@ -72,7 +73,8 @@ export function StepReview() {
                     selectedFlights,
                     flightId: outboundFlight?.id,
                     offerId: outboundFlight?.id, // Use flight ID as offer ID in this mock
-                    contactInfo: contact
+                    contactInfo: contact,
+                    couponCode: promoCode // Redundant but safe
                 }
             }
 
