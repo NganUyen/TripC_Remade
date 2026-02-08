@@ -61,7 +61,9 @@ interface TransportProvider {
     logo_url: string
 }
 
-export function RouteManagement() {    const supabase = useSupabaseClient()    const [loading, setLoading] = useState(true)
+export function RouteManagement() {
+    const supabase = useSupabaseClient()
+    const [loading, setLoading] = useState(true)
     const [routes, setRoutes] = useState<TransportRoute[]>([])
     const [providers, setProviders] = useState<TransportProvider[]>([])
     const [vehicles, setVehicles] = useState<Vehicle[]>([])

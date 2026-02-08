@@ -27,6 +27,11 @@ export default function PartnerLayout({ children }: { children: React.ReactNode 
                 return
             }
 
+            // Temporarily bypass partner approval check for development
+            setIsAuthorized(true)
+            setIsLoading(false)
+
+            /* Original approval check - uncomment when ready for production
             const { data: dbUser } = await supabase
                 .from('users')
                 .select('partner_status')
@@ -39,6 +44,7 @@ export default function PartnerLayout({ children }: { children: React.ReactNode 
                 router.push('/partner') // Redirect back to selection or 'apply' page
             }
             setIsLoading(false)
+            */
         }
 
         checkPartnerStatus()

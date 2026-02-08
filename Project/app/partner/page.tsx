@@ -135,19 +135,17 @@ export default function PartnerSelectionPage() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.5 }}
-                        className="md:col-span-2 lg:col-span-3"
                     >
                         <Link href="/partner/activities">
-                            <div className="bg-white dark:bg-slate-900 rounded-2xl p-8 border-2 border-slate-200 dark:border-slate-800 hover:border-primary transition-all cursor-pointer group h-full flex flex-col items-center text-center">
+                            <div className="bg-white dark:bg-slate-900 rounded-2xl p-8 border-2 border-slate-200 dark:border-slate-800 hover:border-primary transition-all cursor-pointer group h-full flex flex-col">
                                 <div className="mb-6">
-                                    <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-primary transition-colors mx-auto">
-                                        {/* Using Store icon temporarily as we need to import Activity/Ticket icon */}
+                                    <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-primary transition-colors">
                                         <Store className="w-8 h-8 text-primary group-hover:text-white transition-colors" />
                                     </div>
                                     <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
                                         Activities Portal
                                     </h2>
-                                    <p className="text-slate-600 dark:text-slate-400 max-w-lg mx-auto">
+                                    <p className="text-slate-600 dark:text-slate-400">
                                         Quản lý tours, vé tham quan, workshops và các hoạt động trải nghiệm
                                     </p>
                                 </div>

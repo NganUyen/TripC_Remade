@@ -102,7 +102,8 @@ export function TransportDashboard() {
         try {
             setLoading(true)
 
-            // Fetch bookings with route info
+            // Fetch transport bookings with route info
+            // Try new unified schema first (with category filter)
             const { data: bookings, error: bookingsError } = await supabase
                 .from('bookings')
                 .select(`
@@ -112,26 +113,66 @@ export function TransportDashboard() {
                     total_amount,
                     created_at,
                     passenger_info,
-                    transport_routes (
-                        origin,
-                        destination,
-                        departure_time
-                    )
+                    guest_details,
+                    metadata,
+                    title,
+                    location_summary
                 `)
+                .eq('category', 'transport')
                 .order('created_at', { ascending: false })
                 .limit(5)
 
             if (bookingsError) {
                 console.error('Error fetching bookings:', bookingsError)
+                // Try old schema with route_id foreign key
+                const { data: legacyBookings, error: legacyError } = await supabase
+                    .from('bookings')
+                    .select(`
+                        id,
+                        booking_code,
+                        status,
+                        total_amount,
+                        created_at,
+                        passenger_info,
+                        route_id,
+                        transport_routes!route_id (
+                            origin,
+                            destination,
+                            departure_time
+                        )
+                    `)
+                    .order('created_at', { ascending: false })
+                    .limit(5)
+                
+                if (!legacyError) {
+                    setRecentBookings((legacyBookings as unknown as Booking[]) || [])
+                }
             } else {
                 setRecentBookings((bookings as unknown as Booking[]) || [])
             }
 
-            // Calculate stats
-            const { data: allBookings } = await supabase
+            // Calculate stats - Try to filter for transport bookings
+            let allBookings = null
+            
+            // Try with category filter (unified schema)
+            const { data: newSchemaBookings } = await supabase
                 .from('bookings')
-                .select('total_amount, status')
+                .select('total_amount, status, category')
                 .eq('status', 'confirmed')
+                .eq('category', 'transport')
+            
+            if (newSchemaBookings && newSchemaBookings.length > 0) {
+                allBookings = newSchemaBookings
+            } else {
+                // Fall back to all bookings if no category column or no transport bookings
+                const { data: legacyBookings } = await supabase
+                    .from('bookings')
+                    .select('total_amount, status')
+                    .eq('status', 'confirmed')
+                    .not('route_id', 'is', null) // Only bookings with routes
+                
+                allBookings = legacyBookings
+            }
 
             const totalRevenue = allBookings?.reduce((sum, b) => sum + (b.total_amount || 0), 0) || 0
 

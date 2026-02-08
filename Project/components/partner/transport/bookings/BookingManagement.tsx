@@ -27,11 +27,29 @@ interface Booking {
     created_at: string
     held_at: string
     expires_at: string
-    passenger_info: {
+    passenger_info?: {
         name?: string
         phone?: string
         email?: string
     }
+    guest_details?: {
+        firstName?: string
+        lastName?: string
+        email?: string
+        phone?: string
+    }
+    metadata?: {
+        route_id?: string
+        origin?: string
+        destination?: string
+        departure_time?: string
+        arrival_time?: string
+        vehicle_type?: string
+        type?: string
+    }
+    title?: string
+    location_summary?: string
+    route_id?: string // Legacy schema
     transport_routes?: {
         origin: string
         destination: string
@@ -58,6 +76,7 @@ export function BookingManagement() {
         try {
             setLoading(true)
 
+            // Try unified schema first (with category filter)
             const { data, error } = await supabase
                 .from('bookings')
                 .select(`
@@ -69,19 +88,43 @@ export function BookingManagement() {
                     held_at,
                     expires_at,
                     passenger_info,
-                    transport_routes (
-                        origin,
-                        destination,
-                        departure_time,
-                        arrival_time,
-                        vehicle_type,
-                        type
-                    )
+                    guest_details,
+                    metadata,
+                    title,
+                    location_summary
                 `)
+                .eq('category', 'transport')
                 .order('created_at', { ascending: false })
 
             if (error) {
                 console.error('Error fetching bookings:', error)
+                // Try legacy schema with route_id foreign key
+                const { data: legacyData, error: legacyError } = await supabase
+                    .from('bookings')
+                    .select(`
+                        id,
+                        booking_code,
+                        status,
+                        total_amount,
+                        created_at,
+                        held_at,
+                        expires_at,
+                        passenger_info,
+                        route_id,
+                        transport_routes!route_id (
+                            origin,
+                            destination,
+                            departure_time,
+                            arrival_time,
+                            vehicle_type,
+                            type
+                        )
+                    `)
+                    .order('created_at', { ascending: false })
+                
+                if (!legacyError) {
+                    setBookings((legacyData as unknown as Booking[]) || [])
+                }
             } else {
                 setBookings((data as unknown as Booking[]) || [])
             }
@@ -135,11 +178,78 @@ export function BookingManagement() {
         })
     }
 
+    // Helper to get route data from either schema
+    const getRouteData = (booking: Booking) => {
+        // Check legacy schema first (transport_routes relation)
+        if (booking.transport_routes) {
+            return {
+                origin: booking.transport_routes.origin,
+                destination: booking.transport_routes.destination,
+                departure_time: booking.transport_routes.departure_time,
+                arrival_time: booking.transport_routes.arrival_time,
+                vehicle_type: booking.transport_routes.vehicle_type,
+                type: booking.transport_routes.type
+            }
+        }
+        
+        // Check unified schema (metadata)
+        if (booking.metadata) {
+            return {
+                origin: booking.metadata.origin,
+                destination: booking.metadata.destination,
+                departure_time: booking.metadata.departure_time,
+                arrival_time: booking.metadata.arrival_time,
+                vehicle_type: booking.metadata.vehicle_type,
+                type: booking.metadata.type
+            }
+        }
+        
+        // Check location_summary as fallback
+        if (booking.location_summary) {
+            const parts = booking.location_summary.split('→').map(s => s.trim())
+            return {
+                origin: parts[0],
+                destination: parts[1] || parts[0],
+                departure_time: undefined,
+                arrival_time: undefined,
+                vehicle_type: undefined,
+                type: undefined
+            }
+        }
+        
+        return null
+    }
+
+    // Helper to get passenger info from either schema
+    const getPassengerInfo = (booking: Booking) => {
+        if (booking.passenger_info?.name) {
+            return {
+                name: booking.passenger_info.name,
+                phone: booking.passenger_info.phone,
+                email: booking.passenger_info.email
+            }
+        }
+        
+        if (booking.guest_details) {
+            const fullName = [booking.guest_details.firstName, booking.guest_details.lastName]
+                .filter(Boolean)
+                .join(' ')
+            return {
+                name: fullName || 'N/A',
+                phone: booking.guest_details.phone,
+                email: booking.guest_details.email
+            }
+        }
+        
+        return { name: 'N/A', phone: 'N/A', email: 'N/A' }
+    }
+
     const filteredBookings = bookings.filter(booking => {
+        const passengerInfo = getPassengerInfo(booking)
         const matchesSearch =
             booking.booking_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            booking.passenger_info?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            booking.passenger_info?.phone?.includes(searchTerm)
+            passengerInfo.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            passengerInfo.phone?.includes(searchTerm)
         const matchesFilter = filterStatus === 'all' || booking.status === filterStatus
         return matchesSearch && matchesFilter
     })
@@ -237,24 +347,28 @@ export function BookingManagement() {
                                         <td className="px-6 py-4">
                                             <div>
                                                 <p className="font-medium text-slate-900 dark:text-white">
-                                                    {booking.passenger_info?.name || 'N/A'}
+                                                    {getPassengerInfo(booking).name}
                                                 </p>
                                                 <p className="text-sm text-slate-500 dark:text-slate-400">
-                                                    {booking.passenger_info?.phone || 'N/A'}
+                                                    {getPassengerInfo(booking).phone}
                                                 </p>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            {booking.transport_routes ? (
-                                                <div className="flex items-center gap-1 text-sm">
-                                                    <MapPin className="w-4 h-4 text-slate-400" />
-                                                    <span className="text-slate-900 dark:text-white">
-                                                        {(booking.transport_routes as any).origin} → {(booking.transport_routes as any).destination}
-                                                    </span>
-                                                </div>
-                                            ) : (
-                                                <span className="text-slate-400">N/A</span>
-                                            )}
+                                            {(() => {
+                                                const routeData = getRouteData(booking)
+                                                if (routeData && routeData.origin && routeData.destination) {
+                                                    return (
+                                                        <div className="flex items-center gap-1 text-sm">
+                                                            <MapPin className="w-4 h-4 text-slate-400" />
+                                                            <span className="text-slate-900 dark:text-white">
+                                                                {routeData.origin} → {routeData.destination}
+                                                            </span>
+                                                        </div>
+                                                    )
+                                                }
+                                                return <span className="text-slate-400">N/A</span>
+                                            })()}
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-1 text-sm text-slate-600 dark:text-slate-400">
@@ -358,29 +472,37 @@ export function BookingManagement() {
                                 <h4 className="font-semibold text-slate-900 dark:text-white mb-3">Thông tin khách hàng</h4>
                                 <div className="flex items-center gap-2">
                                     <User className="w-4 h-4 text-slate-400" />
-                                    <span>{selectedBooking.passenger_info?.name || 'N/A'}</span>
+                                    <span>{getPassengerInfo(selectedBooking).name}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <Phone className="w-4 h-4 text-slate-400" />
-                                    <span>{selectedBooking.passenger_info?.phone || 'N/A'}</span>
+                                    <span>{getPassengerInfo(selectedBooking).phone}</span>
                                 </div>
                             </div>
 
-                            {selectedBooking.transport_routes && (
-                                <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-xl space-y-2">
-                                    <h4 className="font-semibold text-slate-900 dark:text-white mb-3">Thông tin tuyến</h4>
-                                    <div className="flex items-center gap-2">
-                                        <MapPin className="w-4 h-4 text-primary" />
-                                        <span>
-                                            {(selectedBooking.transport_routes as any).origin} → {(selectedBooking.transport_routes as any).destination}
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <Clock className="w-4 h-4 text-slate-400" />
-                                        <span>{formatDateTime((selectedBooking.transport_routes as any).departure_time)}</span>
-                                    </div>
-                                </div>
-                            )}
+                            {(() => {
+                                const routeData = getRouteData(selectedBooking)
+                                if (routeData && routeData.origin && routeData.destination) {
+                                    return (
+                                        <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-xl space-y-2">
+                                            <h4 className="font-semibold text-slate-900 dark:text-white mb-3">Thông tin tuyến</h4>
+                                            <div className="flex items-center gap-2">
+                                                <MapPin className="w-4 h-4 text-primary" />
+                                                <span>
+                                                    {routeData.origin} → {routeData.destination}
+                                                </span>
+                                            </div>
+                                            {routeData.departure_time && (
+                                                <div className="flex items-center gap-2">
+                                                    <Clock className="w-4 h-4 text-slate-400" />
+                                                    <span>{formatDateTime(routeData.departure_time)}</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )
+                                }
+                                return null
+                            })()}
 
                             <div className="flex items-center justify-between p-4 bg-primary/5 rounded-xl">
                                 <span className="font-medium">Tổng tiền</span>
