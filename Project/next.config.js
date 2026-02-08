@@ -4,18 +4,18 @@ const nextConfig = {
   images: {
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: 'lh3.googleusercontent.com',
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com",
       },
       {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
+        protocol: "https",
+        hostname: "images.unsplash.com",
       },
     ],
     // Increase timeout for image optimization to prevent timeout errors
     minimumCacheTTL: 60,
     dangerouslyAllowSVG: true,
-    contentDispositionType: 'attachment',
+    contentDispositionType: "attachment",
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
   eslint: {
@@ -23,6 +23,22 @@ const nextConfig = {
   },
   typescript: {
     ignoreBuildErrors: true,
+  },
+  // Mark server-only packages as external for server components
+  serverComponentsExternalPackages: ["firebase-admin"],
+  webpack: (config, { isServer }) => {
+    // Exclude server-only packages from client bundle
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        "firebase-admin": false,
+        "firebase-admin/app": false,
+        "firebase-admin/auth": false,
+        "firebase-admin/firestore": false,
+        "firebase-admin/messaging": false,
+      };
+    }
+    return config;
   },
 };
 
