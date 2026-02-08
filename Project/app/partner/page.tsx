@@ -2,12 +2,12 @@
 
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { Store, Hotel, ArrowRight } from 'lucide-react'
+import { Store, Hotel, Bus, ArrowRight } from 'lucide-react'
 
 export default function PartnerSelectionPage() {
     return (
         <div className="min-h-screen bg-[#fcfaf8] dark:bg-[#0a0a0a] flex items-center justify-center p-4">
-            <div className="max-w-4xl w-full">
+            <div className="max-w-6xl w-full">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -21,7 +21,7 @@ export default function PartnerSelectionPage() {
                     </p>
                 </motion.div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {/* Restaurant Portal */}
                     <motion.div
                         initial={{ opacity: 0, x: -20 }}
@@ -66,6 +66,33 @@ export default function PartnerSelectionPage() {
                                     </h2>
                                     <p className="text-slate-600 dark:text-slate-400">
                                         Quản lý khách sạn, phòng, đặt phòng và kênh phân phối
+                                    </p>
+                                </div>
+                                <div className="mt-auto flex items-center gap-2 text-primary font-semibold group-hover:gap-4 transition-all">
+                                    <span>Bắt đầu</span>
+                                    <ArrowRight className="w-5 h-5" />
+                                </div>
+                            </div>
+                        </Link>
+                    </motion.div>
+
+                    {/* Transport Portal */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                    >
+                        <Link href="/partner/transport">
+                            <div className="bg-white dark:bg-slate-900 rounded-2xl p-8 border-2 border-slate-200 dark:border-slate-800 hover:border-primary transition-all cursor-pointer group h-full flex flex-col">
+                                <div className="mb-6">
+                                    <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-primary transition-colors">
+                                        <Bus className="w-8 h-8 text-primary group-hover:text-white transition-colors" />
+                                    </div>
+                                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+                                        Transport Portal
+                                    </h2>
+                                    <p className="text-slate-600 dark:text-slate-400">
+                                        Quản lý đội xe, tuyến đường, đặt chỗ và doanh thu vận tải
                                     </p>
                                 </div>
                                 <div className="mt-auto flex items-center gap-2 text-primary font-semibold group-hover:gap-4 transition-all">
