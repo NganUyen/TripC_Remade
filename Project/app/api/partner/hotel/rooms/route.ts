@@ -4,18 +4,18 @@
  * POST /api/partner/hotel/rooms - Create new room
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { createRoomSchema } from '@/lib/hotel-partner/validation';
+import { NextRequest, NextResponse } from "next/server";
+import { createRoomSchema } from "@/lib/hotel-partner/validation";
 import {
   getHotelRooms,
   createRoom,
   getPartnerHotel,
-} from '@/lib/hotel-partner/database';
+} from "@/lib/hotel-partner/database";
 
 function getPartnerId(req: NextRequest): string {
-  const partnerId = req.headers.get('x-partner-id');
+  const partnerId = req.headers.get("x-partner-id");
   if (!partnerId) {
-    throw new Error('Partner ID not found');
+    throw new Error("Partner ID not found");
   }
   return partnerId;
 }
@@ -28,18 +28,18 @@ export async function GET(req: NextRequest) {
   try {
     const partnerId = getPartnerId(req);
     const { searchParams } = new URL(req.url);
-    const hotelId = searchParams.get('hotel_id');
+    const hotelId = searchParams.get("hotel_id");
 
     if (!hotelId) {
       return NextResponse.json(
         {
           success: false,
           error: {
-            code: 'MISSING_PARAMETER',
-            message: 'hotel_id parameter is required',
+            code: "MISSING_PARAMETER",
+            message: "hotel_id parameter is required",
           },
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -50,11 +50,11 @@ export async function GET(req: NextRequest) {
         {
           success: false,
           error: {
-            code: 'NOT_FOUND',
-            message: 'Hotel not found or access denied',
+            code: "NOT_FOUND",
+            message: "Hotel not found or access denied",
           },
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -66,16 +66,16 @@ export async function GET(req: NextRequest) {
       count: rooms.length,
     });
   } catch (error: any) {
-    console.error('Error fetching rooms:', error);
+    console.error("Error fetching rooms:", error);
     return NextResponse.json(
       {
         success: false,
         error: {
-          code: 'FETCH_ERROR',
-          message: error.message || 'Failed to fetch rooms',
+          code: "FETCH_ERROR",
+          message: error.message || "Failed to fetch rooms",
         },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -96,12 +96,12 @@ export async function POST(req: NextRequest) {
         {
           success: false,
           error: {
-            code: 'VALIDATION_ERROR',
-            message: 'Invalid room data',
+            code: "VALIDATION_ERROR",
+            message: "Invalid room data",
             details: validation.error.errors,
           },
         },
-        { status: 422 }
+        { status: 422 },
       );
     }
 
@@ -112,11 +112,11 @@ export async function POST(req: NextRequest) {
         {
           success: false,
           error: {
-            code: 'NOT_FOUND',
-            message: 'Hotel not found or access denied',
+            code: "NOT_FOUND",
+            message: "Hotel not found or access denied",
           },
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -127,24 +127,24 @@ export async function POST(req: NextRequest) {
       {
         success: true,
         data: room,
-        message: 'Room created successfully',
+        message: "Room created successfully",
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error: any) {
-    console.error('Error creating room:', error);
+    console.error("Error creating room:", error);
 
     // Handle duplicate room code error
-    if (error.code === '23505') {
+    if (error.code === "23505") {
       return NextResponse.json(
         {
           success: false,
           error: {
-            code: 'DUPLICATE_CODE',
-            message: 'A room with this code already exists for this hotel',
+            code: "DUPLICATE_CODE",
+            message: "A room with this code already exists for this hotel",
           },
         },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -152,11 +152,11 @@ export async function POST(req: NextRequest) {
       {
         success: false,
         error: {
-          code: 'CREATE_ERROR',
-          message: error.message || 'Failed to create room',
+          code: "CREATE_ERROR",
+          message: error.message || "Failed to create room",
         },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -4,20 +4,23 @@
  * POST /api/partner/hotel/rates - Create/update rates (single or bulk)
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { createRateSchema, bulkUpdateRatesSchema } from '@/lib/hotel-partner/validation';
+import { NextRequest, NextResponse } from "next/server";
+import {
+  createRateSchema,
+  bulkUpdateRatesSchema,
+} from "@/lib/hotel-partner/validation";
 import {
   getRoomRates,
   upsertRates,
   bulkUpdateRates,
   getRoom,
   getPartnerHotel,
-} from '@/lib/hotel-partner/database';
+} from "@/lib/hotel-partner/database";
 
 function getPartnerId(req: NextRequest): string {
-  const partnerId = req.headers.get('x-partner-id');
+  const partnerId = req.headers.get("x-partner-id");
   if (!partnerId) {
-    throw new Error('Partner ID not found');
+    throw new Error("Partner ID not found");
   }
   return partnerId;
 }
@@ -30,20 +33,20 @@ export async function GET(req: NextRequest) {
   try {
     const partnerId = getPartnerId(req);
     const { searchParams } = new URL(req.url);
-    const roomId = searchParams.get('room_id');
-    const startDate = searchParams.get('start_date');
-    const endDate = searchParams.get('end_date');
+    const roomId = searchParams.get("room_id");
+    const startDate = searchParams.get("start_date");
+    const endDate = searchParams.get("end_date");
 
     if (!roomId || !startDate || !endDate) {
       return NextResponse.json(
         {
           success: false,
           error: {
-            code: 'MISSING_PARAMETERS',
-            message: 'room_id, start_date, and end_date are required',
+            code: "MISSING_PARAMETERS",
+            message: "room_id, start_date, and end_date are required",
           },
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -54,11 +57,11 @@ export async function GET(req: NextRequest) {
         {
           success: false,
           error: {
-            code: 'NOT_FOUND',
-            message: 'Room not found',
+            code: "NOT_FOUND",
+            message: "Room not found",
           },
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -68,11 +71,11 @@ export async function GET(req: NextRequest) {
         {
           success: false,
           error: {
-            code: 'ACCESS_DENIED',
-            message: 'Access denied to this room',
+            code: "ACCESS_DENIED",
+            message: "Access denied to this room",
           },
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -84,16 +87,16 @@ export async function GET(req: NextRequest) {
       count: rates.length,
     });
   } catch (error: any) {
-    console.error('Error fetching rates:', error);
+    console.error("Error fetching rates:", error);
     return NextResponse.json(
       {
         success: false,
         error: {
-          code: 'FETCH_ERROR',
-          message: error.message || 'Failed to fetch rates',
+          code: "FETCH_ERROR",
+          message: error.message || "Failed to fetch rates",
         },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -118,12 +121,12 @@ export async function POST(req: NextRequest) {
           {
             success: false,
             error: {
-              code: 'VALIDATION_ERROR',
-              message: 'Invalid rate data',
+              code: "VALIDATION_ERROR",
+              message: "Invalid rate data",
               details: validation.error.errors,
             },
           },
-          { status: 422 }
+          { status: 422 },
         );
       }
 
@@ -136,11 +139,11 @@ export async function POST(req: NextRequest) {
           {
             success: false,
             error: {
-              code: 'NOT_FOUND',
-              message: 'Room not found',
+              code: "NOT_FOUND",
+              message: "Room not found",
             },
           },
-          { status: 404 }
+          { status: 404 },
         );
       }
 
@@ -150,11 +153,11 @@ export async function POST(req: NextRequest) {
           {
             success: false,
             error: {
-              code: 'ACCESS_DENIED',
-              message: 'Access denied to this room',
+              code: "ACCESS_DENIED",
+              message: "Access denied to this room",
             },
           },
-          { status: 403 }
+          { status: 403 },
         );
       }
 
@@ -164,7 +167,7 @@ export async function POST(req: NextRequest) {
         partnerId,
         start_date,
         end_date,
-        rateData
+        rateData,
       );
 
       return NextResponse.json(
@@ -173,7 +176,7 @@ export async function POST(req: NextRequest) {
           data: rates,
           message: `${rates.length} rates updated successfully`,
         },
-        { status: 201 }
+        { status: 201 },
       );
     } else {
       // Single rate create/update
@@ -183,12 +186,12 @@ export async function POST(req: NextRequest) {
           {
             success: false,
             error: {
-              code: 'VALIDATION_ERROR',
-              message: 'Invalid rate data',
+              code: "VALIDATION_ERROR",
+              message: "Invalid rate data",
               details: validation.error.errors,
             },
           },
-          { status: 422 }
+          { status: 422 },
         );
       }
 
@@ -199,11 +202,11 @@ export async function POST(req: NextRequest) {
           {
             success: false,
             error: {
-              code: 'NOT_FOUND',
-              message: 'Room not found',
+              code: "NOT_FOUND",
+              message: "Room not found",
             },
           },
-          { status: 404 }
+          { status: 404 },
         );
       }
 
@@ -213,11 +216,11 @@ export async function POST(req: NextRequest) {
           {
             success: false,
             error: {
-              code: 'ACCESS_DENIED',
-              message: 'Access denied to this room',
+              code: "ACCESS_DENIED",
+              message: "Access denied to this room",
             },
           },
-          { status: 403 }
+          { status: 403 },
         );
       }
 
@@ -233,22 +236,22 @@ export async function POST(req: NextRequest) {
         {
           success: true,
           data: rates[0],
-          message: 'Rate saved successfully',
+          message: "Rate saved successfully",
         },
-        { status: 201 }
+        { status: 201 },
       );
     }
   } catch (error: any) {
-    console.error('Error saving rates:', error);
+    console.error("Error saving rates:", error);
     return NextResponse.json(
       {
         success: false,
         error: {
-          code: 'SAVE_ERROR',
-          message: error.message || 'Failed to save rates',
+          code: "SAVE_ERROR",
+          message: error.message || "Failed to save rates",
         },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

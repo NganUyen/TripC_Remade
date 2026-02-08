@@ -110,12 +110,14 @@ This document details all operational workflows and user flows in the Hotel Part
 └─────────────────────────────────────────────────────────────┘
 ```
 
-**Processing Time**: 
+**Processing Time**:
+
 - Instant: Steps 1-2
 - 1-3 business days: Admin review
 - 30-60 minutes: Property setup
 
 **Success Criteria**:
+
 - Email verified
 - Documents approved
 - Terms accepted
@@ -295,6 +297,7 @@ This document details all operational workflows and user flows in the Hotel Part
 ```
 
 **Success Metrics**:
+
 - Time to first property listing: < 60 minutes
 - Approval rate: > 85%
 - Re-submission rate: < 20%
@@ -452,6 +455,7 @@ This document details all operational workflows and user flows in the Hotel Part
 ```
 
 **Best Practices**:
+
 - Create all room types before setting rates
 - Use clear, descriptive room names
 - Include view type in name if applicable

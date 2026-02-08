@@ -3,10 +3,10 @@
  * Displays and manages bookings for partner's hotels
  */
 
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import {
   Calendar,
   User,
@@ -15,7 +15,7 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface Booking {
   id: string;
@@ -39,12 +39,12 @@ interface Booking {
 }
 
 const statusConfig = {
-  pending: { label: 'Chờ xác nhận', color: 'yellow', icon: Clock },
-  confirmed: { label: 'Đã xác nhận', color: 'green', icon: CheckCircle },
-  checked_in: { label: 'Đã check-in', color: 'blue', icon: CheckCircle },
-  checked_out: { label: 'Đã check-out', color: 'slate', icon: CheckCircle },
-  cancelled: { label: 'Đã hủy', color: 'red', icon: XCircle },
-  no_show: { label: 'Không đến', color: 'red', icon: AlertCircle },
+  pending: { label: "Chờ xác nhận", color: "yellow", icon: Clock },
+  confirmed: { label: "Đã xác nhận", color: "green", icon: CheckCircle },
+  checked_in: { label: "Đã check-in", color: "blue", icon: CheckCircle },
+  checked_out: { label: "Đã check-out", color: "slate", icon: CheckCircle },
+  cancelled: { label: "Đã hủy", color: "red", icon: XCircle },
+  no_show: { label: "Không đến", color: "red", icon: AlertCircle },
 };
 
 interface BookingListProps {
@@ -55,7 +55,7 @@ export function BookingList({ partnerId }: BookingListProps) {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   useEffect(() => {
     fetchBookings();
@@ -64,26 +64,29 @@ export function BookingList({ partnerId }: BookingListProps) {
   async function fetchBookings() {
     try {
       setLoading(true);
-      const url = new URL('/api/partner/hotel/bookings', window.location.origin);
-      if (statusFilter !== 'all') {
-        url.searchParams.set('status', statusFilter);
+      const url = new URL(
+        "/api/partner/hotel/bookings",
+        window.location.origin,
+      );
+      if (statusFilter !== "all") {
+        url.searchParams.set("status", statusFilter);
       }
 
       const response = await fetch(url, {
         headers: {
-          'x-partner-id': partnerId,
+          "x-partner-id": partnerId,
         },
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch bookings');
+        throw new Error("Failed to fetch bookings");
       }
 
       const result = await response.json();
       if (result.success) {
         setBookings(result.data);
       } else {
-        throw new Error(result.error?.message || 'Unknown error');
+        throw new Error(result.error?.message || "Unknown error");
       }
     } catch (err: any) {
       setError(err.message);
@@ -93,9 +96,9 @@ export function BookingList({ partnerId }: BookingListProps) {
   }
 
   const formatCurrency = (cents: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
     }).format(cents);
   };
 
@@ -178,24 +181,24 @@ export function BookingList({ partnerId }: BookingListProps) {
       {/* Filters */}
       <div className="flex gap-2 overflow-x-auto pb-2">
         {[
-          'all',
-          'pending',
-          'confirmed',
-          'checked_in',
-          'checked_out',
-          'cancelled',
+          "all",
+          "pending",
+          "confirmed",
+          "checked_in",
+          "checked_out",
+          "cancelled",
         ].map((status) => (
           <button
             key={status}
             onClick={() => setStatusFilter(status)}
             className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
               statusFilter === status
-                ? 'bg-primary text-white'
-                : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'
+                ? "bg-primary text-white"
+                : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700"
             }`}
           >
-            {status === 'all'
-              ? 'Tất cả'
+            {status === "all"
+              ? "Tất cả"
               : statusConfig[status as keyof typeof statusConfig]?.label ||
                 status}
           </button>
@@ -210,12 +213,11 @@ export function BookingList({ partnerId }: BookingListProps) {
             Chưa có đặt phòng
           </h3>
           <p className="text-slate-500 dark:text-slate-400">
-            {statusFilter !== 'all'
+            {statusFilter !== "all"
               ? `Không có đặt phòng ${
-                  statusConfig[statusFilter as keyof typeof statusConfig]
-                    ?.label
+                  statusConfig[statusFilter as keyof typeof statusConfig]?.label
                 } nào`
-              : 'Đặt phòng sẽ hiển thị tại đây khi khách hàng đặt phòng'}
+              : "Đặt phòng sẽ hiển thị tại đây khi khách hàng đặt phòng"}
           </p>
         </div>
       ) : (
@@ -249,8 +251,7 @@ function BookingCard({
   onStatusUpdate,
 }: BookingCardProps) {
   const [updating, setUpdating] = useState(false);
-  const statusInfo =
-    statusConfig[booking.status as keyof typeof statusConfig];
+  const statusInfo = statusConfig[booking.status as keyof typeof statusConfig];
   const StatusIcon = statusInfo?.icon || Clock;
 
   const updateStatus = async (newStatus: string) => {
@@ -259,7 +260,7 @@ function BookingCard({
     const confirmed = confirm(
       `Bạn có chắc chắn muốn cập nhật đặt phòng này thành ${
         statusConfig[newStatus as keyof typeof statusConfig]?.label
-      }?`
+      }?`,
     );
     if (!confirmed) return;
 
@@ -268,26 +269,26 @@ function BookingCard({
       const response = await fetch(
         `/api/partner/hotel/bookings/${booking.id}`,
         {
-          method: 'PATCH',
+          method: "PATCH",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({ status: newStatus }),
-        }
+        },
       );
 
       if (!response.ok) {
-        throw new Error('Failed to update booking');
+        throw new Error("Failed to update booking");
       }
 
       const result = await response.json();
       if (result.success) {
         onStatusUpdate();
       } else {
-        throw new Error(result.error?.message || 'Unknown error');
+        throw new Error(result.error?.message || "Unknown error");
       }
     } catch (err: any) {
-      alert('Lỗi: ' + err.message);
+      alert("Lỗi: " + err.message);
     } finally {
       setUpdating(false);
     }
@@ -335,7 +336,7 @@ function BookingCard({
             Check-in
           </div>
           <p className="font-medium text-slate-900 dark:text-white">
-            {new Date(booking.check_in_date).toLocaleDateString('vi-VN')}
+            {new Date(booking.check_in_date).toLocaleDateString("vi-VN")}
           </p>
         </div>
         <div>
@@ -344,7 +345,7 @@ function BookingCard({
             Check-out
           </div>
           <p className="font-medium text-slate-900 dark:text-white">
-            {new Date(booking.check_out_date).toLocaleDateString('vi-VN')}
+            {new Date(booking.check_out_date).toLocaleDateString("vi-VN")}
           </p>
         </div>
         <div>
@@ -360,49 +361,49 @@ function BookingCard({
 
       {/* Room Details */}
       <div className="text-sm text-slate-600 dark:text-slate-400 mb-4">
-        {booking.rooms_count} × {booking.room.title} • {booking.adults_count}{' '}
+        {booking.rooms_count} × {booking.room.title} • {booking.adults_count}{" "}
         người lớn
         {booking.children_count > 0 && `, ${booking.children_count} trẻ em`}
       </div>
 
       {/* Actions */}
-      {booking.status === 'confirmed' && (
+      {booking.status === "confirmed" && (
         <div className="flex gap-2">
           <button
-            onClick={() => updateStatus('checked_in')}
+            onClick={() => updateStatus("checked_in")}
             disabled={updating}
             className="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {updating ? 'Đang cập nhật...' : 'Check In'}
+            {updating ? "Đang cập nhật..." : "Check In"}
           </button>
         </div>
       )}
-      {booking.status === 'checked_in' && (
+      {booking.status === "checked_in" && (
         <div className="flex gap-2">
           <button
-            onClick={() => updateStatus('checked_out')}
+            onClick={() => updateStatus("checked_out")}
             disabled={updating}
             className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {updating ? 'Đang cập nhật...' : 'Check Out'}
+            {updating ? "Đang cập nhật..." : "Check Out"}
           </button>
         </div>
       )}
-      {booking.status === 'pending' && (
+      {booking.status === "pending" && (
         <div className="flex gap-2">
           <button
-            onClick={() => updateStatus('confirmed')}
+            onClick={() => updateStatus("confirmed")}
             disabled={updating}
             className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {updating ? 'Đang cập nhật...' : 'Xác nhận'}
+            {updating ? "Đang cập nhật..." : "Xác nhận"}
           </button>
           <button
-            onClick={() => updateStatus('cancelled')}
+            onClick={() => updateStatus("cancelled")}
             disabled={updating}
             className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {updating ? 'Đang cập nhật...' : 'Hủy'}
+            {updating ? "Đang cập nhật..." : "Hủy"}
           </button>
         </div>
       )}

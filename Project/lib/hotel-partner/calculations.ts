@@ -41,7 +41,7 @@ export interface BookingPrice {
 
 export interface Booking {
   total_cents: number;
-  cancellation_policy: 'flexible' | 'moderate' | 'strict' | 'non_refundable';
+  cancellation_policy: "flexible" | "moderate" | "strict" | "non_refundable";
   check_in_date: Date | string;
   status: string;
   tcent_used: number;
@@ -60,10 +60,10 @@ export interface RefundCalculation {
 // CONSTANTS
 // =====================================================
 
-export const TAX_RATE = 0.10; // 10% tax
+export const TAX_RATE = 0.1; // 10% tax
 export const SERVICE_FEE_RATE = 0.02; // 2% service fee
-export const WORKING_PASS_DISCOUNT_RATE = 0.10; // 10% discount for Working Pass holders
-export const MAX_TCENT_USAGE_RATE = 0.30; // Maximum 30% of total can be paid with TCent
+export const WORKING_PASS_DISCOUNT_RATE = 0.1; // 10% discount for Working Pass holders
+export const MAX_TCENT_USAGE_RATE = 0.3; // Maximum 30% of total can be paid with TCent
 export const TCENT_EARNING_RATE = 0.05; // Earn 5% of base price as TCent
 export const DEFAULT_COMMISSION_RATE = 0.15; // 15% default commission
 
@@ -81,9 +81,12 @@ export function getHoursBetween(date1: Date, date2: Date): number {
 /**
  * Get the number of days between two dates
  */
-export function getDaysBetween(date1: Date | string, date2: Date | string): number {
-  const d1 = typeof date1 === 'string' ? new Date(date1) : date1;
-  const d2 = typeof date2 === 'string' ? new Date(date2) : date2;
+export function getDaysBetween(
+  date1: Date | string,
+  date2: Date | string,
+): number {
+  const d1 = typeof date1 === "string" ? new Date(date1) : date1;
+  const d2 = typeof date2 === "string" ? new Date(date2) : date2;
   const diffTime = Math.abs(d2.getTime() - d1.getTime());
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 }
@@ -95,20 +98,24 @@ export function getDateRange(startDate: string, endDate: string): string[] {
   const dates: string[] = [];
   const start = new Date(startDate);
   const end = new Date(endDate);
-  
+
   const currentDate = new Date(start);
   while (currentDate <= end) {
-    dates.push(currentDate.toISOString().split('T')[0]);
+    dates.push(currentDate.toISOString().split("T")[0]);
     currentDate.setDate(currentDate.getDate() + 1);
   }
-  
+
   return dates;
 }
 
 /**
  * Check if a date is within a given range
  */
-export function isDateInRange(date: string, startDate: string, endDate: string): boolean {
+export function isDateInRange(
+  date: string,
+  startDate: string,
+  endDate: string,
+): boolean {
   const d = new Date(date);
   const start = new Date(startDate);
   const end = new Date(endDate);
@@ -125,7 +132,7 @@ export function isDateInRange(date: string, startDate: string, endDate: string):
 export function calculateBookingPrice(
   rates: Rate[],
   discounts: Discounts = {},
-  partner: Partner
+  partner: Partner,
 ): BookingPrice {
   // Calculate base price (sum of daily rates)
   const basePriceCents = rates.reduce((sum, rate) => sum + rate.price_cents, 0);
@@ -146,13 +153,17 @@ export function calculateBookingPrice(
 
   // Calculate TCent discount (max 30% of subtotal)
   const maxTcentUsage = Math.round(subtotalCents * MAX_TCENT_USAGE_RATE);
-  const tcentDiscountCents = Math.min(discounts.tcent_to_use || 0, maxTcentUsage);
+  const tcentDiscountCents = Math.min(
+    discounts.tcent_to_use || 0,
+    maxTcentUsage,
+  );
 
   // Voucher discount
   const voucherDiscountCents = discounts.voucher_discount_cents || 0;
 
   // Total discount
-  const totalDiscountCents = workingPassDiscountCents + tcentDiscountCents + voucherDiscountCents;
+  const totalDiscountCents =
+    workingPassDiscountCents + tcentDiscountCents + voucherDiscountCents;
 
   // Final total
   const totalCents = Math.max(0, subtotalCents - totalDiscountCents);
@@ -197,7 +208,7 @@ export function calculateBestPrice(rates: Rate[]): {
     };
   }
 
-  const prices = rates.map(r => r.price_cents);
+  const prices = rates.map((r) => r.price_cents);
   const lowestNightlyRateCents = Math.min(...prices);
   const totalPriceCents = prices.reduce((sum, price) => sum + price, 0);
   const averageNightlyRateCents = Math.round(totalPriceCents / rates.length);
@@ -218,24 +229,25 @@ export function calculateBestPrice(rates: Rate[]): {
  */
 export function calculateRefund(
   booking: Booking,
-  cancellationDate: Date = new Date()
+  cancellationDate: Date = new Date(),
 ): RefundCalculation {
-  const checkInDate = typeof booking.check_in_date === 'string' 
-    ? new Date(booking.check_in_date) 
-    : booking.check_in_date;
-  
+  const checkInDate =
+    typeof booking.check_in_date === "string"
+      ? new Date(booking.check_in_date)
+      : booking.check_in_date;
+
   const hoursUntilCheckIn = getHoursBetween(cancellationDate, checkInDate);
   const daysUntilCheckIn = hoursUntilCheckIn / 24;
 
   let refundPercentage = 0;
 
   switch (booking.cancellation_policy) {
-    case 'flexible':
+    case "flexible":
       // Full refund if cancelled 24+ hours before check-in
       refundPercentage = hoursUntilCheckIn >= 24 ? 100 : 0;
       break;
 
-    case 'moderate':
+    case "moderate":
       // Full refund if cancelled 7+ days before
       // 50% refund if cancelled 3-7 days before
       // No refund if less than 3 days
@@ -248,7 +260,7 @@ export function calculateRefund(
       }
       break;
 
-    case 'strict':
+    case "strict":
       // Full refund if cancelled 14+ days before
       // 50% refund if cancelled 7-14 days before
       // No refund if less than 7 days
@@ -261,12 +273,14 @@ export function calculateRefund(
       }
       break;
 
-    case 'non_refundable':
+    case "non_refundable":
       refundPercentage = 0;
       break;
   }
 
-  const refundAmountCents = Math.round(booking.total_cents * (refundPercentage / 100));
+  const refundAmountCents = Math.round(
+    booking.total_cents * (refundPercentage / 100),
+  );
   const cancellationFeeCents = booking.total_cents - refundAmountCents;
 
   // Calculate TCent refund (TCent used is refunded separately)
@@ -294,36 +308,38 @@ export function calculateRefund(
  */
 export function getCommissionRate(totalBookings: number): number {
   // Volume-based commission tiers
-  if (totalBookings >= 1000) return 0.10; // 10% for 1000+ bookings
-  if (totalBookings >= 500) return 0.12;  // 12% for 500+ bookings
-  if (totalBookings >= 100) return 0.14;  // 14% for 100+ bookings
-  return DEFAULT_COMMISSION_RATE;         // 15% default
+  if (totalBookings >= 1000) return 0.1; // 10% for 1000+ bookings
+  if (totalBookings >= 500) return 0.12; // 12% for 500+ bookings
+  if (totalBookings >= 100) return 0.14; // 14% for 100+ bookings
+  return DEFAULT_COMMISSION_RATE; // 15% default
 }
 
 /**
  * Calculate partner payout for a period
  */
-export function calculatePartnerPayout(bookings: {
-  base_price_cents: number;
-  commission_cents: number;
-  status: string;
-}[]): {
+export function calculatePartnerPayout(
+  bookings: {
+    base_price_cents: number;
+    commission_cents: number;
+    status: string;
+  }[],
+): {
   gross_amount_cents: number;
   commission_cents: number;
   net_amount_cents: number;
   eligible_bookings: number;
 } {
   // Only include completed bookings (checked_out status)
-  const eligibleBookings = bookings.filter(b => b.status === 'checked_out');
+  const eligibleBookings = bookings.filter((b) => b.status === "checked_out");
 
   const grossAmountCents = eligibleBookings.reduce(
     (sum, b) => sum + b.base_price_cents,
-    0
+    0,
   );
 
   const commissionCents = eligibleBookings.reduce(
     (sum, b) => sum + b.commission_cents,
-    0
+    0,
   );
 
   const netAmountCents = grossAmountCents - commissionCents;
@@ -345,7 +361,7 @@ export function calculatePartnerPayout(bookings: {
  */
 export function calculateOccupancyRate(
   totalRooms: number,
-  bookedRooms: number
+  bookedRooms: number,
 ): number {
   if (totalRooms === 0) return 0;
   return Math.round((bookedRooms / totalRooms) * 10000) / 100; // Round to 2 decimals
@@ -356,7 +372,7 @@ export function calculateOccupancyRate(
  */
 export function calculateADR(
   totalRevenueCents: number,
-  roomsSold: number
+  roomsSold: number,
 ): number {
   if (roomsSold === 0) return 0;
   return Math.round(totalRevenueCents / roomsSold);
@@ -367,7 +383,7 @@ export function calculateADR(
  */
 export function calculateRevPAR(
   totalRevenueCents: number,
-  totalRoomsAvailable: number
+  totalRoomsAvailable: number,
 ): number {
   if (totalRoomsAvailable === 0) return 0;
   return Math.round(totalRevenueCents / totalRoomsAvailable);
@@ -383,7 +399,7 @@ export function calculateRevPAR(
 export function checkRoomAvailability(
   requestedRooms: number,
   availableRooms: number,
-  existingBookings: number = 0
+  existingBookings: number = 0,
 ): {
   available: boolean;
   remaining: number;
@@ -398,7 +414,10 @@ export function checkRoomAvailability(
 /**
  * Calculate total nights for a booking
  */
-export function calculateTotalNights(checkInDate: string, checkOutDate: string): number {
+export function calculateTotalNights(
+  checkInDate: string,
+  checkOutDate: string,
+): number {
   return getDaysBetween(checkInDate, checkOutDate);
 }
 
@@ -412,7 +431,7 @@ export function calculateTotalNights(checkInDate: string, checkOutDate: string):
 export function calculateNewAverageRating(
   currentAverage: number,
   currentCount: number,
-  newRating: number
+  newRating: number,
 ): number {
   const total = currentAverage * currentCount + newRating;
   const newCount = currentCount + 1;
@@ -426,10 +445,13 @@ export function calculateNewAverageRating(
 /**
  * Format cents to currency string
  */
-export function formatCurrency(cents: number, currency: string = 'USD'): string {
+export function formatCurrency(
+  cents: number,
+  currency: string = "USD",
+): string {
   const amount = cents / 100;
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
     currency: currency,
   }).format(amount);
 }
@@ -458,7 +480,7 @@ export function centsToDollars(cents: number): number {
 export function validateNightsConstraint(
   totalNights: number,
   minNights?: number,
-  maxNights?: number
+  maxNights?: number,
 ): {
   valid: boolean;
   reason?: string;
@@ -485,7 +507,7 @@ export function validateNightsConstraint(
  */
 export function validateBookingDates(
   checkInDate: string,
-  checkOutDate: string
+  checkOutDate: string,
 ): {
   valid: boolean;
   reason?: string;
@@ -498,14 +520,14 @@ export function validateBookingDates(
   if (checkIn < today) {
     return {
       valid: false,
-      reason: 'Check-in date cannot be in the past',
+      reason: "Check-in date cannot be in the past",
     };
   }
 
   if (checkOut <= checkIn) {
     return {
       valid: false,
-      reason: 'Check-out date must be after check-in date',
+      reason: "Check-out date must be after check-in date",
     };
   }
 

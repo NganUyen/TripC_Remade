@@ -19,7 +19,7 @@ export function calculateDynamicPrice(
     totalSeats: number;
     dayOfWeek: number;
     date: Date;
-  }
+  },
 ): number {
   let finalPrice = basePrice;
 
@@ -35,9 +35,9 @@ export function calculateDynamicPrice(
     }
 
     // Apply adjustment
-    if (rule.adjustment_type === 'percentage') {
+    if (rule.adjustment_type === "percentage") {
       finalPrice = finalPrice * (1 + rule.adjustment_value / 100);
-    } else if (rule.adjustment_type === 'fixed_amount') {
+    } else if (rule.adjustment_type === "fixed_amount") {
       finalPrice = finalPrice + rule.adjustment_value;
     }
   }
@@ -105,7 +105,7 @@ function isRuleApplicable(rule: any, context: any): boolean {
  */
 export function calculateLoadFactor(
   seatsBooked: number,
-  totalSeats: number
+  totalSeats: number,
 ): number {
   if (totalSeats === 0) return 0;
   return Math.round((seatsBooked / totalSeats) * 10000) / 100; // Two decimal places
@@ -116,7 +116,7 @@ export function calculateLoadFactor(
  */
 export function calculateYieldPerSeat(
   revenue: number,
-  seatsBooked: number
+  seatsBooked: number,
 ): number {
   if (seatsBooked === 0) return 0;
   return Math.round(revenue / seatsBooked);
@@ -128,7 +128,7 @@ export function calculateYieldPerSeat(
 export function calculateRASK(
   revenue: number,
   availableSeats: number,
-  distanceKm: number
+  distanceKm: number,
 ): number {
   const availableSeatKm = availableSeats * distanceKm;
   if (availableSeatKm === 0) return 0;
@@ -158,7 +158,7 @@ export function calculateRefundAmount(
   totalAmount: number,
   departureTime: Date,
   cancellationTime: Date = new Date(),
-  customPolicies?: RefundPolicy[]
+  customPolicies?: RefundPolicy[],
 ): {
   refundAmount: number;
   refundPercentage: number;
@@ -177,7 +177,7 @@ export function calculateRefundAmount(
   };
 
   const refundAmount = Math.round(
-    (totalAmount * applicablePolicy.refund_percentage) / 100
+    (totalAmount * applicablePolicy.refund_percentage) / 100,
   );
 
   return {
@@ -208,7 +208,7 @@ export function calculateFlightAnalytics(bookings: BookingData[]) {
 
   // Filter valid bookings
   const validBookings = bookings.filter(
-    (b) => b.status !== 'cancelled' && b.status !== 'no_show'
+    (b) => b.status !== "cancelled" && b.status !== "no_show",
   );
 
   // Total metrics
@@ -216,24 +216,33 @@ export function calculateFlightAnalytics(bookings: BookingData[]) {
   const totalRevenue = bookings.reduce((sum, b) => sum + b.total_price, 0);
   const totalPassengers = bookings.reduce(
     (sum, b) => sum + (b.passenger_count || 1),
-    0
+    0,
   );
 
   // Status breakdown
   const confirmedBookings = bookings.filter(
-    (b) => b.status === 'confirmed' || b.status === 'boarded' || b.status === 'completed'
+    (b) =>
+      b.status === "confirmed" ||
+      b.status === "boarded" ||
+      b.status === "completed",
   ).length;
-  const cancelledBookings = bookings.filter((b) => b.status === 'cancelled')
-    .length;
-  const pendingBookings = bookings.filter((b) => b.status === 'pending').length;
+  const cancelledBookings = bookings.filter(
+    (b) => b.status === "cancelled",
+  ).length;
+  const pendingBookings = bookings.filter((b) => b.status === "pending").length;
 
   // Revenue breakdown
   const confirmedRevenue = bookings
-    .filter((b) => b.status === 'confirmed' || b.status === 'boarded' || b.status === 'completed')
+    .filter(
+      (b) =>
+        b.status === "confirmed" ||
+        b.status === "boarded" ||
+        b.status === "completed",
+    )
     .reduce((sum, b) => sum + b.total_price, 0);
 
   const cancelledRevenue = bookings
-    .filter((b) => b.status === 'cancelled')
+    .filter((b) => b.status === "cancelled")
     .reduce((sum, b) => sum + b.total_price, 0);
 
   // Average metrics
@@ -253,7 +262,8 @@ export function calculateFlightAnalytics(bookings: BookingData[]) {
       const bookingDate = new Date(b.created_at);
       const departureDate = new Date(b.departure_at);
       return (
-        (departureDate.getTime() - bookingDate.getTime()) / (1000 * 60 * 60 * 24)
+        (departureDate.getTime() - bookingDate.getTime()) /
+        (1000 * 60 * 60 * 24)
       );
     })
     .filter((days) => days >= 0);
@@ -261,7 +271,7 @@ export function calculateFlightAnalytics(bookings: BookingData[]) {
   const avgLeadTime =
     leadTimes.length > 0
       ? Math.round(
-          leadTimes.reduce((sum, days) => sum + days, 0) / leadTimes.length
+          leadTimes.reduce((sum, days) => sum + days, 0) / leadTimes.length,
         )
       : 0;
 
@@ -304,23 +314,23 @@ export function calculateFlightAnalytics(bookings: BookingData[]) {
  */
 export function calculateGrowth(
   currentValue: number,
-  previousValue: number
+  previousValue: number,
 ): {
   absolute: number;
   percentage: number;
-  trend: 'up' | 'down' | 'stable';
+  trend: "up" | "down" | "stable";
 } {
   const absolute = currentValue - previousValue;
   const percentage =
     previousValue !== 0
       ? Math.round((absolute / previousValue) * 10000) / 100
       : currentValue > 0
-      ? 100
-      : 0;
+        ? 100
+        : 0;
 
-  let trend: 'up' | 'down' | 'stable' = 'stable';
-  if (absolute > 0) trend = 'up';
-  else if (absolute < 0) trend = 'down';
+  let trend: "up" | "down" | "stable" = "stable";
+  if (absolute > 0) trend = "up";
+  else if (absolute < 0) trend = "down";
 
   return {
     absolute,
@@ -342,34 +352,34 @@ export function getDateRange(period: string): { start: Date; end: Date } {
   const end = new Date(now);
 
   switch (period) {
-    case 'today':
+    case "today":
       start.setHours(0, 0, 0, 0);
       end.setHours(23, 59, 59, 999);
       break;
 
-    case 'yesterday':
+    case "yesterday":
       start.setDate(start.getDate() - 1);
       start.setHours(0, 0, 0, 0);
       end.setDate(end.getDate() - 1);
       end.setHours(23, 59, 59, 999);
       break;
 
-    case 'last_7_days':
+    case "last_7_days":
       start.setDate(start.getDate() - 7);
       start.setHours(0, 0, 0, 0);
       break;
 
-    case 'last_30_days':
+    case "last_30_days":
       start.setDate(start.getDate() - 30);
       start.setHours(0, 0, 0, 0);
       break;
 
-    case 'this_month':
+    case "this_month":
       start.setDate(1);
       start.setHours(0, 0, 0, 0);
       break;
 
-    case 'last_month':
+    case "last_month":
       start.setMonth(start.getMonth() - 1);
       start.setDate(1);
       start.setHours(0, 0, 0, 0);
@@ -389,10 +399,13 @@ export function getDateRange(period: string): { start: Date; end: Date } {
 /**
  * Format currency (cents to display)
  */
-export function formatCurrency(cents: number, currency: string = 'USD'): string {
+export function formatCurrency(
+  cents: number,
+  currency: string = "USD",
+): string {
   const amount = cents / 100;
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
     currency,
   }).format(amount);
 }

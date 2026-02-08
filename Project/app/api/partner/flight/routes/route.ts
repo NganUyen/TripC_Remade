@@ -4,18 +4,15 @@
  * POST /api/partner/flight/routes - Create new route
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { createRouteSchema } from '@/lib/flight-partner/validation';
-import {
-  getPartnerRoutes,
-  createRoute,
-} from '@/lib/flight-partner/database';
-import { ZodError } from 'zod';
+import { NextRequest, NextResponse } from "next/server";
+import { createRouteSchema } from "@/lib/flight-partner/validation";
+import { getPartnerRoutes, createRoute } from "@/lib/flight-partner/database";
+import { ZodError } from "zod";
 
 function getPartnerId(req: NextRequest): string {
-  const partnerId = req.headers.get('x-partner-id');
+  const partnerId = req.headers.get("x-partner-id");
   if (!partnerId) {
-    throw new Error('Partner ID not found');
+    throw new Error("Partner ID not found");
   }
   return partnerId;
 }
@@ -34,16 +31,16 @@ export async function GET(req: NextRequest) {
       count: routes.length,
     });
   } catch (error: any) {
-    console.error('Error fetching routes:', error);
+    console.error("Error fetching routes:", error);
     return NextResponse.json(
       {
         success: false,
         error: {
-          code: 'FETCH_ERROR',
-          message: error.message || 'Failed to fetch routes',
+          code: "FETCH_ERROR",
+          message: error.message || "Failed to fetch routes",
         },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -63,24 +60,24 @@ export async function POST(req: NextRequest) {
       {
         success: true,
         data: route,
-        message: 'Route created successfully',
+        message: "Route created successfully",
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error: any) {
-    console.error('Error creating route:', error);
+    console.error("Error creating route:", error);
 
     if (error instanceof ZodError) {
       return NextResponse.json(
         {
           success: false,
           error: {
-            code: 'VALIDATION_ERROR',
-            message: 'Invalid input data',
+            code: "VALIDATION_ERROR",
+            message: "Invalid input data",
             details: error.errors,
           },
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -88,11 +85,11 @@ export async function POST(req: NextRequest) {
       {
         success: false,
         error: {
-          code: 'CREATE_ERROR',
-          message: error.message || 'Failed to create route',
+          code: "CREATE_ERROR",
+          message: error.message || "Failed to create route",
         },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

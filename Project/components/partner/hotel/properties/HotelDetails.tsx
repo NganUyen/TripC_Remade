@@ -3,10 +3,10 @@
  * Detailed view and management of a single hotel
  */
 
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState } from "react";
+import { motion } from "framer-motion";
 import {
   Building2,
   MapPin,
@@ -19,34 +19,34 @@ import {
   X,
   Upload,
   Check,
-} from 'lucide-react';
+} from "lucide-react";
 
 export function HotelDetails() {
   const [isEditing, setIsEditing] = useState(false);
   const [selectedHotel] = useState({
-    id: '1',
-    name: 'Grand Hotel Saigon',
-    slug: 'grand-hotel-saigon',
+    id: "1",
+    name: "Grand Hotel Saigon",
+    slug: "grand-hotel-saigon",
     description:
-      'A luxurious 5-star hotel located in the heart of Saigon, offering world-class amenities and services.',
+      "A luxurious 5-star hotel located in the heart of Saigon, offering world-class amenities and services.",
     address: {
-      street: '123 Nguyen Hue Boulevard',
-      city: 'Ho Chi Minh City',
-      state: 'Ho Chi Minh',
-      country: 'Vietnam',
-      postal_code: '700000',
+      street: "123 Nguyen Hue Boulevard",
+      city: "Ho Chi Minh City",
+      state: "Ho Chi Minh",
+      country: "Vietnam",
+      postal_code: "700000",
     },
     star_rating: 5,
-    phone: '+84 28 3829 2999',
-    email: 'info@grandhotelsaigon.com',
-    website: 'https://grandhotelsaigon.com',
+    phone: "+84 28 3829 2999",
+    email: "info@grandhotelsaigon.com",
+    website: "https://grandhotelsaigon.com",
     is_active: true,
     images: [],
-    amenities: ['WiFi', 'Pool', 'Spa', 'Restaurant', 'Gym', 'Parking'],
+    amenities: ["WiFi", "Pool", "Spa", "Restaurant", "Gym", "Parking"],
     policies: {
-      check_in: '14:00',
-      check_out: '12:00',
-      cancellation_policy: 'Free cancellation up to 24 hours before check-in',
+      check_in: "14:00",
+      check_out: "12:00",
+      cancellation_policy: "Free cancellation up to 24 hours before check-in",
     },
   });
 
@@ -181,8 +181,8 @@ export function HotelDetails() {
                   key={i}
                   className={`w-5 h-5 ${
                     i < (selectedHotel.star_rating || 0)
-                      ? 'fill-yellow-400 text-yellow-400'
-                      : 'text-slate-300 dark:text-slate-600'
+                      ? "fill-yellow-400 text-yellow-400"
+                      : "text-slate-300 dark:text-slate-600"
                   }`}
                 />
               ))}
@@ -196,11 +196,11 @@ export function HotelDetails() {
             <span
               className={`inline-flex px-3 py-1 rounded-full text-sm font-semibold ${
                 selectedHotel.is_active
-                  ? 'bg-green-100 text-green-700'
-                  : 'bg-slate-100 text-slate-700'
+                  ? "bg-green-100 text-green-700"
+                  : "bg-slate-100 text-slate-700"
               }`}
             >
-              {selectedHotel.is_active ? 'Hoạt động' : 'Không hoạt động'}
+              {selectedHotel.is_active ? "Hoạt động" : "Không hoạt động"}
             </span>
           </div>
 
@@ -323,8 +323,8 @@ export function HotelDetails() {
               </div>
             ) : (
               <p className="text-slate-900 dark:text-white">
-                {selectedHotel.address.street}, {selectedHotel.address.city},{' '}
-                {selectedHotel.address.country}{' '}
+                {selectedHotel.address.street}, {selectedHotel.address.city},{" "}
+                {selectedHotel.address.country}{" "}
                 {selectedHotel.address.postal_code}
               </p>
             )}

@@ -4,20 +4,17 @@
  * POST /api/partner/flight/flights - Create new flight
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { createFlightSchema } from '@/lib/flight-partner/validation';
-import {
-  getPartnerFlights,
-  createFlight,
-} from '@/lib/flight-partner/database';
-import { ZodError } from 'zod';
+import { NextRequest, NextResponse } from "next/server";
+import { createFlightSchema } from "@/lib/flight-partner/validation";
+import { getPartnerFlights, createFlight } from "@/lib/flight-partner/database";
+import { ZodError } from "zod";
 
 // Note: Authentication middleware should be added here
 function getPartnerId(req: NextRequest): string {
   // TODO: Replace with actual authentication
-  const partnerId = req.headers.get('x-partner-id');
+  const partnerId = req.headers.get("x-partner-id");
   if (!partnerId) {
-    throw new Error('Partner ID not found');
+    throw new Error("Partner ID not found");
   }
   return partnerId;
 }
@@ -38,16 +35,16 @@ export async function GET(req: NextRequest) {
       count: flights.length,
     });
   } catch (error: any) {
-    console.error('Error fetching partner flights:', error);
+    console.error("Error fetching partner flights:", error);
     return NextResponse.json(
       {
         success: false,
         error: {
-          code: 'FETCH_ERROR',
-          message: error.message || 'Failed to fetch flights',
+          code: "FETCH_ERROR",
+          message: error.message || "Failed to fetch flights",
         },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -70,24 +67,24 @@ export async function POST(req: NextRequest) {
       {
         success: true,
         data: flight,
-        message: 'Flight created successfully',
+        message: "Flight created successfully",
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error: any) {
-    console.error('Error creating flight:', error);
+    console.error("Error creating flight:", error);
 
     if (error instanceof ZodError) {
       return NextResponse.json(
         {
           success: false,
           error: {
-            code: 'VALIDATION_ERROR',
-            message: 'Invalid input data',
+            code: "VALIDATION_ERROR",
+            message: "Invalid input data",
             details: error.errors,
           },
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -95,11 +92,11 @@ export async function POST(req: NextRequest) {
       {
         success: false,
         error: {
-          code: 'CREATE_ERROR',
-          message: error.message || 'Failed to create flight',
+          code: "CREATE_ERROR",
+          message: error.message || "Failed to create flight",
         },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

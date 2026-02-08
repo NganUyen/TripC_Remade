@@ -4,21 +4,18 @@
  * POST /api/partner/hotel/hotels - Create new hotel
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { createHotelSchema } from '@/lib/hotel-partner/validation';
-import {
-  getPartnerHotels,
-  createHotel,
-} from '@/lib/hotel-partner/database';
-import { ZodError } from 'zod';
+import { NextRequest, NextResponse } from "next/server";
+import { createHotelSchema } from "@/lib/hotel-partner/validation";
+import { getPartnerHotels, createHotel } from "@/lib/hotel-partner/database";
+import { ZodError } from "zod";
 
 // Note: Authentication middleware should be added here
 // For now, we'll use a mock partner ID from headers
 function getPartnerId(req: NextRequest): string {
   // TODO: Replace with actual authentication
-  const partnerId = req.headers.get('x-partner-id');
+  const partnerId = req.headers.get("x-partner-id");
   if (!partnerId) {
-    throw new Error('Partner ID not found');
+    throw new Error("Partner ID not found");
   }
   return partnerId;
 }
@@ -39,16 +36,16 @@ export async function GET(req: NextRequest) {
       count: hotels.length,
     });
   } catch (error: any) {
-    console.error('Error fetching partner hotels:', error);
+    console.error("Error fetching partner hotels:", error);
     return NextResponse.json(
       {
         success: false,
         error: {
-          code: 'FETCH_ERROR',
-          message: error.message || 'Failed to fetch hotels',
+          code: "FETCH_ERROR",
+          message: error.message || "Failed to fetch hotels",
         },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -69,12 +66,12 @@ export async function POST(req: NextRequest) {
         {
           success: false,
           error: {
-            code: 'VALIDATION_ERROR',
-            message: 'Invalid hotel data',
+            code: "VALIDATION_ERROR",
+            message: "Invalid hotel data",
             details: validation.error.errors,
           },
         },
-        { status: 422 }
+        { status: 422 },
       );
     }
 
@@ -85,24 +82,24 @@ export async function POST(req: NextRequest) {
       {
         success: true,
         data: hotel,
-        message: 'Hotel created successfully',
+        message: "Hotel created successfully",
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error: any) {
-    console.error('Error creating hotel:', error);
+    console.error("Error creating hotel:", error);
 
     // Handle duplicate slug error
-    if (error.code === '23505') {
+    if (error.code === "23505") {
       return NextResponse.json(
         {
           success: false,
           error: {
-            code: 'DUPLICATE_SLUG',
-            message: 'A hotel with this slug already exists',
+            code: "DUPLICATE_SLUG",
+            message: "A hotel with this slug already exists",
           },
         },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -110,11 +107,11 @@ export async function POST(req: NextRequest) {
       {
         success: false,
         error: {
-          code: 'CREATE_ERROR',
-          message: error.message || 'Failed to create hotel',
+          code: "CREATE_ERROR",
+          message: error.message || "Failed to create hotel",
         },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

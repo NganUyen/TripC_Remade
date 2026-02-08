@@ -2,11 +2,11 @@
  * Route List Component
  */
 
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import { Route, Plus } from 'lucide-react';
+import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { Route, Plus } from "lucide-react";
 
 interface RouteListProps {
   partnerId: string;
@@ -22,9 +22,9 @@ export default function RouteList({ partnerId }: RouteListProps) {
 
   async function fetchRoutes() {
     try {
-      const response = await fetch('/api/partner/flight/routes', {
+      const response = await fetch("/api/partner/flight/routes", {
         headers: {
-          'x-partner-id': partnerId,
+          "x-partner-id": partnerId,
         },
       });
 
@@ -33,7 +33,7 @@ export default function RouteList({ partnerId }: RouteListProps) {
         setRoutes(result.data);
       }
     } catch (error) {
-      console.error('Error fetching routes:', error);
+      console.error("Error fetching routes:", error);
     } finally {
       setLoading(false);
     }

@@ -13,12 +13,14 @@ The Hotel Partner Portal has been fully implemented with all core features for m
 **File**: `supabase/migrations/20260208_hotel_partner_system.sql`
 
 Created 4 new database tables:
+
 - **partner_users**: Partner portal user accounts with role-based access
 - **partner_permissions**: Granular permissions system
 - **partner_analytics**: Daily metrics aggregation
 - **partner_payouts**: Monthly payout records
 
 **Features**:
+
 - Row Level Security (RLS) policies
 - Automated triggers for timestamps
 - Permission assignment based on roles
@@ -28,6 +30,7 @@ Created 4 new database tables:
 ### 2. Business Logic Layer ✅
 
 #### Validation Schemas
+
 **File**: `lib/hotel-partner/validation.ts`
 
 - Hotel creation/update validation
@@ -41,21 +44,25 @@ Created 4 new database tables:
 **Total**: 15+ Zod schemas with TypeScript type inference
 
 #### Calculations Engine
+
 **File**: `lib/hotel-partner/calculations.ts`
 
 **Pricing Functions**:
+
 - `calculateBookingPrice()` - Complete pricing with discounts
 - `calculateBestPrice()` - Lowest/average rate calculation
 - `calculateRefund()` - Policy-based refund calculation
 - `calculatePartnerPayout()` - Commission and payout calculation
 
 **Analytics Functions**:
+
 - `calculateOccupancyRate()` - Room occupancy metrics
 - `calculateADR()` - Average Daily Rate
 - `calculateRevPAR()` - Revenue per Available Room
 - `calculateNewAverageRating()` - Rolling rating calculation
 
 **Utility Functions**:
+
 - Date range generation
 - Currency formatting
 - Validation helpers
@@ -63,40 +70,49 @@ Created 4 new database tables:
 - Working Pass discount (10%)
 
 #### Database Operations
+
 **File**: `lib/hotel-partner/database.ts`
 
 **Partner Operations**:
+
 - Get partner details
 - Get partner hotels
 - Verify hotel ownership
 
 **Hotel Operations**:
+
 - Create/update/delete hotels
 - Get hotel details
 
 **Room Operations**:
+
 - Create/update/delete rooms
 - Get rooms for hotel
 
 **Rate Operations**:
+
 - Get rates for date range
 - Upsert rates (single/bulk)
 - Delete rates for date range
 
 **Booking Operations**:
+
 - Get partner bookings with filters
 - Get booking details
 - Update booking status
 
 **Analytics Operations**:
+
 - Get partner analytics
 - Get dashboard metrics
 
 **Review Operations**:
+
 - Get partner reviews with filters
 - Respond to reviews
 
 **Payout Operations**:
+
 - Get partner payouts
 - Get payout details
 
@@ -105,29 +121,36 @@ Created 4 new database tables:
 Created 13 API route files:
 
 #### Hotel Management
+
 - `app/api/partner/hotel/hotels/route.ts` - List/create hotels
 - `app/api/partner/hotel/hotels/[id]/route.ts` - Get/update/delete hotel
 
 #### Room Management
+
 - `app/api/partner/hotel/rooms/route.ts` - List/create rooms
 - `app/api/partner/hotel/rooms/[id]/route.ts` - Get/update/delete room
 
 #### Rate Management
+
 - `app/api/partner/hotel/rates/route.ts` - List/create/bulk update rates
 
 #### Booking Management
+
 - `app/api/partner/hotel/bookings/route.ts` - List bookings with filters
 - `app/api/partner/hotel/bookings/[id]/route.ts` - Get/update booking status
 
 #### Analytics
+
 - `app/api/partner/hotel/analytics/dashboard/route.ts` - Dashboard metrics
 - `app/api/partner/hotel/analytics/route.ts` - Detailed analytics
 
 #### Reviews
+
 - `app/api/partner/hotel/reviews/route.ts` - List reviews
 - `app/api/partner/hotel/reviews/[id]/respond/route.ts` - Respond to review
 
 **Features**:
+
 - Consistent error handling
 - Input validation with Zod
 - Ownership verification
@@ -141,9 +164,11 @@ Created 13 API route files:
 Created 4 major UI components:
 
 #### Enhanced Dashboard
+
 **File**: `components/partner/hotel/EnhancedHotelDashboard.tsx`
 
 **Features**:
+
 - Real-time metrics fetching
 - Revenue breakdown display
 - Booking statistics
@@ -153,6 +178,7 @@ Created 4 major UI components:
 - Error handling
 
 **Metrics Displayed**:
+
 - Total/Net Revenue (30 days)
 - Total Bookings
 - Active Hotels
@@ -161,9 +187,11 @@ Created 4 major UI components:
 - Cancellation Rate
 
 #### Hotel List Management
+
 **File**: `components/partner/hotel/HotelListManagement.tsx`
 
 **Features**:
+
 - List all partner hotels
 - Search functionality
 - Hotel cards with images
@@ -174,9 +202,11 @@ Created 4 major UI components:
 - Loading skeletons
 
 #### Booking Management
+
 **File**: `components/partner/hotel/BookingManagement.tsx`
 
 **Features**:
+
 - List all bookings
 - Status filtering (all, pending, confirmed, etc.)
 - Booking details display
@@ -187,14 +217,17 @@ Created 4 major UI components:
 - Real-time updates
 
 **Supported Status Transitions**:
+
 - Pending → Confirmed/Cancelled
 - Confirmed → Checked In/Cancelled/No Show
 - Checked In → Checked Out
 
 #### Rate Calendar
+
 **File**: `components/partner/hotel/RateCalendar.tsx`
 
 **Features**:
+
 - Monthly calendar view
 - Visual rate display
 - Click-to-edit rates
@@ -206,6 +239,7 @@ Created 4 major UI components:
 - Price highlighting
 
 **Rate Management**:
+
 - Single date editing
 - Bulk month update
 - Price, availability, min nights
@@ -237,6 +271,7 @@ Created 4 major UI components:
 ## 📊 Key Features Implemented
 
 ### ✅ Hotel Management
+
 - Create, read, update, delete hotels
 - Hotel status management (draft, active, inactive)
 - Image management
@@ -245,6 +280,7 @@ Created 4 major UI components:
 - Star rating system
 
 ### ✅ Room Management
+
 - Create, read, update, delete rooms
 - Room types and capacity
 - Bed configurations
@@ -253,6 +289,7 @@ Created 4 major UI components:
 - Image galleries
 
 ### ✅ Rate Management
+
 - Single date rate updates
 - Bulk date range updates
 - Visual calendar interface
@@ -263,6 +300,7 @@ Created 4 major UI components:
 - Breakfast inclusion
 
 ### ✅ Booking Management
+
 - View all bookings
 - Filter by status
 - Filter by date range
@@ -272,6 +310,7 @@ Created 4 major UI components:
 - Booking reference system
 
 ### ✅ Analytics & Reporting
+
 - Dashboard overview (30-day metrics)
 - Daily analytics aggregation
 - Revenue reports (gross, net, commission)
@@ -281,6 +320,7 @@ Created 4 major UI components:
 - Review statistics
 
 ### ✅ Review Management
+
 - List all reviews for partner hotels
 - Filter by hotel
 - Filter by response status
@@ -288,6 +328,7 @@ Created 4 major UI components:
 - Review statistics
 
 ### ✅ Business Logic
+
 - TCent earning (5% of base price)
 - Working Pass discount (10%)
 - Tax calculation (10%)
@@ -302,17 +343,20 @@ Created 4 major UI components:
 ## 🔐 Security Features
 
 ### Authentication Placeholders
+
 - Partner ID verification via headers (`x-partner-id`)
 - Partner User ID for attribution (`x-partner-user-id`)
 - Ready for JWT integration
 
 ### Authorization
+
 - Hotel ownership verification on all operations
 - Row Level Security (RLS) policies
 - Permission system (can be extended)
 - Role-based access (owner, admin, manager, staff)
 
 ### Data Validation
+
 - Input validation with Zod
 - SQL injection prevention (parameterized queries)
 - XSS prevention
@@ -334,6 +378,7 @@ Created 4 major UI components:
 ## 🔄 Integration Points
 
 ### Ready for Integration
+
 - Customer booking system (existing)
 - TCent wallet system (existing)
 - Working Pass verification (existing)
@@ -343,6 +388,7 @@ Created 4 major UI components:
 - SMS notifications (Twilio)
 
 ### External APIs (Future)
+
 - Booking.com channel management
 - Agoda integration
 - Expedia integration
@@ -353,18 +399,21 @@ Created 4 major UI components:
 ## 🧪 Testing Recommendations
 
 ### Unit Tests Needed
+
 - Calculation functions
 - Validation schemas
 - Helper utilities
 - Date range generation
 
 ### Integration Tests Needed
+
 - API endpoints
 - Database operations
 - Authentication flow
 - Authorization checks
 
 ### E2E Tests Needed
+
 - Hotel creation flow
 - Room setup flow
 - Rate management flow
@@ -376,16 +425,19 @@ Created 4 major UI components:
 ## 📝 API Reference Quick Guide
 
 ### Base URL
+
 ```
 /api/partner/hotel
 ```
 
 ### Authentication
+
 All requests require `x-partner-id` header
 
 ### Endpoints
 
 **Hotels**
+
 - `GET /hotels` - List hotels
 - `POST /hotels` - Create hotel
 - `GET /hotels/:id` - Get hotel
@@ -393,6 +445,7 @@ All requests require `x-partner-id` header
 - `DELETE /hotels/:id` - Delete hotel
 
 **Rooms**
+
 - `GET /rooms?hotel_id=xxx` - List rooms
 - `POST /rooms` - Create room
 - `GET /rooms/:id` - Get room
@@ -400,19 +453,23 @@ All requests require `x-partner-id` header
 - `DELETE /rooms/:id` - Delete room
 
 **Rates**
+
 - `GET /rates?room_id=xxx&start_date=xxx&end_date=xxx` - Get rates
 - `POST /rates` - Create/update rates (bulk supported)
 
 **Bookings**
+
 - `GET /bookings` - List bookings
 - `GET /bookings/:id` - Get booking
 - `PATCH /bookings/:id` - Update status
 
 **Analytics**
+
 - `GET /analytics/dashboard` - Dashboard metrics
 - `GET /analytics?start_date=xxx&end_date=xxx` - Detailed analytics
 
 **Reviews**
+
 - `GET /reviews` - List reviews
 - `POST /reviews/:id/respond` - Respond to review
 
@@ -421,6 +478,7 @@ All requests require `x-partner-id` header
 ## 🚀 Next Steps (Future Enhancements)
 
 ### Phase 1: Authentication
+
 1. Implement JWT authentication for partners
 2. Create partner login/registration flow
 3. Password reset functionality
@@ -428,6 +486,7 @@ All requests require `x-partner-id` header
 5. Multi-factor authentication (optional)
 
 ### Phase 2: Advanced Features
+
 1. Photo upload to Supabase Storage
 2. Revenue charts and graphs
 3. Export functionality (CSV, PDF)
@@ -436,6 +495,7 @@ All requests require `x-partner-id` header
 6. Email templates
 
 ### Phase 3: Channel Management
+
 1. OTA integration framework
 2. Rate parity monitoring
 3. Inventory synchronization
@@ -443,6 +503,7 @@ All requests require `x-partner-id` header
 5. Channel manager webhooks
 
 ### Phase 4: Advanced Analytics
+
 1. Forecasting
 2. Competitor analysis
 3. Market insights
@@ -494,52 +555,54 @@ Project/
 ## 💡 Usage Examples
 
 ### Create a Hotel
+
 ```typescript
-const response = await fetch('/api/partner/hotel/hotels', {
-  method: 'POST',
+const response = await fetch("/api/partner/hotel/hotels", {
+  method: "POST",
   headers: {
-    'Content-Type': 'application/json',
-    'x-partner-id': partnerId,
+    "Content-Type": "application/json",
+    "x-partner-id": partnerId,
   },
   body: JSON.stringify({
-    name: 'Grand Hotel',
-    slug: 'grand-hotel',
+    name: "Grand Hotel",
+    slug: "grand-hotel",
     address: {
-      line1: '123 Main St',
-      city: 'Hanoi',
-      country: 'VN',
+      line1: "123 Main St",
+      city: "Hanoi",
+      country: "VN",
     },
     star_rating: 5,
-    amenities: ['wifi', 'pool', 'gym'],
+    amenities: ["wifi", "pool", "gym"],
     policies: {
-      check_in_time: '14:00',
-      check_out_time: '12:00',
-      cancellation_policy: 'moderate',
+      check_in_time: "14:00",
+      check_out_time: "12:00",
+      cancellation_policy: "moderate",
     },
     contact: {
-      phone: '+84123456789',
-      email: 'info@grandhotel.com',
+      phone: "+84123456789",
+      email: "info@grandhotel.com",
     },
   }),
 });
 ```
 
 ### Bulk Update Rates
+
 ```typescript
-const response = await fetch('/api/partner/hotel/rates', {
-  method: 'POST',
+const response = await fetch("/api/partner/hotel/rates", {
+  method: "POST",
   headers: {
-    'Content-Type': 'application/json',
-    'x-partner-id': partnerId,
+    "Content-Type": "application/json",
+    "x-partner-id": partnerId,
   },
   body: JSON.stringify({
-    room_id: 'room-uuid',
-    start_date: '2026-03-01',
-    end_date: '2026-03-31',
+    room_id: "room-uuid",
+    start_date: "2026-03-01",
+    end_date: "2026-03-31",
     price_cents: 15000, // $150.00
     available_rooms: 5,
     min_nights: 2,
-    cancellation_policy: 'moderate',
+    cancellation_policy: "moderate",
     refundable: true,
     breakfast_included: true,
   }),
@@ -547,16 +610,17 @@ const response = await fetch('/api/partner/hotel/rates', {
 ```
 
 ### Update Booking Status
+
 ```typescript
 const response = await fetch(`/api/partner/hotel/bookings/${bookingId}`, {
-  method: 'PATCH',
+  method: "PATCH",
   headers: {
-    'Content-Type': 'application/json',
-    'x-partner-id': partnerId,
+    "Content-Type": "application/json",
+    "x-partner-id": partnerId,
   },
   body: JSON.stringify({
-    status: 'checked_in',
-    notes: 'Guest arrived on time',
+    status: "checked_in",
+    notes: "Guest arrived on time",
   }),
 });
 ```
@@ -566,6 +630,7 @@ const response = await fetch(`/api/partner/hotel/bookings/${bookingId}`, {
 ## 🎯 Success Metrics
 
 ### Code Quality
+
 - ✅ Type-safe with TypeScript
 - ✅ Validated with Zod
 - ✅ Consistent error handling
@@ -573,6 +638,7 @@ const response = await fetch(`/api/partner/hotel/bookings/${bookingId}`, {
 - ✅ Reusable components
 
 ### Features Delivered
+
 - ✅ 4 database tables
 - ✅ 13 API endpoints
 - ✅ 4 major UI components
@@ -581,6 +647,7 @@ const response = await fetch(`/api/partner/hotel/bookings/${bookingId}`, {
 - ✅ Complete CRUD operations
 
 ### Documentation
+
 - ✅ 6 comprehensive documentation files
 - ✅ API specifications
 - ✅ Database schema documentation
@@ -604,6 +671,7 @@ The Hotel Partner Portal implementation is **complete and production-ready** (pe
 - Security considerations
 
 The system is ready for:
+
 1. Authentication integration
 2. Testing and QA
 3. Staging deployment

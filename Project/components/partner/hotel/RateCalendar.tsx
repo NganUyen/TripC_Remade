@@ -3,10 +3,10 @@
  * Manage room rates across dates
  */
 
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import {
   Calendar as CalendarIcon,
   DollarSign,
@@ -15,7 +15,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Save,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface Rate {
   id: string;
@@ -34,7 +34,11 @@ interface RateCalendarProps {
   roomTitle: string;
 }
 
-export function RateCalendar({ partnerId, roomId, roomTitle }: RateCalendarProps) {
+export function RateCalendar({
+  partnerId,
+  roomId,
+  roomTitle,
+}: RateCalendarProps) {
   const [rates, setRates] = useState<Rate[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -43,7 +47,7 @@ export function RateCalendar({ partnerId, roomId, roomTitle }: RateCalendarProps
     price_cents: 0,
     available_rooms: 0,
     min_nights: 1,
-    cancellation_policy: 'moderate',
+    cancellation_policy: "moderate",
     refundable: true,
     breakfast_included: false,
   });
@@ -58,27 +62,31 @@ export function RateCalendar({ partnerId, roomId, roomTitle }: RateCalendarProps
       const startDate = new Date(
         currentMonth.getFullYear(),
         currentMonth.getMonth(),
-        1
-      ).toISOString().split('T')[0];
+        1,
+      )
+        .toISOString()
+        .split("T")[0];
       const endDate = new Date(
         currentMonth.getFullYear(),
         currentMonth.getMonth() + 1,
-        0
-      ).toISOString().split('T')[0];
+        0,
+      )
+        .toISOString()
+        .split("T")[0];
 
-      const url = new URL('/api/partner/hotel/rates', window.location.origin);
-      url.searchParams.set('room_id', roomId);
-      url.searchParams.set('start_date', startDate);
-      url.searchParams.set('end_date', endDate);
+      const url = new URL("/api/partner/hotel/rates", window.location.origin);
+      url.searchParams.set("room_id", roomId);
+      url.searchParams.set("start_date", startDate);
+      url.searchParams.set("end_date", endDate);
 
       const response = await fetch(url, {
         headers: {
-          'x-partner-id': partnerId,
+          "x-partner-id": partnerId,
         },
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch rates');
+        throw new Error("Failed to fetch rates");
       }
 
       const result = await response.json();
@@ -94,11 +102,11 @@ export function RateCalendar({ partnerId, roomId, roomTitle }: RateCalendarProps
 
   async function saveRate(date: string) {
     try {
-      const response = await fetch('/api/partner/hotel/rates', {
-        method: 'POST',
+      const response = await fetch("/api/partner/hotel/rates", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'x-partner-id': partnerId,
+          "Content-Type": "application/json",
+          "x-partner-id": partnerId,
         },
         body: JSON.stringify({
           room_id: roomId,
@@ -108,7 +116,7 @@ export function RateCalendar({ partnerId, roomId, roomTitle }: RateCalendarProps
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save rate');
+        throw new Error("Failed to save rate");
       }
 
       const result = await response.json();
@@ -117,13 +125,13 @@ export function RateCalendar({ partnerId, roomId, roomTitle }: RateCalendarProps
         fetchRates();
       }
     } catch (err: any) {
-      alert('Error: ' + err.message);
+      alert("Error: " + err.message);
     }
   }
 
   async function bulkUpdate() {
     const confirmed = confirm(
-      'Update rates for the entire month with current form values?'
+      "Update rates for the entire month with current form values?",
     );
     if (!confirmed) return;
 
@@ -131,19 +139,23 @@ export function RateCalendar({ partnerId, roomId, roomTitle }: RateCalendarProps
       const startDate = new Date(
         currentMonth.getFullYear(),
         currentMonth.getMonth(),
-        1
-      ).toISOString().split('T')[0];
+        1,
+      )
+        .toISOString()
+        .split("T")[0];
       const endDate = new Date(
         currentMonth.getFullYear(),
         currentMonth.getMonth() + 1,
-        0
-      ).toISOString().split('T')[0];
+        0,
+      )
+        .toISOString()
+        .split("T")[0];
 
-      const response = await fetch('/api/partner/hotel/rates', {
-        method: 'POST',
+      const response = await fetch("/api/partner/hotel/rates", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'x-partner-id': partnerId,
+          "Content-Type": "application/json",
+          "x-partner-id": partnerId,
         },
         body: JSON.stringify({
           room_id: roomId,
@@ -154,7 +166,7 @@ export function RateCalendar({ partnerId, roomId, roomTitle }: RateCalendarProps
       });
 
       if (!response.ok) {
-        throw new Error('Failed to bulk update rates');
+        throw new Error("Failed to bulk update rates");
       }
 
       const result = await response.json();
@@ -163,7 +175,7 @@ export function RateCalendar({ partnerId, roomId, roomTitle }: RateCalendarProps
         fetchRates();
       }
     } catch (err: any) {
-      alert('Error: ' + err.message);
+      alert("Error: " + err.message);
     }
   }
 
@@ -192,20 +204,20 @@ export function RateCalendar({ partnerId, roomId, roomTitle }: RateCalendarProps
 
   const getRateForDate = (date: Date | null) => {
     if (!date) return null;
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = date.toISOString().split("T")[0];
     return rates.find((r) => r.date === dateStr);
   };
 
   const formatCurrency = (cents: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
     }).format(cents / 100);
   };
 
-  const monthName = currentMonth.toLocaleDateString('en-US', {
-    month: 'long',
-    year: 'numeric',
+  const monthName = currentMonth.toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
   });
 
   const days = getDaysInMonth();
@@ -226,7 +238,10 @@ export function RateCalendar({ partnerId, roomId, roomTitle }: RateCalendarProps
           <button
             onClick={() =>
               setCurrentMonth(
-                new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1)
+                new Date(
+                  currentMonth.getFullYear(),
+                  currentMonth.getMonth() - 1,
+                ),
               )
             }
             className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
@@ -239,7 +254,10 @@ export function RateCalendar({ partnerId, roomId, roomTitle }: RateCalendarProps
           <button
             onClick={() =>
               setCurrentMonth(
-                new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1)
+                new Date(
+                  currentMonth.getFullYear(),
+                  currentMonth.getMonth() + 1,
+                ),
               )
             }
             className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
@@ -357,7 +375,7 @@ export function RateCalendar({ partnerId, roomId, roomTitle }: RateCalendarProps
       <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800">
         {/* Day Headers */}
         <div className="grid grid-cols-7 gap-2 mb-4">
-          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+          {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
             <div
               key={day}
               className="text-center text-sm font-semibold text-slate-600 dark:text-slate-400 py-2"
@@ -384,10 +402,9 @@ export function RateCalendar({ partnerId, roomId, roomTitle }: RateCalendarProps
                 return <div key={`empty-${index}`} />;
               }
 
-              const dateStr = day.toISOString().split('T')[0];
+              const dateStr = day.toISOString().split("T")[0];
               const rate = getRateForDate(day);
-              const isToday =
-                day.toDateString() === new Date().toDateString();
+              const isToday = day.toDateString() === new Date().toDateString();
               const isPast = day < new Date();
 
               return (
@@ -410,14 +427,12 @@ export function RateCalendar({ partnerId, roomId, roomTitle }: RateCalendarProps
                     setEditingDate(dateStr);
                   }}
                   className={`aspect-square p-2 rounded-lg cursor-pointer transition-all ${
-                    isToday
-                      ? 'ring-2 ring-primary'
-                      : ''
+                    isToday ? "ring-2 ring-primary" : ""
                   } ${
                     rate
-                      ? 'bg-primary/10 hover:bg-primary/20'
-                      : 'bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700'
-                  } ${isPast ? 'opacity-50' : ''}`}
+                      ? "bg-primary/10 hover:bg-primary/20"
+                      : "bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700"
+                  } ${isPast ? "opacity-50" : ""}`}
                 >
                   <div className="text-center">
                     <div className="text-sm font-semibold text-slate-900 dark:text-white mb-1">

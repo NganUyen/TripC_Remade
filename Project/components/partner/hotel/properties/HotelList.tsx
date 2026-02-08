@@ -3,10 +3,10 @@
  * Displays and manages partner's hotels
  */
 
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import {
   Building2,
   MapPin,
@@ -16,7 +16,7 @@ import {
   Plus,
   Search,
   Filter,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface Hotel {
   id: string;
@@ -40,7 +40,7 @@ export function HotelList({ partnerId }: HotelListProps) {
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     fetchHotels();
@@ -49,21 +49,21 @@ export function HotelList({ partnerId }: HotelListProps) {
   async function fetchHotels() {
     try {
       setLoading(true);
-      const response = await fetch('/api/partner/hotel/hotels', {
+      const response = await fetch("/api/partner/hotel/hotels", {
         headers: {
-          'x-partner-id': partnerId,
+          "x-partner-id": partnerId,
         },
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch hotels');
+        throw new Error("Failed to fetch hotels");
       }
 
       const result = await response.json();
       if (result.success) {
         setHotels(result.data);
       } else {
-        throw new Error(result.error?.message || 'Unknown error');
+        throw new Error(result.error?.message || "Unknown error");
       }
     } catch (err: any) {
       setError(err.message);
@@ -73,7 +73,7 @@ export function HotelList({ partnerId }: HotelListProps) {
   }
 
   const filteredHotels = hotels.filter((hotel) =>
-    hotel.hotel.name.toLowerCase().includes(searchQuery.toLowerCase())
+    hotel.hotel.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   if (loading) {
@@ -176,8 +176,8 @@ export function HotelList({ partnerId }: HotelListProps) {
           </h3>
           <p className="text-slate-500 dark:text-slate-400 mb-6">
             {searchQuery
-              ? 'Không tìm thấy kết quả phù hợp'
-              : 'Bắt đầu bằng cách thêm khách sạn đầu tiên của bạn'}
+              ? "Không tìm thấy kết quả phù hợp"
+              : "Bắt đầu bằng cách thêm khách sạn đầu tiên của bạn"}
           </p>
           {!searchQuery && (
             <button className="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90">
@@ -197,13 +197,13 @@ export function HotelList({ partnerId }: HotelListProps) {
 }
 
 interface HotelCardProps {
-  hotel: Hotel['hotel'];
+  hotel: Hotel["hotel"];
   index: number;
 }
 
 function HotelCard({ hotel, index }: HotelCardProps) {
   const [imageError, setImageError] = useState(false);
-  const imageUrl = hotel.images?.[0] || '/placeholder-hotel.jpg';
+  const imageUrl = hotel.images?.[0] || "/placeholder-hotel.jpg";
 
   return (
     <motion.div
@@ -231,11 +231,11 @@ function HotelCard({ hotel, index }: HotelCardProps) {
           <div
             className={`absolute top-2 left-2 px-2 py-1 rounded-full text-xs font-semibold ${
               item.is_active
-                ? 'bg-green-100 text-green-700'
-                : 'bg-slate-100 text-slate-700'
+                ? "bg-green-100 text-green-700"
+                : "bg-slate-100 text-slate-700"
             }`}
           >
-            {item.is_active ? 'Hoạt động' : 'Không hoạt động'}
+            {item.is_active ? "Hoạt động" : "Không hoạt động"}
           </div>
         </div>
 
@@ -293,7 +293,7 @@ function HotelCard({ hotel, index }: HotelCardProps) {
           <div className="mt-3 flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
             <span>ID: {hotel.slug}</span>
             <span>
-              Tạo: {new Date(hotel.created_at).toLocaleDateString('vi-VN')}
+              Tạo: {new Date(hotel.created_at).toLocaleDateString("vi-VN")}
             </span>
           </div>
         </div>

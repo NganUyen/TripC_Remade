@@ -3,8 +3,8 @@
  * Handles all database queries and mutations
  */
 
-import { supabaseServerClient } from '@/lib/hotel/supabaseServerClient';
-import { getDateRange } from './calculations';
+import { supabaseServerClient } from "@/lib/hotel/supabaseServerClient";
+import { getDateRange } from "./calculations";
 
 // =====================================================
 // PARTNER QUERIES
@@ -15,9 +15,9 @@ import { getDateRange } from './calculations';
  */
 export async function getPartner(partnerId: string) {
   const { data, error } = await supabaseServerClient
-    .from('hotel_partners')
-    .select('*')
-    .eq('id', partnerId)
+    .from("hotel_partners")
+    .select("*")
+    .eq("id", partnerId)
     .single();
 
   if (error) throw error;
@@ -29,8 +29,9 @@ export async function getPartner(partnerId: string) {
  */
 export async function getPartnerHotels(partnerId: string) {
   const { data, error } = await supabaseServerClient
-    .from('hotel_partner_listings')
-    .select(`
+    .from("hotel_partner_listings")
+    .select(
+      `
       id,
       is_active,
       partner_hotel_id,
@@ -45,9 +46,10 @@ export async function getPartnerHotels(partnerId: string) {
         created_at,
         updated_at
       )
-    `)
-    .eq('partner_id', partnerId)
-    .order('created_at', { ascending: false });
+    `,
+    )
+    .eq("partner_id", partnerId)
+    .order("created_at", { ascending: false });
 
   if (error) throw error;
   return data;
@@ -58,8 +60,9 @@ export async function getPartnerHotels(partnerId: string) {
  */
 export async function getPartnerHotel(partnerId: string, hotelId: string) {
   const { data, error } = await supabaseServerClient
-    .from('hotel_partner_listings')
-    .select(`
+    .from("hotel_partner_listings")
+    .select(
+      `
       id,
       is_active,
       partner_hotel_id,
@@ -78,9 +81,10 @@ export async function getPartnerHotel(partnerId: string, hotelId: string) {
         created_at,
         updated_at
       )
-    `)
-    .eq('partner_id', partnerId)
-    .eq('hotel_id', hotelId)
+    `,
+    )
+    .eq("partner_id", partnerId)
+    .eq("hotel_id", hotelId)
     .single();
 
   if (error) throw error;
@@ -97,13 +101,13 @@ export async function getPartnerHotel(partnerId: string, hotelId: string) {
 export async function createHotel(partnerId: string, hotelData: any) {
   // Insert hotel
   const { data: hotel, error: hotelError } = await supabaseServerClient
-    .from('hotels')
+    .from("hotels")
     .insert({
       ...hotelData,
       metadata: {
         ...hotelData.metadata,
         partner_id: partnerId,
-        created_via: 'partner_portal',
+        created_via: "partner_portal",
       },
     })
     .select()
@@ -113,7 +117,7 @@ export async function createHotel(partnerId: string, hotelData: any) {
 
   // Create partner listing
   const { error: listingError } = await supabaseServerClient
-    .from('hotel_partner_listings')
+    .from("hotel_partner_listings")
     .insert({
       hotel_id: hotel.id,
       partner_id: partnerId,
@@ -123,7 +127,7 @@ export async function createHotel(partnerId: string, hotelData: any) {
 
   if (listingError) {
     // Rollback: delete the hotel if listing creation fails
-    await supabaseServerClient.from('hotels').delete().eq('id', hotel.id);
+    await supabaseServerClient.from("hotels").delete().eq("id", hotel.id);
     throw listingError;
   }
 
@@ -136,21 +140,21 @@ export async function createHotel(partnerId: string, hotelData: any) {
 export async function updateHotel(
   partnerId: string,
   hotelId: string,
-  updates: any
+  updates: any,
 ) {
   // Verify ownership
   const ownership = await getPartnerHotel(partnerId, hotelId);
   if (!ownership) {
-    throw new Error('Hotel not found or access denied');
+    throw new Error("Hotel not found or access denied");
   }
 
   const { data, error } = await supabaseServerClient
-    .from('hotels')
+    .from("hotels")
     .update({
       ...updates,
       updated_at: new Date().toISOString(),
     })
-    .eq('id', hotelId)
+    .eq("id", hotelId)
     .select()
     .single();
 
@@ -167,10 +171,10 @@ export async function deleteHotel(partnerId: string, hotelId: string) {
 
   // Deactivate the partner listing instead of deleting the hotel
   const { error } = await supabaseServerClient
-    .from('hotel_partner_listings')
+    .from("hotel_partner_listings")
     .update({ is_active: false })
-    .eq('partner_id', partnerId)
-    .eq('hotel_id', hotelId);
+    .eq("partner_id", partnerId)
+    .eq("hotel_id", hotelId);
 
   if (error) throw error;
 }
@@ -184,10 +188,10 @@ export async function deleteHotel(partnerId: string, hotelId: string) {
  */
 export async function getHotelRooms(hotelId: string) {
   const { data, error } = await supabaseServerClient
-    .from('hotel_rooms')
-    .select('*')
-    .eq('hotel_id', hotelId)
-    .order('created_at', { ascending: false });
+    .from("hotel_rooms")
+    .select("*")
+    .eq("hotel_id", hotelId)
+    .order("created_at", { ascending: false });
 
   if (error) throw error;
   return data;
@@ -198,9 +202,9 @@ export async function getHotelRooms(hotelId: string) {
  */
 export async function getRoom(roomId: string) {
   const { data, error } = await supabaseServerClient
-    .from('hotel_rooms')
-    .select('*')
-    .eq('id', roomId)
+    .from("hotel_rooms")
+    .select("*")
+    .eq("id", roomId)
     .single();
 
   if (error) throw error;
@@ -212,7 +216,7 @@ export async function getRoom(roomId: string) {
  */
 export async function createRoom(roomData: any) {
   const { data, error } = await supabaseServerClient
-    .from('hotel_rooms')
+    .from("hotel_rooms")
     .insert(roomData)
     .select()
     .single();
@@ -226,12 +230,12 @@ export async function createRoom(roomData: any) {
  */
 export async function updateRoom(roomId: string, updates: any) {
   const { data, error } = await supabaseServerClient
-    .from('hotel_rooms')
+    .from("hotel_rooms")
     .update({
       ...updates,
       updated_at: new Date().toISOString(),
     })
-    .eq('id', roomId)
+    .eq("id", roomId)
     .select()
     .single();
 
@@ -244,9 +248,9 @@ export async function updateRoom(roomId: string, updates: any) {
  */
 export async function deleteRoom(roomId: string) {
   const { error } = await supabaseServerClient
-    .from('hotel_rooms')
+    .from("hotel_rooms")
     .delete()
-    .eq('id', roomId);
+    .eq("id", roomId);
 
   if (error) throw error;
 }
@@ -262,18 +266,18 @@ export async function getRoomRates(
   roomId: string,
   startDate: string,
   endDate: string,
-  partnerId?: string
+  partnerId?: string,
 ) {
   let query = supabaseServerClient
-    .from('hotel_rates')
-    .select('*')
-    .eq('room_id', roomId)
-    .gte('date', startDate)
-    .lte('date', endDate)
-    .order('date', { ascending: true });
+    .from("hotel_rates")
+    .select("*")
+    .eq("room_id", roomId)
+    .gte("date", startDate)
+    .lte("date", endDate)
+    .order("date", { ascending: true });
 
   if (partnerId) {
-    query = query.eq('partner_id', partnerId);
+    query = query.eq("partner_id", partnerId);
   }
 
   const { data, error } = await query;
@@ -286,9 +290,9 @@ export async function getRoomRates(
  */
 export async function upsertRates(rates: any[]) {
   const { data, error } = await supabaseServerClient
-    .from('hotel_rates')
+    .from("hotel_rates")
     .upsert(rates, {
-      onConflict: 'room_id,date,partner_id',
+      onConflict: "room_id,date,partner_id",
     })
     .select();
 
@@ -304,10 +308,10 @@ export async function bulkUpdateRates(
   partnerId: string,
   startDate: string,
   endDate: string,
-  rateData: any
+  rateData: any,
 ) {
   const dates = getDateRange(startDate, endDate);
-  
+
   const ratesToUpsert = dates.map((date) => ({
     room_id: roomId,
     partner_id: partnerId,
@@ -325,15 +329,15 @@ export async function deleteRates(
   roomId: string,
   partnerId: string,
   startDate: string,
-  endDate: string
+  endDate: string,
 ) {
   const { error } = await supabaseServerClient
-    .from('hotel_rates')
+    .from("hotel_rates")
     .delete()
-    .eq('room_id', roomId)
-    .eq('partner_id', partnerId)
-    .gte('date', startDate)
-    .lte('date', endDate);
+    .eq("room_id", roomId)
+    .eq("partner_id", partnerId)
+    .gte("date", startDate)
+    .lte("date", endDate);
 
   if (error) throw error;
 }
@@ -354,14 +358,14 @@ export async function getPartnerBookings(
     end_date?: string;
     limit?: number;
     offset?: number;
-  } = {}
+  } = {},
 ) {
   // Get partner's hotel IDs
   const { data: listings } = await supabaseServerClient
-    .from('hotel_partner_listings')
-    .select('hotel_id')
-    .eq('partner_id', partnerId)
-    .eq('is_active', true);
+    .from("hotel_partner_listings")
+    .select("hotel_id")
+    .eq("partner_id", partnerId)
+    .eq("is_active", true);
 
   if (!listings || listings.length === 0) {
     return [];
@@ -370,31 +374,31 @@ export async function getPartnerBookings(
   const hotelIds = listings.map((l) => l.hotel_id);
 
   let query = supabaseServerClient
-    .from('hotel_bookings')
+    .from("hotel_bookings")
     .select(
       `
       *,
       hotel:hotels (id, name, address),
       room:hotel_rooms (id, title, code)
-    `
+    `,
     )
-    .in('hotel_id', hotelIds)
-    .order('created_at', { ascending: false });
+    .in("hotel_id", hotelIds)
+    .order("created_at", { ascending: false });
 
   if (filters.hotel_id) {
-    query = query.eq('hotel_id', filters.hotel_id);
+    query = query.eq("hotel_id", filters.hotel_id);
   }
 
   if (filters.status) {
-    query = query.eq('status', filters.status);
+    query = query.eq("status", filters.status);
   }
 
   if (filters.start_date) {
-    query = query.gte('check_in_date', filters.start_date);
+    query = query.gte("check_in_date", filters.start_date);
   }
 
   if (filters.end_date) {
-    query = query.lte('check_out_date', filters.end_date);
+    query = query.lte("check_out_date", filters.end_date);
   }
 
   if (filters.limit) {
@@ -402,7 +406,10 @@ export async function getPartnerBookings(
   }
 
   if (filters.offset) {
-    query = query.range(filters.offset, filters.offset + (filters.limit || 10) - 1);
+    query = query.range(
+      filters.offset,
+      filters.offset + (filters.limit || 10) - 1,
+    );
   }
 
   const { data, error } = await query;
@@ -415,7 +422,7 @@ export async function getPartnerBookings(
  */
 export async function getBooking(bookingId: string) {
   const { data, error } = await supabaseServerClient
-    .from('hotel_bookings')
+    .from("hotel_bookings")
     .select(
       `
       *,
@@ -430,9 +437,9 @@ export async function getBooking(bookingId: string) {
         amenities
       ),
       room:hotel_rooms (*)
-    `
+    `,
     )
-    .eq('id', bookingId)
+    .eq("id", bookingId)
     .single();
 
   if (error) throw error;
@@ -445,32 +452,32 @@ export async function getBooking(bookingId: string) {
 export async function updateBookingStatus(
   bookingId: string,
   status: string,
-  notes?: string
+  notes?: string,
 ) {
   const updates: any = {
     status,
     updated_at: new Date().toISOString(),
   };
 
-  if (status === 'checked_in') {
+  if (status === "checked_in") {
     updates.actual_check_in = new Date().toISOString();
-  } else if (status === 'checked_out') {
+  } else if (status === "checked_out") {
     updates.actual_check_out = new Date().toISOString();
   }
 
   const { data, error } = await supabaseServerClient
-    .from('hotel_bookings')
+    .from("hotel_bookings")
     .update(updates)
-    .eq('id', bookingId)
+    .eq("id", bookingId)
     .select()
     .single();
 
   if (error) throw error;
 
   // Log status change in modifications table
-  await supabaseServerClient.from('hotel_booking_modifications').insert({
+  await supabaseServerClient.from("hotel_booking_modifications").insert({
     booking_id: bookingId,
-    modification_type: 'status_change',
+    modification_type: "status_change",
     old_values: {},
     new_values: { status, notes },
     modified_at: new Date().toISOString(),
@@ -490,18 +497,18 @@ export async function getPartnerAnalytics(
   partnerId: string,
   startDate: string,
   endDate: string,
-  hotelId?: string
+  hotelId?: string,
 ) {
   let query = supabaseServerClient
-    .from('partner_analytics')
-    .select('*')
-    .eq('partner_id', partnerId)
-    .gte('date', startDate)
-    .lte('date', endDate)
-    .order('date', { ascending: true });
+    .from("partner_analytics")
+    .select("*")
+    .eq("partner_id", partnerId)
+    .gte("date", startDate)
+    .lte("date", endDate)
+    .order("date", { ascending: true });
 
   if (hotelId) {
-    query = query.eq('hotel_id', hotelId);
+    query = query.eq("hotel_id", hotelId);
   }
 
   const { data, error } = await query;
@@ -518,8 +525,8 @@ export async function getDashboardMetrics(partnerId: string) {
   const thirtyDaysAgo = new Date(today);
   thirtyDaysAgo.setDate(today.getDate() - 30);
 
-  const startDate = thirtyDaysAgo.toISOString().split('T')[0];
-  const endDate = today.toISOString().split('T')[0];
+  const startDate = thirtyDaysAgo.toISOString().split("T")[0];
+  const endDate = today.toISOString().split("T")[0];
 
   const analytics = await getPartnerAnalytics(partnerId, startDate, endDate);
 
@@ -540,15 +547,15 @@ export async function getDashboardMetrics(partnerId: string) {
       gross_revenue_cents: 0,
       net_revenue_cents: 0,
       total_reviews: 0,
-    }
+    },
   );
 
   // Get active hotels count
   const { data: hotels } = await supabaseServerClient
-    .from('hotel_partner_listings')
-    .select('hotel_id')
-    .eq('partner_id', partnerId)
-    .eq('is_active', true);
+    .from("hotel_partner_listings")
+    .select("hotel_id")
+    .eq("partner_id", partnerId)
+    .eq("is_active", true);
 
   return {
     ...metrics,
@@ -572,13 +579,13 @@ export async function getPartnerReviews(
     has_response?: boolean;
     min_rating?: number;
     limit?: number;
-  } = {}
+  } = {},
 ) {
   const { data: listings } = await supabaseServerClient
-    .from('hotel_partner_listings')
-    .select('hotel_id')
-    .eq('partner_id', partnerId)
-    .eq('is_active', true);
+    .from("hotel_partner_listings")
+    .select("hotel_id")
+    .eq("partner_id", partnerId)
+    .eq("is_active", true);
 
   if (!listings || listings.length === 0) {
     return [];
@@ -587,31 +594,31 @@ export async function getPartnerReviews(
   const hotelIds = listings.map((l) => l.hotel_id);
 
   let query = supabaseServerClient
-    .from('hotel_reviews')
+    .from("hotel_reviews")
     .select(
       `
       *,
       hotel:hotels (id, name),
       user:users (id, full_name)
-    `
+    `,
     )
-    .in('hotel_id', hotelIds)
-    .order('created_at', { ascending: false });
+    .in("hotel_id", hotelIds)
+    .order("created_at", { ascending: false });
 
   if (filters.hotel_id) {
-    query = query.eq('hotel_id', filters.hotel_id);
+    query = query.eq("hotel_id", filters.hotel_id);
   }
 
   if (filters.has_response !== undefined) {
     if (filters.has_response) {
-      query = query.not('partner_response', 'is', null);
+      query = query.not("partner_response", "is", null);
     } else {
-      query = query.is('partner_response', null);
+      query = query.is("partner_response", null);
     }
   }
 
   if (filters.min_rating) {
-    query = query.gte('rating', filters.min_rating);
+    query = query.gte("rating", filters.min_rating);
   }
 
   if (filters.limit) {
@@ -629,16 +636,16 @@ export async function getPartnerReviews(
 export async function respondToReview(
   reviewId: string,
   responseText: string,
-  responderId: string
+  responderId: string,
 ) {
   const { data, error } = await supabaseServerClient
-    .from('hotel_reviews')
+    .from("hotel_reviews")
     .update({
       partner_response: responseText,
       partner_response_date: new Date().toISOString(),
       partner_responder_id: responderId,
     })
-    .eq('id', reviewId)
+    .eq("id", reviewId)
     .select()
     .single();
 
@@ -658,16 +665,16 @@ export async function getPartnerPayouts(
   filters: {
     status?: string;
     limit?: number;
-  } = {}
+  } = {},
 ) {
   let query = supabaseServerClient
-    .from('partner_payouts')
-    .select('*')
-    .eq('partner_id', partnerId)
-    .order('period_start', { ascending: false });
+    .from("partner_payouts")
+    .select("*")
+    .eq("partner_id", partnerId)
+    .order("period_start", { ascending: false });
 
   if (filters.status) {
-    query = query.eq('status', filters.status);
+    query = query.eq("status", filters.status);
   }
 
   if (filters.limit) {
@@ -684,9 +691,9 @@ export async function getPartnerPayouts(
  */
 export async function getPayout(payoutId: string) {
   const { data, error } = await supabaseServerClient
-    .from('partner_payouts')
-    .select('*')
-    .eq('id', payoutId)
+    .from("partner_payouts")
+    .select("*")
+    .eq("id", payoutId)
     .single();
 
   if (error) throw error;

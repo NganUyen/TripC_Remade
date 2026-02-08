@@ -3,14 +3,14 @@
  * GET /api/partner/hotel/analytics?start_date=&end_date=&hotel_id= - Get detailed analytics
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { analyticsQuerySchema } from '@/lib/hotel-partner/validation';
-import { getPartnerAnalytics } from '@/lib/hotel-partner/database';
+import { NextRequest, NextResponse } from "next/server";
+import { analyticsQuerySchema } from "@/lib/hotel-partner/validation";
+import { getPartnerAnalytics } from "@/lib/hotel-partner/database";
 
 function getPartnerId(req: NextRequest): string {
-  const partnerId = req.headers.get('x-partner-id');
+  const partnerId = req.headers.get("x-partner-id");
   if (!partnerId) {
-    throw new Error('Partner ID not found');
+    throw new Error("Partner ID not found");
   }
   return partnerId;
 }
@@ -25,9 +25,9 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
 
     const queryData = {
-      start_date: searchParams.get('start_date'),
-      end_date: searchParams.get('end_date'),
-      hotel_id: searchParams.get('hotel_id') || undefined,
+      start_date: searchParams.get("start_date"),
+      end_date: searchParams.get("end_date"),
+      hotel_id: searchParams.get("hotel_id") || undefined,
     };
 
     // Validate query parameters
@@ -37,12 +37,12 @@ export async function GET(req: NextRequest) {
         {
           success: false,
           error: {
-            code: 'VALIDATION_ERROR',
-            message: 'Invalid query parameters',
+            code: "VALIDATION_ERROR",
+            message: "Invalid query parameters",
             details: validation.error.errors,
           },
         },
-        { status: 422 }
+        { status: 422 },
       );
     }
 
@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
       partnerId,
       start_date,
       end_date,
-      hotel_id
+      hotel_id,
     );
 
     // Calculate aggregated metrics
@@ -78,7 +78,7 @@ export async function GET(req: NextRequest) {
         commission_cents: 0,
         total_reviews: 0,
         days: 0,
-      }
+      },
     );
 
     // Calculate rates and averages
@@ -91,18 +91,21 @@ export async function GET(req: NextRequest) {
             : 0,
         avg_daily_bookings:
           aggregated.days > 0
-            ? Math.round((aggregated.total_bookings / aggregated.days) * 10) / 10
+            ? Math.round((aggregated.total_bookings / aggregated.days) * 10) /
+              10
             : 0,
         confirmation_rate:
           aggregated.total_bookings > 0
             ? Math.round(
-                (aggregated.confirmed_bookings / aggregated.total_bookings) * 100
+                (aggregated.confirmed_bookings / aggregated.total_bookings) *
+                  100,
               )
             : 0,
         cancellation_rate:
           aggregated.total_bookings > 0
             ? Math.round(
-                (aggregated.cancelled_bookings / aggregated.total_bookings) * 100
+                (aggregated.cancelled_bookings / aggregated.total_bookings) *
+                  100,
               )
             : 0,
       },
@@ -119,16 +122,16 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (error: any) {
-    console.error('Error fetching analytics:', error);
+    console.error("Error fetching analytics:", error);
     return NextResponse.json(
       {
         success: false,
         error: {
-          code: 'FETCH_ERROR',
-          message: error.message || 'Failed to fetch analytics',
+          code: "FETCH_ERROR",
+          message: error.message || "Failed to fetch analytics",
         },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

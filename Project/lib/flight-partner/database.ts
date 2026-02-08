@@ -3,8 +3,8 @@
  * Handles all database queries and mutations
  */
 
-import { supabaseServerClient } from '@/lib/hotel/supabaseServerClient';
-import { getDateRange } from './calculations';
+import { supabaseServerClient } from "@/lib/hotel/supabaseServerClient";
+import { getDateRange } from "./calculations";
 
 // =====================================================
 // PARTNER QUERIES
@@ -15,9 +15,9 @@ import { getDateRange } from './calculations';
  */
 export async function getFlightPartner(partnerId: string) {
   const { data, error } = await supabaseServerClient
-    .from('flight_partners')
-    .select('*')
-    .eq('id', partnerId)
+    .from("flight_partners")
+    .select("*")
+    .eq("id", partnerId)
     .single();
 
   if (error) throw error;
@@ -29,8 +29,9 @@ export async function getFlightPartner(partnerId: string) {
  */
 export async function getPartnerFlights(partnerId: string) {
   const { data, error } = await supabaseServerClient
-    .from('flights')
-    .select(`
+    .from("flights")
+    .select(
+      `
       id,
       flight_number,
       airline_code,
@@ -52,9 +53,10 @@ export async function getPartnerFlights(partnerId: string) {
       metadata,
       created_at,
       updated_at
-    `)
-    .eq('airline_code', partnerId)
-    .order('departure_at', { ascending: true });
+    `,
+    )
+    .eq("airline_code", partnerId)
+    .order("departure_at", { ascending: true });
 
   if (error) throw error;
   return data;
@@ -65,10 +67,10 @@ export async function getPartnerFlights(partnerId: string) {
  */
 export async function getPartnerFlight(partnerId: string, flightId: string) {
   const { data, error } = await supabaseServerClient
-    .from('flights')
-    .select('*')
-    .eq('id', flightId)
-    .eq('airline_code', partnerId)
+    .from("flights")
+    .select("*")
+    .eq("id", flightId)
+    .eq("airline_code", partnerId)
     .single();
 
   if (error) throw error;
@@ -84,13 +86,13 @@ export async function getPartnerFlight(partnerId: string, flightId: string) {
  */
 export async function createFlight(partnerId: string, flightData: any) {
   const { data, error } = await supabaseServerClient
-    .from('flights')
+    .from("flights")
     .insert({
       ...flightData,
       airline_code: partnerId,
       metadata: {
         ...flightData.metadata,
-        created_via: 'partner_portal',
+        created_via: "partner_portal",
       },
     })
     .select()
@@ -106,18 +108,18 @@ export async function createFlight(partnerId: string, flightData: any) {
 export async function updateFlight(
   partnerId: string,
   flightId: string,
-  updates: any
+  updates: any,
 ) {
   // Verify ownership
   await getPartnerFlight(partnerId, flightId);
 
   const { data, error } = await supabaseServerClient
-    .from('flights')
+    .from("flights")
     .update({
       ...updates,
       updated_at: new Date().toISOString(),
     })
-    .eq('id', flightId)
+    .eq("id", flightId)
     .select()
     .single();
 
@@ -133,9 +135,9 @@ export async function deleteFlight(partnerId: string, flightId: string) {
   await getPartnerFlight(partnerId, flightId);
 
   const { error } = await supabaseServerClient
-    .from('flights')
-    .update({ status: 'cancelled' })
-    .eq('id', flightId);
+    .from("flights")
+    .update({ status: "cancelled" })
+    .eq("id", flightId);
 
   if (error) throw error;
 }
@@ -149,10 +151,10 @@ export async function deleteFlight(partnerId: string, flightId: string) {
  */
 export async function getPartnerRoutes(partnerId: string) {
   const { data, error } = await supabaseServerClient
-    .from('flight_routes')
-    .select('*')
-    .eq('airline_code', partnerId)
-    .order('origin', { ascending: true });
+    .from("flight_routes")
+    .select("*")
+    .eq("airline_code", partnerId)
+    .order("origin", { ascending: true });
 
   if (error) throw error;
   return data;
@@ -163,9 +165,9 @@ export async function getPartnerRoutes(partnerId: string) {
  */
 export async function getRoute(routeId: string) {
   const { data, error } = await supabaseServerClient
-    .from('flight_routes')
-    .select('*')
-    .eq('id', routeId)
+    .from("flight_routes")
+    .select("*")
+    .eq("id", routeId)
     .single();
 
   if (error) throw error;
@@ -177,7 +179,7 @@ export async function getRoute(routeId: string) {
  */
 export async function createRoute(partnerId: string, routeData: any) {
   const { data, error } = await supabaseServerClient
-    .from('flight_routes')
+    .from("flight_routes")
     .insert({
       ...routeData,
       airline_code: partnerId,
@@ -195,13 +197,13 @@ export async function createRoute(partnerId: string, routeData: any) {
 export async function updateRoute(
   partnerId: string,
   routeId: string,
-  updates: any
+  updates: any,
 ) {
   const { data, error } = await supabaseServerClient
-    .from('flight_routes')
+    .from("flight_routes")
     .update(updates)
-    .eq('id', routeId)
-    .eq('airline_code', partnerId)
+    .eq("id", routeId)
+    .eq("airline_code", partnerId)
     .select()
     .single();
 
@@ -214,10 +216,10 @@ export async function updateRoute(
  */
 export async function deleteRoute(partnerId: string, routeId: string) {
   const { error } = await supabaseServerClient
-    .from('flight_routes')
+    .from("flight_routes")
     .delete()
-    .eq('id', routeId)
-    .eq('airline_code', partnerId);
+    .eq("id", routeId)
+    .eq("airline_code", partnerId);
 
   if (error) throw error;
 }
@@ -231,13 +233,13 @@ export async function deleteRoute(partnerId: string, routeId: string) {
  */
 export async function getPricingRules(partnerId: string, routeId?: string) {
   let query = supabaseServerClient
-    .from('flight_pricing_rules')
-    .select('*')
-    .eq('airline_code', partnerId)
-    .order('priority', { ascending: false });
+    .from("flight_pricing_rules")
+    .select("*")
+    .eq("airline_code", partnerId)
+    .order("priority", { ascending: false });
 
   if (routeId) {
-    query = query.eq('route_id', routeId);
+    query = query.eq("route_id", routeId);
   }
 
   const { data, error } = await query;
@@ -251,7 +253,7 @@ export async function getPricingRules(partnerId: string, routeId?: string) {
  */
 export async function createPricingRule(partnerId: string, ruleData: any) {
   const { data, error } = await supabaseServerClient
-    .from('flight_pricing_rules')
+    .from("flight_pricing_rules")
     .insert({
       ...ruleData,
       airline_code: partnerId,
@@ -269,13 +271,13 @@ export async function createPricingRule(partnerId: string, ruleData: any) {
 export async function updatePricingRule(
   partnerId: string,
   ruleId: string,
-  updates: any
+  updates: any,
 ) {
   const { data, error } = await supabaseServerClient
-    .from('flight_pricing_rules')
+    .from("flight_pricing_rules")
     .update(updates)
-    .eq('id', ruleId)
-    .eq('airline_code', partnerId)
+    .eq("id", ruleId)
+    .eq("airline_code", partnerId)
     .select()
     .single();
 
@@ -288,10 +290,10 @@ export async function updatePricingRule(
  */
 export async function deletePricingRule(partnerId: string, ruleId: string) {
   const { error } = await supabaseServerClient
-    .from('flight_pricing_rules')
+    .from("flight_pricing_rules")
     .delete()
-    .eq('id', ruleId)
-    .eq('airline_code', partnerId);
+    .eq("id", ruleId)
+    .eq("airline_code", partnerId);
 
   if (error) throw error;
 }
@@ -312,10 +314,10 @@ export async function getPartnerBookings(
     end_date?: string;
     limit?: number;
     offset?: number;
-  }
+  },
 ) {
   let query = supabaseServerClient
-    .from('flight_bookings')
+    .from("flight_bookings")
     .select(
       `
       *,
@@ -335,26 +337,26 @@ export async function getPartnerBookings(
         full_name,
         email
       )
-    `
+    `,
     )
-    .eq('flight.airline_code', partnerId)
-    .order('created_at', { ascending: false });
+    .eq("flight.airline_code", partnerId)
+    .order("created_at", { ascending: false });
 
   // Apply filters
   if (filters?.flight_id) {
-    query = query.eq('flight_id', filters.flight_id);
+    query = query.eq("flight_id", filters.flight_id);
   }
 
   if (filters?.status) {
-    query = query.eq('status', filters.status);
+    query = query.eq("status", filters.status);
   }
 
   if (filters?.start_date) {
-    query = query.gte('flight.departure_at', filters.start_date);
+    query = query.gte("flight.departure_at", filters.start_date);
   }
 
   if (filters?.end_date) {
-    query = query.lte('flight.departure_at', filters.end_date);
+    query = query.lte("flight.departure_at", filters.end_date);
   }
 
   if (filters?.limit) {
@@ -364,7 +366,7 @@ export async function getPartnerBookings(
   if (filters?.offset) {
     query = query.range(
       filters.offset,
-      filters.offset + (filters.limit || 50) - 1
+      filters.offset + (filters.limit || 50) - 1,
     );
   }
 
@@ -379,7 +381,7 @@ export async function getPartnerBookings(
  */
 export async function getBooking(bookingId: string) {
   const { data, error } = await supabaseServerClient
-    .from('flight_bookings')
+    .from("flight_bookings")
     .select(
       `
       *,
@@ -401,9 +403,9 @@ export async function getBooking(bookingId: string) {
         email,
         phone
       )
-    `
+    `,
     )
-    .eq('id', bookingId)
+    .eq("id", bookingId)
     .single();
 
   if (error) throw error;
@@ -416,22 +418,22 @@ export async function getBooking(bookingId: string) {
 export async function updateBookingStatus(
   bookingId: string,
   status: string,
-  notes?: string
+  notes?: string,
 ) {
   const { data, error } = await supabaseServerClient
-    .from('flight_bookings')
+    .from("flight_bookings")
     .update({
       status,
       updated_at: new Date().toISOString(),
     })
-    .eq('id', bookingId)
+    .eq("id", bookingId)
     .select()
     .single();
 
   if (error) throw error;
 
   // Log status change
-  await supabaseServerClient.from('booking_events').insert({
+  await supabaseServerClient.from("booking_events").insert({
     booking_id: bookingId,
     event_type: `status_changed_to_${status}`,
     metadata: { notes, previous_status: data.status },
@@ -449,38 +451,42 @@ export async function updateBookingStatus(
  */
 export async function getDashboardMetrics(
   partnerId: string,
-  dateRange?: { start: Date; end: Date }
+  dateRange?: { start: Date; end: Date },
 ) {
-  const range = dateRange || getDateRange('last_30_days');
+  const range = dateRange || getDateRange("last_30_days");
 
   // Get bookings in range
   const { data: bookings, error: bookingsError } = await supabaseServerClient
-    .from('flight_bookings')
+    .from("flight_bookings")
     .select(
       `
       *,
       flight:flights!inner (airline_code)
-    `
+    `,
     )
-    .eq('flight.airline_code', partnerId)
-    .gte('created_at', range.start.toISOString())
-    .lte('created_at', range.end.toISOString());
+    .eq("flight.airline_code", partnerId)
+    .gte("created_at", range.start.toISOString())
+    .lte("created_at", range.end.toISOString());
 
   if (bookingsError) throw bookingsError;
 
   // Get flights count
-  const { count: flightsCount, error: flightsError } = await supabaseServerClient
-    .from('flights')
-    .select('*', { count: 'exact', head: true })
-    .eq('airline_code', partnerId);
+  const { count: flightsCount, error: flightsError } =
+    await supabaseServerClient
+      .from("flights")
+      .select("*", { count: "exact", head: true })
+      .eq("airline_code", partnerId);
 
   if (flightsError) throw flightsError;
 
   // Calculate metrics
   const totalBookings = bookings?.length || 0;
-  const totalRevenue = bookings?.reduce((sum, b) => sum + (b.total_price || 0), 0) || 0;
-  const confirmedBookings = bookings?.filter((b) => b.status === 'confirmed').length || 0;
-  const cancelledBookings = bookings?.filter((b) => b.status === 'cancelled').length || 0;
+  const totalRevenue =
+    bookings?.reduce((sum, b) => sum + (b.total_price || 0), 0) || 0;
+  const confirmedBookings =
+    bookings?.filter((b) => b.status === "confirmed").length || 0;
+  const cancelledBookings =
+    bookings?.filter((b) => b.status === "cancelled").length || 0;
 
   return {
     flights: {
@@ -511,15 +517,15 @@ export async function getRevenueAnalytics(
   partnerId: string,
   startDate: string,
   endDate: string,
-  groupBy: 'day' | 'week' | 'month' = 'day'
+  groupBy: "day" | "week" | "month" = "day",
 ) {
   const { data, error } = await supabaseServerClient
-    .from('flight_partner_analytics')
-    .select('*')
-    .eq('partner_id', partnerId)
-    .gte('date', startDate)
-    .lte('date', endDate)
-    .order('date', { ascending: true });
+    .from("flight_partner_analytics")
+    .select("*")
+    .eq("partner_id", partnerId)
+    .gte("date", startDate)
+    .lte("date", endDate)
+    .order("date", { ascending: true });
 
   if (error) throw error;
   return data;
@@ -531,15 +537,15 @@ export async function getRevenueAnalytics(
 export async function getCapacityAnalytics(
   partnerId: string,
   startDate: string,
-  endDate: string
+  endDate: string,
 ) {
   const { data, error } = await supabaseServerClient
-    .from('flights')
-    .select('*')
-    .eq('airline_code', partnerId)
-    .gte('departure_at', startDate)
-    .lte('departure_at', endDate)
-    .order('departure_at', { ascending: true });
+    .from("flights")
+    .select("*")
+    .eq("airline_code", partnerId)
+    .gte("departure_at", startDate)
+    .lte("departure_at", endDate)
+    .order("departure_at", { ascending: true });
 
   if (error) throw error;
 
@@ -561,24 +567,24 @@ export async function getPartnerPayouts(
     status?: string;
     start_date?: string;
     end_date?: string;
-  }
+  },
 ) {
   let query = supabaseServerClient
-    .from('flight_partner_payouts')
-    .select('*')
-    .eq('partner_id', partnerId)
-    .order('period_start', { ascending: false });
+    .from("flight_partner_payouts")
+    .select("*")
+    .eq("partner_id", partnerId)
+    .order("period_start", { ascending: false });
 
   if (filters?.status) {
-    query = query.eq('status', filters.status);
+    query = query.eq("status", filters.status);
   }
 
   if (filters?.start_date) {
-    query = query.gte('period_start', filters.start_date);
+    query = query.gte("period_start", filters.start_date);
   }
 
   if (filters?.end_date) {
-    query = query.lte('period_end', filters.end_date);
+    query = query.lte("period_end", filters.end_date);
   }
 
   const { data, error } = await query;
@@ -592,7 +598,7 @@ export async function getPartnerPayouts(
  */
 export async function createPayout(partnerId: string, payoutData: any) {
   const { data, error } = await supabaseServerClient
-    .from('flight_partner_payouts')
+    .from("flight_partner_payouts")
     .insert({
       ...payoutData,
       partner_id: partnerId,
@@ -610,16 +616,16 @@ export async function createPayout(partnerId: string, payoutData: any) {
 export async function updatePayoutStatus(
   payoutId: string,
   status: string,
-  updates?: any
+  updates?: any,
 ) {
   const { data, error } = await supabaseServerClient
-    .from('flight_partner_payouts')
+    .from("flight_partner_payouts")
     .update({
       status,
       ...updates,
       updated_at: new Date().toISOString(),
     })
-    .eq('id', payoutId)
+    .eq("id", payoutId)
     .select()
     .single();
 

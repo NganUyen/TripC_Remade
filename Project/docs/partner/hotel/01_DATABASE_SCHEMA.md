@@ -232,34 +232,36 @@
 
 **Purpose**: Stores partner organization information (hotel chains, independent hotels, OTAs)
 
-| Column            | Type         | Constraints                         | Description                                      |
-|-------------------|--------------|-------------------------------------|--------------------------------------------------|
-| `id`              | UUID         | PRIMARY KEY, DEFAULT uuid_generate_v4() | Unique identifier                          |
-| `code`            | TEXT         | UNIQUE, NOT NULL                    | Partner code (e.g., 'BOOKING_COM', 'DIRECT')    |
-| `name`            | TEXT         | NOT NULL                            | Partner display name                             |
-| `description`     | TEXT         | -                                   | Partner description                              |
-| `logo_url`        | TEXT         | -                                   | Partner logo URL                                 |
-| `website_url`     | TEXT         | -                                   | Partner website                                  |
-| `commission_rate` | NUMERIC      | DEFAULT 0.10                        | Commission rate (decimal, e.g., 0.15 = 15%)     |
-| `is_active`       | BOOLEAN      | DEFAULT true                        | Whether partner is active                        |
-| `priority`        | INTEGER      | DEFAULT 0                           | Display priority (higher = shown first)          |
-| `contact`         | JSONB        | DEFAULT '{}'                        | Contact information: {email, phone, address}     |
-| `api_config`      | JSONB        | DEFAULT '{}'                        | API credentials and endpoints                    |
-| `metadata`        | JSONB        | DEFAULT '{}'                        | Additional partner metadata                      |
-| `created_at`      | TIMESTAMPTZ  | DEFAULT NOW()                       | Creation timestamp                               |
-| `updated_at`      | TIMESTAMPTZ  | DEFAULT NOW()                       | Last update timestamp                            |
+| Column            | Type        | Constraints                             | Description                                  |
+| ----------------- | ----------- | --------------------------------------- | -------------------------------------------- |
+| `id`              | UUID        | PRIMARY KEY, DEFAULT uuid_generate_v4() | Unique identifier                            |
+| `code`            | TEXT        | UNIQUE, NOT NULL                        | Partner code (e.g., 'BOOKING_COM', 'DIRECT') |
+| `name`            | TEXT        | NOT NULL                                | Partner display name                         |
+| `description`     | TEXT        | -                                       | Partner description                          |
+| `logo_url`        | TEXT        | -                                       | Partner logo URL                             |
+| `website_url`     | TEXT        | -                                       | Partner website                              |
+| `commission_rate` | NUMERIC     | DEFAULT 0.10                            | Commission rate (decimal, e.g., 0.15 = 15%)  |
+| `is_active`       | BOOLEAN     | DEFAULT true                            | Whether partner is active                    |
+| `priority`        | INTEGER     | DEFAULT 0                               | Display priority (higher = shown first)      |
+| `contact`         | JSONB       | DEFAULT '{}'                            | Contact information: {email, phone, address} |
+| `api_config`      | JSONB       | DEFAULT '{}'                            | API credentials and endpoints                |
+| `metadata`        | JSONB       | DEFAULT '{}'                            | Additional partner metadata                  |
+| `created_at`      | TIMESTAMPTZ | DEFAULT NOW()                           | Creation timestamp                           |
+| `updated_at`      | TIMESTAMPTZ | DEFAULT NOW()                           | Last update timestamp                        |
 
 **Indexes**:
+
 - `idx_hotel_partners_code` ON `code` (UNIQUE)
 - `idx_hotel_partners_active` ON `is_active`
 - `idx_hotel_partners_priority` ON `priority`
 
 **Example Data**:
+
 ```json
 {
   "code": "DIRECT",
   "name": "Direct Booking",
-  "commission_rate": 0.10,
+  "commission_rate": 0.1,
   "contact": {
     "email": "partner@hotel.com",
     "phone": "+84-123-456-789"
@@ -278,27 +280,29 @@
 
 **Purpose**: Links hotels to partners (many-to-many relationship)
 
-| Column               | Type        | Constraints                         | Description                                |
-|----------------------|-------------|-------------------------------------|--------------------------------------------|
-| `id`                 | UUID        | PRIMARY KEY, DEFAULT uuid_generate_v4() | Unique identifier                    |
-| `hotel_id`           | UUID        | FK → hotels(id)                     | Hotel reference                            |
-| `partner_id`         | UUID        | FK → hotel_partners(id)             | Partner reference                          |
-| `partner_hotel_id`   | TEXT        | NOT NULL                            | Hotel ID in partner's system               |
-| `partner_hotel_url`  | TEXT        | -                                   | Direct link to hotel on partner platform   |
-| `is_active`          | BOOLEAN     | DEFAULT true                        | Whether listing is active                  |
-| `last_synced_at`     | TIMESTAMPTZ | -                                   | Last successful sync timestamp             |
-| `sync_status`        | TEXT        | DEFAULT 'active'                    | 'active', 'syncing', 'error', 'disabled'   |
-| `metadata`           | JSONB       | DEFAULT '{}'                        | Sync errors, rate differences, etc.        |
-| `created_at`         | TIMESTAMPTZ | DEFAULT NOW()                       | Creation timestamp                         |
-| `updated_at`         | TIMESTAMPTZ | DEFAULT NOW()                       | Last update timestamp                      |
+| Column              | Type        | Constraints                             | Description                              |
+| ------------------- | ----------- | --------------------------------------- | ---------------------------------------- |
+| `id`                | UUID        | PRIMARY KEY, DEFAULT uuid_generate_v4() | Unique identifier                        |
+| `hotel_id`          | UUID        | FK → hotels(id)                         | Hotel reference                          |
+| `partner_id`        | UUID        | FK → hotel_partners(id)                 | Partner reference                        |
+| `partner_hotel_id`  | TEXT        | NOT NULL                                | Hotel ID in partner's system             |
+| `partner_hotel_url` | TEXT        | -                                       | Direct link to hotel on partner platform |
+| `is_active`         | BOOLEAN     | DEFAULT true                            | Whether listing is active                |
+| `last_synced_at`    | TIMESTAMPTZ | -                                       | Last successful sync timestamp           |
+| `sync_status`       | TEXT        | DEFAULT 'active'                        | 'active', 'syncing', 'error', 'disabled' |
+| `metadata`          | JSONB       | DEFAULT '{}'                            | Sync errors, rate differences, etc.      |
+| `created_at`        | TIMESTAMPTZ | DEFAULT NOW()                           | Creation timestamp                       |
+| `updated_at`        | TIMESTAMPTZ | DEFAULT NOW()                           | Last update timestamp                    |
 
 **Indexes**:
+
 - `idx_hotel_listings_hotel` ON `hotel_id`
 - `idx_hotel_listings_partner` ON `partner_id`
 - `idx_hotel_listings_active` ON `is_active`
 - `unique_hotel_partner` UNIQUE(`hotel_id`, `partner_id`)
 
 **Business Rules**:
+
 - A hotel can be listed with multiple partners
 - Each hotel-partner combination must be unique
 - `sync_status` tracks integration health
@@ -312,6 +316,7 @@
 **(Already exists - see main schema)**
 
 **Partner-Relevant Fields**:
+
 - `status`: 'active', 'inactive', 'pending' (pending = awaiting approval)
 - `metadata.partner_id`: Which partner owns this property
 - `metadata.onboarding_status`: 'draft', 'submitted', 'approved', 'live'
@@ -325,6 +330,7 @@
 **(Already exists - see main schema)**
 
 **Partner-Relevant Fields**:
+
 - `code`: Room code in partner's system
 - `status`: 'active', 'inactive', 'maintenance'
 
@@ -337,11 +343,13 @@
 **(Already exists - see main schema)**
 
 **Partner-Specific Fields**:
+
 - `partner_id`: Which partner is providing this rate
 - `is_best_price`: Whether this is the best available price
 - `price_match_guarantee`: Whether price matching is offered
 
 **Key Points for Partners**:
+
 - Partners update rates through API or portal
 - Each room can have different rates from different partners
 - System automatically marks `is_best_price` based on comparisons
@@ -356,6 +364,7 @@
 **(Already exists - see main schema)**
 
 **Partner-Relevant Fields**:
+
 - `partner_id`: Which partner processed the booking
 - `partner_booking_ref`: Booking reference in partner's system
 - `commission_cents`: TripC commission amount
@@ -363,6 +372,7 @@
 - `booking_source`: 'web', 'mobile', 'api', 'partner_portal'
 
 **Booking Statuses**:
+
 - `pending`: Awaiting confirmation
 - `confirmed`: Confirmed by hotel
 - `checked_in`: Guest has arrived
@@ -372,6 +382,7 @@
 - `modified`: Booking has been changed
 
 **Payment Statuses**:
+
 - `pending`: Payment not yet processed
 - `paid`: Payment successful
 - `refunded`: Full refund issued
@@ -387,6 +398,7 @@
 **(Already exists - see main schema)**
 
 **Modification Types**:
+
 - `date_change`: Check-in/out dates modified
 - `room_change`: Different room type
 - `guest_change`: Guest details updated
@@ -403,6 +415,7 @@
 **(Already exists - see main schema)**
 
 **Review Statuses**:
+
 - `pending`: Awaiting moderation
 - `approved`: Published on platform
 - `rejected`: Not suitable for publication
@@ -416,23 +429,24 @@
 
 **Purpose**: User accounts for partner portal (separate from customer users)
 
-| Column            | Type         | Constraints                         | Description                            |
-|-------------------|--------------|-------------------------------------|----------------------------------------|
-| `id`              | UUID         | PRIMARY KEY, DEFAULT uuid_generate_v4() | Unique identifier            |
-| `partner_id`      | UUID         | FK → hotel_partners(id)             | Associated partner                     |
-| `email`           | TEXT         | UNIQUE, NOT NULL                    | Login email                            |
-| `password_hash`   | TEXT         | NOT NULL                            | Bcrypt hashed password                 |
-| `first_name`      | TEXT         | NOT NULL                            | First name                             |
-| `last_name`       | TEXT         | NOT NULL                            | Last name                              |
-| `phone`           | TEXT         | -                                   | Phone number                           |
-| `role`            | TEXT         | NOT NULL                            | 'admin', 'manager', 'staff'            |
-| `permissions`     | JSONB        | DEFAULT '[]'                        | Permission array                       |
-| `is_active`       | BOOLEAN      | DEFAULT true                        | Account status                         |
-| `last_login_at`   | TIMESTAMPTZ  | -                                   | Last login timestamp                   |
-| `created_at`      | TIMESTAMPTZ  | DEFAULT NOW()                       | Creation timestamp                     |
-| `updated_at`      | TIMESTAMPTZ  | DEFAULT NOW()                       | Last update timestamp                  |
+| Column          | Type        | Constraints                             | Description                 |
+| --------------- | ----------- | --------------------------------------- | --------------------------- |
+| `id`            | UUID        | PRIMARY KEY, DEFAULT uuid_generate_v4() | Unique identifier           |
+| `partner_id`    | UUID        | FK → hotel_partners(id)                 | Associated partner          |
+| `email`         | TEXT        | UNIQUE, NOT NULL                        | Login email                 |
+| `password_hash` | TEXT        | NOT NULL                                | Bcrypt hashed password      |
+| `first_name`    | TEXT        | NOT NULL                                | First name                  |
+| `last_name`     | TEXT        | NOT NULL                                | Last name                   |
+| `phone`         | TEXT        | -                                       | Phone number                |
+| `role`          | TEXT        | NOT NULL                                | 'admin', 'manager', 'staff' |
+| `permissions`   | JSONB       | DEFAULT '[]'                            | Permission array            |
+| `is_active`     | BOOLEAN     | DEFAULT true                            | Account status              |
+| `last_login_at` | TIMESTAMPTZ | -                                       | Last login timestamp        |
+| `created_at`    | TIMESTAMPTZ | DEFAULT NOW()                           | Creation timestamp          |
+| `updated_at`    | TIMESTAMPTZ | DEFAULT NOW()                           | Last update timestamp       |
 
 **Indexes**:
+
 - `idx_partner_users_email` ON `email` (UNIQUE)
 - `idx_partner_users_partner` ON `partner_id`
 
@@ -442,16 +456,17 @@
 
 **Purpose**: Granular permission management
 
-| Column        | Type         | Constraints                         | Description                        |
-|---------------|--------------|-------------------------------------|------------------------------------|
-| `id`          | UUID         | PRIMARY KEY, DEFAULT uuid_generate_v4() | Unique identifier        |
-| `user_id`     | UUID         | FK → partner_users(id)              | User reference                     |
-| `hotel_id`    | UUID         | FK → hotels(id), NULL allowed       | Specific hotel (NULL = all hotels) |
-| `resource`    | TEXT         | NOT NULL                            | 'hotels', 'rooms', 'rates', etc.   |
-| `actions`     | TEXT[]       | NOT NULL                            | ['read', 'write', 'delete']        |
-| `created_at`  | TIMESTAMPTZ  | DEFAULT NOW()                       | Creation timestamp                 |
+| Column       | Type        | Constraints                             | Description                        |
+| ------------ | ----------- | --------------------------------------- | ---------------------------------- |
+| `id`         | UUID        | PRIMARY KEY, DEFAULT uuid_generate_v4() | Unique identifier                  |
+| `user_id`    | UUID        | FK → partner_users(id)                  | User reference                     |
+| `hotel_id`   | UUID        | FK → hotels(id), NULL allowed           | Specific hotel (NULL = all hotels) |
+| `resource`   | TEXT        | NOT NULL                                | 'hotels', 'rooms', 'rates', etc.   |
+| `actions`    | TEXT[]      | NOT NULL                                | ['read', 'write', 'delete']        |
+| `created_at` | TIMESTAMPTZ | DEFAULT NOW()                           | Creation timestamp                 |
 
 **Permission Examples**:
+
 ```json
 {
   "user_id": "uuid-123",
@@ -474,25 +489,26 @@
 
 **Purpose**: Pre-calculated analytics for dashboard performance
 
-| Column              | Type         | Constraints                         | Description                      |
-|---------------------|--------------|-------------------------------------|----------------------------------|
-| `id`                | UUID         | PRIMARY KEY, DEFAULT uuid_generate_v4() | Unique identifier      |
-| `partner_id`        | UUID         | FK → hotel_partners(id)             | Partner reference                |
-| `hotel_id`          | UUID         | FK → hotels(id), NULL allowed       | Specific hotel or all            |
-| `metric_date`       | DATE         | NOT NULL                            | Date of metrics                  |
-| `total_bookings`    | INTEGER      | DEFAULT 0                           | Number of bookings               |
-| `total_revenue_cents` | BIGINT     | DEFAULT 0                           | Total revenue in cents           |
-| `commission_cents`  | BIGINT       | DEFAULT 0                           | Commission earned                |
-| `occupancy_rate`    | NUMERIC      | DEFAULT 0                           | Occupancy rate (0-1)             |
-| `avg_daily_rate_cents` | INTEGER   | DEFAULT 0                           | ADR in cents                     |
-| `revpar_cents`      | INTEGER      | DEFAULT 0                           | RevPAR in cents                  |
-| `cancellation_count` | INTEGER     | DEFAULT 0                           | Number of cancellations          |
-| `avg_lead_time_days` | INTEGER     | DEFAULT 0                           | Average booking lead time        |
-| `avg_length_of_stay` | NUMERIC     | DEFAULT 0                           | Average nights per booking       |
-| `metadata`          | JSONB        | DEFAULT '{}'                        | Additional metrics               |
-| `created_at`        | TIMESTAMPTZ  | DEFAULT NOW()                       | Creation timestamp               |
+| Column                 | Type        | Constraints                             | Description                |
+| ---------------------- | ----------- | --------------------------------------- | -------------------------- |
+| `id`                   | UUID        | PRIMARY KEY, DEFAULT uuid_generate_v4() | Unique identifier          |
+| `partner_id`           | UUID        | FK → hotel_partners(id)                 | Partner reference          |
+| `hotel_id`             | UUID        | FK → hotels(id), NULL allowed           | Specific hotel or all      |
+| `metric_date`          | DATE        | NOT NULL                                | Date of metrics            |
+| `total_bookings`       | INTEGER     | DEFAULT 0                               | Number of bookings         |
+| `total_revenue_cents`  | BIGINT      | DEFAULT 0                               | Total revenue in cents     |
+| `commission_cents`     | BIGINT      | DEFAULT 0                               | Commission earned          |
+| `occupancy_rate`       | NUMERIC     | DEFAULT 0                               | Occupancy rate (0-1)       |
+| `avg_daily_rate_cents` | INTEGER     | DEFAULT 0                               | ADR in cents               |
+| `revpar_cents`         | INTEGER     | DEFAULT 0                               | RevPAR in cents            |
+| `cancellation_count`   | INTEGER     | DEFAULT 0                               | Number of cancellations    |
+| `avg_lead_time_days`   | INTEGER     | DEFAULT 0                               | Average booking lead time  |
+| `avg_length_of_stay`   | NUMERIC     | DEFAULT 0                               | Average nights per booking |
+| `metadata`             | JSONB       | DEFAULT '{}'                            | Additional metrics         |
+| `created_at`           | TIMESTAMPTZ | DEFAULT NOW()                           | Creation timestamp         |
 
 **Indexes**:
+
 - `idx_analytics_partner_date` ON `partner_id, metric_date`
 - `idx_analytics_hotel_date` ON `hotel_id, metric_date`
 
@@ -504,26 +520,27 @@
 
 **Purpose**: Track commission payments to TripC
 
-| Column              | Type         | Constraints                         | Description                      |
-|---------------------|--------------|-------------------------------------|----------------------------------|
-| `id`                | UUID         | PRIMARY KEY, DEFAULT uuid_generate_v4() | Unique identifier      |
-| `partner_id`        | UUID         | FK → hotel_partners(id)             | Partner reference                |
-| `period_start`      | DATE         | NOT NULL                            | Payout period start              |
-| `period_end`        | DATE         | NOT NULL                            | Payout period end                |
-| `total_bookings`    | INTEGER      | DEFAULT 0                           | Number of bookings               |
-| `gross_revenue_cents` | BIGINT     | DEFAULT 0                           | Total booking value              |
-| `commission_cents`  | BIGINT       | DEFAULT 0                           | TripC commission owed            |
-| `adjustments_cents` | INTEGER      | DEFAULT 0                           | Refunds, chargebacks             |
-| `net_payout_cents`  | BIGINT       | DEFAULT 0                           | Amount to pay                    |
-| `currency`          | TEXT         | DEFAULT 'USD'                       | Currency code                    |
-| `status`            | TEXT         | DEFAULT 'pending'                   | 'pending', 'paid', 'overdue'     |
-| `paid_at`           | TIMESTAMPTZ  | -                                   | Payment timestamp                |
-| `payment_method`    | TEXT         | -                                   | 'bank_transfer', 'stripe'        |
-| `payment_reference` | TEXT         | -                                   | Transaction ID                   |
-| `metadata`          | JSONB        | DEFAULT '{}'                        | Invoice details                  |
-| `created_at`        | TIMESTAMPTZ  | DEFAULT NOW()                       | Creation timestamp               |
+| Column                | Type        | Constraints                             | Description                  |
+| --------------------- | ----------- | --------------------------------------- | ---------------------------- |
+| `id`                  | UUID        | PRIMARY KEY, DEFAULT uuid_generate_v4() | Unique identifier            |
+| `partner_id`          | UUID        | FK → hotel_partners(id)                 | Partner reference            |
+| `period_start`        | DATE        | NOT NULL                                | Payout period start          |
+| `period_end`          | DATE        | NOT NULL                                | Payout period end            |
+| `total_bookings`      | INTEGER     | DEFAULT 0                               | Number of bookings           |
+| `gross_revenue_cents` | BIGINT      | DEFAULT 0                               | Total booking value          |
+| `commission_cents`    | BIGINT      | DEFAULT 0                               | TripC commission owed        |
+| `adjustments_cents`   | INTEGER     | DEFAULT 0                               | Refunds, chargebacks         |
+| `net_payout_cents`    | BIGINT      | DEFAULT 0                               | Amount to pay                |
+| `currency`            | TEXT        | DEFAULT 'USD'                           | Currency code                |
+| `status`              | TEXT        | DEFAULT 'pending'                       | 'pending', 'paid', 'overdue' |
+| `paid_at`             | TIMESTAMPTZ | -                                       | Payment timestamp            |
+| `payment_method`      | TEXT        | -                                       | 'bank_transfer', 'stripe'    |
+| `payment_reference`   | TEXT        | -                                       | Transaction ID               |
+| `metadata`            | JSONB       | DEFAULT '{}'                            | Invoice details              |
+| `created_at`          | TIMESTAMPTZ | DEFAULT NOW()                           | Creation timestamp           |
 
 **Indexes**:
+
 - `idx_payouts_partner` ON `partner_id`
 - `idx_payouts_period` ON `period_end`
 
@@ -532,6 +549,7 @@
 ## 🔐 Row Level Security (RLS) Policies
 
 ### For `hotel_partners`
+
 ```sql
 -- Partners can read their own data
 CREATE POLICY partner_read_own ON hotel_partners
@@ -545,14 +563,15 @@ CREATE POLICY service_full_access ON hotel_partners
 ```
 
 ### For `hotels`
+
 ```sql
 -- Partners can read hotels they manage
 CREATE POLICY partner_read_hotels ON hotels
   FOR SELECT
   USING (
     id IN (
-      SELECT hotel_id 
-      FROM hotel_partner_listings 
+      SELECT hotel_id
+      FROM hotel_partner_listings
       WHERE partner_id = get_current_partner_id()
     )
   );
@@ -562,14 +581,15 @@ CREATE POLICY partner_update_hotels ON hotels
   FOR UPDATE
   USING (
     id IN (
-      SELECT hotel_id 
-      FROM hotel_partner_listings 
+      SELECT hotel_id
+      FROM hotel_partner_listings
       WHERE partner_id = get_current_partner_id()
     )
   );
 ```
 
 ### For `hotel_bookings`
+
 ```sql
 -- Partners can read bookings for their hotels
 CREATE POLICY partner_read_bookings ON hotel_bookings
@@ -590,27 +610,28 @@ CREATE POLICY partner_update_bookings ON hotel_bookings
 
 ```sql
 -- Composite indexes for common queries
-CREATE INDEX idx_rates_room_date_partner 
+CREATE INDEX idx_rates_room_date_partner
   ON hotel_rates(room_id, date, partner_id);
 
-CREATE INDEX idx_bookings_partner_status 
+CREATE INDEX idx_bookings_partner_status
   ON hotel_bookings(partner_id, status, check_in_date);
 
-CREATE INDEX idx_bookings_hotel_checkin 
-  ON hotel_bookings(hotel_id, check_in_date) 
+CREATE INDEX idx_bookings_hotel_checkin
+  ON hotel_bookings(hotel_id, check_in_date)
   WHERE status NOT IN ('cancelled');
 
 -- GIN indexes for JSONB columns
-CREATE INDEX idx_hotels_amenities 
+CREATE INDEX idx_hotels_amenities
   ON hotels USING GIN (amenities);
 
-CREATE INDEX idx_rooms_amenities 
+CREATE INDEX idx_rooms_amenities
   ON hotel_rooms USING GIN (amenities);
 ```
 
 ## 🔄 Database Functions
 
 ### `get_current_partner_id()`
+
 ```sql
 CREATE OR REPLACE FUNCTION get_current_partner_id()
 RETURNS UUID AS $$
@@ -621,6 +642,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 ```
 
 ### `calculate_occupancy_rate()`
+
 ```sql
 CREATE OR REPLACE FUNCTION calculate_occupancy_rate(
   p_hotel_id UUID,
@@ -639,15 +661,15 @@ BEGIN
     SELECT id FROM hotel_rooms WHERE hotel_id = p_hotel_id
   )
   AND date >= p_start_date AND date < p_end_date;
-  
+
   -- Calculate booked nights
   SELECT COUNT(*) INTO booked_nights
   FROM hotel_bookings
   WHERE hotel_id = p_hotel_id
-  AND check_in_date >= p_start_date 
+  AND check_in_date >= p_start_date
   AND check_in_date < p_end_date
   AND status NOT IN ('cancelled', 'no_show');
-  
+
   -- Return occupancy rate
   IF total_room_nights > 0 THEN
     RETURN ROUND((booked_nights::NUMERIC / total_room_nights) * 100, 2);
@@ -659,6 +681,7 @@ $$ LANGUAGE plpgsql;
 ```
 
 ### `update_hotel_best_price()`
+
 ```sql
 CREATE OR REPLACE FUNCTION update_hotel_best_price()
 RETURNS TRIGGER AS $$
@@ -675,7 +698,7 @@ BEGIN
     )
   )
   WHERE room_id = NEW.room_id AND date = NEW.date;
-  
+
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

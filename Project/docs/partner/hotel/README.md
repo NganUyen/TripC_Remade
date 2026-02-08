@@ -53,31 +53,41 @@ Welcome to the Hotel Partner Portal documentation. This comprehensive guide cove
 ## 🎯 Quick Start by Role
 
 ### For Product Managers
+
 Start with:
+
 1. [00_OVERVIEW.md](./00_OVERVIEW.md) - Understand features and goals
 2. [03_WORKFLOWS_FLOWS.md](./03_WORKFLOWS_FLOWS.md) - Learn operational processes
 3. [02_BUSINESS_LOGIC.md](./02_BUSINESS_LOGIC.md) - Understand business rules
 
 ### For Backend Developers
+
 Start with:
+
 1. [01_DATABASE_SCHEMA.md](./01_DATABASE_SCHEMA.md) - Database structure
 2. [02_BUSINESS_LOGIC.md](./02_BUSINESS_LOGIC.md) - Validation and calculations
 3. [04_API_SPECIFICATION.md](./04_API_SPECIFICATION.md) - API implementation
 
 ### For Frontend Developers
+
 Start with:
+
 1. [00_OVERVIEW.md](./00_OVERVIEW.md) - System overview
 2. [03_WORKFLOWS_FLOWS.md](./03_WORKFLOWS_FLOWS.md) - User flows
 3. [04_API_SPECIFICATION.md](./04_API_SPECIFICATION.md) - API endpoints
 
 ### For QA Engineers
+
 Start with:
+
 1. [02_BUSINESS_LOGIC.md](./02_BUSINESS_LOGIC.md) - Validation rules
 2. [03_WORKFLOWS_FLOWS.md](./03_WORKFLOWS_FLOWS.md) - Test scenarios
 3. [04_API_SPECIFICATION.md](./04_API_SPECIFICATION.md) - API testing
 
 ### For Partners (Hotel Owners/Managers)
+
 Start with:
+
 1. [00_OVERVIEW.md](./00_OVERVIEW.md) - Features and benefits
 2. [03_WORKFLOWS_FLOWS.md](./03_WORKFLOWS_FLOWS.md) - How to use the portal
 
@@ -110,6 +120,7 @@ Start with:
 ## 🔑 Key Features Overview
 
 ### Property Management
+
 - Multi-property support for hotel chains
 - Comprehensive property details management
 - Photo upload and management
@@ -117,6 +128,7 @@ Start with:
 - Policies and contact information
 
 ### Room Management
+
 - Multiple room types per property
 - Detailed room specifications
 - Room photos and virtual tours
@@ -124,6 +136,7 @@ Start with:
 - Inventory management
 
 ### Rate Management
+
 - Daily rate configuration
 - Seasonal pricing
 - Dynamic pricing capabilities
@@ -132,6 +145,7 @@ Start with:
 - Channel-specific rates
 
 ### Booking Management
+
 - Real-time booking notifications
 - Booking status tracking
 - Check-in/check-out management
@@ -140,6 +154,7 @@ Start with:
 - Guest communication
 
 ### Channel Management
+
 - Direct bookings (TripC)
 - OTA integrations (Booking.com, Agoda, Expedia)
 - Rate parity maintenance
@@ -147,6 +162,7 @@ Start with:
 - Commission tracking
 
 ### Analytics & Reporting
+
 - Occupancy reports
 - Revenue analytics
 - ADR and RevPAR tracking
@@ -155,6 +171,7 @@ Start with:
 - Custom report generation
 
 ### Review Management
+
 - Review collection and aggregation
 - Response management
 - Rating tracking
@@ -164,12 +181,14 @@ Start with:
 ## 💰 Revenue Model
 
 ### Commission Structure
+
 - **Direct Bookings**: 10% commission
 - **OTA Bookings**: 15-18% commission (varies by partner)
 - **Volume Discounts**: Available for high-volume partners
 - **Monthly Payouts**: Automated payout processing
 
 ### TCent Integration
+
 - **Earning**: Guests earn 5% of booking value in TCent
 - **Redemption**: Guests can use TCent for discounts (up to 30%)
 - **Tiered Earning**: Higher tiers earn more TCent
@@ -178,6 +197,7 @@ Start with:
 ## 🔐 Security & Authentication
 
 ### Partner Authentication
+
 - **Separate Auth System**: Not using Clerk for partners
 - **JWT-based**: Token authentication
 - **Multi-factor Auth**: Optional for sensitive operations
@@ -185,6 +205,7 @@ Start with:
 - **Permission System**: Granular resource permissions
 
 ### Data Security
+
 - **Encryption**: Data encrypted at rest and in transit
 - **Row Level Security**: PostgreSQL RLS policies
 - **Audit Logging**: All sensitive operations logged
@@ -193,6 +214,7 @@ Start with:
 ## 📊 Database Overview
 
 ### Core Tables
+
 - **hotel_partners**: Partner organizations (10 fields)
 - **hotel_partner_listings**: Hotel-partner relationships (12 fields)
 - **hotels**: Hotel properties (14 fields)
@@ -202,6 +224,7 @@ Start with:
 - **hotel_reviews**: Customer feedback (19 fields)
 
 ### Supporting Tables
+
 - **partner_users**: Partner portal users (13 fields)
 - **partner_permissions**: Access control (6 fields)
 - **partner_analytics**: Pre-calculated metrics (15 fields)
@@ -213,37 +236,46 @@ Total: **12 tables**, **250+ fields**
 ## 🔄 Key Workflows
 
 ### 1. Partner Onboarding
+
 ```
-Registration → Email Verification → Partner Info → 
+Registration → Email Verification → Partner Info →
 Agreement → Admin Review → Approval → Property Setup → Go Live
 ```
+
 **Timeline**: 1-3 business days
 
 ### 2. Property Listing
+
 ```
-Basic Info → Description → Policies → Photos → 
+Basic Info → Description → Policies → Photos →
 Room Setup → Rate Setup → Submit → Review → Live
 ```
+
 **Timeline**: 30-60 minutes (partner effort)
 
 ### 3. Booking Process
+
 ```
 Customer Search → Selection → Payment → Confirmation →
-Partner Notification → Pre-arrival → Check-in → 
+Partner Notification → Pre-arrival → Check-in →
 Stay → Check-out → Review
 ```
+
 **Timeline**: Varies (booking to checkout)
 
 ### 4. Monthly Payout
+
 ```
-Calculate (Day 1) → Statement (Day 3) → 
+Calculate (Day 1) → Statement (Day 3) →
 Disputes (Day 8) → Payment (Day 10) → Received (Day 15)
 ```
+
 **Timeline**: 15 days per cycle
 
 ## 📈 Key Metrics
 
 ### For Partners
+
 - **Occupancy Rate**: % of rooms booked
 - **ADR**: Average Daily Rate per room
 - **RevPAR**: Revenue Per Available Room
@@ -252,6 +284,7 @@ Disputes (Day 8) → Payment (Day 10) → Received (Day 15)
 - **Response Rate**: % of reviews responded to
 
 ### For Platform
+
 - **Active Partners**: Number of active partners
 - **Listed Properties**: Total properties on platform
 - **Monthly Bookings**: Total bookings processed
@@ -261,6 +294,7 @@ Disputes (Day 8) → Payment (Day 10) → Received (Day 15)
 ## 🔧 Technology Stack
 
 ### Frontend
+
 - **Framework**: Next.js 14 (App Router)
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
@@ -270,6 +304,7 @@ Disputes (Day 8) → Payment (Day 10) → Received (Day 15)
 - **Data Fetching**: SWR
 
 ### Backend
+
 - **API**: Next.js API Routes
 - **Database**: Supabase (PostgreSQL)
 - **Auth**: Custom JWT (separate from customer auth)
@@ -278,6 +313,7 @@ Disputes (Day 8) → Payment (Day 10) → Received (Day 15)
 - **SMS**: Twilio
 
 ### Integration
+
 - **Payment**: Stripe Connect
 - **OTA APIs**: Booking.com, Agoda, Expedia
 - **Calendar**: iCal format
@@ -286,12 +322,14 @@ Disputes (Day 8) → Payment (Day 10) → Received (Day 15)
 ## 🚀 Implementation Priorities
 
 ### Phase 1 (MVP) - Completed
+
 ✅ Database schema design  
 ✅ Business logic specification  
 ✅ Workflow documentation  
-✅ API specification  
+✅ API specification
 
 ### Phase 2 (Implementation) - Next Steps
+
 - [ ] Authentication system
 - [ ] Hotel management APIs
 - [ ] Room management APIs
@@ -302,6 +340,7 @@ Disputes (Day 8) → Payment (Day 10) → Received (Day 15)
 - [ ] Rate management UI
 
 ### Phase 3 (Advanced Features)
+
 - [ ] Analytics dashboard
 - [ ] Review management
 - [ ] Channel integrations
@@ -312,17 +351,20 @@ Disputes (Day 8) → Payment (Day 10) → Received (Day 15)
 ## 📝 API Quick Reference
 
 ### Base URL
+
 ```
 https://tripc.com/api/partner/hotel
 ```
 
 ### Authentication
+
 ```http
 POST /api/partner/auth/login
 Authorization: Bearer {token}
 ```
 
 ### Key Endpoints
+
 ```
 GET    /api/partner/hotels                 # List hotels
 POST   /api/partner/hotels                 # Create hotel
@@ -346,24 +388,28 @@ See [04_API_SPECIFICATION.md](./04_API_SPECIFICATION.md) for complete documentat
 ## 🧪 Testing Strategy
 
 ### Unit Tests
+
 - Business logic validation
 - Calculation functions
 - Data transformations
 - Utility functions
 
 ### Integration Tests
+
 - API endpoint testing
 - Database operations
 - Authentication flows
 - Payment processing
 
 ### End-to-End Tests
+
 - Partner onboarding flow
 - Property listing flow
 - Booking management flow
 - Rate update flow
 
 ### Performance Tests
+
 - API response times
 - Database query optimization
 - Concurrent booking handling
@@ -372,12 +418,14 @@ See [04_API_SPECIFICATION.md](./04_API_SPECIFICATION.md) for complete documentat
 ## 📞 Support & Resources
 
 ### For Partners
+
 - **Portal URL**: https://tripc.com/partner/hotel
 - **Support Email**: partner-support@tripc.com
 - **Phone**: +84-123-456-789
 - **Help Center**: https://help.tripc.com/partner
 
 ### For Developers
+
 - **API Documentation**: [04_API_SPECIFICATION.md](./04_API_SPECIFICATION.md)
 - **Database Schema**: [01_DATABASE_SCHEMA.md](./01_DATABASE_SCHEMA.md)
 - **GitHub**: (internal repository)
@@ -386,6 +434,7 @@ See [04_API_SPECIFICATION.md](./04_API_SPECIFICATION.md) for complete documentat
 ## 🎓 Best Practices
 
 ### For Partners
+
 1. **Keep rates updated**: Update at least weekly
 2. **Respond to reviews**: Within 48 hours
 3. **Maintain availability**: Keep inventory accurate
@@ -393,6 +442,7 @@ See [04_API_SPECIFICATION.md](./04_API_SPECIFICATION.md) for complete documentat
 5. **Complete profile**: Fill all property details
 
 ### For Developers
+
 1. **Follow schema**: Use defined database structure
 2. **Implement validation**: Use business logic rules
 3. **Handle errors**: Proper error responses

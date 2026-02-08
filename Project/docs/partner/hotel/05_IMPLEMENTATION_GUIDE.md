@@ -9,6 +9,7 @@ This guide provides practical implementation guidance for developers building th
 ### Phase 1: Foundation (Week 1-2)
 
 #### Database Setup
+
 - [ ] Run migration scripts for new partner tables
 - [ ] Create indexes for performance optimization
 - [ ] Set up Row Level Security policies
@@ -16,6 +17,7 @@ This guide provides practical implementation guidance for developers building th
 - [ ] Seed initial data (partner types, default settings)
 
 #### Authentication System
+
 - [ ] Implement partner JWT authentication (separate from Clerk)
 - [ ] Create login/logout endpoints
 - [ ] Build password reset flow
@@ -23,6 +25,7 @@ This guide provides practical implementation guidance for developers building th
 - [ ] Add role-based access control middleware
 
 #### Basic API Structure
+
 - [ ] Set up API route structure (`/api/partner/hotel`)
 - [ ] Create authentication middleware
 - [ ] Implement error handling
@@ -32,6 +35,7 @@ This guide provides practical implementation guidance for developers building th
 ### Phase 2: Core Features (Week 3-6)
 
 #### Hotel Management
+
 - [ ] Create hotel CRUD endpoints
 - [ ] Implement photo upload to Supabase Storage
 - [ ] Build hotel validation logic
@@ -39,6 +43,7 @@ This guide provides practical implementation guidance for developers building th
 - [ ] Create hotel listing API
 
 #### Room Management
+
 - [ ] Create room CRUD endpoints
 - [ ] Implement room photo uploads
 - [ ] Build room validation
@@ -46,6 +51,7 @@ This guide provides practical implementation guidance for developers building th
 - [ ] Create room listing API
 
 #### Rate Management
+
 - [ ] Create rate CRUD endpoints
 - [ ] Implement bulk rate updates
 - [ ] Build rate validation logic
@@ -54,6 +60,7 @@ This guide provides practical implementation guidance for developers building th
 - [ ] Create rate calendar API
 
 #### Booking Management
+
 - [ ] Implement booking listing API
 - [ ] Create booking details endpoint
 - [ ] Build status update logic
@@ -64,6 +71,7 @@ This guide provides practical implementation guidance for developers building th
 ### Phase 3: Advanced Features (Week 7-10)
 
 #### Analytics
+
 - [ ] Build daily metrics calculation job
 - [ ] Create dashboard metrics API
 - [ ] Implement occupancy reports
@@ -71,18 +79,21 @@ This guide provides practical implementation guidance for developers building th
 - [ ] Build custom report generator
 
 #### Review Management
+
 - [ ] Create review listing API
 - [ ] Implement review response endpoint
 - [ ] Build review moderation logic
 - [ ] Add review notifications
 
 #### Channel Management
+
 - [ ] Implement rate parity logic
 - [ ] Build inventory sync system
 - [ ] Create webhook endpoints
 - [ ] Add OTA integration framework
 
 #### Payouts
+
 - [ ] Build monthly payout calculation
 - [ ] Create payout statement generation
 - [ ] Implement dispute handling
@@ -91,41 +102,48 @@ This guide provides practical implementation guidance for developers building th
 ### Phase 4: UI Development (Week 11-16)
 
 #### Authentication UI
+
 - [ ] Login page
 - [ ] Password reset flow
 - [ ] Profile management
 
 #### Dashboard
+
 - [ ] Overview metrics cards
 - [ ] Recent bookings widget
 - [ ] Quick actions panel
 - [ ] Notifications center
 
 #### Property Management
+
 - [ ] Property list view
 - [ ] Property creation wizard
 - [ ] Property edit form
 - [ ] Photo upload interface
 
 #### Room Management
+
 - [ ] Room list view
 - [ ] Room creation form
 - [ ] Room edit interface
 - [ ] Inventory management
 
 #### Rate Management
+
 - [ ] Rate calendar view
 - [ ] Bulk rate update interface
 - [ ] Seasonal pricing setup
 - [ ] Rate history view
 
 #### Booking Management
+
 - [ ] Booking list with filters
 - [ ] Booking details view
 - [ ] Status update interface
 - [ ] Check-in/out forms
 
 #### Analytics
+
 - [ ] Dashboard charts
 - [ ] Date range selectors
 - [ ] Export functionality
@@ -255,32 +273,32 @@ Project/
 
 ```typescript
 // lib/partner/middleware.ts
-import { NextRequest, NextResponse } from 'next/server';
-import { verifyPartnerToken } from './auth';
+import { NextRequest, NextResponse } from "next/server";
+import { verifyPartnerToken } from "./auth";
 
 export async function withPartnerAuth(
   handler: Function,
-  options?: { requiredPermissions?: string[] }
+  options?: { requiredPermissions?: string[] },
 ) {
   return async (req: NextRequest, context?: any) => {
     try {
       // Extract token from header
-      const token = req.headers.get('authorization')?.replace('Bearer ', '');
-      
+      const token = req.headers.get("authorization")?.replace("Bearer ", "");
+
       if (!token) {
         return NextResponse.json(
-          { error: 'Unauthorized', message: 'No token provided' },
-          { status: 401 }
+          { error: "Unauthorized", message: "No token provided" },
+          { status: 401 },
         );
       }
 
       // Verify token and get partner user
       const partnerUser = await verifyPartnerToken(token);
-      
+
       if (!partnerUser) {
         return NextResponse.json(
-          { error: 'Unauthorized', message: 'Invalid token' },
-          { status: 401 }
+          { error: "Unauthorized", message: "Invalid token" },
+          { status: 401 },
         );
       }
 
@@ -288,13 +306,13 @@ export async function withPartnerAuth(
       if (options?.requiredPermissions) {
         const hasPermission = await checkPermissions(
           partnerUser.id,
-          options.requiredPermissions
+          options.requiredPermissions,
         );
-        
+
         if (!hasPermission) {
           return NextResponse.json(
-            { error: 'Forbidden', message: 'Insufficient permissions' },
-            { status: 403 }
+            { error: "Forbidden", message: "Insufficient permissions" },
+            { status: 403 },
           );
         }
       }
@@ -305,10 +323,10 @@ export async function withPartnerAuth(
       // Call the actual handler
       return handler(req, context);
     } catch (error) {
-      console.error('Auth middleware error:', error);
+      console.error("Auth middleware error:", error);
       return NextResponse.json(
-        { error: 'Internal server error' },
-        { status: 500 }
+        { error: "Internal server error" },
+        { status: 500 },
       );
     }
   };
@@ -320,7 +338,7 @@ export const GET = withPartnerAuth(
     const partnerUser = (req as any).partnerUser;
     // ... handler logic
   },
-  { requiredPermissions: ['hotels:read'] }
+  { requiredPermissions: ["hotels:read"] },
 );
 ```
 
@@ -328,7 +346,7 @@ export const GET = withPartnerAuth(
 
 ```typescript
 // lib/hotel-partner/validation.ts
-import { z } from 'zod';
+import { z } from "zod";
 
 export const hotelSchema = z.object({
   name: z.string().min(3).max(200),
@@ -345,7 +363,12 @@ export const hotelSchema = z.object({
   policies: z.object({
     check_in_time: z.string().regex(/^\d{2}:\d{2}$/),
     check_out_time: z.string().regex(/^\d{2}:\d{2}$/),
-    cancellation_policy: z.enum(['flexible', 'moderate', 'strict', 'non_refundable']),
+    cancellation_policy: z.enum([
+      "flexible",
+      "moderate",
+      "strict",
+      "non_refundable",
+    ]),
   }),
   contact: z.object({
     phone: z.string(),
@@ -353,52 +376,63 @@ export const hotelSchema = z.object({
   }),
 });
 
-export const roomSchema = z.object({
-  code: z.string().min(1).max(20),
-  title: z.string().min(3).max(100),
-  description: z.string().min(10).max(1000).optional(),
-  capacity: z.number().int().min(1).max(10),
-  max_adults: z.number().int().min(1).max(8),
-  max_children: z.number().int().min(0).max(4),
-  bed_type: z.string(),
-  bed_count: z.number().int().min(1).max(10),
-  size_sqm: z.number().min(10).max(500).optional(),
-}).refine(
-  (data) => data.capacity === data.max_adults + data.max_children,
-  { message: 'Capacity must equal max_adults + max_children' }
-);
+export const roomSchema = z
+  .object({
+    code: z.string().min(1).max(20),
+    title: z.string().min(3).max(100),
+    description: z.string().min(10).max(1000).optional(),
+    capacity: z.number().int().min(1).max(10),
+    max_adults: z.number().int().min(1).max(8),
+    max_children: z.number().int().min(0).max(4),
+    bed_type: z.string(),
+    bed_count: z.number().int().min(1).max(10),
+    size_sqm: z.number().min(10).max(500).optional(),
+  })
+  .refine((data) => data.capacity === data.max_adults + data.max_children, {
+    message: "Capacity must equal max_adults + max_children",
+  });
 
-export const rateSchema = z.object({
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  price_cents: z.number().int().min(1000).max(1000000),
-  available_rooms: z.number().int().min(0).max(100),
-  min_nights: z.number().int().min(1).optional(),
-  max_nights: z.number().int().min(1).optional(),
-  cancellation_policy: z.enum(['flexible', 'moderate', 'strict', 'non_refundable']),
-  refundable: z.boolean(),
-  breakfast_included: z.boolean(),
-}).refine(
-  (data) => !data.max_nights || !data.min_nights || data.max_nights >= data.min_nights,
-  { message: 'max_nights must be >= min_nights' }
-);
+export const rateSchema = z
+  .object({
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    price_cents: z.number().int().min(1000).max(1000000),
+    available_rooms: z.number().int().min(0).max(100),
+    min_nights: z.number().int().min(1).optional(),
+    max_nights: z.number().int().min(1).optional(),
+    cancellation_policy: z.enum([
+      "flexible",
+      "moderate",
+      "strict",
+      "non_refundable",
+    ]),
+    refundable: z.boolean(),
+    breakfast_included: z.boolean(),
+  })
+  .refine(
+    (data) =>
+      !data.max_nights ||
+      !data.min_nights ||
+      data.max_nights >= data.min_nights,
+    { message: "max_nights must be >= min_nights" },
+  );
 
 // Usage in API route
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  
+
   // Validate input
   const validation = hotelSchema.safeParse(body);
-  
+
   if (!validation.success) {
     return NextResponse.json(
       {
-        error: 'Validation error',
-        details: validation.error.errors
+        error: "Validation error",
+        details: validation.error.errors,
       },
-      { status: 422 }
+      { status: 422 },
     );
   }
-  
+
   const data = validation.data;
   // ... proceed with valid data
 }
@@ -408,12 +442,13 @@ export async function POST(req: NextRequest) {
 
 ```typescript
 // lib/hotel-partner/database.ts
-import { supabaseServerClient } from '@/lib/supabaseServerClient';
+import { supabaseServerClient } from "@/lib/supabaseServerClient";
 
 export async function getPartnerHotels(partnerId: string) {
   const { data, error } = await supabaseServerClient
-    .from('hotel_partner_listings')
-    .select(`
+    .from("hotel_partner_listings")
+    .select(
+      `
       hotel:hotels (
         id,
         slug,
@@ -424,9 +459,10 @@ export async function getPartnerHotels(partnerId: string) {
         images,
         created_at
       )
-    `)
-    .eq('partner_id', partnerId)
-    .eq('is_active', true);
+    `,
+    )
+    .eq("partner_id", partnerId)
+    .eq("is_active", true);
 
   if (error) throw error;
   return data;
@@ -435,14 +471,14 @@ export async function getPartnerHotels(partnerId: string) {
 export async function createHotel(partnerId: string, hotelData: any) {
   // Start a transaction
   const { data: hotel, error: hotelError } = await supabaseServerClient
-    .from('hotels')
+    .from("hotels")
     .insert({
       ...hotelData,
-      status: 'draft',
+      status: "draft",
       metadata: {
         partner_id: partnerId,
-        created_by: 'partner_portal'
-      }
+        created_by: "partner_portal",
+      },
     })
     .select()
     .single();
@@ -451,7 +487,7 @@ export async function createHotel(partnerId: string, hotelData: any) {
 
   // Create partner listing
   const { error: listingError } = await supabaseServerClient
-    .from('hotel_partner_listings')
+    .from("hotel_partner_listings")
     .insert({
       hotel_id: hotel.id,
       partner_id: partnerId,
@@ -468,11 +504,11 @@ export async function updateRates(
   roomId: string,
   startDate: string,
   endDate: string,
-  rateData: any
+  rateData: any,
 ) {
   const dates = getDateRange(startDate, endDate);
-  
-  const ratesToInsert = dates.map(date => ({
+
+  const ratesToInsert = dates.map((date) => ({
     room_id: roomId,
     partner_id: rateData.partner_id,
     date,
@@ -486,9 +522,9 @@ export async function updateRates(
 
   // Upsert rates (insert or update if exists)
   const { error } = await supabaseServerClient
-    .from('hotel_rates')
+    .from("hotel_rates")
     .upsert(ratesToInsert, {
-      onConflict: 'room_id,date,partner_id'
+      onConflict: "room_id,date,partner_id",
     });
 
   if (error) throw error;
@@ -503,16 +539,13 @@ export async function updateRates(
 export function calculateBookingPrice(
   rates: Rate[],
   discounts: Discounts,
-  partner: Partner
+  partner: Partner,
 ): BookingPrice {
   // Calculate base price
-  const basePriceCents = rates.reduce(
-    (sum, rate) => sum + rate.price_cents,
-    0
-  );
+  const basePriceCents = rates.reduce((sum, rate) => sum + rate.price_cents, 0);
 
   // Calculate tax (10%)
-  const taxCents = Math.round(basePriceCents * 0.10);
+  const taxCents = Math.round(basePriceCents * 0.1);
 
   // Calculate fees (2%)
   const feesCents = Math.round(basePriceCents * 0.02);
@@ -522,13 +555,13 @@ export function calculateBookingPrice(
 
   // Working Pass discount
   const workingPassDiscountCents = discounts.has_working_pass
-    ? Math.round(basePriceCents * 0.10)
+    ? Math.round(basePriceCents * 0.1)
     : 0;
 
   // TCent discount (max 30%)
   const tcentDiscountCents = Math.min(
     discounts.tcent_to_use,
-    Math.round(subtotalCents * 0.30)
+    Math.round(subtotalCents * 0.3),
   );
 
   // Total discount
@@ -541,9 +574,7 @@ export function calculateBookingPrice(
   const totalCents = Math.max(0, subtotalCents - totalDiscountCents);
 
   // Commission
-  const commissionCents = Math.round(
-    basePriceCents * partner.commission_rate
-  );
+  const commissionCents = Math.round(basePriceCents * partner.commission_rate);
 
   return {
     base_price_cents: basePriceCents,
@@ -559,38 +590,38 @@ export function calculateBookingPrice(
 
 export function calculateRefund(
   booking: Booking,
-  cancellationDate: Date
+  cancellationDate: Date,
 ): RefundCalculation {
   const hoursUntilCheckIn = getHoursBetween(
     cancellationDate,
-    booking.check_in_date
+    booking.check_in_date,
   );
 
   let refundPercentage = 0;
 
   switch (booking.cancellation_policy) {
-    case 'flexible':
+    case "flexible":
       refundPercentage = hoursUntilCheckIn >= 24 ? 100 : 0;
       break;
-    case 'moderate':
+    case "moderate":
       const days = hoursUntilCheckIn / 24;
       if (days >= 7) refundPercentage = 100;
       else if (days >= 3) refundPercentage = 50;
       else refundPercentage = 0;
       break;
-    case 'strict':
+    case "strict":
       const daysStrict = hoursUntilCheckIn / 24;
       if (daysStrict >= 14) refundPercentage = 100;
       else if (daysStrict >= 7) refundPercentage = 50;
       else refundPercentage = 0;
       break;
-    case 'non_refundable':
+    case "non_refundable":
       refundPercentage = 0;
       break;
   }
 
   const refundAmountCents = Math.round(
-    booking.total_cents * (refundPercentage / 100)
+    booking.total_cents * (refundPercentage / 100),
   );
 
   return {
@@ -611,16 +642,16 @@ export class APIError extends Error {
   constructor(
     message: string,
     public statusCode: number = 500,
-    public code: string = 'INTERNAL_ERROR',
-    public details?: any
+    public code: string = "INTERNAL_ERROR",
+    public details?: any,
   ) {
     super(message);
-    this.name = 'APIError';
+    this.name = "APIError";
   }
 }
 
 export function handleAPIError(error: any) {
-  console.error('API Error:', error);
+  console.error("API Error:", error);
 
   if (error instanceof APIError) {
     return NextResponse.json(
@@ -632,22 +663,22 @@ export function handleAPIError(error: any) {
           details: error.details,
         },
       },
-      { status: error.statusCode }
+      { status: error.statusCode },
     );
   }
 
   // Database errors
-  if (error.code === '23505') {
+  if (error.code === "23505") {
     // Unique constraint violation
     return NextResponse.json(
       {
         success: false,
         error: {
-          code: 'DUPLICATE_ENTRY',
-          message: 'A record with this value already exists',
+          code: "DUPLICATE_ENTRY",
+          message: "A record with this value already exists",
         },
       },
-      { status: 409 }
+      { status: 409 },
     );
   }
 
@@ -656,11 +687,11 @@ export function handleAPIError(error: any) {
     {
       success: false,
       error: {
-        code: 'INTERNAL_ERROR',
-        message: 'An unexpected error occurred',
+        code: "INTERNAL_ERROR",
+        message: "An unexpected error occurred",
       },
     },
-    { status: 500 }
+    { status: 500 },
   );
 }
 
@@ -668,15 +699,11 @@ export function handleAPIError(error: any) {
 export async function POST(req: NextRequest) {
   try {
     // ... API logic
-    
+
     if (!hotel) {
-      throw new APIError(
-        'Hotel not found',
-        404,
-        'HOTEL_NOT_FOUND'
-      );
+      throw new APIError("Hotel not found", 404, "HOTEL_NOT_FOUND");
     }
-    
+
     // ... more logic
   } catch (error) {
     return handleAPIError(error);
@@ -690,19 +717,23 @@ export async function POST(req: NextRequest) {
 
 ```typescript
 // __tests__/lib/calculations.test.ts
-import { calculateBookingPrice } from '@/lib/hotel-partner/calculations';
+import { calculateBookingPrice } from "@/lib/hotel-partner/calculations";
 
-describe('calculateBookingPrice', () => {
-  it('should calculate correct price with no discounts', () => {
+describe("calculateBookingPrice", () => {
+  it("should calculate correct price with no discounts", () => {
     const rates = [
       { price_cents: 10000 },
       { price_cents: 10000 },
       { price_cents: 10000 },
     ];
 
-    const result = calculateBookingPrice(rates, {}, {
-      commission_rate: 0.10
-    });
+    const result = calculateBookingPrice(
+      rates,
+      {},
+      {
+        commission_rate: 0.1,
+      },
+    );
 
     expect(result.base_price_cents).toBe(30000);
     expect(result.tax_cents).toBe(3000);
@@ -711,13 +742,13 @@ describe('calculateBookingPrice', () => {
     expect(result.commission_cents).toBe(3000);
   });
 
-  it('should apply Working Pass discount correctly', () => {
+  it("should apply Working Pass discount correctly", () => {
     const rates = [{ price_cents: 10000 }];
 
     const result = calculateBookingPrice(
       rates,
       { has_working_pass: true },
-      { commission_rate: 0.10 }
+      { commission_rate: 0.1 },
     );
 
     expect(result.working_pass_discount_cents).toBe(1000);
@@ -729,47 +760,53 @@ describe('calculateBookingPrice', () => {
 
 ```typescript
 // __tests__/api/hotels/route.test.ts
-import { POST } from '@/app/api/partner/hotel/hotels/route';
+import { POST } from "@/app/api/partner/hotel/hotels/route";
 
-describe('POST /api/partner/hotel/hotels', () => {
-  it('should create hotel with valid data', async () => {
-    const mockRequest = new Request('http://localhost:3000/api/partner/hotel/hotels', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer valid-token'
-      },
-      body: JSON.stringify({
-        name: 'Test Hotel',
-        slug: 'test-hotel',
-        address: {
-          line1: '123 Main St',
-          city: 'Hanoi',
-          country: 'VN'
+describe("POST /api/partner/hotel/hotels", () => {
+  it("should create hotel with valid data", async () => {
+    const mockRequest = new Request(
+      "http://localhost:3000/api/partner/hotel/hotels",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer valid-token",
         },
-        star_rating: 4
-      })
-    });
+        body: JSON.stringify({
+          name: "Test Hotel",
+          slug: "test-hotel",
+          address: {
+            line1: "123 Main St",
+            city: "Hanoi",
+            country: "VN",
+          },
+          star_rating: 4,
+        }),
+      },
+    );
 
     const response = await POST(mockRequest as any);
     const data = await response.json();
 
     expect(response.status).toBe(201);
     expect(data.success).toBe(true);
-    expect(data.data.name).toBe('Test Hotel');
+    expect(data.data.name).toBe("Test Hotel");
   });
 
-  it('should reject invalid data', async () => {
-    const mockRequest = new Request('http://localhost:3000/api/partner/hotel/hotels', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer valid-token'
+  it("should reject invalid data", async () => {
+    const mockRequest = new Request(
+      "http://localhost:3000/api/partner/hotel/hotels",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer valid-token",
+        },
+        body: JSON.stringify({
+          name: "AB", // Too short
+        }),
       },
-      body: JSON.stringify({
-        name: 'AB', // Too short
-      })
-    });
+    );
 
     const response = await POST(mockRequest as any);
     const data = await response.json();

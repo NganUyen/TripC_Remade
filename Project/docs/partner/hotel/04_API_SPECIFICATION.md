@@ -10,7 +10,8 @@ This document specifies all API endpoints for the Hotel Partner Portal.
 
 **Content-Type**: `application/json`
 
-**Rate Limiting**: 
+**Rate Limiting**:
+
 - Standard: 100 requests/minute
 - Burst: 200 requests/minute
 - Webhooks: No limit
@@ -26,6 +27,7 @@ POST /api/partner/auth/login
 ```
 
 **Request Body**:
+
 ```json
 {
   "email": "partner@hotel.com",
@@ -33,7 +35,8 @@ POST /api/partner/auth/login
 }
 ```
 
-**Response**: 
+**Response**:
+
 ```json
 {
   "success": true,
@@ -64,16 +67,19 @@ GET /api/partner/hotels
 ```
 
 **Query Parameters**:
+
 - `status` (optional): Filter by status (draft, active, inactive)
 - `page` (optional, default: 1): Page number
 - `limit` (optional, default: 20): Items per page
 
 **Headers**:
+
 ```
 Authorization: Bearer {token}
 ```
 
 **Response**:
+
 ```json
 {
   "success": true,
@@ -114,6 +120,7 @@ GET /api/partner/hotels/:id
 ```
 
 **Response**:
+
 ```json
 {
   "success": true,
@@ -169,6 +176,7 @@ POST /api/partner/hotels
 ```
 
 **Request Body**:
+
 ```json
 {
   "name": "New Luxury Hotel",
@@ -195,6 +203,7 @@ POST /api/partner/hotels
 ```
 
 **Response**: (201 Created)
+
 ```json
 {
   "success": true,
@@ -215,6 +224,7 @@ PATCH /api/partner/hotels/:id
 ```
 
 **Request Body**: (partial update allowed)
+
 ```json
 {
   "description": "Updated description...",
@@ -224,6 +234,7 @@ PATCH /api/partner/hotels/:id
 ```
 
 **Response**: (200 OK)
+
 ```json
 {
   "success": true,
@@ -244,6 +255,7 @@ POST /api/partner/hotels/:id/photos
 **Content-Type**: `multipart/form-data`
 
 **Request Body**:
+
 ```
 file: [image file]
 caption: "Lobby view"
@@ -252,6 +264,7 @@ is_primary: false
 ```
 
 **Response**: (201 Created)
+
 ```json
 {
   "success": true,
@@ -278,9 +291,11 @@ GET /api/partner/hotels/:hotel_id/rooms
 ```
 
 **Query Parameters**:
+
 - `status` (optional): Filter by status
 
 **Response**:
+
 ```json
 {
   "success": true,
@@ -317,6 +332,7 @@ POST /api/partner/hotels/:hotel_id/rooms
 ```
 
 **Request Body**:
+
 ```json
 {
   "code": "STE-001",
@@ -334,6 +350,7 @@ POST /api/partner/hotels/:hotel_id/rooms
 ```
 
 **Response**: (201 Created)
+
 ```json
 {
   "success": true,
@@ -358,11 +375,13 @@ GET /api/partner/hotels/:hotel_id/rooms/:room_id/rates
 ```
 
 **Query Parameters**:
+
 - `start_date` (required): YYYY-MM-DD
 - `end_date` (required): YYYY-MM-DD
 - `partner_id` (optional): Filter by specific partner
 
 **Response**:
+
 ```json
 {
   "success": true,
@@ -371,7 +390,7 @@ GET /api/partner/hotels/:hotel_id/rooms/:room_id/rates
       {
         "id": "uuid",
         "room_id": "room_uuid",
-        "partner_id": "partner_uuid",  
+        "partner_id": "partner_uuid",
         "date": "2026-02-10",
         "price_cents": 15000,
         "currency": "USD",
@@ -397,6 +416,7 @@ POST /api/partner/hotels/:hotel_id/rooms/:room_id/rates/bulk
 ```
 
 **Request Body**:
+
 ```json
 {
   "start_date": "2026-03-01",
@@ -414,6 +434,7 @@ POST /api/partner/hotels/:hotel_id/rooms/:room_id/rates/bulk
 ```
 
 **Response**: (200 OK)
+
 ```json
 {
   "success": true,
@@ -434,6 +455,7 @@ PATCH /api/partner/hotels/:hotel_id/rooms/:room_id/rates/:date
 ```
 
 **Request Body**:
+
 ```json
 {
   "price_cents": 20000,
@@ -442,6 +464,7 @@ PATCH /api/partner/hotels/:hotel_id/rooms/:room_id/rates/:date
 ```
 
 **Response**: (200 OK)
+
 ```json
 {
   "success": true,
@@ -466,6 +489,7 @@ GET /api/partner/bookings
 ```
 
 **Query Parameters**:
+
 - `hotel_id` (optional): Filter by hotel
 - `status` (optional): confirmed, checked_in, checked_out, cancelled
 - `check_in_date` (optional): YYYY-MM-DD
@@ -474,6 +498,7 @@ GET /api/partner/bookings
 - `limit` (optional): Items per page
 
 **Response**:
+
 ```json
 {
   "success": true,
@@ -536,6 +561,7 @@ GET /api/partner/bookings/:id
 ```
 
 **Response**:
+
 ```json
 {
   "success": true,
@@ -579,7 +605,7 @@ GET /api/partner/bookings/:id
       "discount_cents": 5400,
       "total_cents": 45000,
       "commission_cents": 4500,
-      "commission_rate": 0.10,
+      "commission_rate": 0.1,
       "partner_payout_cents": 40500,
       "currency": "USD",
       "nightly_breakdown": [
@@ -627,6 +653,7 @@ PATCH /api/partner/bookings/:id/status
 ```
 
 **Request Body**:
+
 ```json
 {
   "status": "checked_in",
@@ -636,6 +663,7 @@ PATCH /api/partner/bookings/:id/status
 ```
 
 **Response**: (200 OK)
+
 ```json
 {
   "success": true,
@@ -655,6 +683,7 @@ POST /api/partner/bookings/:id/cancel
 ```
 
 **Request Body**:
+
 ```json
 {
   "reason": "Property maintenance required",
@@ -664,6 +693,7 @@ POST /api/partner/bookings/:id/cancel
 ```
 
 **Response**: (200 OK)
+
 ```json
 {
   "success": true,
@@ -690,11 +720,13 @@ GET /api/partner/analytics/dashboard
 ```
 
 **Query Parameters**:
+
 - `hotel_id` (optional): Specific hotel
 - `start_date` (optional): YYYY-MM-DD
 - `end_date` (optional): YYYY-MM-DD
 
 **Response**:
+
 ```json
 {
   "success": true,
@@ -727,7 +759,7 @@ GET /api/partner/analytics/dashboard
         "channel": "tripc_direct",
         "bookings": 25,
         "revenue_cents": 375000,
-        "commission_rate": 0.10
+        "commission_rate": 0.1
       },
       {
         "channel": "booking_com",
@@ -739,7 +771,7 @@ GET /api/partner/analytics/dashboard
         "channel": "walk_in",
         "bookings": 5,
         "revenue_cents": 57000,
-        "commission_rate": 0.00
+        "commission_rate": 0.0
       }
     ]
   }
@@ -753,12 +785,14 @@ GET /api/partner/analytics/occupancy
 ```
 
 **Query Parameters**:
+
 - `hotel_id` (required)
 - `start_date` (required)
 - `end_date` (required)
 - `granularity` (optional): daily, weekly, monthly
 
 **Response**:
+
 ```json
 {
   "success": true,
@@ -812,6 +846,7 @@ GET /api/partner/reviews
 ```
 
 **Query Parameters**:
+
 - `hotel_id` (optional)
 - `status` (optional): pending, approved, rejected
 - `rating` (optional): 1-5
@@ -819,6 +854,7 @@ GET /api/partner/reviews
 - `limit` (optional)
 
 **Response**:
+
 ```json
 {
   "success": true,
@@ -870,6 +906,7 @@ POST /api/partner/reviews/:id/respond
 ```
 
 **Request Body**:
+
 ```json
 {
   "response": "Thank you for your wonderful review! We're thrilled to hear you enjoyed your stay. We've taken note of your WiFi feedback and are working on upgrades. We hope to welcome you again soon!"
@@ -877,6 +914,7 @@ POST /api/partner/reviews/:id/respond
 ```
 
 **Response**: (200 OK)
+
 ```json
 {
   "success": true,
@@ -900,11 +938,13 @@ GET /api/partner/payouts
 ```
 
 **Query Parameters**:
+
 - `status` (optional): pending, paid, overdue
 - `year` (optional)
 - `month` (optional)
 
 **Response**:
+
 ```json
 {
   "success": true,
@@ -953,12 +993,14 @@ GET /api/partner/notifications
 ```
 
 **Query Parameters**:
+
 - `unread_only` (optional): true/false
 - `type` (optional): booking, review, payout, alert
 - `page` (optional)
 - `limit` (optional)
 
 **Response**:
+
 ```json
 {
   "success": true,
@@ -1003,6 +1045,7 @@ POST /api/partner/webhooks
 ```
 
 **Request Body**:
+
 ```json
 {
   "url": "https://partner-system.com/webhooks/tripc",

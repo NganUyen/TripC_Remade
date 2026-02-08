@@ -63,12 +63,14 @@ The Hotel Partner section serves multiple key purposes:
 ## 🔑 Key Features
 
 ### 1. Multi-Property Management
+
 - Support for hotel chains or independent properties
 - Centralized management dashboard
 - Property-specific permissions and access controls
 - Bulk operations across properties
 
 ### 2. Dynamic Rate Management
+
 - **Base Rates**: Set standard rates for each room type
 - **Seasonal Pricing**: Define peak/off-peak seasons
 - **Dynamic Pricing**: Adjust rates based on demand
@@ -77,6 +79,7 @@ The Hotel Partner section serves multiple key purposes:
 - **Early Bird Discounts**: Advance booking incentives
 
 ### 3. Channel Management
+
 - **Direct Bookings**: Own booking channel with 0% commission
 - **OTA Integration**: Connect with third-party booking platforms
 - **Rate Parity**: Maintain consistent pricing across channels
@@ -84,6 +87,7 @@ The Hotel Partner section serves multiple key purposes:
 - **Commission Tracking**: Monitor fees per channel
 
 ### 4. Booking Operations
+
 - **Booking Inbox**: Centralized view of all reservations
 - **Auto-confirmation**: Instant booking confirmation
 - **Modification Handling**: Process changes and cancellations
@@ -92,6 +96,7 @@ The Hotel Partner section serves multiple key purposes:
 - **Special Requests**: Manage guest preferences
 
 ### 5. Revenue & Analytics
+
 - **Occupancy Reports**: Daily/weekly/monthly occupancy rates
 - **Revenue Tracking**: Total revenue by channel, room type, date
 - **ADR (Average Daily Rate)**: Monitor pricing performance
@@ -100,6 +105,7 @@ The Hotel Partner section serves multiple key purposes:
 - **Channel Performance**: Compare channel efficiency
 
 ### 6. Review & Reputation
+
 - **Review Aggregation**: Collect reviews from all sources
 - **Response Management**: Reply to guest feedback
 - **Rating Monitoring**: Track overall rating trends
@@ -109,18 +115,21 @@ The Hotel Partner section serves multiple key purposes:
 ## 💼 Partner Types
 
 ### 1. Direct Hotel Partners
+
 - Hotels that list directly on TripC
 - Full control over rates and availability
 - Pay commission on completed bookings
 - Access to all portal features
 
 ### 2. Aggregator Partners (OTAs)
+
 - Third-party booking platforms
 - Provide bulk hotel inventory
 - API integration for rate fetching
 - Commission paid by hotel or TripC
 
 ### 3. Chain Partners
+
 - Hotel chains with multiple properties
 - Centralized management for all locations
 - Volume-based commission discounts
@@ -129,6 +138,7 @@ The Hotel Partner section serves multiple key purposes:
 ## 🔄 Core Workflows
 
 ### Property Onboarding Flow
+
 ```
 1. Partner Registration
    ↓
@@ -148,6 +158,7 @@ The Hotel Partner section serves multiple key purposes:
 ```
 
 ### Booking Flow
+
 ```
 Customer Search → Partner Rate Display → Selection → Booking Request
                                                             ↓
@@ -169,6 +180,7 @@ Review Request
 ```
 
 ### Rate Update Flow
+
 ```
 Partner Updates Rate → Validation → Database Update → Channel Sync
                                                             ↓
@@ -235,6 +247,7 @@ hotel_bookings (1) ──→ (M) hotel_booking_modifications
 ## 🔧 Technical Stack
 
 ### Frontend
+
 - **Framework**: Next.js 14 (App Router)
 - **UI**: React with Tailwind CSS
 - **State Management**: React Context + Hooks
@@ -242,6 +255,7 @@ hotel_bookings (1) ──→ (M) hotel_booking_modifications
 - **Data Fetching**: SWR for real-time updates
 
 ### Backend
+
 - **API**: Next.js API Routes (serverless)
 - **Database**: Supabase PostgreSQL
 - **Authentication**: Custom partner auth (NOT Clerk)
@@ -249,6 +263,7 @@ hotel_bookings (1) ──→ (M) hotel_booking_modifications
 - **Caching**: Redis for rate caching
 
 ### Integration
+
 - **Calendar Sync**: iCal format support
 - **Channel Manager**: Custom API + third-party integrations
 - **Payment**: Stripe Connect for payouts
@@ -258,6 +273,7 @@ hotel_bookings (1) ──→ (M) hotel_booking_modifications
 ## 📈 Key Metrics
 
 ### For Partners
+
 - Occupancy Rate
 - Average Daily Rate (ADR)
 - Revenue Per Available Room (RevPAR)
@@ -267,6 +283,7 @@ hotel_bookings (1) ──→ (M) hotel_booking_modifications
 - Review Score
 
 ### For TripC Platform
+
 - Total Bookings
 - Commission Revenue
 - Active Partners
@@ -277,6 +294,7 @@ hotel_bookings (1) ──→ (M) hotel_booking_modifications
 ## 🚀 Future Enhancements
 
 ### Phase 2 Features
+
 - Mobile app for partners
 - Advanced yield management
 - AI-powered pricing recommendations
@@ -285,6 +303,7 @@ hotel_bookings (1) ──→ (M) hotel_booking_modifications
 - Group booking management
 
 ### Phase 3 Features
+
 - PMS (Property Management System) integration
 - Advanced reporting and BI tools
 - White-label booking widgets

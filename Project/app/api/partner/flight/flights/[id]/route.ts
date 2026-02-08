@@ -5,19 +5,19 @@
  * DELETE /api/partner/flight/flights/[id] - Delete flight
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { updateFlightSchema } from '@/lib/flight-partner/validation';
+import { NextRequest, NextResponse } from "next/server";
+import { updateFlightSchema } from "@/lib/flight-partner/validation";
 import {
   getPartnerFlight,
   updateFlight,
   deleteFlight,
-} from '@/lib/flight-partner/database';
-import { ZodError } from 'zod';
+} from "@/lib/flight-partner/database";
+import { ZodError } from "zod";
 
 function getPartnerId(req: NextRequest): string {
-  const partnerId = req.headers.get('x-partner-id');
+  const partnerId = req.headers.get("x-partner-id");
   if (!partnerId) {
-    throw new Error('Partner ID not found');
+    throw new Error("Partner ID not found");
   }
   return partnerId;
 }
@@ -27,7 +27,7 @@ function getPartnerId(req: NextRequest): string {
  */
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   try {
     const partnerId = getPartnerId(req);
@@ -38,16 +38,16 @@ export async function GET(
       data: flight,
     });
   } catch (error: any) {
-    console.error('Error fetching flight:', error);
+    console.error("Error fetching flight:", error);
     return NextResponse.json(
       {
         success: false,
         error: {
-          code: 'FETCH_ERROR',
-          message: error.message || 'Failed to fetch flight',
+          code: "FETCH_ERROR",
+          message: error.message || "Failed to fetch flight",
         },
       },
-      { status: error.message.includes('not found') ? 404 : 500 }
+      { status: error.message.includes("not found") ? 404 : 500 },
     );
   }
 }
@@ -57,7 +57,7 @@ export async function GET(
  */
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   try {
     const partnerId = getPartnerId(req);
@@ -69,22 +69,22 @@ export async function PUT(
     return NextResponse.json({
       success: true,
       data: flight,
-      message: 'Flight updated successfully',
+      message: "Flight updated successfully",
     });
   } catch (error: any) {
-    console.error('Error updating flight:', error);
+    console.error("Error updating flight:", error);
 
     if (error instanceof ZodError) {
       return NextResponse.json(
         {
           success: false,
           error: {
-            code: 'VALIDATION_ERROR',
-            message: 'Invalid input data',
+            code: "VALIDATION_ERROR",
+            message: "Invalid input data",
             details: error.errors,
           },
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -92,11 +92,11 @@ export async function PUT(
       {
         success: false,
         error: {
-          code: 'UPDATE_ERROR',
-          message: error.message || 'Failed to update flight',
+          code: "UPDATE_ERROR",
+          message: error.message || "Failed to update flight",
         },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -106,7 +106,7 @@ export async function PUT(
  */
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   try {
     const partnerId = getPartnerId(req);
@@ -114,19 +114,19 @@ export async function DELETE(
 
     return NextResponse.json({
       success: true,
-      message: 'Flight cancelled successfully',
+      message: "Flight cancelled successfully",
     });
   } catch (error: any) {
-    console.error('Error deleting flight:', error);
+    console.error("Error deleting flight:", error);
     return NextResponse.json(
       {
         success: false,
         error: {
-          code: 'DELETE_ERROR',
-          message: error.message || 'Failed to cancel flight',
+          code: "DELETE_ERROR",
+          message: error.message || "Failed to cancel flight",
         },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

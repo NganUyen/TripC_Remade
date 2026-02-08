@@ -5,18 +5,18 @@
  * DELETE /api/partner/hotel/hotels/[id] - Delete hotel
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { updateHotelSchema } from '@/lib/hotel-partner/validation';
+import { NextRequest, NextResponse } from "next/server";
+import { updateHotelSchema } from "@/lib/hotel-partner/validation";
 import {
   getPartnerHotel,
   updateHotel,
   deleteHotel,
-} from '@/lib/hotel-partner/database';
+} from "@/lib/hotel-partner/database";
 
 function getPartnerId(req: NextRequest): string {
-  const partnerId = req.headers.get('x-partner-id');
+  const partnerId = req.headers.get("x-partner-id");
   if (!partnerId) {
-    throw new Error('Partner ID not found');
+    throw new Error("Partner ID not found");
   }
   return partnerId;
 }
@@ -27,7 +27,7 @@ function getPartnerId(req: NextRequest): string {
  */
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   try {
     const partnerId = getPartnerId(req);
@@ -40,11 +40,11 @@ export async function GET(
         {
           success: false,
           error: {
-            code: 'NOT_FOUND',
-            message: 'Hotel not found or access denied',
+            code: "NOT_FOUND",
+            message: "Hotel not found or access denied",
           },
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -53,16 +53,16 @@ export async function GET(
       data: hotel,
     });
   } catch (error: any) {
-    console.error('Error fetching hotel:', error);
+    console.error("Error fetching hotel:", error);
     return NextResponse.json(
       {
         success: false,
         error: {
-          code: 'FETCH_ERROR',
-          message: error.message || 'Failed to fetch hotel',
+          code: "FETCH_ERROR",
+          message: error.message || "Failed to fetch hotel",
         },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -73,7 +73,7 @@ export async function GET(
  */
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   try {
     const partnerId = getPartnerId(req);
@@ -87,12 +87,12 @@ export async function PUT(
         {
           success: false,
           error: {
-            code: 'VALIDATION_ERROR',
-            message: 'Invalid hotel data',
+            code: "VALIDATION_ERROR",
+            message: "Invalid hotel data",
             details: validation.error.errors,
           },
         },
-        { status: 422 }
+        { status: 422 },
       );
     }
 
@@ -102,21 +102,24 @@ export async function PUT(
     return NextResponse.json({
       success: true,
       data: hotel,
-      message: 'Hotel updated successfully',
+      message: "Hotel updated successfully",
     });
   } catch (error: any) {
-    console.error('Error updating hotel:', error);
+    console.error("Error updating hotel:", error);
 
-    if (error.message.includes('not found') || error.message.includes('access denied')) {
+    if (
+      error.message.includes("not found") ||
+      error.message.includes("access denied")
+    ) {
       return NextResponse.json(
         {
           success: false,
           error: {
-            code: 'NOT_FOUND',
-            message: 'Hotel not found or access denied',
+            code: "NOT_FOUND",
+            message: "Hotel not found or access denied",
           },
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -124,11 +127,11 @@ export async function PUT(
       {
         success: false,
         error: {
-          code: 'UPDATE_ERROR',
-          message: error.message || 'Failed to update hotel',
+          code: "UPDATE_ERROR",
+          message: error.message || "Failed to update hotel",
         },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -139,7 +142,7 @@ export async function PUT(
  */
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   try {
     const partnerId = getPartnerId(req);
@@ -149,21 +152,24 @@ export async function DELETE(
 
     return NextResponse.json({
       success: true,
-      message: 'Hotel deleted successfully',
+      message: "Hotel deleted successfully",
     });
   } catch (error: any) {
-    console.error('Error deleting hotel:', error);
+    console.error("Error deleting hotel:", error);
 
-    if (error.message.includes('not found') || error.message.includes('access denied')) {
+    if (
+      error.message.includes("not found") ||
+      error.message.includes("access denied")
+    ) {
       return NextResponse.json(
         {
           success: false,
           error: {
-            code: 'NOT_FOUND',
-            message: 'Hotel not found or access denied',
+            code: "NOT_FOUND",
+            message: "Hotel not found or access denied",
           },
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -171,11 +177,11 @@ export async function DELETE(
       {
         success: false,
         error: {
-          code: 'DELETE_ERROR',
-          message: error.message || 'Failed to delete hotel',
+          code: "DELETE_ERROR",
+          message: error.message || "Failed to delete hotel",
         },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -3,10 +3,10 @@
  * Fetches and displays real-time partner metrics
  */
 
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import {
   TrendingUp,
   DollarSign,
@@ -17,7 +17,7 @@ import {
   Hotel,
   Users,
   AlertCircle,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface DashboardMetrics {
   total_bookings: number;
@@ -41,11 +41,18 @@ interface StatCardProps {
   value: string | number;
   change?: number;
   icon: React.ElementType;
-  trend?: 'up' | 'down';
+  trend?: "up" | "down";
   loading?: boolean;
 }
 
-function StatCard({ title, value, change, icon: Icon, trend, loading }: StatCardProps) {
+function StatCard({
+  title,
+  value,
+  change,
+  icon: Icon,
+  trend,
+  loading,
+}: StatCardProps) {
   if (loading) {
     return (
       <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm animate-pulse">
@@ -72,10 +79,10 @@ function StatCard({ title, value, change, icon: Icon, trend, loading }: StatCard
         {change !== undefined && trend && (
           <div
             className={`flex items-center gap-1 text-sm font-semibold ${
-              trend === 'up' ? 'text-green-600' : 'text-red-600'
+              trend === "up" ? "text-green-600" : "text-red-600"
             }`}
           >
-            {trend === 'up' ? (
+            {trend === "up" ? (
               <ArrowUpRight className="w-4 h-4" />
             ) : (
               <ArrowDownRight className="w-4 h-4" />
@@ -100,21 +107,21 @@ export function EnhancedHotelDashboard({ partnerId }: { partnerId: string }) {
   useEffect(() => {
     async function fetchMetrics() {
       try {
-        const response = await fetch('/api/partner/hotel/analytics/dashboard', {
+        const response = await fetch("/api/partner/hotel/analytics/dashboard", {
           headers: {
-            'x-partner-id': partnerId,
+            "x-partner-id": partnerId,
           },
         });
 
         if (!response.ok) {
-          throw new Error('Failed to fetch metrics');
+          throw new Error("Failed to fetch metrics");
         }
 
         const result = await response.json();
         if (result.success) {
           setMetrics(result.data);
         } else {
-          throw new Error(result.error?.message || 'Unknown error');
+          throw new Error(result.error?.message || "Unknown error");
         }
       } catch (err: any) {
         setError(err.message);
@@ -124,7 +131,7 @@ export function EnhancedHotelDashboard({ partnerId }: { partnerId: string }) {
     }
 
     fetchMetrics();
-    
+
     // Refresh every 5 minutes
     const interval = setInterval(fetchMetrics, 5 * 60 * 1000);
     return () => clearInterval(interval);
@@ -146,37 +153,39 @@ export function EnhancedHotelDashboard({ partnerId }: { partnerId: string }) {
 
   const stats = [
     {
-      title: 'Total Revenue (30 days)',
-      value: metrics?.gross_revenue || '$0',
+      title: "Total Revenue (30 days)",
+      value: metrics?.gross_revenue || "$0",
       icon: DollarSign,
       loading,
     },
     {
-      title: 'Net Revenue (30 days)',
-      value: metrics?.net_revenue || '$0',
+      title: "Net Revenue (30 days)",
+      value: metrics?.net_revenue || "$0",
       icon: TrendingUp,
       loading,
     },
     {
-      title: 'Total Bookings',
+      title: "Total Bookings",
       value: metrics?.total_bookings || 0,
       icon: Calendar,
       loading,
     },
     {
-      title: 'Active Hotels',
+      title: "Active Hotels",
       value: metrics?.active_hotels || 0,
       icon: Hotel,
       loading,
     },
     {
-      title: 'Confirmation Rate',
-      value: metrics?.confirmation_rate ? `${metrics.confirmation_rate}%` : '0%',
+      title: "Confirmation Rate",
+      value: metrics?.confirmation_rate
+        ? `${metrics.confirmation_rate}%`
+        : "0%",
       icon: Users,
       loading,
     },
     {
-      title: 'Total Reviews',
+      title: "Total Reviews",
       value: metrics?.total_reviews || 0,
       icon: Star,
       loading,
@@ -194,11 +203,11 @@ export function EnhancedHotelDashboard({ partnerId }: { partnerId: string }) {
           {metrics ? (
             <>
               Performance overview for the last 30 days (
-              {new Date(metrics.period_start).toLocaleDateString()} -{' '}
+              {new Date(metrics.period_start).toLocaleDateString()} -{" "}
               {new Date(metrics.period_end).toLocaleDateString()})
             </>
           ) : (
-            'Loading performance metrics...'
+            "Loading performance metrics..."
           )}
         </p>
       </div>

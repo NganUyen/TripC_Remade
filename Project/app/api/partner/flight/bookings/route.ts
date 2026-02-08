@@ -3,13 +3,13 @@
  * GET /api/partner/flight/bookings - List all bookings
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { getPartnerBookings } from '@/lib/flight-partner/database';
+import { NextRequest, NextResponse } from "next/server";
+import { getPartnerBookings } from "@/lib/flight-partner/database";
 
 function getPartnerId(req: NextRequest): string {
-  const partnerId = req.headers.get('x-partner-id');
+  const partnerId = req.headers.get("x-partner-id");
   if (!partnerId) {
-    throw new Error('Partner ID not found');
+    throw new Error("Partner ID not found");
   }
   return partnerId;
 }
@@ -25,12 +25,16 @@ export async function GET(req: NextRequest) {
 
     // Parse query parameters
     const filters = {
-      flight_id: searchParams.get('flight_id') || undefined,
-      status: searchParams.get('status') || undefined,
-      start_date: searchParams.get('start_date') || undefined,
-      end_date: searchParams.get('end_date') || undefined,
-      limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 50,
-      offset: searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : 0,
+      flight_id: searchParams.get("flight_id") || undefined,
+      status: searchParams.get("status") || undefined,
+      start_date: searchParams.get("start_date") || undefined,
+      end_date: searchParams.get("end_date") || undefined,
+      limit: searchParams.get("limit")
+        ? parseInt(searchParams.get("limit")!)
+        : 50,
+      offset: searchParams.get("offset")
+        ? parseInt(searchParams.get("offset")!)
+        : 0,
     };
 
     const bookings = await getPartnerBookings(partnerId, filters);
@@ -39,7 +43,7 @@ export async function GET(req: NextRequest) {
     const total = bookings.length;
     const totalRevenue = bookings.reduce(
       (sum, booking) => sum + (booking.total_price || 0),
-      0
+      0,
     );
 
     return NextResponse.json({
@@ -53,16 +57,16 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (error: any) {
-    console.error('Error fetching bookings:', error);
+    console.error("Error fetching bookings:", error);
     return NextResponse.json(
       {
         success: false,
         error: {
-          code: 'FETCH_ERROR',
-          message: error.message || 'Failed to fetch bookings',
+          code: "FETCH_ERROR",
+          message: error.message || "Failed to fetch bookings",
         },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

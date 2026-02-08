@@ -3,11 +3,11 @@
  * Displays and manages partner's flights
  */
 
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import { Plane, Plus, Search, Filter } from 'lucide-react';
+import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { Plane, Plus, Search, Filter } from "lucide-react";
 
 interface FlightListProps {
   partnerId: string;
@@ -25,9 +25,9 @@ export default function FlightList({ partnerId }: FlightListProps) {
   async function fetchFlights() {
     try {
       setLoading(true);
-      const response = await fetch('/api/partner/flight/flights', {
+      const response = await fetch("/api/partner/flight/flights", {
         headers: {
-          'x-partner-id': partnerId,
+          "x-partner-id": partnerId,
         },
       });
 
@@ -35,7 +35,7 @@ export default function FlightList({ partnerId }: FlightListProps) {
         const result = await response.json();
         setFlights(result.data);
       } else {
-        throw new Error('Failed to fetch flights');
+        throw new Error("Failed to fetch flights");
       }
     } catch (err: any) {
       setError(err.message);
@@ -128,9 +128,9 @@ export default function FlightList({ partnerId }: FlightListProps) {
                     </p>
                     <span
                       className={`inline-block px-2 py-1 text-xs rounded-full ${
-                        flight.status === 'scheduled'
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-slate-100 text-slate-700'
+                        flight.status === "scheduled"
+                          ? "bg-green-100 text-green-700"
+                          : "bg-slate-100 text-slate-700"
                       }`}
                     >
                       {flight.status}

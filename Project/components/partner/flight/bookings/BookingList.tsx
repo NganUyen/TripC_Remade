@@ -2,11 +2,11 @@
  * Booking List Component for Flight Partner
  */
 
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import { Users, Search } from 'lucide-react';
+import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { Users, Search } from "lucide-react";
 
 interface BookingListProps {
   partnerId: string;
@@ -22,9 +22,9 @@ export default function BookingList({ partnerId }: BookingListProps) {
 
   async function fetchBookings() {
     try {
-      const response = await fetch('/api/partner/flight/bookings', {
+      const response = await fetch("/api/partner/flight/bookings", {
         headers: {
-          'x-partner-id': partnerId,
+          "x-partner-id": partnerId,
         },
       });
 
@@ -33,7 +33,7 @@ export default function BookingList({ partnerId }: BookingListProps) {
         setBookings(result.data);
       }
     } catch (error) {
-      console.error('Error fetching bookings:', error);
+      console.error("Error fetching bookings:", error);
     } finally {
       setLoading(false);
     }

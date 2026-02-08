@@ -3,14 +3,14 @@
  * GET /api/partner/hotel/analytics/dashboard - Get dashboard metrics
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { getDashboardMetrics } from '@/lib/hotel-partner/database';
-import { formatCurrency } from '@/lib/hotel-partner/calculations';
+import { NextRequest, NextResponse } from "next/server";
+import { getDashboardMetrics } from "@/lib/hotel-partner/database";
+import { formatCurrency } from "@/lib/hotel-partner/calculations";
 
 function getPartnerId(req: NextRequest): string {
-  const partnerId = req.headers.get('x-partner-id');
+  const partnerId = req.headers.get("x-partner-id");
   if (!partnerId) {
-    throw new Error('Partner ID not found');
+    throw new Error("Partner ID not found");
   }
   return partnerId;
 }
@@ -33,15 +33,19 @@ export async function GET(req: NextRequest) {
       avg_booking_value: formatCurrency(
         metrics.total_bookings > 0
           ? Math.round(metrics.gross_revenue_cents / metrics.total_bookings)
-          : 0
+          : 0,
       ),
       confirmation_rate:
         metrics.total_bookings > 0
-          ? Math.round((metrics.confirmed_bookings / metrics.total_bookings) * 100)
+          ? Math.round(
+              (metrics.confirmed_bookings / metrics.total_bookings) * 100,
+            )
           : 0,
       cancellation_rate:
         metrics.total_bookings > 0
-          ? Math.round((metrics.cancelled_bookings / metrics.total_bookings) * 100)
+          ? Math.round(
+              (metrics.cancelled_bookings / metrics.total_bookings) * 100,
+            )
           : 0,
     };
 
@@ -50,16 +54,16 @@ export async function GET(req: NextRequest) {
       data: formattedMetrics,
     });
   } catch (error: any) {
-    console.error('Error fetching dashboard metrics:', error);
+    console.error("Error fetching dashboard metrics:", error);
     return NextResponse.json(
       {
         success: false,
         error: {
-          code: 'FETCH_ERROR',
-          message: error.message || 'Failed to fetch dashboard metrics',
+          code: "FETCH_ERROR",
+          message: error.message || "Failed to fetch dashboard metrics",
         },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
