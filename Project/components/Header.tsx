@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { UserProfileMenu } from "./UserProfileMenu";
 import { BellButton } from "./notifications/BellButton";
@@ -8,16 +8,30 @@ import { SignInButton, SignedIn, SignedOut, useUser } from "@clerk/nextjs";
 import { CartIcon } from "@/components/shop/cart/CartIcon";
 import { Globe } from "lucide-react";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
+import { Capacitor } from "@capacitor/core";
+import { cn } from "@/lib/utils";
+
 
 export function Header() {
   const { user } = useUser();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isAndroid, setIsAndroid] = useState(false);
+
+  useEffect(() => {
+    // Manually push content down on Android to avoid status bar overlap
+    if (Capacitor.getPlatform() === 'android') {
+      setIsAndroid(true);
+    }
+  }, []);
 
   // Auto-sync user to Supabase on first login
   useCurrentUser();
 
   return (
-    <header className="sticky top-0 z-[60] bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
+    <header className={cn(
+      "sticky top-0 z-[60] bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800",
+      isAndroid && "pt-8"
+    )}>
       <div className="w-full px-6 lg:px-12 xl:px-16">
         <div className="flex items-center justify-between h-16 sm:h-20 gap-4">
           <div className="flex items-center gap-8 flex-1">

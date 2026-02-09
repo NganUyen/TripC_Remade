@@ -38,6 +38,52 @@ export function WellnessBookingSidebar({ experience }: WellnessBookingSidebarPro
         phone: ''
     })
 
+    // Voucher State
+    const [voucherCode, setVoucherCode] = useState("")
+    const [discountAmount, setDiscountAmount] = useState(0)
+    const [voucherMessage, setVoucherMessage] = useState("")
+    const [isVoucherApplied, setIsVoucherApplied] = useState(false)
+    const [isValidatingVoucher, setIsValidatingVoucher] = useState(false)
+
+    // Handle Voucher Application
+    const handleApplyVoucher = async () => {
+        if (!voucherCode.trim()) return
+
+        setIsValidatingVoucher(true)
+        setVoucherMessage("")
+        setDiscountAmount(0)
+        setIsVoucherApplied(false)
+
+        try {
+            const res = await fetch("/api/v1/vouchers/validate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    code: voucherCode,
+                    cartTotal: totalPrice,
+                    serviceType: "wellness",
+                }),
+            })
+
+            const data = await res.json()
+
+            if (!res.ok) {
+                setVoucherMessage(data.error || "Invalid voucher")
+                return
+            }
+
+            if (data.valid) {
+                setDiscountAmount(data.discountAmount)
+                setIsVoucherApplied(true)
+                setVoucherMessage(`Voucher applied: -$${data.discountAmount}`)
+            }
+        } catch (err) {
+            setVoucherMessage("Failed to validate voucher")
+        } finally {
+            setIsValidatingVoucher(false)
+        }
+    }
+
     useEffect(() => {
         if (user) {
             setContact({
@@ -87,7 +133,7 @@ export function WellnessBookingSidebar({ experience }: WellnessBookingSidebarPro
             const result = await createWellnessBooking({
                 user_id: user?.id,
                 experience_id: experience.id,
-                total_amount: totalPrice,
+                total_amount: Math.max(0, totalPrice - discountAmount),
                 booking_details: bookingData,
                 title: experience.title,
                 image_url: experience.image_url,
@@ -220,15 +266,33 @@ export function WellnessBookingSidebar({ experience }: WellnessBookingSidebarPro
                                 </div>
 
                                 {/* Promo Code */}
-                                <div className="flex gap-2">
-                                    <input
-                                        type="text"
-                                        placeholder="Promo code"
-                                        className="flex-1 bg-white dark:bg-slate-800/50 border-slate-200/60 dark:border-white/10 rounded-full px-6 py-4 focus:ring-2 focus:ring-[#FF5E1F]/20 dark:text-white transition-all text-sm outline-none"
-                                    />
-                                    <button className="px-6 py-4 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-full font-bold text-sm hover:opacity-90 transition-opacity">
-                                        Apply
-                                    </button>
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between p-1 bg-white dark:bg-slate-800/50 border border-slate-200/60 dark:border-white/10 rounded-full shadow-sm">
+                                        <input
+                                            type="text"
+                                            placeholder="Promo code"
+                                            value={voucherCode}
+                                            onChange={(e) => {
+                                                setVoucherCode(e.target.value.toUpperCase())
+                                                setIsVoucherApplied(false)
+                                                setDiscountAmount(0)
+                                                setVoucherMessage('')
+                                            }}
+                                            className="flex-1 px-4 py-2 text-sm bg-transparent border-none focus:outline-none focus:ring-0 text-slate-900 dark:text-white placeholder:text-slate-400"
+                                        />
+                                        <button
+                                            onClick={handleApplyVoucher}
+                                            disabled={!voucherCode || isValidatingVoucher}
+                                            className="px-6 py-2 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-full font-bold text-sm hover:opacity-90 transition-opacity shadow-md disabled:opacity-50 disabled:shadow-none"
+                                        >
+                                            {isValidatingVoucher ? '...' : 'Apply'}
+                                        </button>
+                                    </div>
+                                    {voucherMessage && (
+                                        <p className={`text-xs ml-4 font-medium ${isVoucherApplied ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
+                                            {voucherMessage}
+                                        </p>
+                                    )}
                                 </div>
 
                             </div>
@@ -237,9 +301,17 @@ export function WellnessBookingSidebar({ experience }: WellnessBookingSidebarPro
 
                     {/* Total & Button */}
                     <div className="pt-6 border-t border-slate-200/60 dark:border-white/10 space-y-4">
+                        {isVoucherApplied && discountAmount > 0 && (
+                            <div className="flex items-center justify-between text-sm text-green-600 dark:text-green-400">
+                                <span className="font-bold">Discount</span>
+                                <span className="font-black">-${discountAmount}</span>
+                            </div>
+                        )}
                         <div className="flex items-center justify-between">
                             <span className="font-bold text-slate-500">Total</span>
-                            <span className="text-3xl font-black text-slate-900 dark:text-white">${totalPrice.toLocaleString()}</span>
+                            <span className="text-3xl font-black text-slate-900 dark:text-white">
+                                ${Math.max(0, totalPrice - discountAmount).toLocaleString()}
+                            </span>
                         </div>
                         <button
                             onClick={handleBook}

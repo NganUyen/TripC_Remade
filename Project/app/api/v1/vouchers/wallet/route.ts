@@ -43,6 +43,7 @@ export async function GET() {
                 )
             `)
             .eq('user_id', user.id)
+            .eq('status', 'AVAILABLE')
             .order('acquired_at', { ascending: false })
 
         if (error) {

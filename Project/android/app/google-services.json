@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "796687001557",
+    "project_id": "tripc-mobile",
+    "storage_bucket": "tripc-mobile.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:796687001557:android:3299190b607632300dbf5c",
+        "android_client_info": {
+          "package_name": "com.tripc.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBStIl8HlSxriEX31qHiMhknBg8zSiYgRM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

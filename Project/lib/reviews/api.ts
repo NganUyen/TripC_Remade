@@ -15,7 +15,7 @@ export const reviewsApi = {
             offset: String(offset),
         })
         const response = await api.get(`/reviews?${queryParams.toString()}`)
-        return response.data
+        return response // api.get already extracts the data field
     },
 
     createReview: async (
@@ -27,7 +27,7 @@ export const reviewsApi = {
             data,
             options?.headers ? { headers: options.headers } : undefined
         )
-        return response.data
+        return response // api.post already extracts the data field
     },
 
     updateReview: async (
@@ -35,7 +35,7 @@ export const reviewsApi = {
         data: UpdateReviewRequest
     ): Promise<Review> => {
         const response = await api.put(`/reviews/${id}`, data)
-        return response.data
+        return response // api.put already extracts the data field
     },
 
     deleteReview: async (id: string): Promise<void> => {

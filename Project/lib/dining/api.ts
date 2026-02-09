@@ -32,32 +32,33 @@ export const diningApi = {
       })
     }
     const response = await api.get(`/dining/venues?${queryParams.toString()}`)
-    return response.data
+    // api.get now returns the unwrapped data directly
+    return response as VenueListResponse
   },
 
   getVenueById: async (id: string): Promise<DiningVenue> => {
     const response = await api.get(`/dining/venues/${id}`)
-    return response.data
+    return response as DiningVenue
   },
 
   getVenueBySlug: async (slug: string): Promise<DiningVenue> => {
     const response = await api.get(`/dining/venues/slug/${slug}`)
-    return response.data
+    return response as DiningVenue
   },
 
   getFeaturedVenues: async (limit: number = 10): Promise<DiningVenue[]> => {
     const response = await api.get(`/dining/venues/featured?limit=${limit}`)
-    return response.data
+    return response as DiningVenue[]
   },
 
   createVenue: async (venueData: CreateVenueRequest): Promise<DiningVenue> => {
     const response = await api.post('/dining/venues', venueData)
-    return response.data
+    return response as DiningVenue
   },
 
   updateVenue: async (id: string, updates: Partial<CreateVenueRequest>): Promise<DiningVenue> => {
     const response = await api.put(`/dining/venues/${id}`, updates)
-    return response.data
+    return response as DiningVenue
   },
 
   deleteVenue: async (id: string): Promise<void> => {
@@ -67,7 +68,7 @@ export const diningApi = {
   // Menus
   getVenueMenus: async (venueId: string): Promise<DiningMenu[]> => {
     const response = await api.get(`/dining/menus?venue_id=${venueId}`)
-    return response.data
+    return response as DiningMenu[]
   },
 
   getMenuItems: async (options: {
@@ -81,35 +82,35 @@ export const diningApi = {
     if (options.featured) queryParams.append('featured', 'true')
 
     const response = await api.get(`/dining/menus/items?${queryParams.toString()}`)
-    return response.data
+    return response as DiningMenuItem[]
   },
 
   // Reservations
   createReservation: async (reservationData: CreateReservationRequest): Promise<DiningReservation> => {
     const response = await api.post('/dining/reservations', reservationData)
-    return response.data
+    return response as DiningReservation
   },
 
   getReservation: async (id: string): Promise<DiningReservation> => {
     const response = await api.get(`/dining/reservations/${id}`)
-    return response.data
+    return response as DiningReservation
   },
 
   getUserReservations: async (userId: string): Promise<DiningReservation[]> => {
     const response = await api.get(`/dining/reservations?user_id=${userId}`)
-    return response.data
+    return response as DiningReservation[]
   },
 
   getVenueReservations: async (venueId: string, date: string, status?: string): Promise<DiningReservation[]> => {
     const queryParams = new URLSearchParams({ venue_id: venueId, date })
     if (status) queryParams.append('status', status)
     const response = await api.get(`/dining/reservations?${queryParams.toString()}`)
-    return response.data
+    return response as DiningReservation[]
   },
 
   updateReservation: async (id: string, status: string, metadata?: any): Promise<DiningReservation> => {
     const response = await api.put(`/dining/reservations/${id}`, { status, ...metadata })
-    return response.data
+    return response as DiningReservation
   },
 
   cancelReservation: async (id: string, reason?: string): Promise<void> => {
@@ -130,23 +131,23 @@ export const diningApi = {
       guest_count: String(guestCount),
     })
     const response = await api.get(`/dining/reservations/check?${queryParams.toString()}`)
-    return response.data
+    return response as { available: boolean; reason?: string }
   },
 
   // Appointments (new booking flow)
   createAppointment: async (data: CreateDiningAppointmentRequest): Promise<DiningAppointment> => {
     const response = await api.post('/dining/appointments', data)
-    return response.data
+    return response as DiningAppointment
   },
 
   getAppointment: async (id: string): Promise<DiningAppointment> => {
     const response = await api.get(`/dining/appointments/${id}`)
-    return response.data
+    return response as DiningAppointment
   },
 
   getUserAppointments: async (userId: string): Promise<DiningAppointment[]> => {
     const response = await api.get(`/dining/appointments?user_id=${userId}`)
-    return response.data
+    return response as DiningAppointment[]
   },
 
   cancelAppointment: async (id: string, reason?: string): Promise<void> => {
@@ -164,7 +165,7 @@ export const diningApi = {
       guest_count: String(guestCount),
     })
     const response = await api.get(`/dining/venues/${venueId}/available-times?${queryParams.toString()}`)
-    return response.data
+    return response as { times: string[]; reason?: string }
   },
 
   // ============================================================
@@ -179,7 +180,7 @@ export const diningApi = {
     const response = await api.get(
       `/dining/venues/${venueId}/reviews?limit=${limit}&offset=${offset}`,
     )
-    return response.data
+    return response as { reviews: any[]; stats: any }
   },
 
   createReview: async (
@@ -196,6 +197,6 @@ export const diningApi = {
       data,
       options?.headers ? { headers: options.headers } : undefined,
     )
-    return response.data
+    return response
   },
 }

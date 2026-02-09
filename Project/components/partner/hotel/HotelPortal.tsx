@@ -4,91 +4,113 @@ import React, { useState } from 'react'
 import { HotelPortalLayout } from './HotelPortalLayout'
 import { HotelDashboard } from './HotelDashboard'
 
-// Placeholder components - sẽ được tạo sau
-const PlaceholderComponent = ({ title }: { title: string }) => (
-    <div className="space-y-6">
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
-            {title}
-        </h1>
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-12 border border-slate-200 dark:border-slate-800 text-center">
-            <p className="text-slate-500 dark:text-slate-400">
-                Component đang được phát triển...
-            </p>
-        </div>
-    </div>
-)
+// Properties
+import { HotelList } from './properties/HotelList'
+import { HotelDetails } from './properties/HotelDetails'
+
+// Rooms
+import { RoomTypes } from './rooms/RoomTypes'
+import { RoomInventory } from './rooms/RoomInventory'
+
+// Rates
+import { RateCalendar } from './rates/RateCalendar'
+import { RateManagement } from './rates/RateManagement'
+import { BulkUpdate } from './rates/BulkUpdate'
+
+// Bookings
+import { BookingList } from './bookings/BookingList'
+import { BookingCalendar } from './bookings/BookingCalendar'
+import { CheckInOut } from './bookings/CheckInOut'
+
+// Analytics
+import { DashboardMetrics } from './analytics/DashboardMetrics'
+import { RevenueReport } from './analytics/RevenueReport'
+import { OccupancyReport } from './analytics/OccupancyReport'
+import { FinancialReports } from './analytics/FinancialReports'
+
+// Reviews
+import { ReviewsList } from './reviews/ReviewsList'
+import { RespondReviews } from './reviews/RespondReviews'
+
+// Settings
+import { AccountSettings } from './settings/AccountSettings'
+import { NotificationSettings } from './settings/NotificationSettings'
+import { PayoutSettings } from './settings/PayoutSettings'
 
 type Section = 
     | 'dashboard'
-    | 'hotels' | 'rooms' | 'calendar' | 'availability'
-    | 'bookings' | 'rate-management' | 'channel-manager'
-    | 'products' | 'orders'
-    | 'loyalty' | 'gamification' | 'promotions'
-    | 'performance' | 'campaign-analytics'
-    | 'reviews' | 'reputation'
-    | 'team' | 'configuration' | 'notifications' | 'bulk-import'
+    | 'hotel-list' | 'hotel-details'
+    | 'room-types' | 'room-inventory'
+    | 'rate-calendar' | 'rate-management' | 'bulk-update'
+    | 'booking-list' | 'booking-calendar' | 'check-in-out'
+    | 'dashboard-metrics' | 'revenue-report' | 'occupancy-report' | 'financial-reports'
+    | 'reviews-list' | 'respond-reviews'
+    | 'account-settings' | 'notification-settings' | 'payout-settings'
 
 export function HotelPortal() {
     const [activeSection, setActiveSection] = useState<Section>('dashboard')
+    
+    // TODO: Replace with actual partner ID from authentication
+    // This is a mock partner ID for development without auth
+    const partnerId = '00000000-0000-0000-0000-000000000001'
 
     const renderContent = () => {
         switch (activeSection) {
+            // Dashboard
             case 'dashboard':
                 return <HotelDashboard />
 
-            // Operations
-            case 'hotels':
-                return <PlaceholderComponent title="Quản lý Cơ sở" />
-            case 'rooms':
-                return <PlaceholderComponent title="Quản lý Phòng" />
-            case 'calendar':
-                return <PlaceholderComponent title="Lịch vận hành" />
-            case 'availability':
-                return <PlaceholderComponent title="Quản lý Trống" />
+            // Properties
+            case 'hotel-list':
+                return <HotelList partnerId={partnerId} />
+            case 'hotel-details':
+                return <HotelDetails />
 
-            // Reservations
-            case 'bookings':
-                return <PlaceholderComponent title="Quản lý Đặt phòng" />
+            // Rooms
+            case 'room-types':
+                return <RoomTypes />
+            case 'room-inventory':
+                return <RoomInventory />
+
+            // Rates
+            case 'rate-calendar':
+                return <RateCalendar />
             case 'rate-management':
-                return <PlaceholderComponent title="Quản lý Giá" />
-            case 'channel-manager':
-                return <PlaceholderComponent title="Điều phối Kênh" />
+                return <RateManagement />
+            case 'bulk-update':
+                return <BulkUpdate />
 
-            // Commerce
-            case 'products':
-                return <PlaceholderComponent title="Quản lý Sản phẩm" />
-            case 'orders':
-                return <PlaceholderComponent title="Xử lý Đơn hàng" />
-
-            // Marketing
-            case 'loyalty':
-                return <PlaceholderComponent title="Lòng trung thành" />
-            case 'gamification':
-                return <PlaceholderComponent title="Gamification" />
-            case 'promotions':
-                return <PlaceholderComponent title="Khuyến mãi" />
+            // Bookings
+            case 'booking-list':
+                return <BookingList partnerId={partnerId} />
+            case 'booking-calendar':
+                return <BookingCalendar />
+            case 'check-in-out':
+                return <CheckInOut />
 
             // Analytics
-            case 'performance':
-                return <PlaceholderComponent title="Quản trị Hiệu suất" />
-            case 'campaign-analytics':
-                return <PlaceholderComponent title="Phân tích Chiến dịch" />
+            case 'dashboard-metrics':
+                return <DashboardMetrics />
+            case 'revenue-report':
+                return <RevenueReport />
+            case 'occupancy-report':
+                return <OccupancyReport />
+            case 'financial-reports':
+                return <FinancialReports />
 
-            // Feedback
-            case 'reviews':
-                return <PlaceholderComponent title="Quản lý Đánh giá" />
-            case 'reputation':
-                return <PlaceholderComponent title="Quản trị Danh tiếng" />
+            // Reviews
+            case 'reviews-list':
+                return <ReviewsList />
+            case 'respond-reviews':
+                return <RespondReviews />
 
-            // Admin
-            case 'team':
-                return <PlaceholderComponent title="Quản lý Đội ngũ" />
-            case 'configuration':
-                return <PlaceholderComponent title="Cấu hình Hệ thống" />
-            case 'notifications':
-                return <PlaceholderComponent title="Trung tâm Thông báo" />
-            case 'bulk-import':
-                return <PlaceholderComponent title="Nhập dữ liệu hàng loạt" />
+            // Settings
+            case 'account-settings':
+                return <AccountSettings />
+            case 'notification-settings':
+                return <NotificationSettings />
+            case 'payout-settings':
+                return <PayoutSettings />
 
             default:
                 return <HotelDashboard />

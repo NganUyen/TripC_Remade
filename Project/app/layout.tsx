@@ -6,6 +6,7 @@ import { Providers } from "@/components/Providers";
 import { SyncSupabaseUser } from "@/components/SyncSupabaseUser";
 import { Toaster } from "@/components/ui/sonner";
 import { ConditionalLayout } from "@/components/ConditionalLayout";
+import { MobilePushListener } from "@/components/MobilePushListener";
 
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -14,13 +15,24 @@ const plusJakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "TripC SuperApp - Category Slider Variant 2.9",
+  title: "TripC Pro",
   description: "TripC Pro - Your all-in-one travel companion",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "TripC",
+  },
+  formatDetection: {
+    telephone: false,
+  },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  themeColor: "#5b21b6",
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -39,6 +51,7 @@ export default function RootLayout({
       <body className="bg-background-light dark:bg-background-dark font-display min-h-screen flex flex-col text-slate-900 dark:text-slate-100 antialiased overflow-x-hidden">
         <Providers>
           <SyncSupabaseUser />
+          <MobilePushListener />
           <ConditionalLayout>{children}</ConditionalLayout>
         </Providers>
         <Toaster

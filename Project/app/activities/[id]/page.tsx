@@ -7,17 +7,20 @@ import { Footer } from '@/components/Footer'
 import Link from 'next/link'
 
 interface PageProps {
-    params: {
+    params: Promise<{
         id: string
-    }
+    }>
 }
 
 export const dynamic = 'force-dynamic'
 
 export default async function ActivityDetailPage({ params }: PageProps) {
+    // Await params first
+    const { id } = await params
+    
     // Extract ID (last 36 characters if it's a slug based URL, or full string if just ID)
     // UUID length is 36.
-    const activityId = params.id.length > 36 ? params.id.slice(-36) : params.id
+    const activityId = id.length > 36 ? id.slice(-36) : id
     const activity = await getActivityById(activityId)
 
     if (!activity) {

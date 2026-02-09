@@ -13,11 +13,11 @@ import { createServiceSupabaseClient } from "@/lib/supabase-server";
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const supabase = createServiceSupabaseClient();
-    const { id } = params;
+    const { id } = await params;
 
     // Fetch the main item
     const { data: item, error: itemError } = await supabase

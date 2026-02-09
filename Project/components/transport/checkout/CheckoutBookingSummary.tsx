@@ -7,11 +7,16 @@ interface CheckoutBookingSummaryProps {
     route: any;
     date: string | null;
     passengers: string;
-    expiresAt?: string; // New prop for 8-min hold
+    expiresAt?: string;
+    voucherCode?: string;
+    discountAmount?: number;
+    onApplyVoucher?: (code: string) => Promise<void>;
+    isApplyingVoucher?: boolean;
 }
 
-export function CheckoutBookingSummary({ route, date, passengers, expiresAt }: CheckoutBookingSummaryProps) {
+export function CheckoutBookingSummary({ route, date, passengers, expiresAt, voucherCode, discountAmount = 0, onApplyVoucher, isApplyingVoucher }: CheckoutBookingSummaryProps) {
     const [timeLeft, setTimeLeft] = useState<string>("");
+    const [inputCode, setInputCode] = useState(voucherCode || "");
 
     useEffect(() => {
         if (!expiresAt) return;
@@ -38,8 +43,15 @@ export function CheckoutBookingSummary({ route, date, passengers, expiresAt }: C
 
     const baseFare = route.price;
     const taxes = baseFare * 0.1; // 10% tax assumption
-    const total = baseFare + taxes;
+    const subTotal = baseFare + taxes;
+    const total = Math.max(0, subTotal - discountAmount);
     const formattedDate = date ? new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+
+    const handleVoucherSubmit = () => {
+        if (onApplyVoucher && inputCode) {
+            onApplyVoucher(inputCode);
+        }
+    };
 
     return (
         <div className="card-shell w-full lg:w-[460px] p-8 md:p-10 flex flex-col bg-white dark:bg-[#1b1a18] border border-border-subtle dark:border-[#333] rounded-card shadow-sm dark:shadow-none sticky top-24">
@@ -110,7 +122,29 @@ export function CheckoutBookingSummary({ route, date, passengers, expiresAt }: C
                         </div>
                     </div>
                 </div>
+
+                {/* Voucher Input */}
+                <div className="pt-4 border-t border-border-subtle dark:border-white/10">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">Voucher Code</p>
+                    <div className="flex items-center gap-2">
+                        <input
+                            type="text"
+                            className="flex-1 bg-white dark:bg-white/5 border border-border-subtle dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary uppercase"
+                            placeholder="Enter code"
+                            value={inputCode}
+                            onChange={(e) => setInputCode(e.target.value)}
+                        />
+                        <button
+                            className="bg-primary hover:bg-primary/90 text-white font-bold text-xs px-4 py-2.5 rounded-lg transition-colors disabled:opacity-50"
+                            onClick={handleVoucherSubmit}
+                            disabled={!inputCode || isApplyingVoucher}
+                        >
+                            {isApplyingVoucher ? '...' : 'APPLY'}
+                        </button>
+                    </div>
+                </div>
             </div>
+
             <div className="space-y-4 pt-8 border-t border-border-subtle dark:border-white/10">
                 <div className="flex justify-between items-center text-sm text-muted-foreground">
                     <span>Base Fare (x{passengers})</span>
@@ -124,6 +158,14 @@ export function CheckoutBookingSummary({ route, date, passengers, expiresAt }: C
                         {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(taxes)}
                     </span>
                 </div>
+                {discountAmount > 0 && (
+                    <div className="flex justify-between items-center text-sm text-green-600 dark:text-green-500">
+                        <span className="font-bold">Discount Applied</span>
+                        <span className="font-bold">
+                            -{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(discountAmount)}
+                        </span>
+                    </div>
+                )}
 
                 <div className="pt-6 mt-2 flex justify-between items-end">
                     <div>

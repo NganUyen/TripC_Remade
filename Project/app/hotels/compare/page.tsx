@@ -30,6 +30,7 @@ interface AIAnalysis {
   verdict: string;
   bestValue: string;
   bestRated: string;
+  bestHotelName?: string; // Added for explicit hotel identification
   bestFor?: {
     families?: string;
     business?: string;
@@ -62,6 +63,14 @@ function CompareContent() {
 
       setLoadingHotels(true);
       try {
+        // TODO: Replace with actual database query
+        // Should fetch from: /api/hotels with IDs or slugs
+        // Query should include:
+        // - SELECT hotels.*, AVG(reviews.rating) as average_rating, COUNT(reviews.id) as reviews_count
+        // - FROM hotels LEFT JOIN hotel_reviews ON hotels.id = hotel_reviews.hotel_id
+        // - WHERE hotels.id IN (ids) AND hotels.status = 'active'
+        // - Also join hotel_rooms for room_size_sqm
+        
         // First, try to get hotels from sessionStorage
         const storedHotels = sessionStorage.getItem("compareHotels");
         if (storedHotels) {
@@ -137,18 +146,65 @@ function CompareContent() {
 
   const fetchAIAnalysis = async () => {
     setLoadingAI(true);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+
     try {
+      // Transform hotels to match database schema before sending to AI
+      const transformedHotels = selectedHotels.map(hotel => ({
+        id: hotel.id?.toString() || hotel.slug || '',
+        slug: hotel.slug,
+        name: hotel.name,
+        address: {
+          city: hotel.location || 'Unknown'
+        },
+        star_rating: hotel.stars || 4,
+        amenities: hotel.amenities || [],
+        best_price: Math.round((hotel.priceNew || 100) * 100), // Convert to cents
+        average_rating: hotel.rating || 8.0,
+        reviews_count: hotel.reviews || 0
+      }));
+
       const response = await fetch("/api/hotels/compare-analysis", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ hotels: selectedHotels }),
+        body: JSON.stringify({ hotels: transformedHotels }),
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
+
       const data = await response.json();
       if (data.success && data.analysis) {
         setAiAnalysis(data.analysis);
+        console.log("[AI Analysis] Received:", {
+          bestHotelName: data.analysis.bestHotelName,
+          verdict: data.analysis.verdict?.substring(0, 100) + "...",
+        });
+      } else if (data.error) {
+        console.error("AI analysis error:", data.error);
+        setAiAnalysis({
+          verdict: "Unable to generate AI analysis at this time. Please compare hotels manually.",
+          insights: [],
+          warnings: [],
+        });
       }
     } catch (error) {
-      console.error("Failed to fetch AI analysis:", error);
+      clearTimeout(timeoutId);
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.error("AI analysis request timed out");
+        setAiAnalysis({
+          verdict: "AI analysis timed out. Please try again or compare hotels manually.",
+          insights: [],
+          warnings: [],
+        });
+      } else {
+        console.error("Failed to fetch AI analysis:", error);
+        setAiAnalysis({
+          verdict: "Unable to generate AI analysis. Please compare hotels manually.",
+          insights: [],
+          warnings: [],
+        });
+      }
     } finally {
       setLoadingAI(false);
     }
@@ -327,11 +383,67 @@ function CompareContent() {
   }
 
   // Determine Dynamic Winner Logic
-  // Winner: Highest Rating
-  const winner = selectedHotels.reduce(
+  // AI Winner: Extract from AI analysis if available
+  const getAIWinner = (): Hotel | null => {
+    if (!aiAnalysis) return null;
+    
+    // Priority 1: Use explicit bestHotelName field if available
+    if (aiAnalysis.bestHotelName) {
+      const exactMatch = selectedHotels.find(h => 
+        h.name.toLowerCase().trim() === aiAnalysis.bestHotelName?.toLowerCase().trim()
+      );
+      if (exactMatch) return exactMatch;
+      
+      // Fuzzy match if exact match fails
+      const fuzzyMatch = selectedHotels.find(h => 
+        h.name.toLowerCase().includes(aiAnalysis.bestHotelName?.toLowerCase() || '') ||
+        aiAnalysis.bestHotelName?.toLowerCase().includes(h.name.toLowerCase())
+      );
+      if (fuzzyMatch) return fuzzyMatch;
+    }
+    
+    // Priority 2: Try to extract hotel name from bestRated field
+    const bestRatedName = aiAnalysis.bestRated;
+    if (bestRatedName) {
+      // Try each hotel to see if its name appears in the bestRated string
+      for (const hotel of selectedHotels) {
+        if (bestRatedName.toLowerCase().includes(hotel.name.toLowerCase())) {
+          return hotel;
+        }
+      }
+    }
+    
+    // Priority 3: Try to extract from verdict
+    if (aiAnalysis.verdict) {
+      for (const hotel of selectedHotels) {
+        if (aiAnalysis.verdict.toLowerCase().includes(hotel.name.toLowerCase())) {
+          return hotel;
+        }
+      }
+    }
+    
+    return null;
+  };
+
+  const aiWinner = getAIWinner();
+  
+  // Log AI winner selection for debugging
+  if (aiAnalysis && aiWinner) {
+    console.log("[AI Winner] Selected:", aiWinner.name, "from AI analysis");
+  } else if (aiAnalysis && !aiWinner) {
+    console.warn("[AI Winner] Could not match AI recommendation to any hotel");
+    console.warn("[AI Winner] Available hotels:", selectedHotels.map(h => h.name));
+    console.warn("[AI Winner] AI bestHotelName:", aiAnalysis.bestHotelName);
+  }
+  
+  // Fallback: Highest Rating if no AI winner
+  const ratingWinner = selectedHotels.reduce(
     (prev, current) => (prev.rating > current.rating ? prev : current),
     selectedHotels[0],
   );
+  
+  // Use AI winner if available, otherwise use rating winner
+  const winner = aiWinner || ratingWinner;
 
   // Best Value: Lowest Price
   const bestValue = selectedHotels.reduce(
@@ -366,13 +478,19 @@ function CompareContent() {
           </Link>
         </div>
 
-        <section className="relative h-[60vh] w-full overflow-hidden">
+        <section className="relative h-[60vh] w-full overflow-hidden bg-slate-200 dark:bg-slate-800">
           <Image
             alt="Luxury Hotel Interior"
             fill
             className="object-cover"
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuAtObXxzl5gFklIb9tEBG4cnGXT5t2S6_1HdfWccLkaHEm1y6hmK3JJhOy5NoIgA0eU-T-nv8fchBV_GtNQY4bTCysGgLgn9thxP7i2_zZGr3tis_-DydxSYhTsAt2zfjiWXVg6KYPL1nTD38J4eJJULaishsUjiguQkGsuJTP0AeKHQWY26G__joSc84ct2GR6Lq9eYJB1sJC-WlVfW_mHCoZZoeJHJ0rMKcsDx4sHzoRRKR-_62X_skUsrm4VASTEEr1eRK5WxrM"
+            src="https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1920&q=80"
             priority
+            loading="eager"
+            placeholder="blur"
+            blurDataURL="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect width='400' height='300' fill='%23e2e8f0'/%3E%3C/svg%3E"
+            onError={(e) => {
+              console.warn("Hero image failed to load");
+            }}
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/40 to-transparent"></div>
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-white px-4">
@@ -429,7 +547,7 @@ function CompareContent() {
                   href={`/hotels/${winner.slug || winner.id}`}
                   className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-10 py-4 rounded-full font-bold text-sm tracking-widest uppercase flex items-center justify-center gap-3 hover:from-orange-600 hover:to-orange-700 hover:shadow-2xl hover:shadow-orange-500/40 transition-all shadow-xl shadow-orange-500/30 hover:scale-105"
                 >
-                  Select Winner
+                  {aiWinner ? 'Book AI Winner' : 'Select Winner'}
                   <span className="material-symbols-outlined text-lg">
                     arrow_forward
                   </span>
@@ -567,13 +685,17 @@ function CompareContent() {
                       </div>
                     )}
                     <div
-                      className={`relative ${imageSizeClasses} w-full rounded-[2.5rem] overflow-hidden`}
+                      className={`relative ${imageSizeClasses} w-full rounded-[2.5rem] overflow-hidden bg-slate-200 dark:bg-slate-800`}
                     >
                       <Image
                         alt={hotel.name}
                         fill
                         className="object-cover"
-                        src={hotel.image}
+                        src={hotel.image || "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=80"}
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        onError={(e) => {
+                          console.warn(`Hotel image failed to load for ${hotel.name}`);
+                        }}
                       />
                     </div>
                   </div>

@@ -1,6 +1,7 @@
 "use client"
 
 import { Settings, HelpCircle, Shield, Globe, Lock, LogOut, ChevronRight, Briefcase, Camera } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
 export function GrowthSection() {
     return (
@@ -38,9 +39,10 @@ export function GrowthSection() {
 }
 
 export function SettingsList() {
+    const router = useRouter()
     const items = [
-        { icon: <Settings className="w-5 h-5" />, label: "Account Settings" },
-        { icon: <Shield className="w-5 h-5" />, label: "Privacy & Security" },
+        { icon: <Settings className="w-5 h-5" />, label: "Account Settings", href: "/profile/settings" },
+        { icon: <Shield className="w-5 h-5" />, label: "Privacy & Security", href: "/profile/settings" },
         { icon: <Globe className="w-5 h-5" />, label: "Language & Region" },
         { icon: <HelpCircle className="w-5 h-5" />, label: "Help & Support" },
         { icon: <Lock className="w-5 h-5" />, label: "Legal" },
@@ -50,7 +52,11 @@ export function SettingsList() {
         <section className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-4 shadow-sm border border-slate-100 dark:border-slate-800">
             <div className="space-y-1">
                 {items.map((item, i) => (
-                    <button key={i} className="w-full flex items-center justify-between p-4 rounded-[1.5rem] hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors group">
+                    <button
+                        key={i}
+                        onClick={() => item.href && router.push(item.href)}
+                        className="w-full flex items-center justify-between p-4 rounded-[1.5rem] hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors group"
+                    >
                         <div className="flex items-center gap-4">
                             <div className="text-slate-400 group-hover:text-orange-500 transition-colors">
                                 {item.icon}

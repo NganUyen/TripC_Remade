@@ -36,19 +36,25 @@ export function ReviewSection({ entityId, entityType, title = "Reviews & Ratings
 
         try {
             const response = await reviewsApi.getReviews(entityType, entityId, limit, newOffset)
-            const fetchedReviews = response.reviews || []
+            const fetchedReviews = response?.reviews || []
 
             if (append) {
                 setReviews((prev) => [...prev, ...fetchedReviews])
             } else {
                 setReviews(fetchedReviews)
-                setStats(response.stats || null)
+                setStats(response?.stats || null)
             }
 
-            setHasMore(response.has_more)
+            setHasMore(response?.has_more || false)
             setOffset(newOffset)
         } catch (err) {
             console.error("Error fetching reviews:", err)
+            // Set empty state on error
+            if (!append) {
+                setReviews([])
+                setStats(null)
+            }
+            setHasMore(false)
         } finally {
             setLoading(false)
             setLoadingMore(false)

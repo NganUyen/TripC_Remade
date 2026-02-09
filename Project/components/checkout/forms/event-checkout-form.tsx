@@ -16,14 +16,16 @@ import {
 } from "@/hooks/use-events";
 
 interface Props {
-  initialData: {
-    eventId: string;
-    sessionId: string;
-    ticketTypeId: string;
-    adults: number;
-    children: number;
-  };
-  onSubmit: (data: any) => void;
+    initialData: {
+        eventId: string;
+        sessionId: string;
+        ticketTypeId: string;
+        adults: number;
+        children: number;
+        voucherCode?: string;
+        discountAmount?: number;
+    };
+    onSubmit: (data: any) => void;
 }
 
 interface EventDetails {
@@ -164,6 +166,8 @@ export const EventCheckoutForm = ({ initialData, onSubmit }: Props) => {
         phone: contact.phone || undefined,
       },
       specialRequests: specialRequests || undefined,
+      voucherCode: initialData.voucherCode,
+      discountAmount: initialData.discountAmount,
     };
 
     console.log("[EventCheckoutForm] Submitting Payload:", payload);
@@ -174,7 +178,9 @@ export const EventCheckoutForm = ({ initialData, onSubmit }: Props) => {
   // Calculate totals
   const totalQuantity = initialData.adults + initialData.children;
   const unitPrice = details?.ticketPrice || 0;
-  const totalPrice = totalQuantity * unitPrice;
+  const subtotal = totalQuantity * unitPrice;
+  const discount = initialData.discountAmount || 0;
+  const totalPrice = Math.max(0, subtotal - discount);
   const currency = details?.currency || "VND";
 
   if (!details) {
@@ -241,27 +247,53 @@ export const EventCheckoutForm = ({ initialData, onSubmit }: Props) => {
           )}
 
           {/* Ticket Info */}
-          <div className="flex items-center justify-between p-4 bg-orange-50 dark:bg-orange-900/20 rounded-xl border border-orange-100 dark:border-orange-900/50">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-[#FF5E1F] rounded-full flex items-center justify-center">
-                <Ticket className="w-5 h-5 text-white" />
+          <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-xl border border-orange-100 dark:border-orange-900/50">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-[#FF5E1F] rounded-full flex items-center justify-center">
+                  <Ticket className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="font-bold text-slate-900 dark:text-white">
+                    {details.ticketTypeName}
+                  </p>
+                  <p className="text-sm text-slate-500">
+                    {formatEventPrice(unitPrice, currency)} / ticket
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="font-bold text-slate-900 dark:text-white">
-                  {details.ticketTypeName}
-                </p>
-                <p className="text-sm text-slate-500">
-                  {formatEventPrice(unitPrice, currency)} / ticket
+              <div className="text-right">
+                <p className="text-sm font-medium text-slate-500">
+                  {totalQuantity} ticket{totalQuantity !== 1 ? "s" : ""}
                 </p>
               </div>
             </div>
-            <div className="text-right">
-              <p className="text-2xl font-black text-[#FF5E1F]">
-                {formatEventPrice(totalPrice, currency)}
-              </p>
-              <p className="text-xs text-slate-500">
-                {totalQuantity} ticket{totalQuantity !== 1 ? "s" : ""}
-              </p>
+
+            {/* Breakdown */}
+            <div className="space-y-1 pt-2 mt-2 border-t border-orange-200 dark:border-orange-800/50">
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-600 dark:text-slate-400">
+                  Subtotal
+                </span>
+                <span className="font-semibold text-slate-900 dark:text-white">
+                  {formatEventPrice(subtotal, currency)}
+                </span>
+              </div>
+              {discount > 0 && (
+                <div className="flex justify-between text-sm text-green-600 font-medium">
+                  <span>
+                    Voucher Discount{" "}
+                    {initialData.voucherCode
+                      ? `(${initialData.voucherCode})`
+                      : ""}
+                  </span>
+                  <span>-{formatEventPrice(discount, currency)}</span>
+                </div>
+              )}
+              <div className="flex justify-between text-lg font-black text-[#FF5E1F] pt-2 border-t border-orange-200 dark:border-orange-800/50 mt-2">
+                <span>Total</span>
+                <span>{formatEventPrice(totalPrice, currency)}</span>
+              </div>
             </div>
           </div>
 

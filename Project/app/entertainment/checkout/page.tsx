@@ -38,12 +38,17 @@ function EntertainmentCheckoutContent() {
         );
     }
 
+    const voucherCode = searchParams.get("voucherCode");
+    const discountAmount = parseFloat(searchParams.get("discountAmount") || "0");
+
     // Build initialData for UnifiedCheckoutContainer (following Events pattern)
     const initialData = {
         itemId: itemId,
         sessionId: sessionId || undefined,
         ticketTypeId: ticketTypeId,
         quantity: quantity,
+        voucherCode: voucherCode || undefined,
+        discountAmount: discountAmount || 0,
     };
 
     return (

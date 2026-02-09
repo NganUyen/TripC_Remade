@@ -8,7 +8,7 @@ import { User, Mail, Phone, Briefcase, Shield, SquareEqual, Utensils } from "luc
 import { FlightDetailsSummary } from "../FlightDetailsSummary"
 
 export function StepReview() {
-    const { setStep, passengers, contact, seats, extras, insurance, trip, useTcent, selectedFlights } = useBookingStore()
+    const { setStep, passengers, contact, seats, extras, insurance, trip, useTcent, selectedFlights, discountAmount, promoCode } = useBookingStore()
     const router = useRouter()
     const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -28,7 +28,11 @@ export function StepReview() {
             const insuranceCost = insurance === 'no' ? 0 : (insurance === 'basic' ? 20 : (insurance === 'standard' ? 40 : 80)) * (trip.passengersCount || 1)
 
             let total = basePrice + taxes + seatCost + baggageCost + insuranceCost
-            if (useTcent) total -= 50
+
+            // Apply Discount
+            if (discountAmount > 0) total = Math.max(0, total - discountAmount)
+            // Apply TCent (if stackable)
+            if (useTcent) total = Math.max(0, total - 50)
 
             const description = selectedFlights.map(f => `${f.airline} ${f.flightNumber} (${f.departure?.airport} -> ${f.arrival?.airport})`).join(' | ')
 
@@ -45,6 +49,7 @@ export function StepReview() {
                 endDate: returnFlight?.rawDepartureAt || returnFlight?.rawArrivalAt || trip.returnDate || trip.date,
                 totalAmount: total,
                 currency: 'USD',
+                couponCode: promoCode, // Pass the voucher code
                 guestDetails: {
                     contact,
                     passengers: passengers.map(p => ({
@@ -57,7 +62,8 @@ export function StepReview() {
                         returnMeal: extras.meals[`return_${p.id}`] || (trip.returnDate ? 'None' : 'N/A'),
                     })),
                     insurance,
-                    flights: selectedFlights
+                    flights: selectedFlights,
+                    discountAmount
                 },
                 metadata: {
                     trip,
@@ -67,7 +73,8 @@ export function StepReview() {
                     selectedFlights,
                     flightId: outboundFlight?.id,
                     offerId: outboundFlight?.id, // Use flight ID as offer ID in this mock
-                    contactInfo: contact
+                    contactInfo: contact,
+                    couponCode: promoCode // Redundant but safe
                 }
             }
 

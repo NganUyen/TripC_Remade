@@ -1,6 +1,4 @@
 import { TransportHero } from '@/components/transport/TransportHero'
-import { TransportFeatures } from '@/components/transport/TransportFeatures'
-import { FleetPreview } from '@/components/transport/FleetPreview'
 import { PopularTransfers } from '@/components/transport/PopularTransfers'
 import { TransportPartnerLoop } from '@/components/transport/TransportPartnerLoop'
 import { Footer } from '@/components/Footer'
@@ -12,9 +10,7 @@ export default function TransportPage() {
                 <TransportHero />
                 <TransportPartnerLoop />
 
-                <div className="relative z-20 bg-white dark:bg-[#0f172a] rounded-t-[3rem] -mt-8 pt-8">
-                    <TransportFeatures />
-                    <FleetPreview />
+                <div className="relative z-20 bg-white dark:bg-[#0f172a] rounded-t-[3rem] -mt-8 pt-8 pb-16">
                     <PopularTransfers />
                 </div>
             </main>

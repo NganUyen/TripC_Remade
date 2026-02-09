@@ -6,9 +6,10 @@ import { appointmentService } from "@/lib/dining";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const { id } = await params;
     const date = request.nextUrl.searchParams.get("date");
     const guestCount = parseInt(request.nextUrl.searchParams.get("guest_count") || "2", 10);
     if (!date) {
@@ -18,7 +19,7 @@ export async function GET(
       );
     }
 
-    const result = await appointmentService.getAvailableTimes(params.id, date, guestCount);
+    const result = await appointmentService.getAvailableTimes(id, date, guestCount);
     return NextResponse.json({ success: true, data: result });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Failed to get available times";

@@ -2,6 +2,7 @@
 
 import { Target, Calendar, Heart, Bookmark, ShoppingBag, Gift, Users, Award } from 'lucide-react'
 import { motion, Variants } from 'framer-motion'
+import { useRouter } from 'next/navigation'
 
 // Color Mapping for Dynamic Shadow Interpolation
 const SHADOW_COLORS: Record<string, string> = {
@@ -22,7 +23,8 @@ const ACTIVITIES = [
         badge: "3",
         colorName: "rose",
         colorClass: "text-rose-600 dark:text-rose-400",
-        bgClass: "bg-rose-50 dark:bg-rose-900/20"
+        bgClass: "bg-rose-50 dark:bg-rose-900/20",
+        href: "/rewards"
     },
     {
         icon: Calendar,
@@ -30,7 +32,8 @@ const ACTIVITIES = [
         badge: null,
         colorName: "sky",
         colorClass: "text-sky-600 dark:text-sky-400",
-        bgClass: "bg-sky-50 dark:bg-sky-900/20"
+        bgClass: "bg-sky-50 dark:bg-sky-900/20",
+        href: "/my-bookings"
     },
     {
         icon: Heart,
@@ -38,7 +41,8 @@ const ACTIVITIES = [
         badge: null,
         colorName: "pink",
         colorClass: "text-pink-600 dark:text-pink-400",
-        bgClass: "bg-pink-50 dark:bg-pink-900/20"
+        bgClass: "bg-pink-50 dark:bg-pink-900/20",
+        href: "/wishlist"
     },
     {
         icon: Bookmark,
@@ -54,7 +58,8 @@ const ACTIVITIES = [
         badge: "1",
         colorName: "amber",
         colorClass: "text-amber-600 dark:text-amber-400",
-        bgClass: "bg-amber-50 dark:bg-amber-900/20"
+        bgClass: "bg-amber-50 dark:bg-amber-900/20",
+        href: "/shop/cart"
     },
     {
         icon: Gift,
@@ -62,7 +67,8 @@ const ACTIVITIES = [
         badge: null,
         colorName: "emerald",
         colorClass: "text-emerald-600 dark:text-emerald-400",
-        bgClass: "bg-emerald-50 dark:bg-emerald-900/20"
+        bgClass: "bg-emerald-50 dark:bg-emerald-900/20",
+        href: "/rewards"
     },
     {
         icon: Users,
@@ -102,6 +108,8 @@ const itemVariants: Variants = {
 }
 
 export function ActivityGrid() {
+    const router = useRouter()
+
     return (
         <section className="mb-12">
             <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6 px-2">My Activity</h3>
@@ -121,7 +129,9 @@ export function ActivityGrid() {
                             variants={itemVariants}
                             whileHover="hover"
                             whileTap={{ scale: 0.95 }}
+                            onClick={() => item.href && router.push(item.href)}
                             className="group flex flex-col items-center gap-3 relative"
+                            onClick={() => item.href && router.push(item.href)}
                         >
                             {/* Icon Container - The "App Icon" */}
                             <motion.div

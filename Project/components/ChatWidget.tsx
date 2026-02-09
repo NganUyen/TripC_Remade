@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { usePathname } from "next/navigation";
 import {
   Sparkles,
   X,
@@ -231,6 +232,10 @@ interface Conversation {
 }
 
 export function ChatWidget() {
+  const pathname = usePathname();
+  // Check if we are on likely booking pages with sticky footers
+  const isBookingPage = pathname?.includes("/hotels/") || pathname?.includes("/flights/");
+
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState(INITIAL_MESSAGES);
   const [inputValue, setInputValue] = useState("");
@@ -522,7 +527,9 @@ export function ChatWidget() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-[100] flex flex-col items-end gap-4 pointer-events-none">
+    <div
+      className={`fixed right-6 z-[100] flex flex-col items-end gap-4 pointer-events-none transition-all duration-300 ${isBookingPage ? "bottom-24 md:bottom-6" : "bottom-6"}`}
+    >
       {/* Chat Window */}
       <AnimatePresence>
         {isOpen && (
@@ -580,11 +587,10 @@ export function ChatWidget() {
                           onClick={() => handleLoadConversation(conv.id)}
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
-                          className={`w-full text-left p-3 rounded-2xl transition-all ${
-                            conv.id === conversationId
-                              ? "bg-[#FF5E1F]/10 border-2 border-[#FF5E1F]"
-                              : "bg-white dark:bg-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-700 border border-slate-200 dark:border-zinc-700"
-                          }`}
+                          className={`w-full text-left p-3 rounded-2xl transition-all ${conv.id === conversationId
+                            ? "bg-[#FF5E1F]/10 border-2 border-[#FF5E1F]"
+                            : "bg-white dark:bg-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-700 border border-slate-200 dark:border-zinc-700"
+                            }`}
                         >
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex-1 min-w-0">
@@ -667,11 +673,10 @@ export function ChatWidget() {
                   <div className="max-w-[85%]">
                     {/* Bubble */}
                     <div
-                      className={`px-4 py-3 shadow-sm text-sm leading-relaxed ${
-                        msg.role === "user"
-                          ? "bg-gradient-to-r from-[#FF5E1F] to-[#ff8c5e] text-white rounded-2xl rounded-tr-none font-medium"
-                          : "bg-white dark:bg-zinc-800 text-slate-700 dark:text-slate-200 border border-slate-100 dark:border-zinc-700 rounded-2xl rounded-tl-none"
-                      }`}
+                      className={`px-4 py-3 shadow-sm text-sm leading-relaxed ${msg.role === "user"
+                        ? "bg-gradient-to-r from-[#FF5E1F] to-[#ff8c5e] text-white rounded-2xl rounded-tr-none font-medium"
+                        : "bg-white dark:bg-zinc-800 text-slate-700 dark:text-slate-200 border border-slate-100 dark:border-zinc-700 rounded-2xl rounded-tl-none"
+                        }`}
                     >
                       {msg.role === "user" ? (
                         <span className="font-medium">{msg.text}</span>
