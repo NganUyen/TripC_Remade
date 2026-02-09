@@ -82,7 +82,7 @@ export function BrandHeader({ brand }: BrandHeaderProps) {
                             <Clock className="w-5 h-5" />
                         </div>
                         <div>
-                            <span className="block text-xl font-bold text-slate-900 dark:text-white">{brand.on_time_ship_rate ? `${brand.on_time_ship_rate}%` : 'N/A'}</span>
+                            <span className="block text-xl font-bold text-slate-900 dark:text-white">{brand.on_time_ship_rate ? `${brand.on_time_ship_rate}%` : '—'}</span>
                             <span className="text-xs text-slate-500">Ship on Time</span>
                         </div>
                     </div>
@@ -91,7 +91,7 @@ export function BrandHeader({ brand }: BrandHeaderProps) {
                             <MessageCircle className="w-5 h-5" />
                         </div>
                         <div>
-                            <span className="block text-xl font-bold text-slate-900 dark:text-white">{brand.response_rate ? `${brand.response_rate}%` : 'N/A'}</span>
+                            <span className="block text-xl font-bold text-slate-900 dark:text-white">{brand.response_rate ? `${brand.response_rate}%` : '—'}</span>
                             <span className="text-xs text-slate-500">Chat Response</span>
                         </div>
                     </div>

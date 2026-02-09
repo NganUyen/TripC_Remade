@@ -370,7 +370,7 @@ export async function getBrands(): Promise<Brand[]> {
 
     const { data, error } = await supabase
         .from('brands')
-        .select('id, slug, name, logo_url, is_active, tagline, follower_count, rating_avg, response_rate, on_time_ship_rate')
+        .select('id, slug, name, logo_url, is_active, tagline, description, cover_url, follower_count, rating_avg, rating_count, response_rate, on_time_ship_rate, product_count, joined_date, response_time')
         .eq('is_active', true);
 
     if (error) return [];
@@ -380,15 +380,46 @@ export async function getBrands(): Promise<Brand[]> {
 export async function getBrandBySlug(slug: string): Promise<Brand | null> {
     const supabase = getSupabase();
 
+    // First, try to find in brands table
     const { data: brand, error } = await supabase
         .from('brands')
-        .select('id, slug, name, logo_url, is_active, tagline, follower_count, rating_avg, response_rate, on_time_ship_rate')
+        .select('id, slug, name, logo_url, is_active, tagline, description, cover_url, follower_count, rating_avg, rating_count, response_rate, on_time_ship_rate, product_count, joined_date, response_time')
         .eq('slug', slug)
         .eq('is_active', true)
         .single();
 
-    if (error || !brand) return null;
-    return brand as Brand;
+    if (brand && !error) return brand as Brand;
+
+    // Fallback: Check shop_partners table (for partner stores)
+    const { data: partner, error: partnerError } = await supabase
+        .from('shop_partners')
+        .select('id, slug, display_name, logo_url, description, cover_url, created_at')
+        .eq('slug', slug)
+        .eq('status', 'approved')
+        .is('deleted_at', null)
+        .single();
+
+    if (partnerError || !partner) return null;
+
+    // Map partner data to Brand format
+    return {
+        id: partner.id,
+        slug: partner.slug,
+        name: partner.display_name,
+        logo_url: partner.logo_url,
+        is_active: true,
+        tagline: undefined,
+        description: partner.description,
+        cover_url: partner.cover_url,
+        follower_count: 0,
+        rating_avg: undefined, // New partners have no ratings yet
+        rating_count: 0,
+        response_rate: undefined,
+        on_time_ship_rate: undefined,
+        product_count: 0,
+        joined_date: partner.created_at,
+        response_time: undefined,
+    } as Brand;
 }
 
 // =============================================================================

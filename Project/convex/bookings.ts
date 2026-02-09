@@ -14,22 +14,22 @@ export const getUserBookings = query({
       ),
     ),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx: any, args: any) => {
     if (args.status !== undefined) {
       const bookings = await ctx.db
         .query("bookings")
-        .withIndex("by_user_and_status", (q) =>
+        .withIndex("by_user_and_status", (q: any) =>
           q.eq("userId", args.userId).eq("status", args.status!),
         )
         .collect();
-      return bookings.sort((a, b) => b.createdAt - a.createdAt);
+      return bookings.sort((a: any, b: any) => b.createdAt - a.createdAt);
     }
 
     const bookings = await ctx.db
       .query("bookings")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user", (q: any) => q.eq("userId", args.userId))
       .collect();
-    return bookings.sort((a, b) => b.createdAt - a.createdAt);
+    return bookings.sort((a: any, b: any) => b.createdAt - a.createdAt);
   },
 });
 
@@ -55,7 +55,7 @@ export const createBooking = mutation({
     imageUrl: v.optional(v.string()),
     metadata: v.optional(v.any()),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx: any, args: any) => {
     const bookingId = await ctx.db.insert("bookings", {
       ...args,
       status: "confirmed",
@@ -78,7 +78,7 @@ export const updateBookingStatus = mutation({
       v.literal("completed"),
     ),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx: any, args: any) => {
     await ctx.db.patch(args.bookingId, {
       status: args.status,
       updatedAt: Date.now(),
@@ -89,7 +89,7 @@ export const updateBookingStatus = mutation({
 // Delete booking
 export const deleteBooking = mutation({
   args: { bookingId: v.id("bookings") },
-  handler: async (ctx, args) => {
+  handler: async (ctx: any, args: any) => {
     await ctx.db.delete(args.bookingId);
   },
 });

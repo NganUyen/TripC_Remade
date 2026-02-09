@@ -10,12 +10,16 @@ export interface Product {
     title: string;
     description: string;
     product_type: 'physical' | 'digital';
-    status: 'active' | 'draft' | 'archived';
+    status: 'active' | 'draft' | 'archived' | 'flagged';
     rating_avg: number;
     review_count: number;
     is_featured: boolean;
     category_id: string;
     brand_id: string;
+    partner_id?: string | null;
+    reviewed_by?: string | null;
+    reviewed_at?: string | null;
+    review_notes?: string | null;
     created_at: string;
     updated_at: string;
     variants: Variant[];
@@ -59,10 +63,16 @@ export interface Brand {
     logo_url: string;
     is_active: boolean;
     tagline?: string;
+    description?: string;
+    cover_url?: string;
     follower_count?: number;
     rating_avg?: number;
+    rating_count?: number;
     response_rate?: number;
     on_time_ship_rate?: number;
+    product_count?: number;
+    joined_date?: string;
+    response_time?: string;
 }
 
 export interface ProductImage {
@@ -217,4 +227,140 @@ export interface ShopMockData {
     coupons: Coupon[];
     voucher_templates: VoucherTemplate[];
     addresses?: Address[];
+}
+
+// =============================================================================
+// PARTNER / VENDOR TYPES
+// =============================================================================
+
+export type PartnerStatus = 'pending' | 'approved' | 'suspended' | 'banned';
+export type PartnerBusinessType = 'individual' | 'business' | 'enterprise';
+export type PartnerMemberRole = 'owner' | 'staff';
+export type PartnerMemberStatus = 'pending' | 'active' | 'removed';
+
+export interface ShopPartner {
+    id: string;
+    slug: string;
+    business_name: string;
+    display_name: string | null;
+    description: string | null;
+    logo_url: string | null;
+    cover_url: string | null;
+    email: string;
+    phone: string | null;
+    website: string | null;
+    business_type: PartnerBusinessType;
+    business_registration_number: string | null;
+    tax_id: string | null;
+    address_line1: string | null;
+    address_line2: string | null;
+    city: string | null;
+    state_province: string | null;
+    postal_code: string | null;
+    country_code: string;
+    status: PartnerStatus;
+    verified_at: string | null;
+    rejection_reason: string | null;
+    brand_id: string | null;
+    product_count: number;
+    order_count: number;
+    total_sales_cents: number;
+    rating_avg: number;
+    rating_count: number;
+    follower_count: number;
+    commission_rate: number;
+    metadata: Record<string, unknown>;
+    created_at: string;
+    updated_at: string;
+    deleted_at: string | null;
+}
+
+export interface PartnerMemberPermissions {
+    products: boolean;
+    orders: boolean;
+    analytics: boolean;
+}
+
+export interface PartnerMember {
+    id: string;
+    partner_id: string;
+    user_id: string;
+    role: PartnerMemberRole;
+    permissions: PartnerMemberPermissions;
+    status: PartnerMemberStatus;
+    invited_by: string | null;
+    invited_at: string | null;
+    accepted_at: string | null;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface PartnerWithMembership extends ShopPartner {
+    role: PartnerMemberRole;
+    permissions: PartnerMemberPermissions;
+}
+
+export interface PartnerProduct extends Product {
+    sales_count?: number;
+    stock_total?: number;
+}
+
+export interface PartnerOrderItem {
+    id: string;
+    product_id: string;
+    product_title: string;
+    variant_id: string;
+    variant_title: string;
+    qty: number;
+    unit_price: Money;
+    line_total: Money;
+    image_url?: string;
+}
+
+export interface PartnerOrder {
+    id: string;
+    order_number: string;
+    status: string;
+    customer_name: string;
+    item_count: number;
+    partner_subtotal: Money;
+    items: PartnerOrderItem[];
+    shipping_address?: Record<string, unknown>;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface DashboardStats {
+    period: string;
+    stats: {
+        revenue: Money;
+        revenue_change: number;
+        orders: number;
+        orders_change: number;
+        product_views: number;
+        views_change: number;
+        conversion_rate: number;
+    };
+    chart?: {
+        labels: string[];
+        revenue: number[];
+        orders: number[];
+    };
+}
+
+export interface PartnerApplicationData {
+    business_name: string;
+    display_name?: string;
+    business_type: PartnerBusinessType;
+    email: string;
+    phone?: string;
+    website?: string;
+    address_line1?: string;
+    city?: string;
+    country_code?: string;
+    description?: string;
+    business_registration_number?: string;
+    tax_id?: string;
+    // Certificate uploads (URLs — placeholder for AI verification)
+    certificate_urls?: string[];
 }

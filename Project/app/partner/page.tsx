@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { Store, Hotel, Bus, Plane, ArrowRight } from "lucide-react";
+import { Store, Hotel, Bus, Plane, ArrowRight, ShoppingBag } from "lucide-react";
 
 export default function PartnerSelectionPage() {
   return (
@@ -66,6 +66,33 @@ export default function PartnerSelectionPage() {
                   </h2>
                   <p className="text-slate-600 dark:text-slate-400">
                     Quản lý khách sạn, phòng, đặt phòng và kênh phân phối
+                  </p>
+                </div>
+                <div className="mt-auto flex items-center gap-2 text-primary font-semibold group-hover:gap-4 transition-all">
+                  <span>Bắt đầu</span>
+                  <ArrowRight className="w-5 h-5" />
+                </div>
+              </div>
+            </Link>
+          </motion.div>
+
+          {/* Shop Partner Portal */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <Link href="/shop/partner">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl p-8 border-2 border-slate-200 dark:border-slate-800 hover:border-primary transition-all cursor-pointer group h-full flex flex-col">
+                <div className="mb-6">
+                  <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-primary transition-colors">
+                    <ShoppingBag className="w-8 h-8 text-primary group-hover:text-white transition-colors" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+                    Shop Partner Portal
+                  </h2>
+                  <p className="text-slate-600 dark:text-slate-400">
+                    Bán sản phẩm trên TripC Marketplace, quản lý đơn hàng và phân tích
                   </p>
                 </div>
                 <div className="mt-auto flex items-center gap-2 text-primary font-semibold group-hover:gap-4 transition-all">
