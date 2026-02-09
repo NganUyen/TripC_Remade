@@ -48,7 +48,7 @@ export async function GET(request: NextRequest, { params }: Params) {
             const supabase = createServiceSupabaseClient();
             const { data: partner } = await supabase
                 .from('shop_partners')
-                .select('id, display_name, logo_url, description')
+                .select('id, slug, display_name, logo_url, description')
                 .eq('id', product.partner_id)
                 .single();
 
@@ -58,7 +58,7 @@ export async function GET(request: NextRequest, { params }: Params) {
                 if (!brand) {
                     brand = {
                         id: partner.id,
-                        slug: `partner-${partner.id.slice(0, 8)}`,
+                        slug: partner.slug, // Use actual slug from database
                         name: partner.display_name || 'Partner Store',
                         logo_url: partner.logo_url || null,
                         is_active: true,
@@ -69,7 +69,6 @@ export async function GET(request: NextRequest, { params }: Params) {
                         response_rate: null,
                         on_time_ship_rate: null,
                     } as any;
-                    console.log('[Product API] Created brand from partner:', brand);
                 }
             }
         }

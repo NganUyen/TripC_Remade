@@ -1,12 +1,14 @@
 "use client"
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useUser } from '@clerk/nextjs'
 import { usePartnerStore } from '@/store/usePartnerStore'
 import type { PartnerApplicationData, PartnerBusinessType } from '@/lib/shop/types'
 import { motion } from 'framer-motion'
 import { Store, ArrowRight, ArrowLeft, CheckCircle2, Loader2, Upload, FileText, X } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 
 interface CertificateFile {
     file: File
@@ -16,6 +18,7 @@ interface CertificateFile {
 
 export function OnboardingForm() {
     const router = useRouter()
+    const { user } = useUser()
     const { applyAsPartner, isApplying } = usePartnerStore()
     const [step, setStep] = useState(1)
     const [formData, setFormData] = useState<PartnerApplicationData>({
@@ -36,6 +39,13 @@ export function OnboardingForm() {
     const [certificates, setCertificates] = useState<CertificateFile[]>([])
     const [errors, setErrors] = useState<Record<string, string>>({})
     const fileInputRef = useRef<HTMLInputElement>(null)
+
+    // Auto-fill email from logged-in user
+    useEffect(() => {
+        if (user?.primaryEmailAddress?.emailAddress && !formData.email) {
+            setFormData(prev => ({ ...prev, email: user.primaryEmailAddress?.emailAddress || '' }))
+        }
+    }, [user])
 
     const totalSteps = 4
 
@@ -162,9 +172,8 @@ export function OnboardingForm() {
                     {Array.from({ length: totalSteps }, (_, i) => i + 1).map((s) => (
                         <div
                             key={s}
-                            className={`flex-1 h-1.5 rounded-full transition-colors ${
-                                s <= step ? 'bg-primary' : 'bg-slate-200 dark:bg-slate-700'
-                            }`}
+                            className={`flex-1 h-1.5 rounded-full transition-colors ${s <= step ? 'bg-primary' : 'bg-slate-200 dark:bg-slate-700'
+                                }`}
                         />
                     ))}
                 </div>
@@ -397,10 +406,13 @@ export function OnboardingForm() {
                                             className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl"
                                         >
                                             {cert.preview ? (
-                                                <img
+                                                <Image
                                                     src={cert.preview}
                                                     alt={cert.name}
+                                                    width={40}
+                                                    height={40}
                                                     className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
+                                                    unoptimized
                                                 />
                                             ) : (
                                                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">

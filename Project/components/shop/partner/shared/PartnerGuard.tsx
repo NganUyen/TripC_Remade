@@ -244,7 +244,7 @@ export function PartnerGuard({
                     </h2>
                     <p className="text-slate-500 dark:text-slate-400 mb-4 leading-relaxed">
                         Your partner application for <strong className="text-slate-700 dark:text-slate-200">{partner.business_name}</strong> is
-                        being reviewed. We'll notify you once it's approved.
+                        being reviewed. We&apos;ll notify you once it&apos;s approved.
                     </p>
                     <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 text-sm font-medium">
                         <Clock className="w-4 h-4" />

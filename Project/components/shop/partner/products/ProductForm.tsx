@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import type { PartnerProduct, Variant, ProductImage, Category } from '@/lib/shop/types'
+import Image from 'next/image'
 
 // BUG-004 Fix: Category type for dropdown
 interface CategoryOption {
@@ -123,7 +124,11 @@ export function ProductForm({ productId }: ProductFormProps) {
         if (productId) {
             // Save first if there are changes
             if (hasChanges) await handleSave()
-            await publishProduct(productId)
+            const success = await publishProduct(productId)
+            if (success) {
+                // Navigate to dashboard after successful publish
+                router.push('/shop/partner')
+            }
         }
     }
 
@@ -373,7 +378,7 @@ export function ProductForm({ productId }: ProductFormProps) {
                                         .sort((a, b) => a.sort_order - b.sort_order)
                                         .map((img) => (
                                             <div key={img.id} className="relative group rounded-xl overflow-hidden aspect-square bg-slate-100 dark:bg-slate-800">
-                                                <img src={img.url} alt={img.alt} className="w-full h-full object-cover" />
+                                                <Image src={img.url} alt={img.alt || 'Product image'} fill className="object-cover" unoptimized />
                                                 {img.is_primary && (
                                                     <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-primary text-white text-xs font-medium">
                                                         Primary

@@ -20,6 +20,7 @@ import {
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import type { PartnerOrderItem } from '@/lib/shop/types'
+import Image from 'next/image'
 
 const statusConfig: Record<string, { color: string; bg: string; icon: React.ElementType }> = {
     pending: { color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-500/10', icon: Clock },
@@ -309,7 +310,14 @@ function OrderItemRow({ item }: { item: PartnerOrderItem }) {
             {/* Image */}
             <div className="w-14 h-14 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 flex-shrink-0">
                 {item.image_url ? (
-                    <img src={item.image_url} alt={item.product_title} className="w-full h-full object-cover" />
+                    <Image
+                        src={item.image_url}
+                        alt={item.product_title}
+                        width={56}
+                        height={56}
+                        className="w-full h-full object-cover"
+                        unoptimized
+                    />
                 ) : (
                     <div className="w-full h-full flex items-center justify-center">
                         <Package className="w-5 h-5 text-slate-400" />

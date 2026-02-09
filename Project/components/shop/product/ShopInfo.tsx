@@ -47,15 +47,15 @@ export function ShopInfo({ brand }: ShopInfoProps) {
             <div className="flex gap-12 text-center md:text-left">
                 <div>
                     <span className="block text-slate-400 text-xs">Seller Ratings</span>
-                    <span className="font-bold text-xl text-slate-900 dark:text-white">{brand.rating_avg?.toFixed(1) || 'N/A'}</span>
+                    <span className="font-bold text-xl text-slate-900 dark:text-white">{brand.rating_avg?.toFixed(1) || 'New'}</span>
                 </div>
                 <div>
                     <span className="block text-slate-400 text-xs">Ship on Time</span>
-                    <span className="font-bold text-xl text-slate-900 dark:text-white">{brand.on_time_ship_rate ? `${brand.on_time_ship_rate}%` : 'N/A'}</span>
+                    <span className="font-bold text-xl text-slate-900 dark:text-white">{brand.on_time_ship_rate ? `${brand.on_time_ship_rate}%` : '—'}</span>
                 </div>
                 <div>
                     <span className="block text-slate-400 text-xs">Chat Response</span>
-                    <span className="font-bold text-xl text-slate-900 dark:text-white">{brand.response_rate ? `${brand.response_rate}%` : 'N/A'}</span>
+                    <span className="font-bold text-xl text-slate-900 dark:text-white">{brand.response_rate ? `${brand.response_rate}%` : '—'}</span>
                 </div>
             </div>
 

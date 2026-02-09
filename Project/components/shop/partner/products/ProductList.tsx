@@ -8,6 +8,7 @@ import { Package, Plus, Search, Eye, Edit, Trash2, Archive, Rocket, MoreVertical
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import type { PartnerProduct } from '@/lib/shop/types'
+import Image from 'next/image'
 
 export function ProductList() {
     const router = useRouter()
@@ -207,7 +208,14 @@ function ProductRow({
             {/* Image */}
             <div className="w-14 h-14 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 flex-shrink-0">
                 {primaryImage ? (
-                    <img src={primaryImage.url} alt={product.title} className="w-full h-full object-cover" />
+                    <Image
+                        src={primaryImage.url}
+                        alt={product.title}
+                        width={56}
+                        height={56}
+                        className="w-full h-full object-cover"
+                        unoptimized
+                    />
                 ) : (
                     <div className="w-full h-full flex items-center justify-center">
                         <Package className="w-5 h-5 text-slate-400" />

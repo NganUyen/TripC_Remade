@@ -9,11 +9,12 @@ import {
     Globe,
     Phone,
     FileText,
-    Image,
+    Image as ImageIcon,
     Upload,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
+import Image from 'next/image'
 
 export function SettingsView() {
     const { partner, isUpdating, updateProfile } = usePartnerStore()
@@ -111,11 +112,17 @@ export function SettingsView() {
                 {/* Cover Preview */}
                 <div className="h-32 bg-gradient-to-r from-primary to-[#FF8A00] relative">
                     {formData.cover_url && (
-                        <img src={formData.cover_url} alt="" className="w-full h-full object-cover" />
+                        <Image
+                            src={formData.cover_url}
+                            alt="Cover"
+                            fill
+                            className="object-cover"
+                            unoptimized
+                        />
                     )}
                     <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
                         <span className="text-white text-sm font-medium flex items-center gap-2">
-                            <Image className="w-4 h-4" />
+                            <ImageIcon className="w-4 h-4" />
                             Update cover URL below
                         </span>
                     </div>
@@ -127,7 +134,13 @@ export function SettingsView() {
                         <div className="flex-shrink-0">
                             <div className="w-20 h-20 rounded-xl bg-white dark:bg-slate-800 border-4 border-white dark:border-slate-900 overflow-hidden shadow-sm">
                                 {formData.logo_url ? (
-                                    <img src={formData.logo_url} alt="" className="w-full h-full object-cover" />
+                                    <Image
+                                        src={formData.logo_url}
+                                        alt="Logo"
+                                        fill
+                                        className="object-cover"
+                                        unoptimized
+                                    />
                                 ) : (
                                     <div className="w-full h-full bg-primary/10 flex items-center justify-center">
                                         <Store className="w-8 h-8 text-primary" />
@@ -205,7 +218,7 @@ export function SettingsView() {
 
                         <div>
                             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-2">
-                                <Image className="w-4 h-4" />
+                                <ImageIcon className="w-4 h-4" />
                                 Logo URL
                             </label>
                             <input
@@ -219,7 +232,7 @@ export function SettingsView() {
 
                         <div>
                             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-2">
-                                <Image className="w-4 h-4" />
+                                <ImageIcon className="w-4 h-4" />
                                 Cover URL
                             </label>
                             <input
