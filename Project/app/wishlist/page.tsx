@@ -38,7 +38,7 @@ export default function WishlistPage() {
 
             <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {isLoading ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                         {[1, 2, 3, 4].map((i) => (
                             <div key={i} className="bg-slate-50 dark:bg-zinc-900 rounded-[2rem] aspect-[4/5] animate-pulse overflow-hidden border border-slate-100 dark:border-zinc-800">
                                 <div className="h-2/3 bg-slate-200 dark:bg-zinc-800" />
@@ -52,7 +52,7 @@ export default function WishlistPage() {
                 ) : isEmpty ? (
                     <EmptyState activeTab={activeTab} />
                 ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                         <AnimatePresence mode="sync">
                             {filteredWishlist.map((item, index) => (
                                 <motion.div

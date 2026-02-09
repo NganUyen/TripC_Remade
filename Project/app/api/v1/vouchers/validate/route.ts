@@ -12,6 +12,7 @@ export async function POST(request: Request) {
 
         const body = await request.json()
         const { code, cartTotal, serviceType } = body
+        console.log(`[VoucherValidation] Request: code='${code}' serviceType='${serviceType}' total=${cartTotal}`);
 
         if (!code) {
             return NextResponse.json({ error: 'Voucher code is required' }, { status: 400 })
@@ -20,11 +21,15 @@ export async function POST(request: Request) {
         const supabase = createServiceSupabaseClient()
 
         // 1. Find voucher by code
+        // trimming the code just in case
+        const cleanCode = code.trim();
         const { data: voucher, error: voucherError } = await supabase
             .from('vouchers')
             .select('*')
-            .eq('code', code)
+            .ilike('code', cleanCode)
             .single()
+
+        console.log(`[VoucherValidation] Lookup result for '${cleanCode}':`, voucher ? 'Found' : 'Not Found', voucherError?.message);
 
         if (voucherError || !voucher) {
             return NextResponse.json({ error: 'Invalid voucher code' }, { status: 404 })
@@ -33,8 +38,8 @@ export async function POST(request: Request) {
         // 1.5. Validate Category (if serviceType is provided)
         if (serviceType) {
             // Normalize categories
-            const voucherCategory = (voucher.category || voucher.voucher_type || '').toLowerCase();
-            const currentCategory = serviceType.toLowerCase();
+            const voucherCategory = (voucher.voucher_type || voucher.category || '').toLowerCase().trim();
+            const currentCategory = serviceType.toLowerCase().trim();
 
             // Check match
             // Allow 'transport' vouchers on 'flight' bookings, assuming flights are a subset of transport
@@ -44,11 +49,14 @@ export async function POST(request: Request) {
                 (voucherCategory === 'transport' && (currentCategory === 'transport' || currentCategory === 'flight')) ||
                 (voucherCategory.includes('hotel') && currentCategory === 'hotel') ||
                 (voucherCategory === 'entertainment' && (currentCategory === 'event' || currentCategory === 'entertainment')) ||
-                (voucherCategory === 'activities' && (currentCategory === 'event' || currentCategory === 'entertainment')) ||
+                (voucherCategory === 'activities' && (currentCategory === 'activity' || currentCategory === 'event')) ||
                 (voucherCategory === 'wellness' && currentCategory === 'wellness') ||
                 (voucherCategory === 'global'); // Global vouchers work everywhere
 
-            if (!isMatch && voucherCategory) {
+            // Strict check: If it's NOT a match, and it's NOT a global/empty category that explicitly allows all (which we don't want generally), reject.
+            // If voucherCategory is empty, we should probably reject if a serviceType was requested, unless it's a specific global code.
+            // For now, if no match found:
+            if (!isMatch) {
                 return NextResponse.json({
                     error: `Voucher is not applicable for this category (${currentCategory})`
                 }, { status: 400 })

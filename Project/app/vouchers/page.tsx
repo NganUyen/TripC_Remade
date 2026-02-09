@@ -18,6 +18,9 @@ export default function VouchersPage() {
                 if (res.ok) {
                     const data = await res.json()
                     setBalance(data.tcent_balance || 0)
+                } else if (res.status === 401) {
+                    // User not authenticated - set balance to 0
+                    setBalance(0)
                 }
             } catch (error) {
                 console.error('Failed to fetch user status', error)

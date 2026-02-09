@@ -1,8 +1,12 @@
 "use client"
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { RestaurantPortalLayout } from './RestaurantPortalLayout'
 import { RestaurantDashboard } from './RestaurantDashboard'
+import { RestaurantRegistration } from './RestaurantRegistration'
+import { partnerApi } from '@/lib/partner/api'
+import { useUser } from '@clerk/nextjs'
+import { Loader2 } from 'lucide-react'
 
 // Operations
 import { MyOutlets } from './operations/MyOutlets'
@@ -31,7 +35,7 @@ import { Analytics } from './admin/Analytics'
 import { StaffManagement } from './admin/StaffManagement'
 import { HardwareIntegration } from './admin/HardwareIntegration'
 
-type Section = 
+type Section =
     | 'dashboard'
     | 'outlets' | 'menu' | 'tables' | 'kitchen'
     | 'reservations' | 'order-management' | 'pricing' | 'reports'
@@ -40,7 +44,36 @@ type Section =
     | 'analytics' | 'staff' | 'hardware'
 
 export function RestaurantPortal() {
+    const { user } = useUser()
     const [activeSection, setActiveSection] = useState<Section>('dashboard')
+    const [hasVenue, setHasVenue] = useState<boolean | null>(null) // null = loading
+    const [refreshKey, setRefreshKey] = useState(0) // Trigger re-check
+
+    useEffect(() => {
+        const checkVenue = async () => {
+            if (!user) return
+            try {
+                const venues = await partnerApi.getMyVenues(user.id)
+                setHasVenue(venues.length > 0)
+            } catch (error) {
+                console.error("Check venue failed", error)
+                setHasVenue(false)
+            }
+        }
+        checkVenue()
+    }, [user, refreshKey])
+
+    if (hasVenue === null) {
+        return (
+            <div className="h-screen flex items-center justify-center bg-slate-50 dark:bg-black">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+        )
+    }
+
+    if (hasVenue === false) {
+        return <RestaurantRegistration onSuccess={() => setRefreshKey(k => k + 1)} />
+    }
 
     const renderContent = () => {
         switch (activeSection) {
@@ -98,7 +131,7 @@ export function RestaurantPortal() {
     }
 
     return (
-        <RestaurantPortalLayout 
+        <RestaurantPortalLayout
             activeSection={activeSection}
             onSectionChange={setActiveSection}
         >

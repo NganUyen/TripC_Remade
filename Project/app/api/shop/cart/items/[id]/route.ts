@@ -12,9 +12,10 @@ import { auth } from '@clerk/nextjs/server';
 
 export async function PATCH(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         const { userId: clerkId } = await auth();
 
         if (!clerkId) {
@@ -42,7 +43,7 @@ export async function PATCH(
         // Get the item first to find variant_id.
         const cart = await getCart(userId);
 
-        const item = cart?.items.find(i => i.id === params.id);
+        const item = cart?.items.find(i => i.id === id);
 
         if (!item) {
             return errorResponse('ITEM_NOT_FOUND', 'Item not found in cart', 404);
@@ -55,7 +56,7 @@ export async function PATCH(
             }
         }
 
-        const updatedCart = await updateCartItem(userId, params.id, qty);
+        const updatedCart = await updateCartItem(userId, id, qty);
         return successResponse(updatedCart);
 
     } catch (error) {
@@ -66,9 +67,10 @@ export async function PATCH(
 
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         const { userId: clerkId } = await auth();
 
         if (!clerkId) {
@@ -80,7 +82,7 @@ export async function DELETE(
             return errorResponse('USER_NOT_FOUND', 'User record not found', 404);
         }
 
-        const updatedCart = await removeCartItem(userId, params.id);
+        const updatedCart = await removeCartItem(userId, id);
         return successResponse(updatedCart);
 
     } catch (error) {

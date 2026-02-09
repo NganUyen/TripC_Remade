@@ -67,26 +67,26 @@ export function BeautyNearYou() {
                     ))}
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                     {spots.map((spot) => (
                         <div
                             key={spot.id}
-                            className="flex gap-5 p-4 rounded-[2rem] bg-slate-50 dark:bg-zinc-800/50 hover:bg-white hover:shadow-xl dark:hover:bg-zinc-800 transition-all cursor-pointer group border border-transparent hover:border-slate-100 dark:hover:border-zinc-700"
+                            className="flex gap-4 md:gap-5 p-3 md:p-4 rounded-3xl md:rounded-[2rem] bg-slate-50 dark:bg-zinc-800/50 hover:bg-white hover:shadow-xl dark:hover:bg-zinc-800 transition-all cursor-pointer group border border-transparent hover:border-slate-100 dark:hover:border-zinc-700"
                             onClick={() => router.push(`/beauty/venue/${spot.id}`)}
                         >
-                            <div className="w-28 h-28 rounded-2xl overflow-hidden bg-slate-200 shrink-0 shadow-sm">
+                            <div className="w-24 h-24 md:w-28 md:h-28 rounded-2xl md:rounded-2xl overflow-hidden bg-slate-200 shrink-0 shadow-sm">
                                 <img src={spot.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt={spot.name} />
                             </div>
-                            <div className="flex flex-col justify-center py-1">
-                                <h4 className="font-bold text-slate-900 dark:text-white text-lg mb-1 group-hover:text-[#FF5E1F] transition-colors">{spot.name}</h4>
-                                <p className="text-sm text-slate-500 mb-3 font-medium flex items-center gap-1">
-                                    <MapPin className="w-3.5 h-3.5" /> {spot.distance}
+                            <div className="flex flex-col justify-center py-0.5 md:py-1 min-w-0">
+                                <h4 className="font-bold text-slate-900 dark:text-white text-base md:text-lg mb-1 group-hover:text-[#FF5E1F] transition-colors truncate">{spot.name}</h4>
+                                <p className="text-xs md:text-sm text-slate-500 mb-2 md:mb-3 font-medium flex items-center gap-1">
+                                    <MapPin className="w-3 md:w-3.5 h-3 md:h-3.5" /> {spot.distance}
                                 </p>
                                 <div className="flex items-center gap-2">
-                                    <span className="text-[10px] font-bold text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30 px-2.5 py-1 rounded-full w-fit tracking-wide uppercase">Open Now</span>
+                                    <span className="text-[8px] md:text-[10px] font-bold text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30 px-2 py-0.5 md:px-2.5 md:py-1 rounded-full w-fit tracking-wide uppercase">Open Now</span>
                                     <div className="flex items-center gap-1">
-                                        <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
-                                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{spot.rating.toFixed(1)}</span>
+                                        <Star className="w-2.5 h-2.5 md:w-3 md:h-3 text-amber-400 fill-amber-400" />
+                                        <span className="text-[10px] md:text-xs font-bold text-slate-700 dark:text-slate-300">{spot.rating.toFixed(1)}</span>
                                     </div>
                                 </div>
                             </div>

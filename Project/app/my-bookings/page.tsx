@@ -253,7 +253,7 @@ export default function MyBookingsPage() {
           />
 
           {/* STATUS FILTER TABS */}
-          <div className="flex items-center gap-4 mb-8 border-b border-slate-200 dark:border-white/10 pb-1 overflow-x-auto">
+          <div className="flex items-center gap-4 mb-8 border-b border-slate-200 dark:border-white/10 pb-1 overflow-x-auto no-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
             {statusTabs.map((tab) => {
               const isActive = activeStatus === tab.id;
               const Icon = tab.icon;
@@ -309,7 +309,7 @@ export default function MyBookingsPage() {
             </motion.div>
           ) : (
             <motion.div
-              className="grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3"
+              className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3"
               layout
             >
               <AnimatePresence mode="popLayout">

@@ -128,12 +128,12 @@ export function WeatherForecast({
           {getDateRange()}
         </span>
       </div>
-      <div className="flex justify-between items-center bg-white/60 dark:bg-black/20 rounded-xl p-4">
+      <div className="grid grid-cols-4 sm:grid-cols-7 gap-3 bg-white/60 dark:bg-black/20 rounded-xl p-4">
         {forecast.map((day, index) => (
           <div key={index} className="text-center">
-            <p className="text-xs text-slate-500 font-bold mb-1">{day.day}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-bold mb-1">{day.day}</p>
             {getWeatherIcon(day.condition)}
-            <p className="font-bold text-slate-900 dark:text-white">
+            <p className="font-bold text-slate-900 dark:text-white text-sm">
               {day.temp}°
             </p>
           </div>

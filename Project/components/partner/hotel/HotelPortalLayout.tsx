@@ -3,20 +3,17 @@
 import React, { useState } from 'react'
 import { 
     LayoutDashboard, 
-    Hotel, 
-    Bed,
+    Building2, 
+    BedDouble, 
     Calendar,
-    ShoppingCart,
-    DollarSign,
+    ClipboardList,
     BarChart3,
-    Users,
-    Gift,
-    Package,
+    Star,
     Settings,
     Menu,
     X,
-    TrendingUp,
-    MessageSquare,
+    DollarSign,
+    Users,
     Bell
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -35,72 +32,73 @@ const navItems: NavItem[] = [
         icon: LayoutDashboard
     },
     {
-        id: 'operations',
-        label: 'Vận hành Khách sạn',
-        icon: Hotel,
+        id: 'properties',
+        label: 'Quản lý Khách sạn',
+        icon: Building2,
         children: [
-            { id: 'hotels', label: 'Cơ sở của tôi', icon: Hotel },
-            { id: 'rooms', label: 'Quản lý Phòng', icon: Bed },
-            { id: 'calendar', label: 'Lịch vận hành', icon: Calendar },
-            { id: 'availability', label: 'Quản lý Trống', icon: Calendar }
+            { id: 'hotel-list', label: 'Danh sách Khách sạn', icon: Building2 },
+            { id: 'hotel-details', label: 'Thông tin Chi tiết', icon: Settings }
         ]
     },
     {
-        id: 'reservations',
-        label: 'Đặt phòng',
-        icon: Calendar,
+        id: 'rooms',
+        label: 'Quản lý Phòng',
+        icon: BedDouble,
         children: [
-            { id: 'bookings', label: 'Quản lý Đặt phòng', icon: Calendar },
+            { id: 'room-types', label: 'Loại Phòng', icon: BedDouble },
+            { id: 'room-inventory', label: 'Tồn kho Phòng', icon: ClipboardList }
+        ]
+    },
+    {
+        id: 'rates',
+        label: 'Giá & Khả dụng',
+        icon: DollarSign,
+        children: [
+            { id: 'rate-calendar', label: 'Lịch Giá', icon: Calendar },
             { id: 'rate-management', label: 'Quản lý Giá', icon: DollarSign },
-            { id: 'channel-manager', label: 'Điều phối Kênh', icon: TrendingUp }
+            { id: 'bulk-update', label: 'Cập nhật Hàng loạt', icon: Settings }
         ]
     },
     {
-        id: 'commerce',
-        label: 'Thương mại điện tử',
-        icon: ShoppingCart,
+        id: 'bookings',
+        label: 'Quản lý Đặt phòng',
+        icon: ClipboardList,
         children: [
-            { id: 'products', label: 'Quản lý Sản phẩm', icon: Package },
-            { id: 'orders', label: 'Xử lý Đơn hàng', icon: ShoppingCart }
-        ]
-    },
-    {
-        id: 'marketing',
-        label: 'Marketing & Gamification',
-        icon: Gift,
-        children: [
-            { id: 'loyalty', label: 'Lòng trung thành', icon: Users },
-            { id: 'gamification', label: 'Gamification', icon: Gift },
-            { id: 'promotions', label: 'Khuyến mãi', icon: Gift }
+            { id: 'booking-list', label: 'Danh sách Đặt phòng', icon: ClipboardList },
+            { id: 'booking-calendar', label: 'Lịch Đặt phòng', icon: Calendar },
+            { id: 'check-in-out', label: 'Check-in/Check-out', icon: Users }
         ]
     },
     {
         id: 'analytics',
-        label: 'Phân tích & Hiệu suất',
+        label: 'Phân tích & Báo cáo',
         icon: BarChart3,
         children: [
-            { id: 'performance', label: 'Quản trị Hiệu suất', icon: BarChart3 },
-            { id: 'campaign-analytics', label: 'Phân tích Chiến dịch', icon: TrendingUp }
+            { id: 'dashboard-metrics', label: 'Chỉ số Dashboard', icon: BarChart3 },
+            { id: 'revenue-report', label: 'Báo cáo Doanh thu', icon: DollarSign },
+            { id: 'occupancy-report', label: 'Báo cáo Công suất', icon: BedDouble },
+            { id: 'financial-reports', label: 'Báo cáo Tài chính', icon: BarChart3 }
+        ]
+    },
+    {
+        id: 'reviews',
+        label: 'Đánh giá & Phản hồi',
+        icon: Star,
+        children: [
+            { id: 'reviews-list', label: 'Danh sách Đánh giá', icon: Star },
+            { id: 'respond-reviews', label: 'Phản hồi Đánh giá', icon: Bell }
         ]
     },
     {
         id: 'feedback',
         label: 'Phản hồi & Đánh giá',
-        icon: MessageSquare,
-        children: [
-            { id: 'reviews', label: 'Quản lý Đánh giá', icon: MessageSquare },
-            { id: 'reputation', label: 'Quản trị Danh tiếng', icon: BarChart3 }
-        ]
-    },
-    {
-        id: 'admin',
-        label: 'Quản trị Hệ thống',
+        id: 'settings',
+        label: 'Cài đặt',
         icon: Settings,
         children: [
-            { id: 'team', label: 'Quản lý Đội ngũ', icon: Users },
-            { id: 'configuration', label: 'Cấu hình Hệ thống', icon: Settings },
-            { id: 'notifications', label: 'Trung tâm Thông báo', icon: Bell },
-            { id: 'bulk-import', label: 'Nhập dữ liệu hàng loạt', icon: Package }
+            { id: 'account-settings', label: 'Thông tin Tài khoản', icon: Users },
+            { id: 'notification-settings', label: 'Thông báo', icon: Bell },
+            { id: 'payout-settings', label: 'Thanh toán', icon: DollarSign }
         ]
     }
 ]
@@ -113,7 +111,7 @@ interface HotelPortalLayoutProps {
 
 export function HotelPortalLayout({ children, activeSection = 'dashboard', onSectionChange }: HotelPortalLayoutProps) {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true)
-    const [expandedSections, setExpandedSections] = useState<string[]>(['operations', 'reservations'])
+    const [expandedSections, setExpandedSections] = useState<string[]>(['properties', 'bookings'])
 
     const toggleSection = (sectionId: string) => {
         setExpandedSections(prev => 

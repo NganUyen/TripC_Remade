@@ -11,10 +11,10 @@ import { supabaseServerClient } from "@/lib/flight/supabaseServerClient";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { offerId: string } },
+  { params }: { params: Promise<{ offerId: string }> },
 ) {
   try {
-    const { offerId } = params;
+    const { offerId } = await params;
 
     if (!offerId) {
       return NextResponse.json(
