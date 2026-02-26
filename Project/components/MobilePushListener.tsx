@@ -51,9 +51,12 @@ export function MobilePushListener() {
         });
 
         const receivedListener = PushNotifications.addListener("pushNotificationReceived", (notification) => {
-            console.log("Push Received: ", notification);
-            toast.info(notification.title || "New Notification", {
+            console.log("Foreground Push Received: ", notification);
+            // Display an in-app banner (Toast) if the user is actively using the app
+            toast.success(notification.title || "New Notification", {
                 description: notification.body,
+                duration: 5000,
+                position: 'top-center'
             });
         });
 
