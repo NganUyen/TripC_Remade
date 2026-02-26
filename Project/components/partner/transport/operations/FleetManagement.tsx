@@ -20,6 +20,8 @@ import {
   Image as ImageIcon,
 } from "lucide-react";
 import { useSupabaseClient } from "@/lib/supabase";
+import { toast } from "sonner";
+import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 
 interface Vehicle {
   id: string;
@@ -47,6 +49,7 @@ interface TransportProvider {
 
 export function FleetManagement() {
   const supabase = useSupabaseClient();
+  const { supabaseUser, isLoading: isAuthLoading } = useCurrentUser();
   const [loading, setLoading] = useState(true);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [providers, setProviders] = useState<TransportProvider[]>([]);
@@ -66,47 +69,52 @@ export function FleetManagement() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (supabaseUser) fetchData();
+  }, [supabaseUser]);
+
+  const refreshProviders = async () => {
+    if (!supabaseUser) return [];
+    try {
+      const resp = await fetch("/api/partner/transport/providers", {
+        headers: { "x-user-id": supabaseUser.id },
+      });
+      const result = await resp.json();
+      if (result.success) {
+        setProviders(result.data || []);
+        return result.data || [];
+      }
+    } catch (error) {
+      console.error("Error refreshing providers:", error);
+    }
+    return [];
+  };
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      if (!supabaseUser) return;
 
-      if (!user) return;
-
-      // Fetch providers for this user
-      const { data: providersData } = await supabase
-        .from("transport_providers")
-        .select("id, name, logo_url")
-        .eq("owner_id", user.id);
-
-      const myProviders =
-        (providersData as unknown as TransportProvider[]) || [];
-      setProviders(myProviders);
+      // 1. Fetch providers
+      const myProviders = await refreshProviders();
 
       if (myProviders.length > 0) {
-        // Fetch vehicles for these providers
-        const providerIds = myProviders.map((p) => p.id);
-        const { data: vehiclesData, error } = await supabase
-          .from("transport_vehicles")
-          .select("*")
-          .in("provider_id", providerIds)
-          .order("created_at", { ascending: false });
-
-        if (error) {
-          console.error("Error fetching vehicles:", error);
-        } else {
-          setVehicles((vehiclesData as unknown as Vehicle[]) || []);
+        const allVehicles: Vehicle[] = [];
+        for (const p of myProviders) {
+          const resp = await fetch(`/api/partner/transport/vehicles?provider_id=${p.id}`, {
+            headers: { "x-user-id": supabaseUser.id },
+          });
+          const result = await resp.json();
+          if (result.success && result.data) {
+            allVehicles.push(...result.data);
+          }
         }
+        setVehicles(allVehicles);
       } else {
         setVehicles([]);
       }
-    } catch (error) {
-      console.error("Error:", error);
+    } catch (error: any) {
+      console.error("Error fetching vehicles:", error);
+      toast.error("Lỗi khi tải đội xe: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -114,26 +122,26 @@ export function FleetManagement() {
 
   const handleSave = async () => {
     try {
+      if (!supabaseUser) return;
+
       // Validate
       if (!formData.plate_number) {
-        alert("Vui lòng nhập biển số xe");
+        toast.error("Vui lòng nhập biển số xe");
         return;
       }
 
-      // Simple plate number regex (VN format)
       const plateRegex = /^[0-9]{2}[A-Z]-[0-9]{3,5}(\.[0-9]{2})?$/i;
       if (!plateRegex.test(formData.plate_number.replace(/\s/g, ""))) {
-        if (!confirm("Biển số xe có vẻ không hợp lệ. Bạn vẫn muốn lưu?"))
-          return;
+        toast.warning("Biển số xe có vẻ không hợp lệ. Vui lòng kiểm tra lại.");
       }
 
       if (!formData.model) {
-        alert("Vui lòng nhập mẫu xe (ví dụ: Hyundai Solati)");
+        toast.error("Vui lòng nhập mẫu xe (ví dụ: Hyundai Solati)");
         return;
       }
 
       if (!formData.capacity || formData.capacity < 1) {
-        alert("Số chỗ ngồi phải lớn hơn 0");
+        toast.error("Số chỗ ngồi phải lớn hơn 0");
         return;
       }
 
@@ -141,29 +149,29 @@ export function FleetManagement() {
 
       const dataToSave = {
         ...formData,
+        id: editingVehicle?.id,
         provider_id: formData.provider_id || providers[0]?.id,
       };
 
       if (!dataToSave.provider_id) {
-        alert(
-          "Vui lòng tạo hồ sơ nhà cung cấp trước khi thêm phương tiện (trong Cài đặt).",
-        );
+        toast.error("Vui lòng tạo hồ sơ nhà cung cấp trước khi thêm phương tiện.");
         setSaving(false);
         return;
       }
 
-      if (editingVehicle) {
-        const { error } = await supabase
-          .from("transport_vehicles")
-          .update(dataToSave)
-          .eq("id", editingVehicle.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from("transport_vehicles")
-          .insert([dataToSave]);
-        if (error) throw error;
-      }
+      const response = await fetch("/api/partner/transport/vehicles", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": supabaseUser.id
+        },
+        body: JSON.stringify(dataToSave),
+      });
+
+      const result = await response.json();
+      if (!result.success) throw new Error(result.error);
+
+      toast.success(editingVehicle ? "Cập nhật phương tiện thành công" : "Thêm phương tiện mới thành công");
 
       setShowModal(false);
       setEditingVehicle(null);
@@ -177,26 +185,30 @@ export function FleetManagement() {
       fetchData();
     } catch (error: any) {
       console.error("Error saving vehicle:", error);
-      alert("Lỗi khi lưu phương tiện: " + error.message);
+      toast.error("Lỗi khi lưu phương tiện: " + error.message);
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async (id: string) => {
+    if (!supabaseUser) return;
     if (!confirm("Bạn có chắc chắn muốn xóa phương tiện này?")) return;
 
     try {
-      const { error } = await supabase
-        .from("transport_vehicles")
-        .delete()
-        .eq("id", id);
+      const response = await fetch(`/api/partner/transport/vehicles?id=${id}`, {
+        method: "DELETE",
+        headers: { "x-user-id": supabaseUser.id },
+      });
 
-      if (error) throw error;
+      const result = await response.json();
+      if (!result.success) throw new Error(result.error);
+
+      toast.success("Đã xóa phương tiện");
       fetchData();
     } catch (error: any) {
       console.error("Error deleting vehicle:", error);
-      alert("Lỗi khi xóa phương tiện: " + error.message);
+      toast.error("Lỗi khi xóa phương tiện: " + error.message);
     }
   };
 
@@ -206,14 +218,17 @@ export function FleetManagement() {
     setShowModal(true);
   };
 
-  const openAddModal = () => {
+  const openAddModal = async () => {
     setEditingVehicle(null);
+    // Refresh providers on open to ensure sync
+    const currentProviders = await refreshProviders();
     setFormData({
       type: "bus",
       status: "active",
       amenities: { wifi: true, ac: true },
       images: [],
-      provider_id: providers[0]?.id, // Default to first provider
+      provider_id: currentProviders.length > 0 ? currentProviders[0].id : "",
+      capacity: 29,
     });
     setShowModal(true);
   };
@@ -242,23 +257,23 @@ export function FleetManagement() {
 
   const getStatusBadge = (status: string) => {
     const config: Record<string, { bg: string; text: string; label: string }> =
-      {
-        active: {
-          bg: "bg-green-100 dark:bg-green-900/20",
-          text: "text-green-700 dark:text-green-400",
-          label: "Hoạt động",
-        },
-        maintenance: {
-          bg: "bg-amber-100 dark:bg-amber-900/20",
-          text: "text-amber-700 dark:text-amber-400",
-          label: "Bảo trì",
-        },
-        inactive: {
-          bg: "bg-red-100 dark:bg-red-900/20",
-          text: "text-red-700 dark:text-red-400",
-          label: "Không hoạt động",
-        },
-      };
+    {
+      active: {
+        bg: "bg-green-100 dark:bg-green-900/20",
+        text: "text-green-700 dark:text-green-400",
+        label: "Hoạt động",
+      },
+      maintenance: {
+        bg: "bg-amber-100 dark:bg-amber-900/20",
+        text: "text-amber-700 dark:text-amber-400",
+        label: "Bảo trì",
+      },
+      inactive: {
+        bg: "bg-red-100 dark:bg-red-900/20",
+        text: "text-red-700 dark:text-red-400",
+        label: "Không hoạt động",
+      },
+    };
     const c = config[status] || config.active;
     return (
       <span
@@ -538,6 +553,33 @@ export function FleetManagement() {
                 </button>
               </div>
 
+              {/* Provider Selection (only if multiple or newly created) */}
+              {(providers.length > 1 || !editingVehicle) && (
+                <div className="space-y-1.5 p-6 bg-primary/5 rounded-2xl border border-primary/10 mb-6">
+                  <label className="text-sm font-bold text-primary flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                    Nhà cung cấp vận chuyển
+                  </label>
+                  <select
+                    value={formData.provider_id || ""}
+                    onChange={(e) =>
+                      setFormData({ ...formData, provider_id: e.target.value })
+                    }
+                    className="w-full px-4 py-2.5 bg-white dark:bg-slate-900 border-2 border-primary/20 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-semibold"
+                  >
+                    <option value="" disabled>--- Chọn nhà cung cấp ---</option>
+                    {providers.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-[10px] text-primary/60 italic px-1">
+                    * Bạn có thể tạo thêm hồ sơ trong phần "Cài đặt"
+                  </p>
+                </div>
+              )}
+
               <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar flex-1">
                 {/* Basic Info Group */}
                 <div className="space-y-4">
@@ -556,7 +598,6 @@ export function FleetManagement() {
                           })
                         }
                         className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                        placeholder="29B-123.45"
                       />
                       <p className="text-[10px] text-slate-500 italic">
                         Ví dụ: 29B-123.45
@@ -593,7 +634,6 @@ export function FleetManagement() {
                         setFormData({ ...formData, model: e.target.value })
                       }
                       className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                      placeholder="Ví dụ: Hyundai Solati 2024 Premium"
                     />
                   </div>
 
@@ -652,20 +692,19 @@ export function FleetManagement() {
                     ].map((item) => (
                       <label
                         key={item.key}
-                        className={`flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all cursor-pointer ${
-                          formData.amenities?.[
-                            item.key as keyof Vehicle["amenities"]
-                          ]
-                            ? "border-primary bg-primary/5 text-primary"
-                            : "border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-500"
-                        }`}
+                        className={`flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all cursor-pointer ${formData.amenities?.[
+                          item.key as keyof Vehicle["amenities"]
+                        ]
+                          ? "border-primary bg-primary/5 text-primary"
+                          : "border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-500"
+                          }`}
                       >
                         <input
                           type="checkbox"
                           className="hidden"
                           checked={
                             formData.amenities?.[
-                              item.key as keyof Vehicle["amenities"]
+                            item.key as keyof Vehicle["amenities"]
                             ] || false
                           }
                           onChange={(e) =>
@@ -700,7 +739,6 @@ export function FleetManagement() {
                         setFormData({ ...formData, images: [e.target.value] })
                       }
                       className="flex-1 px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                      placeholder="Dán link ảnh tại đây (URL)..."
                     />
                   </div>
                   {formData.images?.[0] ? (

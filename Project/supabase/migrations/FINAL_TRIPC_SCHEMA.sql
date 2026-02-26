@@ -1265,11 +1265,18 @@ CREATE TABLE public.transport_bookings (
 );
 CREATE TABLE public.transport_providers (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
+  owner_id uuid,
   name text NOT NULL,
   logo_url text,
+  contact_email text,
+  contact_phone text,
+  address text,
+  website text,
+  description text,
   rating numeric DEFAULT 0,
   created_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT transport_providers_pkey PRIMARY KEY (id)
+  CONSTRAINT transport_providers_pkey PRIMARY KEY (id),
+  CONSTRAINT transport_providers_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES public.users(id)
 );
 CREATE TABLE public.transport_routes (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -1281,9 +1288,11 @@ CREATE TABLE public.transport_routes (
   departure_time timestamp with time zone NOT NULL,
   arrival_time timestamp with time zone NOT NULL,
   price numeric NOT NULL,
+  currency text NOT NULL DEFAULT 'VND'::text,
   seats_available integer DEFAULT 0,
   vehicle_details jsonb,
-  images ARRAY,
+  images text[],
+  vehicle_id uuid,
   created_at timestamp with time zone DEFAULT now(),
   booking_id uuid,
   CONSTRAINT transport_routes_pkey PRIMARY KEY (id),

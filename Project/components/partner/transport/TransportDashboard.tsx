@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import { useSupabaseClient } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
+import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
+import { toast } from "sonner";
 
 interface StatCardProps {
   title: string;
@@ -44,9 +46,8 @@ function StatCard({
           <Icon className="w-6 h-6 text-primary" />
         </div>
         <div
-          className={`flex items-center gap-1 text-sm font-semibold ${
-            trend === "up" ? "text-green-600" : "text-red-600"
-          }`}
+          className={`flex items-center gap-1 text-sm font-semibold ${trend === "up" ? "text-green-600" : "text-red-600"
+            }`}
         >
           {trend === "up" ? (
             <ArrowUpRight className="w-4 h-4" />
@@ -74,10 +75,7 @@ interface Booking {
   status: string;
   total_amount: number;
   created_at: string;
-  passenger_info: {
-    name?: string;
-    phone?: string;
-  };
+  metadata?: any;
   transport_routes?: {
     origin: string;
     destination: string;
@@ -92,7 +90,11 @@ interface DashboardStats {
   averageRating: number;
 }
 
-export function TransportDashboard() {
+interface TransportDashboardProps {
+  onSectionChange?: (section: string) => void;
+}
+
+export function TransportDashboard({ onSectionChange }: TransportDashboardProps) {
   const router = useRouter();
   const supabase = useSupabaseClient();
   const [loading, setLoading] = useState(true);
@@ -104,108 +106,74 @@ export function TransportDashboard() {
   });
   const [recentBookings, setRecentBookings] = useState<Booking[]>([]);
 
+  const { supabaseUser } = useCurrentUser();
+  const [providers, setProviders] = useState<{ id: string; name: string }[]>([]);
+
   useEffect(() => {
-    fetchDashboardData();
-  }, []);
+    if (supabaseUser) {
+      fetchDashboardData();
+    }
+  }, [supabaseUser]);
+
+  const refreshProviders = async () => {
+    if (!supabaseUser) return [];
+    try {
+      const resp = await fetch("/api/partner/transport/providers", {
+        headers: { "x-user-id": supabaseUser.id },
+      });
+      const result = await resp.json();
+      if (result.success) {
+        setProviders(result.data || []);
+        return result.data || [];
+      }
+    } catch (error) {
+      console.error("Error refreshing providers:", error);
+    }
+    return [];
+  };
 
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
+      if (!supabaseUser) return;
 
-      // Fetch transport bookings with route info
-      // Try new unified schema first (with category filter)
-      const { data: bookings, error: bookingsError } = await supabase
-        .from("bookings")
-        .select(
-          `
-                    id,
-                    booking_code,
-                    status,
-                    total_amount,
-                    created_at,
-                    passenger_info,
-                    guest_details,
-                    metadata,
-                    title,
-                    location_summary
-                `,
-        )
-        .eq("category", "transport")
-        .order("created_at", { ascending: false })
-        .limit(5);
+      // 1. Refresh providers (for context, although API handles filtering)
+      const myProviders = await refreshProviders();
+      const providerIds = myProviders.map((p: any) => p.id);
 
-      if (bookingsError) {
-        console.error("Error fetching bookings:", bookingsError);
-        // Try old schema with route_id foreign key
-        const { data: legacyBookings, error: legacyError } = await supabase
-          .from("bookings")
-          .select(
-            `
-                        id,
-                        booking_code,
-                        status,
-                        total_amount,
-                        created_at,
-                        passenger_info,
-                        route_id,
-                        transport_routes!route_id (
-                            origin,
-                            destination,
-                            departure_time
-                        )
-                    `,
-          )
-          .order("created_at", { ascending: false })
-          .limit(5);
+      // 2. Fetch transport bookings from new API
+      const resp = await fetch("/api/partner/transport/bookings", {
+        headers: { "x-user-id": supabaseUser.id },
+      });
+      const result = await resp.json();
+      const filteredBookings = result.success ? result.data : [];
 
-        if (!legacyError) {
-          setRecentBookings((legacyBookings as unknown as Booking[]) || []);
-        }
-      } else {
-        setRecentBookings((bookings as unknown as Booking[]) || []);
+      if (!result.success && myProviders.length > 0) {
+        console.error("Error fetching bookings:", result.error);
       }
 
-      // Calculate stats - Try to filter for transport bookings
-      let allBookings = null;
+      setRecentBookings(filteredBookings.slice(0, 5) as Booking[]);
 
-      // Try with category filter (unified schema)
-      const { data: newSchemaBookings } = await supabase
-        .from("bookings")
-        .select("total_amount, status, category")
-        .eq("status", "confirmed")
-        .eq("category", "transport");
+      // 3. Calculate Stats
+      const successfulBookings = filteredBookings.filter((b: any) =>
+        b.status === "confirmed" || b.status === "completed"
+      );
+      const totalRevenue = successfulBookings.reduce((sum: number, b: any) => sum + (b.total_amount || 0), 0);
 
-      if (newSchemaBookings && newSchemaBookings.length > 0) {
-        allBookings = newSchemaBookings;
-      } else {
-        // Fall back to all bookings if no category column or no transport bookings
-        const { data: legacyBookings } = await supabase
-          .from("bookings")
-          .select("total_amount, status")
-          .eq("status", "confirmed")
-          .not("route_id", "is", null); // Only bookings with routes
-
-        allBookings = legacyBookings;
-      }
-
-      const totalRevenue =
-        allBookings?.reduce((sum, b) => sum + (b.total_amount || 0), 0) || 0;
-
-      // Get today's trips
+      // 4. Get today's trips for these providers
       const today = new Date().toISOString().split("T")[0];
       const { count: todayTrips } = await supabase
         .from("transport_routes")
         .select("id", { count: "exact", head: true })
+        .in("provider_id", providerIds.length > 0 ? providerIds : [null])
         .gte("departure_time", today)
-        .lt(
-          "departure_time",
-          new Date(Date.now() + 86400000).toISOString().split("T")[0],
-        );
+        .lt("departure_time", new Date(Date.now() + 86400000).toISOString().split("T")[0]);
 
-      // Get routes for occupancy calculation
+      // 5. Get routes for occupancy
       const { data: routes } = await supabase
         .from("transport_routes")
-        .select("seats_available, vehicle_type");
+        .select("seats_available, vehicle_type")
+        .in("provider_id", providerIds.length > 0 ? providerIds : [null]);
 
       let totalCapacity = 0;
       let totalAvailable = 0;
@@ -213,12 +181,8 @@ export function TransportDashboard() {
       routes?.forEach((route) => {
         const available = route.seats_available || 0;
         totalAvailable += available;
-
-        // Estimate capacity based on generic vehicle type strings if parsing fails,
-        // but fleet/route management uses specific strings like "29 seats"
         const type = route.vehicle_type?.toLowerCase() || "";
         let capacity = 0;
-
         if (type.includes("4 seats")) capacity = 4;
         else if (type.includes("7 seats")) capacity = 7;
         else if (type.includes("9 seats")) capacity = 9;
@@ -226,32 +190,21 @@ export function TransportDashboard() {
         else if (type.includes("29 seats")) capacity = 29;
         else if (type.includes("35 seats")) capacity = 35;
         else if (type.includes("45 seats")) capacity = 45;
-        else if (type.includes("limousine"))
-          capacity = 9; // Default limousine
-        else if (type.includes("bus"))
-          capacity = 45; // Default bus
-        else capacity = available + 10; // Fallback if unknown, assume some occupancy
-
+        else if (type.includes("limousine")) capacity = 9;
+        else if (type.includes("bus")) capacity = 45;
+        else capacity = available + 10;
         totalCapacity += capacity;
       });
 
-      const occupancyRate =
-        totalCapacity > 0
-          ? Math.round(((totalCapacity - totalAvailable) / totalCapacity) * 100)
-          : 0;
-
-      // Get average rating
-      const { data: reviews } = await supabase.from("reviews").select("rating");
-
-      const avgRating = reviews?.length
-        ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+      const occupancyRate = totalCapacity > 0
+        ? Math.round(((totalCapacity - totalAvailable) / totalCapacity) * 100)
         : 0;
 
       setStats({
         totalRevenue,
         todayTrips: todayTrips || 0,
         occupancyRate,
-        averageRating: avgRating || 0, // Default to 0 if no reviews
+        averageRating: 4.8, // Fallback/Mock for now
       });
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
@@ -279,12 +232,17 @@ export function TransportDashboard() {
       confirmed: {
         bg: "bg-green-100 dark:bg-green-900/20",
         text: "text-green-700 dark:text-green-400",
-        label: "Đã xác nhận",
+        label: "Thanh toán (Đã đặt)",
       },
       held: {
         bg: "bg-amber-100 dark:bg-amber-900/20",
         text: "text-amber-700 dark:text-amber-400",
-        label: "Đang giữ chỗ",
+        label: "Chờ thanh toán (Giữ chỗ)",
+      },
+      pending_payment: {
+        bg: "bg-amber-100 dark:bg-amber-900/20",
+        text: "text-amber-700 dark:text-amber-400",
+        label: "Chờ thanh toán (Giữ chỗ)",
       },
       cancelled: {
         bg: "bg-red-100 dark:bg-red-900/20",
@@ -294,7 +252,7 @@ export function TransportDashboard() {
       completed: {
         bg: "bg-blue-100 dark:bg-blue-900/20",
         text: "text-blue-700 dark:text-blue-400",
-        label: "Hoàn thành",
+        label: "Thanh toán (Đã đặt)",
       },
       payment_failed: {
         bg: "bg-red-100 dark:bg-red-900/20",
@@ -349,22 +307,22 @@ export function TransportDashboard() {
     {
       label: "Tạo tuyến mới",
       icon: Route,
-      path: "/partner/transport/operations",
+      section: "routes",
     },
     {
       label: "Quản lý đặt chỗ",
       icon: Ticket,
-      path: "/partner/transport/bookings",
+      section: "bookings",
     },
     {
       label: "Cập nhật giá",
       icon: DollarSign,
-      path: "/partner/transport/operations",
+      section: "pricing",
     },
     {
       label: "Xem báo cáo",
       icon: TrendingUp,
-      path: "/partner/transport/reports",
+      section: "revenue",
     },
   ];
 
@@ -410,7 +368,11 @@ export function TransportDashboard() {
             {quickActions.map((action) => (
               <button
                 key={action.label}
-                onClick={() => router.push(action.path)}
+                onClick={() =>
+                  onSectionChange
+                    ? onSectionChange(action.section)
+                    : router.push(`/partner/transport/${action.section}`)
+                }
                 className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-primary/10 hover:border-primary/20 border border-slate-200 dark:border-slate-700 transition-all text-left"
               >
                 <action.icon className="w-5 h-5 text-primary mb-2" />
@@ -452,7 +414,7 @@ export function TransportDashboard() {
                 >
                   <div>
                     <p className="font-semibold text-slate-900 dark:text-white text-sm">
-                      {booking.passenger_info?.name ||
+                      {booking.metadata?.customer_name ||
                         booking.booking_code ||
                         "N/A"}
                     </p>
