@@ -11,8 +11,12 @@ import {
   Star,
   MapPin,
   Users,
+  Bus,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
 import { useSupabaseClient } from "@/lib/supabase";
+import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 
 interface PerformanceData {
   totalTrips: number;
@@ -40,134 +44,146 @@ export function Performance() {
     avgOccupancy: 0,
     topRoutes: [],
   });
-  const [period, setPeriod] = useState<"week" | "month" | "year">("month");
+  const [period, setPeriod] = useState<"week" | "month" | "year">("year");
+
+  const { supabaseUser } = useCurrentUser();
+  const [providers, setProviders] = useState<{ id: string; name: string }[]>([]);
 
   useEffect(() => {
-    fetchPerformanceData();
-  }, [period]);
+    if (supabaseUser) {
+      fetchPerformanceData();
+    }
+  }, [period, supabaseUser]);
+
+  const refreshProviders = async () => {
+    if (!supabaseUser) return [];
+    try {
+      const resp = await fetch("/api/partner/transport/providers", {
+        headers: { "x-user-id": supabaseUser.id },
+      });
+      const result = await resp.json();
+      if (result.success) {
+        setProviders(result.data || []);
+        return result.data || [];
+      }
+    } catch (error) {
+      console.error("Error refreshing providers:", error);
+    }
+    return [];
+  };
 
   const fetchPerformanceData = async () => {
     try {
       setLoading(true);
+      if (!supabaseUser) return;
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
+      const myProviders = await refreshProviders();
+      if (myProviders.length === 0) { setLoading(false); return; }
+      const providerIds = myProviders.map((p: any) => p.id);
 
-      // Get user's providers
-      const { data: providers } = await supabase
-        .from("transport_providers")
-        .select("id")
-        .eq("owner_id", user.id);
-
-      if (!providers || providers.length === 0) {
-        setLoading(false);
-        return;
-      }
-
-      const providerIds = providers.map((p) => p.id);
-
-      // Get date range
-      const now = new Date();
-      let startDate = new Date();
-      if (period === "week") {
-        startDate.setDate(now.getDate() - 7);
-      } else if (period === "month") {
-        startDate.setMonth(now.getMonth() - 1);
-      } else {
-        startDate.setFullYear(now.getFullYear() - 1);
-      }
-
-      // Fetch bookings restricted to provider's routes
-      // Note: Assuming bookings for transport have a route_id that maps to transport_routes
+      // 1. Get this provider's routes (for origin/destination lookup)
       const { data: routes } = await supabase
         .from("transport_routes")
-        .select("id, origin, destination")
+        .select("id, origin, destination, vehicle_type, seats_available, total_capacity")
         .in("provider_id", providerIds);
 
-      if (!routes || routes.length === 0) {
-        setLoading(false);
-        return;
-      }
+      const routeMap = new Map((routes || []).map((r) => [r.id, r]));
 
-      const routeIds = routes.map((r) => r.id);
+      // 2. Fetch confirmed bookings securely via API (bypasses RLS)
+      const bookingsResp = await fetch("/api/partner/transport/bookings", {
+        headers: { "x-user-id": supabaseUser.id },
+      });
+      const bookingsResult = await bookingsResp.json();
+      const bookings: any[] = bookingsResult.success ? bookingsResult.data : [];
 
-      const { data: bookings, error: bookingsError } = await supabase
-        .from("bookings")
-        .select(
-          `
-                    id,
-                    status,
-                    route_id,
-                    transport_routes!inner (
-                        origin,
-                        destination,
-                        seats_available,
-                        provider_id
-                    )
-                `,
-        )
-        .in("transport_routes.provider_id", providerIds)
-        .gte("created_at", startDate.toISOString());
+      // 3. Total = ALL-TIME, period = filter
+      const now = new Date();
+      const startDate = new Date();
+      if (period === "week") startDate.setDate(now.getDate() - 7);
+      else if (period === "month") startDate.setMonth(now.getMonth() - 1);
+      else startDate.setFullYear(now.getFullYear() - 1);
 
-      // Fetch reviews restricted to provider
-      const { data: reviews, error: reviewsError } = await supabase
+      // ALL-TIME confirmed for occupancy
+      const allConfirmed = bookings.filter((b) => b.status === "confirmed" || b.status === "completed");
+      // Period bookings for trip counts
+      const periodBookings = bookings.filter((b) => new Date(b.created_at) >= startDate);
+
+      const total = allConfirmed.length; // all-time total
+      const completed = allConfirmed.filter((b) => b.status === "completed").length;
+      const cancelled = bookings.filter((b) => b.status === "cancelled" && new Date(b.created_at) >= startDate).length;
+
+      // 4. Get reviews
+      const { data: reviews } = await supabase
         .from("transport_reviews")
         .select("rating")
-        .in("provider_id", providerIds)
-        .gte("created_at", startDate.toISOString());
+        .in("provider_id", providerIds.length > 0 ? providerIds : [null]);
 
-      if (bookingsError || reviewsError) {
-        console.error("Error fetching data:", bookingsError || reviewsError);
-      } else {
-        const total = bookings?.length || 0;
-        const completed =
-          bookings?.filter((b) => b.status === "completed").length || 0;
-        const cancelled =
-          bookings?.filter((b) => b.status === "cancelled").length || 0;
+      const ratings = (reviews || []).map((r) => r.rating);
+      const avgRating = ratings.length > 0
+        ? Number((ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1))
+        : 0;
 
-        // Calculate average rating
-        const ratings = reviews?.map((r) => r.rating) || [];
-        const avgRating =
-          ratings.length > 0
-            ? ratings.reduce((a, b) => a + b, 0) / ratings.length
-            : 0;
-
-        // Group by routes
-        const routeCounts: Record<
-          string,
-          { origin: string; destination: string; count: number }
-        > = {};
-        bookings?.forEach((booking) => {
-          const route = booking.transport_routes as any;
-          if (route) {
-            const key = `${route.origin}-${route.destination}`;
-            if (!routeCounts[key]) {
-              routeCounts[key] = {
-                origin: route.origin,
-                destination: route.destination,
-                count: 0,
-              };
-            }
+      // 5. Top routes — use allConfirmed to maximize data
+      const routeCounts: Record<string, { origin: string; destination: string; count: number }> = {};
+      allConfirmed.forEach((booking) => {
+        const meta = booking.metadata || {};
+        const routeId = meta.routeId || meta.metadata?.routeId;
+        const route = routeId ? routeMap.get(routeId) : null;
+        if (route) {
+          const key = `${route.origin}-${route.destination}`;
+          routeCounts[key] = routeCounts[key] || { origin: route.origin, destination: route.destination, count: 0 };
+          routeCounts[key].count++;
+        } else {
+          // Fallback: try pickup/dropoff fields in metadata
+          const origin = meta.pickupLocation || meta.origin;
+          const destination = meta.dropoffLocation || meta.destination;
+          if (origin && destination) {
+            const key = `${origin}-${destination}`;
+            routeCounts[key] = routeCounts[key] || { origin, destination, count: 0 };
             routeCounts[key].count++;
           }
-        });
+        }
+      });
+      const topRoutes = Object.values(routeCounts).sort((a, b) => b.count - a.count).slice(0, 5);
 
-        const topRoutes = Object.values(routeCounts)
-          .sort((a, b) => b.count - a.count)
-          .slice(0, 5);
+      // 6. Occupancy from allConfirmed
+      let totalCapacity = 0;
+      let totalBooked = 0;
+      const confirmedByRoute = new Map<string, number>();
+      allConfirmed.forEach((b) => {
+        const meta = b.metadata || {};
+        const rid = meta.routeId || meta.metadata?.routeId;
+        if (rid) confirmedByRoute.set(rid, (confirmedByRoute.get(rid) || 0) + (meta.passengerCount || meta.metadata?.passengerCount || 1));
+      });
 
-        setData({
-          totalTrips: total,
-          completedTrips: completed,
-          cancelledTrips: cancelled,
-          avgRating: Number(avgRating.toFixed(1)),
-          onTimeRate: total > 0 ? Math.round((completed / total) * 100) : 0,
-          avgOccupancy: 75,
-          topRoutes,
-        });
-      }
+      (routes || []).forEach((route) => {
+        const getSeatCapacityFallback = (vt: string) => {
+          const t = vt.toLowerCase();
+          if (t.includes("45")) return 45;
+          if (t.includes("35")) return 35;
+          if (t.includes("29")) return 29;
+          if (t.includes("16")) return 16;
+          if (t.includes("9") || t.includes("limousine")) return 9;
+          if (t.includes("7")) return 7;
+          if (t.includes("4")) return 4;
+          return 29;
+        };
+        const cap = (route.total_capacity > 0) ? route.total_capacity : getSeatCapacityFallback(route.vehicle_type);
+        totalCapacity += cap;
+        totalBooked += confirmedByRoute.get(route.id) || 0;
+      });
+
+      const avgOccupancy = totalCapacity > 0 ? Math.round((totalBooked / totalCapacity) * 100) : 0;
+
+      setData({
+        totalTrips: total,
+        completedTrips: completed,
+        cancelledTrips: cancelled,
+        avgRating,
+        onTimeRate: total > 0 ? Math.round((completed / total) * 100) : 0,
+        avgOccupancy,
+        topRoutes,
+      });
     } catch (error) {
       console.error("Error:", error);
     } finally {
@@ -177,58 +193,58 @@ export function Performance() {
 
   const stats = [
     {
-      label: "Tổng số chuyến",
+      label: "Tổng chuyến",
       value: data.totalTrips,
-      icon: BarChart3,
-      color: "text-primary",
-      bgColor: "bg-primary/10",
-      change: "+12%",
+      icon: Bus,
+      color: "text-blue-600",
+      bgColor: "bg-blue-50",
       trend: "up",
+      change: "Mới",
     },
     {
       label: "Hoàn thành",
       value: data.completedTrips,
-      icon: TrendingUp,
-      color: "text-green-600",
-      bgColor: "bg-green-100 dark:bg-green-900/20",
-      change: "+8%",
+      icon: CheckCircle2,
+      color: "text-emerald-600",
+      bgColor: "bg-emerald-50",
       trend: "up",
+      change: "Mới",
     },
     {
       label: "Đã hủy",
       value: data.cancelledTrips,
-      icon: TrendingDown,
+      icon: XCircle,
       color: "text-red-600",
-      bgColor: "bg-red-100 dark:bg-red-900/20",
-      change: "-5%",
+      bgColor: "bg-red-50",
       trend: "down",
+      change: "Mới",
     },
     {
-      label: "Đánh giá TB",
+      label: "Đánh giá",
       value: data.avgRating,
       icon: Star,
       color: "text-amber-600",
-      bgColor: "bg-amber-100 dark:bg-amber-900/20",
-      change: "+0.2",
+      bgColor: "bg-amber-50",
       trend: "up",
+      change: "Mới",
     },
     {
-      label: "Tỷ lệ đúng giờ",
+      label: "Đúng giờ",
       value: `${data.onTimeRate}%`,
       icon: Clock,
-      color: "text-blue-600",
-      bgColor: "bg-blue-100 dark:bg-blue-900/20",
-      change: "+3%",
+      color: "text-indigo-600",
+      bgColor: "bg-indigo-50",
       trend: "up",
+      change: "Mới",
     },
     {
-      label: "Tỷ lệ lấp đầy",
+      label: "Lấp đầy",
       value: `${data.avgOccupancy}%`,
       icon: Users,
       color: "text-purple-600",
-      bgColor: "bg-purple-100 dark:bg-purple-900/20",
-      change: "+5%",
+      bgColor: "bg-purple-50",
       trend: "up",
+      change: "Mới",
     },
   ];
 
@@ -254,11 +270,10 @@ export function Performance() {
             <button
               key={p}
               onClick={() => setPeriod(p)}
-              className={`px-6 py-2 text-xs font-black uppercase tracking-widest rounded-xl transition-all ${
-                period === p
-                  ? "bg-white dark:bg-slate-700 text-primary shadow-sm"
-                  : "text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-white/50 dark:hover:bg-slate-700/50"
-              }`}
+              className={`px-6 py-2 text-xs font-black uppercase tracking-widest rounded-xl transition-all ${period === p
+                ? "bg-white dark:bg-slate-700 text-primary shadow-sm"
+                : "text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-white/50 dark:hover:bg-slate-700/50"
+                }`}
             >
               {p === "week" ? "Tuần" : p === "month" ? "Tháng" : "Năm"}
             </button>
@@ -308,7 +323,7 @@ export function Performance() {
                 ) : (
                   <TrendingDown className="w-3.5 h-3.5" />
                 )}
-                {stat.change}
+                {stat.change === "Mới" ? "" : stat.change}
               </div>
             </motion.div>
           ))}
@@ -372,20 +387,39 @@ export function Performance() {
         )}
       </div>
 
-      {/* Performance Chart Placeholder */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800">
-        <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">
-          Biểu đồ Hiệu suất
-        </h2>
-        <div className="h-64 flex items-center justify-center bg-slate-50 dark:bg-slate-800/50 rounded-xl">
-          <div className="text-center">
-            <BarChart3 className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
-            <p className="text-slate-500 dark:text-slate-400">
-              Biểu đồ sẽ hiển thị khi có đủ dữ liệu
-            </p>
+      {/* Performance Chart - real bar chart from top routes */}
+      {!loading && data.topRoutes.length > 0 && (
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-1.5 h-6 bg-primary rounded-full" />
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white">Biểu đồ chuyến theo tuyến</h2>
+          </div>
+          <div className="flex items-end gap-3 h-36">
+            {data.topRoutes.map((route, i) => {
+              const maxCount = data.topRoutes[0]?.count || 1;
+              const barH = (route.count / maxCount) * 100;
+              return (
+                <div key={i} className="flex-1 flex flex-col items-center gap-1 group">
+                  <div className="relative w-full" style={{ height: '120px', display: 'flex', alignItems: 'flex-end' }}>
+                    <div className="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap bg-slate-800 text-white text-[10px] rounded px-2 py-1">
+                      {route.count} chuyến
+                    </div>
+                    <motion.div
+                      className="w-full bg-primary/80 rounded-t-lg"
+                      initial={{ height: 0 }}
+                      animate={{ height: `${barH}%` }}
+                      transition={{ delay: i * 0.1, duration: 0.6, ease: 'easeOut' }}
+                    />
+                  </div>
+                  <span className="text-[9px] text-slate-400 font-bold text-center leading-tight">
+                    {route.origin.split(' ')[0]}→{route.destination.split(' ')[0]}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

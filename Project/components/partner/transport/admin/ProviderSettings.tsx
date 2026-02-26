@@ -13,8 +13,14 @@ import {
   Save,
   Edit,
   Check,
+  Trash2,
+  AlertTriangle,
+  X,
 } from "lucide-react";
 import { useSupabaseClient } from "@/lib/supabase";
+import { AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
+import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 
 interface ProviderData {
   id: string;
@@ -29,6 +35,7 @@ interface ProviderData {
 
 export function ProviderSettings() {
   const supabase = useSupabaseClient();
+  const { supabaseUser, isLoading: isAuthLoading } = useCurrentUser();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [providers, setProviders] = useState<ProviderData[]>([]);
@@ -45,29 +52,29 @@ export function ProviderSettings() {
     website: "",
     description: "",
   });
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [providerToDelete, setProviderToDelete] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchProviders();
-  }, []);
+    if (supabaseUser) {
+      fetchProviders();
+    }
+  }, [supabaseUser]);
 
   const fetchProviders = async () => {
     try {
       setLoading(true);
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      if (!supabaseUser) return;
 
-      if (!user) return;
+      const response = await fetch("/api/partner/transport/providers", {
+        headers: { "x-user-id": supabaseUser.id },
+      });
+      const result = await response.json();
 
-      const { data, error } = await supabase
-        .from("transport_providers")
-        .select("*")
-        .eq("owner_id", user.id);
-
-      if (!error && data) {
-        setProviders(data as unknown as ProviderData[]);
-        if (data.length === 1 && !selectedProvider) {
-          setSelectedProvider(data[0] as unknown as ProviderData);
+      if (result.success && result.data) {
+        setProviders(result.data as ProviderData[]);
+        if (result.data.length === 1 && !selectedProvider) {
+          setSelectedProvider(result.data[0] as ProviderData);
         }
       }
     } catch (error) {
@@ -105,35 +112,85 @@ export function ProviderSettings() {
   };
 
   const handleSave = async () => {
+    console.log("🚀 [handleSave] Started", { formData, selectedProvider, supabaseUser });
     try {
-      setSaving(true);
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) return;
-
-      if (selectedProvider) {
-        const { error } = await supabase
-          .from("transport_providers")
-          .update(formData)
-          .eq("id", selectedProvider.id);
-
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from("transport_providers")
-          .insert([{ ...formData, owner_id: user.id }]);
-
-        if (error) throw error;
+      if (!formData.name) {
+        toast.error("Vui lòng nhập tên doanh nghiệp");
+        return;
       }
 
+      setSaving(true);
+      if (!supabaseUser) {
+        console.error("❌ [handleSave] No user found");
+        toast.error("Bạn chưa đăng nhập hoặc phiên làm việc hết hạn");
+        return;
+      }
+
+      const dataToSave = {
+        ...formData,
+        id: selectedProvider?.id // Include ID if updating
+      };
+
+      console.log("📡 [handleSave] Fetching API", dataToSave);
+
+      const response = await fetch("/api/partner/transport/providers", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": supabaseUser.id
+        },
+        body: JSON.stringify(dataToSave),
+      });
+
+      console.log("📊 [handleSave] Response received", response.status);
+      const result = await response.json();
+      console.log("✅ [handleSave] Result:", result);
+
+      if (!result.success) throw new Error(result.error);
+
+      toast.success(selectedProvider ? "Cập nhật hồ sơ thành công" : "Tạo hồ sơ nhà xe mới thành công");
       setEditMode(false);
       fetchProviders();
-    } catch (error) {
-      console.error("Error saving:", error);
+    } catch (error: any) {
+      console.error("🔥 [handleSave] Error:", error);
+      const errorMessage = error.message || "Vui lòng kiểm tra console";
+      toast.error(`Lỗi khi lưu: ${errorMessage}`);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDelete = (providerId: string) => {
+    setProviderToDelete(providerId);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!providerToDelete) return;
+
+    try {
+      if (!supabaseUser) return;
+      setLoading(true);
+      setShowDeleteModal(false);
+
+      const response = await fetch(`/api/partner/transport/providers?id=${providerToDelete}`, {
+        method: "DELETE",
+        headers: {
+          "x-user-id": supabaseUser.id
+        }
+      });
+
+      const result = await response.json();
+      if (!result.success) throw new Error(result.error);
+
+      toast.success("Đã xóa hồ sơ nhà xe thành công");
+      fetchProviders();
+    } catch (error: any) {
+      console.error("Error deleting provider:", error);
+      toast.error(`Lỗi khi xóa: ${error.message}`);
+    } finally {
+      setLoading(false);
+      setProviderToDelete(null);
     }
   };
 
@@ -282,7 +339,6 @@ export function ProviderSettings() {
                         setFormData({ ...formData, name: e.target.value })
                       }
                       className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-primary/20 focus:bg-white dark:focus:bg-slate-800 rounded-[1.5rem] outline-none transition-all font-bold text-slate-900 dark:text-white"
-                      placeholder="Tên nhà xe hoặc công ty vận tải"
                     />
                   </div>
 
@@ -300,7 +356,6 @@ export function ProviderSettings() {
                         })
                       }
                       className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-primary/20 focus:bg-white dark:focus:bg-slate-800 rounded-[1.5rem] outline-none transition-all font-bold text-slate-900 dark:text-white"
-                      placeholder="contact@company.com"
                     />
                   </div>
 
@@ -318,7 +373,6 @@ export function ProviderSettings() {
                         })
                       }
                       className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-primary/20 focus:bg-white dark:focus:bg-slate-800 rounded-[1.5rem] outline-none transition-all font-bold text-slate-900 dark:text-white"
-                      placeholder="0123 456 789"
                     />
                   </div>
 
@@ -333,7 +387,6 @@ export function ProviderSettings() {
                         setFormData({ ...formData, address: e.target.value })
                       }
                       className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-primary/20 focus:bg-white dark:focus:bg-slate-800 rounded-[1.5rem] outline-none transition-all font-bold text-slate-900 dark:text-white"
-                      placeholder="Số nhà, đường, quận, thành phố"
                     />
                   </div>
 
@@ -351,7 +404,6 @@ export function ProviderSettings() {
                       }
                       rows={5}
                       className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-primary/20 focus:bg-white dark:focus:bg-slate-800 rounded-[1.5rem] outline-none transition-all font-bold text-slate-900 dark:text-white resize-none"
-                      placeholder="Giới thiệu đôi nét về quy mô và uy tín của nhà xe..."
                     />
                   </div>
                 </div>
@@ -382,12 +434,20 @@ export function ProviderSettings() {
                     </div>
                   )}
                 </div>
-                <button
-                  onClick={() => startEditing(p)}
-                  className="p-3 bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-primary rounded-xl transition-all"
-                >
-                  <Edit className="w-5 h-5" />
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => startEditing(p)}
+                    className="p-3 bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-primary rounded-xl transition-all"
+                  >
+                    <Edit className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(p.id)}
+                    className="p-3 bg-red-50 dark:bg-red-900/20 text-red-400 hover:text-red-600 rounded-xl transition-all"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
               <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight mb-2 truncate">
                 {p.name}
@@ -433,6 +493,59 @@ export function ProviderSettings() {
           </button>
         </div>
       )}
+
+      {/* Custom Delete Confirmation Modal */}
+      <AnimatePresence>
+        {showDeleteModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowDeleteModal(false)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 shadow-2xl border border-slate-200 dark:border-slate-800"
+            >
+              <div className="flex flex-col items-center text-center">
+                <div className="w-20 h-20 bg-red-50 dark:bg-red-900/20 rounded-[1.5rem] flex items-center justify-center mb-6">
+                  <AlertTriangle className="w-10 h-10 text-red-500" />
+                </div>
+                <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">
+                  Xác nhận xóa?
+                </h3>
+                <p className="text-slate-500 dark:text-slate-400 font-medium mb-8">
+                  Bạn có chắc chắn muốn xóa hồ sơ nhà xe này? Hành động này không thể hoàn tác và tất cả dữ liệu liên quan sẽ bị mất.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3 w-full">
+                  <button
+                    onClick={() => setShowDeleteModal(false)}
+                    className="flex-1 py-4 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+                  >
+                    Hủy bỏ
+                  </button>
+                  <button
+                    onClick={confirmDelete}
+                    className="flex-1 py-4 bg-red-500 text-white text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-red-600 shadow-lg shadow-red-500/25 hover:scale-105 transition-all"
+                  >
+                    Xác nhận xóa
+                  </button>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="absolute top-6 right-6 p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

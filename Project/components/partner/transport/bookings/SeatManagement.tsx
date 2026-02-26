@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Armchair, Search, MapPin, Clock, Users, Check, X } from "lucide-react";
 import { useSupabaseClient } from "@/lib/supabase";
+import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 
 interface RouteSeats {
   id: string;
@@ -13,8 +14,24 @@ interface RouteSeats {
   vehicle_type: string;
   type: string;
   seats_available: number;
+  total_capacity: number;   // real capacity from DB (or derived fallback)
+  booked_count: number;     // computed from confirmed bookings
   provider_name?: string;
 }
+
+/** Derive capacity from vehicle_type string (sorted by length to avoid '9' matching '29') */
+const getSeatCapacityFallback = (vehicleType: string): number => {
+  const capacities: Record<string, number> = {
+    "45 seats": 45, "35 seats": 35, "29 seats": 29, "16 seats": 16,
+    "9 seats": 9, "7 seats": 7, "4 seats": 4,
+    limousine: 9, "xe 29 chỗ": 29, "29 chỗ": 29, "9 chỗ": 9,
+    "limousine 9 chỗ": 9, "limousine 9 seats": 9,
+  };
+  const type = (vehicleType || "").toLowerCase();
+  const keys = Object.keys(capacities).sort((a, b) => b.length - a.length);
+  for (const key of keys) if (type.includes(key)) return capacities[key];
+  return 29;
+};
 
 export function SeatManagement() {
   const supabase = useSupabaseClient();
@@ -23,62 +40,83 @@ export function SeatManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRoute, setSelectedRoute] = useState<RouteSeats | null>(null);
 
+  const { supabaseUser } = useCurrentUser();
+  const [providers, setProviders] = useState<{ id: string; name: string }[]>([]);
+
   useEffect(() => {
-    fetchRoutes();
-  }, []);
+    if (supabaseUser) {
+      fetchRoutes();
+    }
+  }, [supabaseUser]);
+
+  const refreshProviders = async () => {
+    if (!supabaseUser) return [];
+    try {
+      const resp = await fetch("/api/partner/transport/providers", {
+        headers: { "x-user-id": supabaseUser.id },
+      });
+      const result = await resp.json();
+      if (result.success) {
+        setProviders(result.data || []);
+        return result.data || [];
+      }
+    } catch (error) {
+      console.error("Error refreshing providers:", error);
+    }
+    return [];
+  };
 
   const fetchRoutes = async () => {
     try {
       setLoading(true);
+      if (!supabaseUser) return;
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
+      const myProviders = await refreshProviders();
+      if (myProviders.length === 0) { setRoutes([]); setLoading(false); return; }
+      const providerIds = myProviders.map((p: any) => p.id);
 
-      // Get user's providers
-      const { data: providers } = await supabase
-        .from("transport_providers")
-        .select("id")
-        .eq("owner_id", user.id);
-
-      if (!providers || providers.length === 0) {
-        setRoutes([]);
-        setLoading(false);
-        return;
-      }
-
-      const providerIds = providers.map((p) => p.id);
-
+      // 1. Fetch routes (include total_capacity if the column exists)
       const { data, error } = await supabase
         .from("transport_routes")
-        .select(
-          `
-                    id,
-                    origin,
-                    destination,
-                    departure_time,
-                    vehicle_type,
-                    type,
-                    seats_available,
-                    transport_providers (
-                        name
-                    )
-                `,
-        )
+        .select(`id, origin, destination, departure_time, vehicle_type, type, seats_available, total_capacity, transport_providers(name)`)
         .in("provider_id", providerIds)
         .order("departure_time", { ascending: true });
 
-      if (error) {
-        console.error("Error fetching routes:", error);
-      } else {
-        const formattedData =
-          data?.map((item) => ({
-            ...item,
-            provider_name: (item.transport_providers as any)?.name,
-          })) || [];
-        setRoutes(formattedData);
-      }
+      if (error) { console.error("Error fetching routes:", error); setLoading(false); return; }
+
+      // 2. Fetch confirmed bookings to count booked seats per route
+      const bookingsResp = await fetch("/api/partner/transport/bookings", {
+        headers: { "x-user-id": supabaseUser.id },
+      });
+      const bookingsResult = await bookingsResp.json();
+      const confirmed = (bookingsResult.success ? bookingsResult.data : []).filter(
+        (b: any) => b.status === "confirmed" || b.status === "completed"
+      );
+
+      const formattedData = (data || []).map((item: any) => {
+        // Count passengers booked for this specific route
+        const booked = confirmed.reduce((sum: number, b: any) => {
+          const meta = b.metadata || {};
+          const rid = meta.routeId || meta.metadata?.routeId;
+          if (rid === item.id) return sum + (meta.passengerCount || meta.metadata?.passengerCount || 1);
+          return sum;
+        }, 0);
+
+        // Use DB total_capacity if already set (>0), otherwise fall back to vehicle type
+        const cap: number = (item.total_capacity > 0)
+          ? item.total_capacity
+          : getSeatCapacityFallback(item.vehicle_type);
+
+        return {
+          ...item,
+          provider_name: (item.transport_providers as any)?.name,
+          total_capacity: cap,
+          booked_count: booked,
+          seats_available: Math.max(0, cap - booked),
+        };
+      });
+
+      setRoutes(formattedData);
     } catch (error) {
       console.error("Error:", error);
     } finally {
@@ -86,17 +124,31 @@ export function SeatManagement() {
     }
   };
 
-  const updateSeats = async (routeId: string, newSeats: number) => {
+  /**
+   * updateCapacity: Partner adjusts the TOTAL vehicle capacity by +1 or -1.
+   * - Booked seats (confirmed bookings) are ALWAYS preserved.
+   * - seats_available = new_total_capacity - booked_count.
+   * - Cannot reduce capacity below number of already booked seats.
+   */
+  const updateCapacity = async (route: RouteSeats, delta: number) => {
+    if (!supabaseUser) return;
+    const booked = route.booked_count ?? 0;
+    const newCap = Math.max(booked, route.total_capacity + delta);
+    const newAvail = newCap - booked;
     try {
-      const { error } = await supabase
-        .from("transport_routes")
-        .update({ seats_available: newSeats })
-        .eq("id", routeId);
-
-      if (error) {
-        console.error("Error updating seats:", error);
+      const resp = await fetch(`/api/partner/transport/routes/${route.id}/seats`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", "x-user-id": supabaseUser.id },
+        body: JSON.stringify({ total_capacity: newCap, seats_available: newAvail }),
+      });
+      const result = await resp.json();
+      if (!resp.ok || !result.success) {
+        console.error("Error updating capacity:", result.error);
       } else {
-        fetchRoutes();
+        // Optimistic update — avoids full refetch for snappy UX
+        setRoutes((prev) => prev.map((r) =>
+          r.id === route.id ? { ...r, total_capacity: newCap, seats_available: newAvail } : r
+        ));
       }
     } catch (error) {
       console.error("Error:", error);
@@ -124,17 +176,7 @@ export function SeatManagement() {
     return labels[type] || type;
   };
 
-  const getSeatCapacity = (vehicleType: string) => {
-    const capacities: Record<string, number> = {
-      "4 seats": 4,
-      "7 seats": 7,
-      "16 seats": 16,
-      "29 seats": 29,
-      "45 seats": 45,
-      "limousine 9 seats": 9,
-    };
-    return capacities[vehicleType] || 10;
-  };
+  // Use route.total_capacity which is already resolved in fetchRoutes
 
   const getOccupancyColor = (available: number, total: number) => {
     const occupancy = ((total - available) / total) * 100;
@@ -150,16 +192,13 @@ export function SeatManagement() {
       route.destination.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
-  // Calculate total stats
-  const totalSeats = routes.reduce(
-    (sum, r) => sum + getSeatCapacity(r.vehicle_type),
-    0,
-  );
+  // Stats from real DB data
+  const totalSeats = routes.reduce((sum, r) => sum + (r.total_capacity || 0), 0);
   const availableSeats = routes.reduce((sum, r) => sum + r.seats_available, 0);
-  const occupancyRate =
-    totalSeats > 0
-      ? (((totalSeats - availableSeats) / totalSeats) * 100).toFixed(1)
-      : 0;
+  const totalBooked = routes.reduce((sum, r) => sum + (r.booked_count || 0), 0);
+  const occupancyRate = totalSeats > 0
+    ? ((totalBooked / totalSeats) * 100).toFixed(1)
+    : 0;
 
   return (
     <div className="space-y-6">
@@ -262,8 +301,8 @@ export function SeatManagement() {
       ) : filteredRoutes.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredRoutes.map((route, index) => {
-            const capacity = getSeatCapacity(route.vehicle_type);
-            const bookedSeats = capacity - route.seats_available;
+            const capacity = route.total_capacity || getSeatCapacityFallback(route.vehicle_type);
+            const bookedSeats = route.booked_count ?? (capacity - route.seats_available);
 
             return (
               <motion.div
@@ -313,11 +352,10 @@ export function SeatManagement() {
                     {Array.from({ length: capacity }).map((_, i) => (
                       <div
                         key={i}
-                        className={`aspect-square rounded-lg flex items-center justify-center transition-all ${
-                          i < bookedSeats
-                            ? "bg-red-500/10 text-red-600 border border-red-500/20"
-                            : "bg-green-500/10 text-green-600 border border-green-500/20"
-                        }`}
+                        className={`aspect-square rounded-lg flex items-center justify-center transition-all ${i < bookedSeats
+                          ? "bg-red-500/10 text-red-600 border border-red-500/20"
+                          : "bg-green-500/10 text-green-600 border border-green-500/20"
+                          }`}
                       >
                         <Armchair className="w-3.5 h-3.5" />
                       </div>
@@ -335,32 +373,26 @@ export function SeatManagement() {
                   </div>
                 </div>
 
-                {/* Quick Actions */}
-                <div className="flex items-center gap-3 pt-6 border-t border-slate-100 dark:border-slate-800">
-                  <button
-                    onClick={() =>
-                      updateSeats(
-                        route.id,
-                        Math.max(0, route.seats_available - 1),
-                      )
-                    }
-                    disabled={route.seats_available === 0}
-                    className="flex-1 py-3 text-xs font-black uppercase tracking-widest text-red-600 bg-red-500/5 hover:bg-red-500/10 rounded-2xl transition-all disabled:opacity-30 disabled:cursor-not-allowed active:scale-95"
-                  >
-                    - Giảm ghế
-                  </button>
-                  <button
-                    onClick={() =>
-                      updateSeats(
-                        route.id,
-                        Math.min(capacity, route.seats_available + 1),
-                      )
-                    }
-                    disabled={route.seats_available >= capacity}
-                    className="flex-1 py-3 text-xs font-black uppercase tracking-widest text-green-600 bg-green-500/5 hover:bg-green-500/10 rounded-2xl transition-all disabled:opacity-30 disabled:cursor-not-allowed active:scale-95"
-                  >
-                    + Thêm ghế
-                  </button>
+                {/* Quick Actions — adjusts TOTAL capacity, not just available */}
+                <div className="space-y-2 pt-4 border-t border-slate-100 dark:border-slate-800">
+                  <p className="text-[10px] text-slate-400 uppercase tracking-widest text-center">
+                    {bookedSeats} đã đặt / {capacity} tổng ghế &bull; {route.seats_available} trống
+                  </p>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => updateCapacity(route, -1)}
+                      disabled={capacity <= bookedSeats}  // cannot go below booked
+                      className="flex-1 py-3 text-xs font-black uppercase tracking-widest text-red-600 bg-red-500/5 hover:bg-red-500/10 rounded-2xl transition-all disabled:opacity-30 disabled:cursor-not-allowed active:scale-95"
+                    >
+                      − Bỏ 1 ghế
+                    </button>
+                    <button
+                      onClick={() => updateCapacity(route, +1)}
+                      className="flex-1 py-3 text-xs font-black uppercase tracking-widest text-green-600 bg-green-500/5 hover:bg-green-500/10 rounded-2xl transition-all active:scale-95"
+                    >
+                      + Thêm 1 ghế
+                    </button>
+                  </div>
                 </div>
               </motion.div>
             );
