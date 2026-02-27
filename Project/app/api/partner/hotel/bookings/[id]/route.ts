@@ -11,14 +11,10 @@ import {
   updateBookingStatus,
   getPartnerHotel,
 } from "@/lib/hotel-partner/database";
-
-function getPartnerId(req: NextRequest): string {
-  const partnerId = req.headers.get("x-partner-id");
-  if (!partnerId) {
-    throw new Error("Partner ID not found");
-  }
-  return partnerId;
-}
+import {
+  resolveHotelPartnerId,
+  authErrorStatus,
+} from "@/lib/partner/clerkAuth";
 
 /**
  * GET /api/partner/hotel/bookings/[id]
@@ -29,7 +25,7 @@ export async function GET(
   { params }: { params: { id: string } },
 ) {
   try {
-    const partnerId = getPartnerId(req);
+    const partnerId = await resolveHotelPartnerId();
     const bookingId = params.id;
 
     const booking = await getBooking(bookingId);
@@ -90,7 +86,7 @@ export async function PATCH(
   { params }: { params: { id: string } },
 ) {
   try {
-    const partnerId = getPartnerId(req);
+    const partnerId = await resolveHotelPartnerId();
     const bookingId = params.id;
     const body = await req.json();
 

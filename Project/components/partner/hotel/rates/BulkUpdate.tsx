@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useAuth } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import {
   Settings,
@@ -10,7 +11,8 @@ import {
   AlertCircle,
 } from "lucide-react";
 
-export function BulkUpdate() {
+export function BulkUpdate({ partnerId }: { partnerId: string }) {
+  const { getToken } = useAuth();
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [updateType, setUpdateType] = useState<"price" | "availability">(
@@ -22,28 +24,101 @@ export function BulkUpdate() {
   });
   const [availabilityChange, setAvailabilityChange] = useState(0);
   const [selectedRooms, setSelectedRooms] = useState<string[]>([]);
+  const [rooms, setRooms] = useState<{ id: string; name: string }[]>([]);
+  const [hotelId, setHotelId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
-  const roomTypes = [
-    "Deluxe Room",
-    "Suite Room",
-    "Family Room",
-    "Presidential Suite",
-  ];
+  useEffect(() => {
+    if (!partnerId) return;
+    (async () => {
+      try {
+        const token = await getToken();
+        const res = await fetch("/api/partner/hotel/hotels", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.data?.length > 0) {
+            setHotelId(data.data[0].id);
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+  }, [partnerId]);
 
-  const toggleRoom = (room: string) => {
+  useEffect(() => {
+    if (!hotelId) return;
+    (async () => {
+      try {
+        const token = await getToken();
+        const res = await fetch(
+          `/api/partner/hotel/rooms?hotel_id=${hotelId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success) {
+            setRooms(
+              (data.data || []).map((r: any) => ({ id: r.id, name: r.name })),
+            );
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+  }, [hotelId]);
+
+  const toggleRoom = (roomId: string) => {
     setSelectedRooms((prev) =>
-      prev.includes(room) ? prev.filter((r) => r !== room) : [...prev, room],
+      prev.includes(roomId)
+        ? prev.filter((r) => r !== roomId)
+        : [...prev, roomId],
     );
   };
 
-  const handleBulkUpdate = () => {
+  const handleBulkUpdate = async () => {
     if (!startDate || !endDate || selectedRooms.length === 0) {
       alert("Vui lòng điền đầy đủ thông tin");
       return;
     }
-    alert(
-      `Cập nhật ${selectedRooms.length} loại phòng từ ${startDate} đến ${endDate}`,
-    );
+    setSaving(true);
+    try {
+      const token = await getToken();
+      await Promise.all(
+        selectedRooms.map((roomId) =>
+          fetch("/api/partner/hotel/rates", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              room_id: roomId,
+              start_date: startDate,
+              end_date: endDate,
+              ...(updateType === "availability"
+                ? { available_rooms: availabilityChange }
+                : {
+                    price_change_type: priceChange.type,
+                    price_change_value: priceChange.value,
+                  }),
+            }),
+          }),
+        ),
+      );
+      alert(
+        `Đã cập nhật ${selectedRooms.length} loại phòng từ ${startDate} đến ${endDate}`,
+      );
+    } catch (e: any) {
+      alert("Lỗi: " + e.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -162,17 +237,17 @@ export function BulkUpdate() {
               Chọn loại phòng
             </label>
             <div className="grid grid-cols-2 gap-3">
-              {roomTypes.map((room) => (
+              {rooms.map((room) => (
                 <button
-                  key={room}
-                  onClick={() => toggleRoom(room)}
+                  key={room.id}
+                  onClick={() => toggleRoom(room.id)}
                   className={`p-3 rounded-xl border text-left transition-colors ${
-                    selectedRooms.includes(room)
+                    selectedRooms.includes(room.id)
                       ? "bg-primary/10 border-primary"
                       : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700"
                   }`}
                 >
-                  <p className="font-medium">{room}</p>
+                  <p className="font-medium">{room.name}</p>
                 </button>
               ))}
             </div>
@@ -184,10 +259,11 @@ export function BulkUpdate() {
           {/* Action Button */}
           <button
             onClick={handleBulkUpdate}
-            className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-primary text-white rounded-xl hover:bg-primary/90 transition-colors"
+            disabled={saving}
+            className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-primary text-white rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50"
           >
             <Save className="w-5 h-5" />
-            Áp dụng Cập nhật
+            {saving ? "Đang cập nhật..." : "Áp dụng Cập nhật"}
           </button>
         </div>
       </div>

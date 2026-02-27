@@ -1,19 +1,82 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useAuth } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import { DollarSign, TrendingUp, Calendar } from "lucide-react";
 
-export function RevenueReport() {
+export function RevenueReport({ partnerId }: { partnerId: string }) {
+  const { getToken } = useAuth();
   const [period, setPeriod] = useState<"week" | "month" | "year">("month");
+  const [hotelId, setHotelId] = useState<string | null>(null);
+  const [apiData, setApiData] = useState<{
+    total: number;
+    growth: number;
+  } | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const revenueData = {
+  const fallback = {
     week: { total: 25000000, growth: 8 },
     month: { total: 125000000, growth: 12 },
     year: { total: 1500000000, growth: 15 },
   };
 
-  const current = revenueData[period];
+  useEffect(() => {
+    if (!partnerId) return;
+    (async () => {
+      try {
+        const token = await getToken();
+        const res = await fetch("/api/partner/hotel/hotels", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const d = await res.json();
+          if (d.success && d.data?.length > 0) setHotelId(d.data[0].id);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+  }, [partnerId]);
+
+  useEffect(() => {
+    if (!hotelId) return;
+    (async () => {
+      try {
+        setLoading(true);
+        const token = await getToken();
+        const endDate = new Date().toISOString().split("T")[0];
+        const startDate = new Date(
+          period === "week"
+            ? Date.now() - 7 * 86400000
+            : period === "month"
+              ? Date.now() - 30 * 86400000
+              : Date.now() - 365 * 86400000,
+        )
+          .toISOString()
+          .split("T")[0];
+        const res = await fetch(
+          `/api/partner/hotel/analytics?hotel_id=${hotelId}&start_date=${startDate}&end_date=${endDate}`,
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+        if (res.ok) {
+          const d = await res.json();
+          if (d.success && d.data) {
+            setApiData({
+              total: (d.data.gross_revenue_cents ?? 0) / 100,
+              growth: 0,
+            });
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [hotelId, period]);
+
+  const current = apiData ?? fallback[period];
 
   return (
     <div className="space-y-6">

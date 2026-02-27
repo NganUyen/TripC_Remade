@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useAuth } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import { DollarSign, TrendingUp, Edit, Save } from "lucide-react";
 
@@ -14,27 +15,72 @@ interface PricingRule {
   maxDiscount: number;
 }
 
-export function RateManagement() {
-  const [rules, setRules] = useState<PricingRule[]>([
-    {
-      id: "1",
-      roomType: "Deluxe Room",
-      basePrice: 1500000,
-      weekendMultiplier: 1.3,
-      holidayMultiplier: 1.5,
-      minStay: 1,
-      maxDiscount: 20,
-    },
-    {
-      id: "2",
-      roomType: "Suite Room",
-      basePrice: 2500000,
-      weekendMultiplier: 1.4,
-      holidayMultiplier: 1.6,
-      minStay: 1,
-      maxDiscount: 15,
-    },
-  ]);
+export function RateManagement({ partnerId }: { partnerId: string }) {
+  const { getToken } = useAuth();
+  const [rules, setRules] = useState<PricingRule[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [hotelId, setHotelId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!partnerId) return;
+    (async () => {
+      try {
+        const token = await getToken();
+        const res = await fetch("/api/partner/hotel/hotels", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.data?.length > 0) {
+            setHotelId(data.data[0].id);
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+  }, [partnerId]);
+
+  useEffect(() => {
+    if (!hotelId) return;
+    (async () => {
+      try {
+        setLoading(true);
+        const token = await getToken();
+        // Fetch rooms and map each room as a "pricing rule"
+        const res = await fetch(
+          `/api/partner/hotel/rooms?hotel_id=${hotelId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success) {
+            setRules(
+              (data.data || []).map((r: any) => ({
+                id: r.id,
+                roomType: r.name,
+                basePrice: r.base_price_cents
+                  ? r.base_price_cents / 100
+                  : r.price_cents
+                    ? r.price_cents / 100
+                    : 0,
+                weekendMultiplier: r.weekend_multiplier ?? 1.3,
+                holidayMultiplier: r.holiday_multiplier ?? 1.5,
+                minStay: r.min_nights ?? 1,
+                maxDiscount: r.max_discount ?? 20,
+              })),
+            );
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [hotelId]);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<PricingRule>>({});
@@ -44,17 +90,51 @@ export function RateManagement() {
     setEditForm(rule);
   };
 
-  const handleSave = () => {
-    if (editingId) {
-      setRules((prev) =>
-        prev.map((r) =>
-          r.id === editingId ? ({ ...r, ...editForm } as PricingRule) : r,
-        ),
-      );
-      setEditingId(null);
-      setEditForm({});
+  const handleSave = async () => {
+    if (!editingId) return;
+    // Optimistic update
+    setRules((prev) =>
+      prev.map((r) =>
+        r.id === editingId ? ({ ...r, ...editForm } as PricingRule) : r,
+      ),
+    );
+    setEditingId(null);
+    setEditForm({});
+    try {
+      const token = await getToken();
+      await fetch(`/api/partner/hotel/rooms/${editingId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          base_price_cents: editForm.basePrice
+            ? editForm.basePrice * 100
+            : undefined,
+          weekend_multiplier: editForm.weekendMultiplier,
+          holiday_multiplier: editForm.holidayMultiplier,
+          min_nights: editForm.minStay,
+          max_discount: editForm.maxDiscount,
+        }),
+      });
+    } catch (e) {
+      console.error(e);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        {[1, 2].map((i) => (
+          <div
+            key={i}
+            className="h-48 bg-slate-200 dark:bg-slate-800 rounded-2xl animate-pulse"
+          />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

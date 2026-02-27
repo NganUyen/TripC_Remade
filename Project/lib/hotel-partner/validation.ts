@@ -464,6 +464,33 @@ export const changePasswordSchema = z
   });
 
 // =====================================================
+// PARTNER REGISTRATION SCHEMA
+// Used by POST /api/partner/hotel/register
+// =====================================================
+
+export const registerHotelPartnerSchema = z.object({
+  /** Display name of the hotel company */
+  company_name: z
+    .string()
+    .min(2, "Company name must be at least 2 characters")
+    .max(255),
+  /** Short unique code (e.g. "VINPEARL") used as hotel_partners.code */
+  company_code: z
+    .string()
+    .min(2)
+    .max(50)
+    .regex(/^[A-Z0-9_-]+$/, "Code must be uppercase letters, numbers, - or _"),
+  /** Optional commission override; defaults to platform default */
+  commission_rate: z.number().min(0).max(1).optional(),
+  /** Owner's display name stored in partner_users */
+  owner_full_name: z.string().min(2).max(255),
+  /** Phone number for the owner account */
+  owner_phone: z.string().min(8).optional(),
+});
+
+export type RegisterHotelPartner = z.infer<typeof registerHotelPartnerSchema>;
+
+// =====================================================
 // TYPE EXPORTS
 // Export inferred TypeScript types from schemas
 // =====================================================

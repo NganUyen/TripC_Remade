@@ -1,37 +1,70 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useAuth } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import { BarChart3, TrendingUp, Users, DollarSign, Plane } from "lucide-react";
 
-export default function AnalyticsDashboard() {
+export default function AnalyticsDashboard({
+  partnerId,
+}: {
+  partnerId: string;
+}) {
+  const { getToken } = useAuth();
   const [period, setPeriod] = useState("month");
+  const [dashData, setDashData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!partnerId) return;
+    (async () => {
+      try {
+        setLoading(true);
+        const token = await getToken();
+        const res = await fetch("/api/partner/flight/analytics/dashboard", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success) setDashData(data.data);
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [partnerId, period]);
 
   const metrics = [
     {
       label: "Tổng doanh thu",
-      value: "248.5B ₫",
+      value: dashData
+        ? `${((dashData.total_revenue ?? 0) / 1e9).toFixed(1)}B ₫`
+        : "—",
       change: "+12.5%",
       icon: DollarSign,
       color: "blue",
     },
     {
       label: "Hành khách",
-      value: "49,700",
+      value: dashData ? String(dashData.total_passengers ?? 0) : "—",
       change: "+8.3%",
       icon: Users,
       color: "green",
     },
     {
       label: "Chuyến bay",
-      value: "345",
+      value: dashData ? String(dashData.total_flights ?? 0) : "—",
       change: "+5.2%",
       icon: Plane,
       color: "purple",
     },
     {
       label: "Tỷ lệ lấp đầy",
-      value: "80%",
+      value: dashData
+        ? `${(dashData.avg_occupancy_rate ?? 0).toFixed(1)}%`
+        : "—",
       change: "+3.1%",
       icon: TrendingUp,
       color: "orange",
@@ -48,6 +81,19 @@ export default function AnalyticsDashboard() {
   ];
 
   const maxRevenue = Math.max(...monthlyData.map((d) => d.revenue));
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {[1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className="h-36 bg-slate-200 dark:bg-slate-800 rounded-2xl animate-pulse"
+          />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

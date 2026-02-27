@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useAuth } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import { Calendar, ChevronLeft, ChevronRight, Circle } from "lucide-react";
 
@@ -11,12 +12,82 @@ interface BookingData {
   checkOuts: number;
 }
 
-export function BookingCalendar() {
+export function BookingCalendar({ partnerId }: { partnerId: string }) {
+  const { getToken } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [bookingData] = useState<BookingData[]>([
-    { date: "2025-02-10", bookings: 5, checkIns: 3, checkOuts: 2 },
-    { date: "2025-02-15", bookings: 8, checkIns: 5, checkOuts: 3 },
-  ]);
+  const [bookingData, setBookingData] = useState<BookingData[]>([]);
+  const [hotelId, setHotelId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!partnerId) return;
+    (async () => {
+      try {
+        const token = await getToken();
+        const res = await fetch("/api/partner/hotel/hotels", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.data?.length > 0) {
+            setHotelId(data.data[0].id);
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+  }, [partnerId]);
+
+  useEffect(() => {
+    if (!hotelId) return;
+    (async () => {
+      try {
+        const token = await getToken();
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        const startDate = new Date(year, month, 1).toISOString().split("T")[0];
+        const endDate = new Date(year, month + 1, 0)
+          .toISOString()
+          .split("T")[0];
+        const res = await fetch(
+          `/api/partner/hotel/bookings?hotel_id=${hotelId}&start_date=${startDate}&end_date=${endDate}`,
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success) {
+            // Aggregate bookings by date
+            const map: Record<string, BookingData> = {};
+            for (const b of data.data || []) {
+              const d =
+                b.check_in_date?.split("T")[0] ?? b.check_in?.split("T")[0];
+              const co =
+                b.check_out_date?.split("T")[0] ?? b.check_out?.split("T")[0];
+              if (d) {
+                if (!map[d])
+                  map[d] = { date: d, bookings: 0, checkIns: 0, checkOuts: 0 };
+                map[d].bookings++;
+                map[d].checkIns++;
+              }
+              if (co) {
+                if (!map[co])
+                  map[co] = {
+                    date: co,
+                    bookings: 0,
+                    checkIns: 0,
+                    checkOuts: 0,
+                  };
+                map[co].checkOuts++;
+              }
+            }
+            setBookingData(Object.values(map));
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+  }, [hotelId, currentDate]);
 
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();

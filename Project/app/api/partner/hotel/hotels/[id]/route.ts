@@ -12,14 +12,10 @@ import {
   updateHotel,
   deleteHotel,
 } from "@/lib/hotel-partner/database";
-
-function getPartnerId(req: NextRequest): string {
-  const partnerId = req.headers.get("x-partner-id");
-  if (!partnerId) {
-    throw new Error("Partner ID not found");
-  }
-  return partnerId;
-}
+import {
+  resolveHotelPartnerId,
+  authErrorStatus,
+} from "@/lib/partner/clerkAuth";
 
 /**
  * GET /api/partner/hotel/hotels/[id]
@@ -30,7 +26,7 @@ export async function GET(
   { params }: { params: { id: string } },
 ) {
   try {
-    const partnerId = getPartnerId(req);
+    const partnerId = await resolveHotelPartnerId();
     const hotelId = params.id;
 
     const hotel = await getPartnerHotel(partnerId, hotelId);
@@ -76,7 +72,7 @@ export async function PUT(
   { params }: { params: { id: string } },
 ) {
   try {
-    const partnerId = getPartnerId(req);
+    const partnerId = await resolveHotelPartnerId();
     const hotelId = params.id;
     const body = await req.json();
 
@@ -145,7 +141,7 @@ export async function DELETE(
   { params }: { params: { id: string } },
 ) {
   try {
-    const partnerId = getPartnerId(req);
+    const partnerId = await resolveHotelPartnerId();
     const hotelId = params.id;
 
     await deleteHotel(partnerId, hotelId);

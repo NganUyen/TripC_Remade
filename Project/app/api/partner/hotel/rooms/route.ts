@@ -11,14 +11,10 @@ import {
   createRoom,
   getPartnerHotel,
 } from "@/lib/hotel-partner/database";
-
-function getPartnerId(req: NextRequest): string {
-  const partnerId = req.headers.get("x-partner-id");
-  if (!partnerId) {
-    throw new Error("Partner ID not found");
-  }
-  return partnerId;
-}
+import {
+  resolveHotelPartnerId,
+  authErrorStatus,
+} from "@/lib/partner/clerkAuth";
 
 /**
  * GET /api/partner/hotel/rooms?hotel_id=xxx
@@ -26,7 +22,7 @@ function getPartnerId(req: NextRequest): string {
  */
 export async function GET(req: NextRequest) {
   try {
-    const partnerId = getPartnerId(req);
+    const partnerId = await resolveHotelPartnerId();
     const { searchParams } = new URL(req.url);
     const hotelId = searchParams.get("hotel_id");
 
@@ -86,7 +82,7 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   try {
-    const partnerId = getPartnerId(req);
+    const partnerId = await resolveHotelPartnerId();
     const body = await req.json();
 
     // Validate request body

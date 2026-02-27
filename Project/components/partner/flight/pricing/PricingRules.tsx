@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useAuth } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import { DollarSign, Plus, Edit, Trash2, Save, X } from "lucide-react";
 
@@ -15,31 +16,62 @@ interface PricingRule {
   advanceBookingDiscount: number;
 }
 
-export default function PricingRules() {
-  const [rules, setRules] = useState<PricingRule[]>([
-    {
-      id: "1",
-      name: "HAN-SGN Economy Standard",
-      route: "HAN - SGN",
-      basePrice: 2000000,
-      class: "economy",
-      weekendMultiplier: 1.2,
-      holidayMultiplier: 1.5,
-      advanceBookingDiscount: 15,
-    },
-    {
-      id: "2",
-      name: "HAN-SGN Business Premium",
-      route: "HAN - SGN",
-      basePrice: 5000000,
-      class: "business",
-      weekendMultiplier: 1.15,
-      holidayMultiplier: 1.3,
-      advanceBookingDiscount: 10,
-    },
-  ]);
+export default function PricingRules({ partnerId }: { partnerId: string }) {
+  const { getToken } = useAuth();
+  const [rules, setRules] = useState<PricingRule[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!partnerId) return;
+    (async () => {
+      try {
+        setLoading(true);
+        const token = await getToken();
+        const res = await fetch("/api/partner/flight/flights", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success) {
+            setRules(
+              (data.data || []).map((f: any) => ({
+                id: f.id,
+                name: f.flight_number,
+                route: `${f.origin_code ?? f.origin ?? ""} - ${f.destination_code ?? f.destination ?? ""}`,
+                basePrice: f.base_price_cents
+                  ? f.base_price_cents / 100
+                  : (f.economy_price ?? 0),
+                class: "economy" as const,
+                weekendMultiplier: f.weekend_multiplier ?? 1.2,
+                holidayMultiplier: f.holiday_multiplier ?? 1.5,
+                advanceBookingDiscount: f.advance_discount ?? 15,
+              })),
+            );
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [partnerId]);
+
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        {[1, 2].map((i) => (
+          <div
+            key={i}
+            className="h-40 bg-slate-200 dark:bg-slate-800 rounded-2xl animate-pulse"
+          />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

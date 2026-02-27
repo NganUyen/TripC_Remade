@@ -13,14 +13,10 @@ import {
   deleteFlight,
 } from "@/lib/flight-partner/database";
 import { ZodError } from "zod";
-
-function getPartnerId(req: NextRequest): string {
-  const partnerId = req.headers.get("x-partner-id");
-  if (!partnerId) {
-    throw new Error("Partner ID not found");
-  }
-  return partnerId;
-}
+import {
+  resolveFlightPartnerId,
+  authErrorStatus,
+} from "@/lib/partner/clerkAuth";
 
 /**
  * GET /api/partner/flight/flights/[id]
@@ -30,7 +26,7 @@ export async function GET(
   { params }: { params: { id: string } },
 ) {
   try {
-    const partnerId = getPartnerId(req);
+    const { airlineCode: partnerId } = await resolveFlightPartnerId();
     const flight = await getPartnerFlight(partnerId, params.id);
 
     return NextResponse.json({
@@ -60,7 +56,7 @@ export async function PUT(
   { params }: { params: { id: string } },
 ) {
   try {
-    const partnerId = getPartnerId(req);
+    const { airlineCode: partnerId } = await resolveFlightPartnerId();
     const body = await req.json();
 
     const validatedData = updateFlightSchema.parse(body);
@@ -109,7 +105,7 @@ export async function DELETE(
   { params }: { params: { id: string } },
 ) {
   try {
-    const partnerId = getPartnerId(req);
+    const { airlineCode: partnerId } = await resolveFlightPartnerId();
     await deleteFlight(partnerId, params.id);
 
     return NextResponse.json({

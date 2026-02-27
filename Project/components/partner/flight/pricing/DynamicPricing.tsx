@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useAuth } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import { Zap, TrendingUp, TrendingDown, Activity } from "lucide-react";
 
@@ -14,37 +15,49 @@ interface DynamicPriceData {
   recommendedPrice: number;
 }
 
-export default function DynamicPricing() {
+export default function DynamicPricing({ partnerId }: { partnerId: string }) {
+  const { getToken } = useAuth();
   const [autoAdjust, setAutoAdjust] = useState(true);
-  const [priceData] = useState<DynamicPriceData[]>([
-    {
-      route: "HAN - SGN",
-      currentPrice: 2400000,
-      basePrice: 2000000,
-      demandLevel: "high",
-      occupancyRate: 85,
-      priceChange: 20,
-      recommendedPrice: 2500000,
-    },
-    {
-      route: "SGN - DAD",
-      currentPrice: 1500000,
-      basePrice: 1600000,
-      demandLevel: "low",
-      occupancyRate: 45,
-      priceChange: -6.25,
-      recommendedPrice: 1400000,
-    },
-    {
-      route: "HAN - DAD",
-      currentPrice: 1800000,
-      basePrice: 1800000,
-      demandLevel: "medium",
-      occupancyRate: 68,
-      priceChange: 0,
-      recommendedPrice: 1850000,
-    },
-  ]);
+  const [priceData, setPriceData] = useState<DynamicPriceData[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!partnerId) return;
+    (async () => {
+      try {
+        setLoading(true);
+        const token = await getToken();
+        const res = await fetch("/api/partner/flight/routes", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success) {
+            setPriceData(
+              (data.data || []).map((r: any) => ({
+                route: `${r.origin_code ?? r.origin ?? ""} - ${r.destination_code ?? r.destination ?? ""}`,
+                currentPrice: r.current_price ?? r.base_price ?? 0,
+                basePrice: r.base_price ?? r.economy_price ?? 0,
+                demandLevel:
+                  (r.occupancy_rate ?? r.avg_occupancy ?? 50) > 75
+                    ? "high"
+                    : (r.occupancy_rate ?? r.avg_occupancy ?? 50) > 50
+                      ? "medium"
+                      : "low",
+                occupancyRate: r.occupancy_rate ?? r.avg_occupancy ?? 0,
+                priceChange: 0,
+                recommendedPrice: r.recommended_price ?? r.base_price ?? 0,
+              })),
+            );
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [partnerId]);
 
   const getDemandColor = (level: string) => {
     switch (level) {
@@ -58,6 +71,19 @@ export default function DynamicPricing() {
         return "text-slate-600 bg-slate-100 dark:bg-slate-800";
     }
   };
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        {[1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="h-28 bg-slate-200 dark:bg-slate-800 rounded-2xl animate-pulse"
+          />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
