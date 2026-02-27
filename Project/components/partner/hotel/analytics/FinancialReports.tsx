@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { BarChart3, FileText, Download, Calendar } from "lucide-react";
 
-export function FinancialReports() {
+export function FinancialReports({ partnerId }: { partnerId: string }) {
   const [selectedMonth, setSelectedMonth] = useState(
     new Date().toISOString().slice(0, 7),
   );

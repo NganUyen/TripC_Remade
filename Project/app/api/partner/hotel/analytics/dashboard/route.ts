@@ -6,14 +6,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDashboardMetrics } from "@/lib/hotel-partner/database";
 import { formatCurrency } from "@/lib/hotel-partner/calculations";
-
-function getPartnerId(req: NextRequest): string {
-  const partnerId = req.headers.get("x-partner-id");
-  if (!partnerId) {
-    throw new Error("Partner ID not found");
-  }
-  return partnerId;
-}
+import {
+  resolveHotelPartnerId,
+  authErrorStatus,
+} from "@/lib/partner/clerkAuth";
 
 /**
  * GET /api/partner/hotel/analytics/dashboard
@@ -21,7 +17,7 @@ function getPartnerId(req: NextRequest): string {
  */
 export async function GET(req: NextRequest) {
   try {
-    const partnerId = getPartnerId(req);
+    const partnerId = await resolveHotelPartnerId();
 
     const metrics = await getDashboardMetrics(partnerId);
 

@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useAuth } from "@clerk/nextjs";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   BedDouble,
@@ -30,20 +31,144 @@ interface RoomType {
   images: string[];
 }
 
-export function RoomTypes() {
-  const [roomTypes, setRoomTypes] = useState<RoomType[]>([
-    {
-      id: "1",
-      name: "Deluxe Room",
-      capacity: 2,
-      size: 30,
-      beds: "1 King Bed",
-      basePrice: 1500000,
-      amenities: ["wifi", "ac", "tv", "minibar"],
-      description: "Phòng rộng rãi với view đẹp",
-      images: [],
-    },
-  ]);
+export function RoomTypes({ partnerId }: { partnerId: string }) {
+  const [roomTypes, setRoomTypes] = useState<RoomType[]>([]);
+  const [apiLoading, setApiLoading] = useState(true);
+  const { getToken } = useAuth();
+
+  // Search params need hotel_id; load first hotel for this partner
+  const [hotelId, setHotelId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!partnerId) return;
+    async function loadHotel() {
+      try {
+        const token = await getToken();
+        const res = await fetch("/api/partner/hotel/hotels", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const json = await res.json();
+          const first = json.data?.[0];
+          if (first?.hotel?.id) setHotelId(first.hotel.id);
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+    loadHotel();
+  }, [partnerId, getToken]);
+
+  useEffect(() => {
+    if (!hotelId) return;
+    async function loadRooms() {
+      try {
+        const token = await getToken();
+        const res = await fetch(
+          `/api/partner/hotel/rooms?hotel_id=${hotelId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
+        if (res.ok) {
+          const json = await res.json();
+          const mapped: RoomType[] = (json.data ?? []).map((r: any) => ({
+            id: r.id,
+            name: r.name,
+            capacity: r.max_occupancy ?? 2,
+            size: r.size_sqm ?? 0,
+            beds: r.bed_configuration?.type ?? "1 King Bed",
+            basePrice: Math.round((r.base_price_cents ?? 0) / 100),
+            amenities: Object.keys(r.amenities ?? {}).filter(
+              (k) => r.amenities[k],
+            ),
+            description: r.description ?? "",
+            images: r.images ?? [],
+          }));
+          setRoomTypes(mapped);
+        }
+      } catch (err) {
+        console.error("Failed to load rooms:", err);
+      } finally {
+        setApiLoading(false);
+      }
+    }
+    loadRooms();
+  }, [hotelId, getToken]);
+
+  const handleSaveToApi = async (
+    roomData: Partial<RoomType>,
+    editingId?: string,
+  ) => {
+    if (!hotelId) return;
+    try {
+      const token = await getToken();
+      const payload = {
+        hotel_id: hotelId,
+        name: roomData.name,
+        max_occupancy: roomData.capacity,
+        size_sqm: roomData.size,
+        bed_configuration: { type: roomData.beds },
+        base_price_cents: (roomData.basePrice ?? 0) * 100,
+        amenities: Object.fromEntries(
+          (roomData.amenities ?? []).map((a) => [a, true]),
+        ),
+        description: roomData.description,
+      };
+      const url = editingId
+        ? `/api/partner/hotel/rooms/${editingId}`
+        : "/api/partner/hotel/rooms";
+      const method = editingId ? "PUT" : "POST";
+      const res = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        const saved = json.data;
+        const room: RoomType = {
+          id: saved.id,
+          name: saved.name,
+          capacity: saved.max_occupancy ?? 2,
+          size: saved.size_sqm ?? 0,
+          beds: saved.bed_configuration?.type ?? "1 King Bed",
+          basePrice: Math.round((saved.base_price_cents ?? 0) / 100),
+          amenities: Object.keys(saved.amenities ?? {}).filter(
+            (k) => saved.amenities[k],
+          ),
+          description: saved.description ?? "",
+          images: saved.images ?? [],
+        };
+        if (editingId) {
+          setRoomTypes((prev) =>
+            prev.map((r) => (r.id === editingId ? room : r)),
+          );
+        } else {
+          setRoomTypes((prev) => [...prev, room]);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to save room:", err);
+    }
+  };
+
+  const handleDeleteApi = async (id: string) => {
+    if (!confirm("Bạn có chắc muốn xóa loại phòng này?")) return;
+    try {
+      const token = await getToken();
+      await fetch(`/api/partner/hotel/rooms/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setRoomTypes((prev) => prev.filter((r) => r.id !== id));
+    } catch (err) {
+      console.error("Failed to delete room:", err);
+    }
+  };
 
   const [showModal, setShowModal] = useState(false);
   const [editingRoom, setEditingRoom] = useState<RoomType | null>(null);
@@ -59,26 +184,7 @@ export function RoomTypes() {
   ];
 
   const handleSave = () => {
-    if (editingRoom) {
-      setRoomTypes((prev) =>
-        prev.map((r) =>
-          r.id === editingRoom.id ? { ...editingRoom, ...formData } : r,
-        ),
-      );
-    } else {
-      const newRoom: RoomType = {
-        id: Date.now().toString(),
-        name: formData.name || "",
-        capacity: formData.capacity || 2,
-        size: formData.size || 20,
-        beds: formData.beds || "1 King Bed",
-        basePrice: formData.basePrice || 1000000,
-        amenities: formData.amenities || [],
-        description: formData.description || "",
-        images: [],
-      };
-      setRoomTypes((prev) => [...prev, newRoom]);
-    }
+    handleSaveToApi(formData, editingRoom?.id);
     setShowModal(false);
     setEditingRoom(null);
     setFormData({ amenities: [] });
@@ -91,9 +197,7 @@ export function RoomTypes() {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm("Bạn có chắc muốn xóa loại phòng này?")) {
-      setRoomTypes((prev) => prev.filter((r) => r.id !== id));
-    }
+    handleDeleteApi(id);
   };
 
   const toggleAmenity = (amenityId: string) => {

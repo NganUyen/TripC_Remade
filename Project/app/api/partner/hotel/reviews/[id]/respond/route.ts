@@ -7,22 +7,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { reviewResponseSchema } from "@/lib/hotel-partner/validation";
 import { respondToReview } from "@/lib/hotel-partner/database";
 import { supabaseServerClient } from "@/lib/hotel/supabaseServerClient";
-
-function getPartnerId(req: NextRequest): string {
-  const partnerId = req.headers.get("x-partner-id");
-  if (!partnerId) {
-    throw new Error("Partner ID not found");
-  }
-  return partnerId;
-}
-
-function getPartnerUserId(req: NextRequest): string {
-  const userId = req.headers.get("x-partner-user-id");
-  if (!userId) {
-    throw new Error("Partner user ID not found");
-  }
-  return userId;
-}
+import {
+  resolveHotelPartnerId,
+  authErrorStatus,
+} from "@/lib/partner/clerkAuth";
+import { auth } from "@clerk/nextjs/server";
 
 /**
  * POST /api/partner/hotel/reviews/[id]/respond
@@ -33,8 +22,8 @@ export async function POST(
   { params }: { params: { id: string } },
 ) {
   try {
-    const partnerId = getPartnerId(req);
-    const partnerUserId = getPartnerUserId(req);
+    const partnerId = await resolveHotelPartnerId();
+    const { userId } = await auth();
     const reviewId = params.id;
     const body = await req.json();
 

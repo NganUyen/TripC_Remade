@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useAuth } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import { Star, ThumbsUp, MessageCircle } from "lucide-react";
 
@@ -13,29 +14,84 @@ interface Review {
   roomType: string;
 }
 
-export function ReviewsList() {
-  const [reviews] = useState<Review[]>([
-    {
-      id: "1",
-      guestName: "Nguyễn Văn A",
-      rating: 5,
-      comment: "Phòng rất sạch sẽ và tiện nghi, nhân viên thân thiện!",
-      date: "2025-02-05",
-      roomType: "Deluxe Room",
-    },
-    {
-      id: "2",
-      guestName: "Trần Thị B",
-      rating: 4,
-      comment: "Khách sạn đẹp, view đẹp, có điều máy lạnh hơi ồn",
-      date: "2025-02-03",
-      roomType: "Suite Room",
-    },
-  ]);
+export function ReviewsList({ partnerId }: { partnerId: string }) {
+  const { getToken } = useAuth();
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [hotelId, setHotelId] = useState<string | null>(null);
 
-  const avgRating = (
-    reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
-  ).toFixed(1);
+  useEffect(() => {
+    if (!partnerId) return;
+    (async () => {
+      try {
+        const token = await getToken();
+        const res = await fetch("/api/partner/hotel/hotels", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const d = await res.json();
+          if (d.success && d.data?.length > 0) setHotelId(d.data[0].id);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+  }, [partnerId]);
+
+  useEffect(() => {
+    if (!hotelId) return;
+    (async () => {
+      try {
+        setLoading(true);
+        const token = await getToken();
+        const res = await fetch(
+          `/api/partner/hotel/reviews?hotel_id=${hotelId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
+        if (res.ok) {
+          const d = await res.json();
+          if (d.success) {
+            setReviews(
+              (d.data || []).map((r: any) => ({
+                id: r.id,
+                guestName: r.reviewer_name ?? r.profiles?.full_name ?? "Khách",
+                rating: r.rating ?? 5,
+                comment: r.comment ?? r.review_text ?? "",
+                date: r.created_at?.split("T")[0] ?? "",
+                roomType: r.room_name ?? r.hotel_rooms?.name ?? "-",
+              })),
+            );
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [hotelId]);
+
+  const avgRating =
+    reviews.length > 0
+      ? (
+          reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+        ).toFixed(1)
+      : "0.0";
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        {[1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="h-32 bg-slate-200 dark:bg-slate-800 rounded-2xl animate-pulse"
+          />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

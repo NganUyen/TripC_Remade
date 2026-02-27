@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useAuth } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import { UserCheck, Search, QrCode, Check, X } from "lucide-react";
 
@@ -14,30 +15,57 @@ interface CheckInItem {
   boardingPass: boolean;
 }
 
-export default function CheckInManagement() {
+export default function CheckInManagement({
+  partnerId,
+}: {
+  partnerId: string;
+}) {
+  const { getToken } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
-  const [checkIns, setCheckIns] = useState<CheckInItem[]>([
-    {
-      id: "1",
-      bookingRef: "ABC123",
-      passengerName: "Nguyễn Văn A",
-      flightNumber: "VN123",
-      seatNumber: "12A",
-      checkedIn: false,
-      boardingPass: false,
-    },
-    {
-      id: "2",
-      bookingRef: "DEF456",
-      passengerName: "Trần Thị B",
-      flightNumber: "VN456",
-      seatNumber: "15C",
-      checkedIn: true,
-      boardingPass: true,
-    },
-  ]);
+  const [checkIns, setCheckIns] = useState<CheckInItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleCheckIn = (id: string) => {
+  useEffect(() => {
+    if (!partnerId) return;
+    (async () => {
+      try {
+        setLoading(true);
+        const token = await getToken();
+        const res = await fetch(
+          "/api/partner/flight/bookings?status=confirmed,booked",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success) {
+            setCheckIns(
+              (data.data || []).map((b: any) => ({
+                id: b.id,
+                bookingRef:
+                  b.booking_reference ?? b.id?.slice(0, 8).toUpperCase() ?? "-",
+                passengerName:
+                  b.passenger_name ?? b.profiles?.full_name ?? "Hành khách",
+                flightNumber:
+                  b.flight_number ?? b.flights?.flight_number ?? "-",
+                seatNumber: b.seat_number ?? "-",
+                checkedIn: b.status === "checked_in",
+                boardingPass: b.boarding_pass_issued ?? false,
+              })),
+            );
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [partnerId]);
+
+  const handleCheckIn = async (id: string) => {
+    // Optimistic
     setCheckIns((prev) =>
       prev.map((item) =>
         item.id === id
@@ -45,6 +73,19 @@ export default function CheckInManagement() {
           : item,
       ),
     );
+    try {
+      const token = await getToken();
+      await fetch(`/api/partner/flight/bookings/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status: "checked_in" }),
+      });
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const filteredCheckIns = checkIns.filter(
@@ -53,6 +94,19 @@ export default function CheckInManagement() {
       item.passengerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.flightNumber.toLowerCase().includes(searchQuery.toLowerCase()),
   );
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        {[1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="h-24 bg-slate-200 dark:bg-slate-800 rounded-2xl animate-pulse"
+          />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

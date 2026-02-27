@@ -6,21 +6,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDashboardMetrics } from "@/lib/flight-partner/database";
 import { getDateRange } from "@/lib/flight-partner/calculations";
-
-function getPartnerId(req: NextRequest): string {
-  const partnerId = req.headers.get("x-partner-id");
-  if (!partnerId) {
-    throw new Error("Partner ID not found");
-  }
-  return partnerId;
-}
+import {
+  resolveFlightPartnerId,
+  authErrorStatus,
+} from "@/lib/partner/clerkAuth";
 
 /**
  * GET /api/partner/flight/analytics/dashboard
  */
 export async function GET(req: NextRequest) {
   try {
-    const partnerId = getPartnerId(req);
+    const { airlineCode: partnerId } = await resolveFlightPartnerId();
     const { searchParams } = new URL(req.url);
 
     const period = searchParams.get("period") || "last_30_days";

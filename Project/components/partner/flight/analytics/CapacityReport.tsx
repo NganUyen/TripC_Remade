@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useAuth } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import { PieChart, Plane, Users, Percent } from "lucide-react";
 
@@ -12,41 +13,57 @@ interface CapacityData {
   occupancyRate: number;
 }
 
-export default function CapacityReport() {
-  const [capacityData] = useState<CapacityData[]>([
-    {
-      route: "HAN - SGN",
-      totalSeats: 21600,
-      bookedSeats: 18360,
-      availableSeats: 3240,
-      occupancyRate: 85,
-    },
-    {
-      route: "SGN - DAD",
-      totalSeats: 13500,
-      bookedSeats: 10530,
-      availableSeats: 2970,
-      occupancyRate: 78,
-    },
-    {
-      route: "HAN - DAD",
-      totalSeats: 11250,
-      bookedSeats: 9225,
-      availableSeats: 2025,
-      occupancyRate: 82,
-    },
-    {
-      route: "SGN - PQC",
-      totalSeats: 9000,
-      bookedSeats: 6750,
-      availableSeats: 2250,
-      occupancyRate: 75,
-    },
-  ]);
+export default function CapacityReport({ partnerId }: { partnerId: string }) {
+  const { getToken } = useAuth();
+  const [capacityData, setCapacityData] = useState<CapacityData[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!partnerId) return;
+    (async () => {
+      try {
+        setLoading(true);
+        const token = await getToken();
+        const res = await fetch("/api/partner/flight/routes", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && Array.isArray(data.data)) {
+            setCapacityData(
+              data.data.map((r: any) => {
+                const totalSeats = r.total_seats ?? 0;
+                const bookedSeats =
+                  r.booked_seats ??
+                  Math.round(totalSeats * ((r.avg_occupancy ?? 0) / 100));
+                const availableSeats = totalSeats - bookedSeats;
+                const occupancyRate =
+                  totalSeats > 0
+                    ? Math.round((bookedSeats / totalSeats) * 100)
+                    : 0;
+                return {
+                  route: `${r.origin_code} - ${r.destination_code}`,
+                  totalSeats,
+                  bookedSeats,
+                  availableSeats,
+                  occupancyRate,
+                };
+              }),
+            );
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [partnerId]);
 
   const totalSeats = capacityData.reduce((sum, d) => sum + d.totalSeats, 0);
   const totalBooked = capacityData.reduce((sum, d) => sum + d.bookedSeats, 0);
-  const avgOccupancy = ((totalBooked / totalSeats) * 100).toFixed(1);
+  const avgOccupancy =
+    totalSeats > 0 ? ((totalBooked / totalSeats) * 100).toFixed(1) : "0.0";
 
   const getOccupancyColor = (rate: number) => {
     if (rate >= 80) return "text-green-600 bg-green-100 dark:bg-green-900/30";
@@ -54,6 +71,23 @@ export default function CapacityReport() {
       return "text-yellow-600 bg-yellow-100 dark:bg-yellow-900/30";
     return "text-red-600 bg-red-100 dark:bg-red-900/30";
   };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="h-10 w-48 bg-slate-200 dark:bg-slate-800 rounded-xl animate-pulse" />
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div
+              key={i}
+              className="h-32 bg-slate-200 dark:bg-slate-800 rounded-2xl animate-pulse"
+            />
+          ))}
+        </div>
+        <div className="h-64 bg-slate-200 dark:bg-slate-800 rounded-2xl animate-pulse" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

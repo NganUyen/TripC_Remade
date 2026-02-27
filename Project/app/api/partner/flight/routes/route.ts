@@ -8,21 +8,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { createRouteSchema } from "@/lib/flight-partner/validation";
 import { getPartnerRoutes, createRoute } from "@/lib/flight-partner/database";
 import { ZodError } from "zod";
-
-function getPartnerId(req: NextRequest): string {
-  const partnerId = req.headers.get("x-partner-id");
-  if (!partnerId) {
-    throw new Error("Partner ID not found");
-  }
-  return partnerId;
-}
+import {
+  resolveFlightPartnerId,
+  authErrorStatus,
+} from "@/lib/partner/clerkAuth";
 
 /**
  * GET /api/partner/flight/routes
  */
 export async function GET(req: NextRequest) {
   try {
-    const partnerId = getPartnerId(req);
+    const { airlineCode: partnerId } = await resolveFlightPartnerId();
     const routes = await getPartnerRoutes(partnerId);
 
     return NextResponse.json({
@@ -40,7 +36,7 @@ export async function GET(req: NextRequest) {
           message: error.message || "Failed to fetch routes",
         },
       },
-      { status: 500 },
+      { status: authErrorStatus(error) },
     );
   }
 }
@@ -50,7 +46,7 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   try {
-    const partnerId = getPartnerId(req);
+    const { airlineCode: partnerId } = await resolveFlightPartnerId();
     const body = await req.json();
 
     const validatedData = createRouteSchema.parse(body);

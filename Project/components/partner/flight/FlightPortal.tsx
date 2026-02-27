@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useFlightPartnerStore } from "@/store/useFlightPartnerStore";
 import FlightPortalLayout from "./FlightPortalLayout";
 import FlightDashboard from "./FlightDashboard";
 
@@ -51,53 +52,54 @@ type Section =
   | "notification-settings"
   | "payout-settings";
 
-export default function FlightPortal() {
+export function FlightPortal() {
   const [activeSection, setActiveSection] = useState<Section>("dashboard");
-
-  // TODO: Replace with actual partner ID from authentication
-  const partnerId = "00000000-0000-0000-0000-000000000001";
+  // Identity resolved by FlightPartnerGuard via useFlightPartnerStore
+  // Flights are queried by airline_code, not UUID
+  const { partner } = useFlightPartnerStore();
+  const pid = partner?.airline_code ?? "";
 
   const renderContent = () => {
     switch (activeSection) {
       // Dashboard
       case "dashboard":
-        return <FlightDashboard partnerId={partnerId} />;
+        return <FlightDashboard partnerId={pid} />;
 
       // Flights
       case "flight-list":
-        return <FlightList partnerId={partnerId} />;
+        return <FlightList partnerId={pid} />;
       case "flight-schedule":
-        return <FlightSchedule />;
+        return <FlightSchedule partnerId={pid} />;
 
       // Routes
       case "route-list":
-        return <RouteList partnerId={partnerId} />;
+        return <RouteList partnerId={pid} />;
       case "route-analytics":
-        return <RouteAnalytics />;
+        return <RouteAnalytics partnerId={pid} />;
 
       // Pricing
       case "pricing-rules":
-        return <PricingRules />;
+        return <PricingRules partnerId={pid} />;
       case "dynamic-pricing":
-        return <DynamicPricing />;
+        return <DynamicPricing partnerId={pid} />;
 
       // Bookings
       case "booking-list":
-        return <BookingList partnerId={partnerId} />;
+        return <BookingList partnerId={pid} />;
       case "passenger-management":
-        return <PassengerManagement />;
+        return <PassengerManagement partnerId={pid} />;
       case "check-in-management":
-        return <CheckInManagement />;
+        return <CheckInManagement partnerId={pid} />;
 
       // Analytics
       case "analytics-dashboard":
-        return <AnalyticsDashboard />;
+        return <AnalyticsDashboard partnerId={pid} />;
       case "revenue-report":
-        return <RevenueReport />;
+        return <RevenueReport partnerId={pid} />;
       case "capacity-report":
-        return <CapacityReport />;
+        return <CapacityReport partnerId={pid} />;
       case "performance-metrics":
-        return <PerformanceMetrics />;
+        return <PerformanceMetrics partnerId={pid} />;
 
       // Settings
       case "account-settings":
@@ -108,7 +110,7 @@ export default function FlightPortal() {
         return <PayoutSettings />;
 
       default:
-        return <FlightDashboard partnerId={partnerId} />;
+        return <FlightDashboard partnerId={pid} />;
     }
   };
 
@@ -121,5 +123,3 @@ export default function FlightPortal() {
     </FlightPortalLayout>
   );
 }
-
-export { FlightPortal };

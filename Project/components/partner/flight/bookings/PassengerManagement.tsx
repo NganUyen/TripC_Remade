@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useAuth } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import {
   Users,
@@ -24,32 +25,60 @@ interface Passenger {
   status: "checked-in" | "booked" | "boarded";
 }
 
-export default function PassengerManagement() {
+export default function PassengerManagement({
+  partnerId,
+}: {
+  partnerId: string;
+}) {
+  const { getToken } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
-  const [passengers] = useState<Passenger[]>([
-    {
-      id: "1",
-      name: "Nguyễn Văn A",
-      email: "nguyenvana@email.com",
-      phone: "0901234567",
-      flightNumber: "VN123",
-      seatNumber: "12A",
-      bookingRef: "ABC123",
-      date: "2026-02-08",
-      status: "checked-in",
-    },
-    {
-      id: "2",
-      name: "Trần Thị B",
-      email: "tranthib@email.com",
-      phone: "0907654321",
-      flightNumber: "VN456",
-      seatNumber: "15C",
-      bookingRef: "DEF456",
-      date: "2026-02-08",
-      status: "booked",
-    },
-  ]);
+  const [passengers, setPassengers] = useState<Passenger[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!partnerId) return;
+    (async () => {
+      try {
+        setLoading(true);
+        const token = await getToken();
+        const res = await fetch("/api/partner/flight/bookings", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success) {
+            setPassengers(
+              (data.data || []).map((b: any) => ({
+                id: b.id,
+                name: b.passenger_name ?? b.profiles?.full_name ?? "Hành khách",
+                email: b.email ?? b.profiles?.email ?? "",
+                phone: b.phone ?? "",
+                flightNumber:
+                  b.flight_number ?? b.flights?.flight_number ?? "-",
+                seatNumber: b.seat_number ?? "-",
+                bookingRef:
+                  b.booking_reference ?? b.id?.slice(0, 8).toUpperCase() ?? "-",
+                date:
+                  b.departure_time?.split("T")[0] ??
+                  b.created_at?.split("T")[0] ??
+                  "",
+                status:
+                  b.status === "checked_in"
+                    ? "checked-in"
+                    : b.status === "boarded"
+                      ? "boarded"
+                      : "booked",
+              })),
+            );
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [partnerId]);
 
   const filteredPassengers = passengers.filter(
     (p) =>
@@ -70,6 +99,19 @@ export default function PassengerManagement() {
         return "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-400";
     }
   };
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        {[1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="h-24 bg-slate-200 dark:bg-slate-800 rounded-2xl animate-pulse"
+          />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

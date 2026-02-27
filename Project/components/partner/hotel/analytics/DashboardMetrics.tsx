@@ -1,6 +1,7 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { useAuth } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import {
   BarChart3,
@@ -11,37 +12,97 @@ import {
   Star,
 } from "lucide-react";
 
-export function DashboardMetrics() {
+export function DashboardMetrics({ partnerId }: { partnerId: string }) {
+  const { getToken } = useAuth();
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [hotelId, setHotelId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!partnerId) return;
+    (async () => {
+      try {
+        const token = await getToken();
+        const res = await fetch("/api/partner/hotel/hotels", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const d = await res.json();
+          if (d.success && d.data?.length > 0) setHotelId(d.data[0].id);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+  }, [partnerId]);
+
+  useEffect(() => {
+    if (!hotelId) return;
+    (async () => {
+      try {
+        setLoading(true);
+        const token = await getToken();
+        const res = await fetch(
+          `/api/partner/hotel/analytics?hotel_id=${hotelId}`,
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+        if (res.ok) {
+          const d = await res.json();
+          if (d.success) setData(d.data);
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [hotelId]);
+
   const metrics = [
     {
       label: "Tổng doanh thu",
-      value: "125,000,000 VNĐ",
+      value: data
+        ? `${((data.gross_revenue_cents ?? 0) / 100).toLocaleString("vi-VN")} VNĐ`
+        : "—",
       change: "+12%",
       icon: DollarSign,
       color: "text-green-600",
     },
     {
       label: "Tỷ lệ lấp đầy",
-      value: "85%",
+      value: data ? `${(data.avg_occupancy_rate ?? 0).toFixed(1)}%` : "—",
       change: "+5%",
       icon: BarChart3,
       color: "text-blue-600",
     },
     {
       label: "Đánh giá TB",
-      value: "4.7/5",
+      value: data ? `${(data.avg_rating ?? 0).toFixed(1)}/5` : "—",
       change: "+0.2",
       icon: Star,
       color: "text-yellow-600",
     },
     {
-      label: "Khách hàng",
-      value: "1,234",
+      label: "Đặt phòng",
+      value: data ? String(data.total_bookings ?? 0) : "—",
       change: "+18%",
       icon: Users,
       color: "text-purple-600",
     },
   ];
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {[1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className="h-36 bg-slate-200 dark:bg-slate-800 rounded-2xl animate-pulse"
+          />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
