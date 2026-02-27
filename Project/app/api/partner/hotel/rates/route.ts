@@ -16,8 +16,10 @@ import {
   getRoom,
   getPartnerHotel,
 } from "@/lib/hotel-partner/database";
-import { resolveHotelPartnerId, authErrorStatus } from "@/lib/partner/clerkAuth";  
-}
+import {
+  resolveHotelPartnerId,
+  authErrorStatus,
+} from "@/lib/partner/clerkAuth";
 
 /**
  * GET /api/partner/hotel/rates
