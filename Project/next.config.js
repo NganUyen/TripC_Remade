@@ -11,6 +11,10 @@ const nextConfig = {
         protocol: "https",
         hostname: "images.unsplash.com",
       },
+      {
+        protocol: "https",
+        hostname: "dkviqhhjmdtqkfljhhuk.supabase.co",
+      },
     ],
     // Increase timeout for image optimization to prevent timeout errors
     minimumCacheTTL: 60,

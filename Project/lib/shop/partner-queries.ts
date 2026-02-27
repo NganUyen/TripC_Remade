@@ -43,6 +43,51 @@ function slugify(text: string): string {
         .trim();
 }
 
+/**
+ * Backfill partner_id on order_items that were created before the fix.
+ * Joins variant → product to find items belonging to the partner.
+ * Called lazily on first dashboard/order-list load. After backfill, subsequent calls are cheap.
+ */
+async function ensurePartnerItemsTagged(partnerId: string): Promise<void> {
+    const supabase = getSupabase();
+
+    // Quick check: are there any untagged items for this partner's products?
+    const { data: partnerProducts } = await supabase
+        .from('shop_products')
+        .select('id')
+        .eq('partner_id', partnerId);
+
+    if (!partnerProducts || partnerProducts.length === 0) return;
+
+    const productIds = partnerProducts.map(p => p.id);
+
+    // Get variants belonging to these products
+    const { data: variants } = await supabase
+        .from('product_variants')
+        .select('id')
+        .in('product_id', productIds);
+
+    if (!variants || variants.length === 0) return;
+
+    const variantIds = variants.map(v => v.id);
+
+    // Find untagged order_items for these variants
+    const { data: untaggedItems } = await supabase
+        .from('order_items')
+        .select('id')
+        .in('variant_id', variantIds)
+        .is('partner_id', null);
+
+    if (!untaggedItems || untaggedItems.length === 0) return;
+
+    // Backfill partner_id
+    await supabase
+        .from('order_items')
+        .update({ partner_id: partnerId })
+        .in('id', untaggedItems.map(i => i.id));
+}
+
+
 function generatePartnerSlug(businessName: string, id: string): string {
     const base = slugify(businessName);
     const suffix = id.slice(0, 6);
@@ -831,6 +876,9 @@ export async function getPartnerOrders(
     const limit = params?.limit || 20;
     const offset = params?.offset || 0;
 
+    // Backfill partner_id on items created before the fix
+    await ensurePartnerItemsTagged(partnerId);
+
     // Get order IDs that contain partner's items
     let itemsQuery = supabase
         .from('order_items')
@@ -913,8 +961,9 @@ export async function getPartnerOrderById(
     partnerId: string,
     orderId: string
 ): Promise<PartnerOrder | null> {
-    const { data: orders } = await getPartnerOrders(partnerId, { limit: 1 });
-    // Find specific order by getting all partner orders for this specific orderId
+    // Backfill is handled by getPartnerOrders, but call it directly too for single-order fetches
+    await ensurePartnerItemsTagged(partnerId);
+
     const supabase = getSupabase();
 
     const { data: partnerItems } = await supabase
@@ -970,6 +1019,9 @@ export async function getPartnerDashboardStats(
     period: string = '7d'
 ): Promise<DashboardStats> {
     const supabase = getSupabase();
+
+    // Backfill partner_id on items created before the fix
+    await ensurePartnerItemsTagged(partnerId);
 
     // Calculate date range
     const now = new Date();
@@ -1033,8 +1085,13 @@ export async function getPartnerDashboardStats(
     const dailyMap = new Map<string, { revenue: number; orders: Set<string> }>();
     const labels: string[] = [];
 
-    // Helper to format key
-    const formatDateKey = (date: Date) => date.toISOString().split('T')[0]; // YYYY-MM-DD
+    // Helper to format key - use local timezone to avoid UTC shift
+    const formatDateKey = (date: Date) => {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    };
     const formatLabel = (date: Date) => {
         if (period === '12m') {
             return date.toLocaleDateString('en-US', { month: 'short' });
@@ -1073,14 +1130,14 @@ export async function getPartnerDashboardStats(
         const key = formatDateKey(d);
         const entry = dailyMap.get(key) || { revenue: 0, orders: new Set() };
 
-        chartRevenue.push(Math.round(entry.revenue)); // cents
+        chartRevenue.push(Math.round(entry.revenue * 100)); // cents
         chartOrders.push(entry.orders.size);
     }
 
     return {
         period,
         stats: {
-            revenue: money(Math.round(currentRevenue)), // Keep in cents for consistency
+            revenue: money(Math.round(currentRevenue * 100)), // Output in cents
             revenue_change: Math.round(revenueChange * 10) / 10,
             orders: currentOrders,
             orders_change: Math.round(ordersChange * 10) / 10,

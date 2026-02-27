@@ -18,8 +18,8 @@ interface CertificateFile {
 
 export function OnboardingForm() {
     const router = useRouter()
-    const { user } = useUser()
-    const { applyAsPartner, isApplying } = usePartnerStore()
+    const { user, isSignedIn, isLoaded: clerkLoaded } = useUser()
+    const { applyAsPartner, isApplying, partner, isLoading, fetchPartner } = usePartnerStore()
     const [step, setStep] = useState(1)
     const [formData, setFormData] = useState<PartnerApplicationData>({
         business_name: '',
@@ -39,6 +39,24 @@ export function OnboardingForm() {
     const [certificates, setCertificates] = useState<CertificateFile[]>([])
     const [errors, setErrors] = useState<Record<string, string>>({})
     const fileInputRef = useRef<HTMLInputElement>(null)
+
+    // Check if user is already a partner → redirect away from onboarding
+    useEffect(() => {
+        if (clerkLoaded && isSignedIn) {
+            fetchPartner()
+        }
+    }, [clerkLoaded, isSignedIn, fetchPartner])
+
+    useEffect(() => {
+        if (!isLoading && partner) {
+            if (partner.status === 'approved') {
+                router.replace('/shop/partner/dashboard')
+            } else {
+                // pending, suspended, banned → show status page
+                router.replace('/shop/partner')
+            }
+        }
+    }, [isLoading, partner, router])
 
     // Auto-fill email from logged-in user
     useEffect(() => {
@@ -146,6 +164,18 @@ export function OnboardingForm() {
         text-slate-900 dark:text-white placeholder:text-slate-400
         focus:outline-none focus:ring-2
     `
+
+    // Show loading while checking if user is already a partner
+    if (!clerkLoaded || isLoading || partner) {
+        return (
+            <div className="min-h-screen bg-[#fcfaf8] dark:bg-[#0a0a0a] flex items-center justify-center p-4">
+                <div className="flex flex-col items-center gap-3">
+                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Loading...</p>
+                </div>
+            </div>
+        )
+    }
 
     return (
         <div className="min-h-screen bg-[#fcfaf8] dark:bg-[#0a0a0a] flex items-center justify-center p-4">

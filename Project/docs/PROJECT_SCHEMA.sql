@@ -22,7 +22,35 @@ CREATE TABLE public.activities (
   inclusions ARRAY DEFAULT '{}'::text[],
   exclusions ARRAY DEFAULT '{}'::text[],
   important_info text,
-  CONSTRAINT activities_pkey PRIMARY KEY (id)
+  partner_id uuid,
+  CONSTRAINT activities_pkey PRIMARY KEY (id),
+  CONSTRAINT activities_partner_id_fkey FOREIGN KEY (partner_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.activity_bookings (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  booking_id uuid,
+  user_uuid uuid,
+  external_user_ref text,
+  activity_id uuid,
+  confirmation_code text UNIQUE,
+  booking_date timestamp with time zone,
+  participant_count integer,
+  ticket_details jsonb DEFAULT '{}'::jsonb,
+  total_amount numeric,
+  currency text DEFAULT 'USD'::text,
+  guest_name text,
+  guest_email text,
+  guest_phone text,
+  special_requests text,
+  status text DEFAULT 'confirmed'::text,
+  payment_status text DEFAULT 'pending'::text,
+  confirmed_at timestamp with time zone,
+  metadata jsonb DEFAULT '{}'::jsonb,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT activity_bookings_pkey PRIMARY KEY (id),
+  CONSTRAINT activity_bookings_booking_id_fkey FOREIGN KEY (booking_id) REFERENCES public.bookings(id),
+  CONSTRAINT activity_bookings_user_uuid_fkey FOREIGN KEY (user_uuid) REFERENCES public.users(id),
+  CONSTRAINT activity_bookings_activity_id_fkey FOREIGN KEY (activity_id) REFERENCES public.activities(id)
 );
 CREATE TABLE public.addresses (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -66,7 +94,8 @@ CREATE TABLE public.beauty_appointments (
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT beauty_appointments_pkey PRIMARY KEY (id),
   CONSTRAINT beauty_appointments_venue_id_fkey FOREIGN KEY (venue_id) REFERENCES public.beauty_venues(id),
-  CONSTRAINT beauty_appointments_service_id_fkey FOREIGN KEY (service_id) REFERENCES public.beauty_services(id)
+  CONSTRAINT beauty_appointments_service_id_fkey FOREIGN KEY (service_id) REFERENCES public.beauty_services(id),
+  CONSTRAINT beauty_appointments_booking_id_fkey FOREIGN KEY (booking_id) REFERENCES public.bookings(id)
 );
 CREATE TABLE public.beauty_reviews (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -486,6 +515,10 @@ CREATE TABLE public.dining_tables (
   premium_charge numeric DEFAULT 0 CHECK (premium_charge >= 0::numeric),
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
+  area text DEFAULT 'Main'::text,
+  status text DEFAULT 'available'::text,
+  current_guests integer DEFAULT 0,
+  capacity integer DEFAULT 4,
   CONSTRAINT dining_tables_pkey PRIMARY KEY (id),
   CONSTRAINT dining_tables_venue_id_fkey FOREIGN KEY (venue_id) REFERENCES public.dining_venues(id)
 );
@@ -715,7 +748,9 @@ CREATE TABLE public.entertainment_organizers (
   metadata jsonb DEFAULT '{}'::jsonb,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   updated_at timestamp with time zone NOT NULL DEFAULT now(),
-  CONSTRAINT entertainment_organizers_pkey PRIMARY KEY (id)
+  partner_id uuid,
+  CONSTRAINT entertainment_organizers_pkey PRIMARY KEY (id),
+  CONSTRAINT entertainment_organizers_partner_id_fkey FOREIGN KEY (partner_id) REFERENCES public.users(id)
 );
 CREATE TABLE public.entertainment_reviews (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -980,7 +1015,9 @@ CREATE TABLE public.events (
   meta_description text,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT events_pkey PRIMARY KEY (id)
+  partner_id uuid,
+  CONSTRAINT events_pkey PRIMARY KEY (id),
+  CONSTRAINT events_partner_id_fkey FOREIGN KEY (partner_id) REFERENCES public.users(id)
 );
 CREATE TABLE public.fare_rules (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -1171,6 +1208,40 @@ CREATE TABLE public.flight_offers (
   CONSTRAINT flight_offers_pkey PRIMARY KEY (id),
   CONSTRAINT flight_offers_flight_id_fkey FOREIGN KEY (flight_id) REFERENCES public.flights(id),
   CONSTRAINT flight_offers_supplier_id_fkey FOREIGN KEY (supplier_id) REFERENCES public.flight_suppliers(id)
+);
+CREATE TABLE public.flight_partner_users (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  partner_id uuid NOT NULL,
+  email character varying NOT NULL UNIQUE,
+  full_name character varying NOT NULL,
+  phone character varying,
+  role character varying NOT NULL DEFAULT 'admin'::character varying CHECK (role::text = ANY (ARRAY['owner'::character varying, 'admin'::character varying, 'manager'::character varying, 'staff'::character varying]::text[])),
+  is_active boolean NOT NULL DEFAULT true,
+  last_login_at timestamp with time zone,
+  password_hash text NOT NULL,
+  reset_token text,
+  reset_token_expires_at timestamp with time zone,
+  metadata jsonb DEFAULT '{}'::jsonb,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  clerk_user_id text UNIQUE,
+  CONSTRAINT flight_partner_users_pkey PRIMARY KEY (id),
+  CONSTRAINT flight_partner_users_partner_id_fkey FOREIGN KEY (partner_id) REFERENCES public.flight_partners(id)
+);
+CREATE TABLE public.flight_partners (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  airline_code text NOT NULL UNIQUE,
+  name text NOT NULL,
+  logo_url text,
+  website_url text,
+  commission_rate numeric NOT NULL DEFAULT 0.08,
+  is_active boolean NOT NULL DEFAULT true,
+  api_config jsonb DEFAULT '{}'::jsonb,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  status text NOT NULL DEFAULT 'pending'::text CHECK (status = ANY (ARRAY['pending'::text, 'approved'::text, 'suspended'::text, 'banned'::text])),
+  rejection_reason text,
+  CONSTRAINT flight_partners_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.flight_search_cache (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -1383,6 +1454,8 @@ CREATE TABLE public.hotel_partners (
   metadata jsonb DEFAULT '{}'::jsonb,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
+  status text NOT NULL DEFAULT 'pending'::text CHECK (status = ANY (ARRAY['pending'::text, 'approved'::text, 'suspended'::text, 'banned'::text])),
+  rejection_reason text,
   CONSTRAINT hotel_partners_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.hotel_rates (
@@ -1448,7 +1521,6 @@ CREATE TABLE public.hotels (
   amenities jsonb DEFAULT '[]'::jsonb,
   policies jsonb DEFAULT '{}'::jsonb,
   contact jsonb DEFAULT '{}'::jsonb,
-  status text DEFAULT 'active'::text CHECK (status = ANY (ARRAY['active'::text, 'inactive'::text, 'pending'::text])),
   metadata jsonb DEFAULT '{}'::jsonb,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
@@ -1468,6 +1540,20 @@ CREATE TABLE public.mail_service (
   created_at timestamp with time zone DEFAULT now(),
   CONSTRAINT mail_service_pkey PRIMARY KEY (id),
   CONSTRAINT mail_service_booking_id_fkey FOREIGN KEY (booking_id) REFERENCES public.bookings(id)
+);
+CREATE TABLE public.newsletter_subscribers (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  email text NOT NULL UNIQUE,
+  name text,
+  subscribed_at timestamp with time zone DEFAULT now(),
+  unsubscribed_at timestamp with time zone,
+  is_active boolean DEFAULT true,
+  preferences jsonb DEFAULT '{"frequency": "weekly", "categories": ["deals", "tips", "alerts"]}'::jsonb,
+  source text DEFAULT 'website'::text,
+  user_id text,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT newsletter_subscribers_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.notifications (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -1494,10 +1580,12 @@ CREATE TABLE public.order_items (
   line_total numeric NOT NULL,
   currency character varying DEFAULT 'USD'::character varying,
   created_at timestamp with time zone DEFAULT now(),
+  partner_id uuid,
   CONSTRAINT order_items_pkey PRIMARY KEY (id),
   CONSTRAINT order_items_order_id_fkey FOREIGN KEY (order_id) REFERENCES public.shop_orders(id),
   CONSTRAINT order_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.shop_products(id),
-  CONSTRAINT order_items_variant_id_fkey FOREIGN KEY (variant_id) REFERENCES public.product_variants(id)
+  CONSTRAINT order_items_variant_id_fkey FOREIGN KEY (variant_id) REFERENCES public.product_variants(id),
+  CONSTRAINT order_items_partner_id_fkey FOREIGN KEY (partner_id) REFERENCES public.shop_partners(id)
 );
 CREATE TABLE public.order_status_history (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -1512,6 +1600,94 @@ CREATE TABLE public.order_status_history (
   created_at timestamp with time zone DEFAULT now(),
   CONSTRAINT order_status_history_pkey PRIMARY KEY (id),
   CONSTRAINT order_status_history_order_id_fkey FOREIGN KEY (order_id) REFERENCES public.shop_orders(id)
+);
+CREATE TABLE public.partner_analytics (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  partner_id uuid NOT NULL,
+  hotel_id uuid,
+  date date NOT NULL,
+  total_bookings integer NOT NULL DEFAULT 0,
+  confirmed_bookings integer NOT NULL DEFAULT 0,
+  cancelled_bookings integer NOT NULL DEFAULT 0,
+  pending_bookings integer NOT NULL DEFAULT 0,
+  gross_revenue_cents bigint NOT NULL DEFAULT 0,
+  net_revenue_cents bigint NOT NULL DEFAULT 0,
+  commission_cents bigint NOT NULL DEFAULT 0,
+  refund_cents bigint NOT NULL DEFAULT 0,
+  total_rooms integer NOT NULL DEFAULT 0,
+  rooms_booked integer NOT NULL DEFAULT 0,
+  occupancy_rate numeric DEFAULT 0.00,
+  avg_booking_value_cents integer DEFAULT 0,
+  avg_nights numeric DEFAULT 0.00,
+  avg_lead_time_days integer DEFAULT 0,
+  new_reviews integer NOT NULL DEFAULT 0,
+  avg_rating numeric,
+  calculated_at timestamp with time zone NOT NULL DEFAULT now(),
+  metadata jsonb DEFAULT '{}'::jsonb,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT partner_analytics_pkey PRIMARY KEY (id),
+  CONSTRAINT partner_analytics_partner_id_fkey FOREIGN KEY (partner_id) REFERENCES public.hotel_partners(id),
+  CONSTRAINT partner_analytics_hotel_id_fkey FOREIGN KEY (hotel_id) REFERENCES public.hotels(id)
+);
+CREATE TABLE public.partner_payouts (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  partner_id uuid NOT NULL,
+  period_start date NOT NULL,
+  period_end date NOT NULL,
+  gross_amount_cents bigint NOT NULL DEFAULT 0,
+  commission_cents bigint NOT NULL DEFAULT 0,
+  net_amount_cents bigint NOT NULL DEFAULT 0,
+  adjustment_cents bigint DEFAULT 0,
+  adjustment_reason text,
+  payout_amount_cents bigint NOT NULL,
+  status character varying NOT NULL DEFAULT 'pending'::character varying CHECK (status::text = ANY (ARRAY['pending'::character varying, 'processing'::character varying, 'paid'::character varying, 'failed'::character varying, 'disputed'::character varying]::text[])),
+  total_bookings integer NOT NULL DEFAULT 0,
+  booking_ids jsonb DEFAULT '[]'::jsonb,
+  payment_method character varying,
+  payment_reference character varying,
+  paid_at timestamp with time zone,
+  dispute_reason text,
+  dispute_status character varying CHECK (dispute_status::text = ANY (ARRAY['open'::character varying, 'investigating'::character varying, 'resolved'::character varying, 'closed'::character varying]::text[])),
+  disputed_at timestamp with time zone,
+  resolved_at timestamp with time zone,
+  notes text,
+  metadata jsonb DEFAULT '{}'::jsonb,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT partner_payouts_pkey PRIMARY KEY (id),
+  CONSTRAINT partner_payouts_partner_id_fkey FOREIGN KEY (partner_id) REFERENCES public.hotel_partners(id)
+);
+CREATE TABLE public.partner_permissions (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  permission character varying NOT NULL,
+  resource_type character varying CHECK (resource_type::text = ANY (ARRAY['hotel'::character varying, 'room'::character varying, 'rate'::character varying, 'booking'::character varying, 'analytics'::character varying, 'settings'::character varying]::text[])),
+  resource_id uuid,
+  granted_at timestamp with time zone NOT NULL DEFAULT now(),
+  granted_by uuid,
+  CONSTRAINT partner_permissions_pkey PRIMARY KEY (id),
+  CONSTRAINT partner_permissions_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.partner_users(id),
+  CONSTRAINT partner_permissions_granted_by_fkey FOREIGN KEY (granted_by) REFERENCES public.partner_users(id)
+);
+CREATE TABLE public.partner_users (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  partner_id uuid NOT NULL,
+  email character varying NOT NULL UNIQUE,
+  full_name character varying NOT NULL,
+  phone character varying,
+  role character varying NOT NULL DEFAULT 'admin'::character varying CHECK (role::text = ANY (ARRAY['owner'::character varying, 'admin'::character varying, 'manager'::character varying, 'staff'::character varying]::text[])),
+  is_active boolean NOT NULL DEFAULT true,
+  last_login_at timestamp with time zone,
+  password_hash text NOT NULL,
+  reset_token text,
+  reset_token_expires_at timestamp with time zone,
+  metadata jsonb DEFAULT '{}'::jsonb,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  clerk_user_id text UNIQUE,
+  CONSTRAINT partner_users_pkey PRIMARY KEY (id),
+  CONSTRAINT partner_users_partner_id_fkey FOREIGN KEY (partner_id) REFERENCES public.hotel_partners(id)
 );
 CREATE TABLE public.payment_transactions (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -1562,7 +1738,7 @@ CREATE TABLE public.product_variants (
   sku character varying NOT NULL UNIQUE,
   title character varying,
   price real NOT NULL CHECK (price >= 0::double precision),
-  compare_at_price integer,
+  compare_at_price real,
   currency character varying DEFAULT 'USD'::character varying,
   stock_on_hand integer NOT NULL DEFAULT 0 CHECK (stock_on_hand >= 0),
   is_active boolean DEFAULT true,
@@ -1596,15 +1772,20 @@ CREATE TABLE public.quests (
 );
 CREATE TABLE public.reviews (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
-  booking_id uuid,
-  user_id text NOT NULL,
-  category text NOT NULL,
-  item_id uuid,
-  rating integer CHECK (rating >= 1 AND rating <= 5),
+  user_id uuid NOT NULL,
+  entity_id uuid NOT NULL,
+  entity_type character varying NOT NULL,
+  rating integer NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  title character varying,
   comment text,
+  photos ARRAY,
+  helpful_count integer DEFAULT 0,
+  is_verified boolean DEFAULT false,
+  status character varying DEFAULT 'published'::character varying CHECK (status::text = ANY (ARRAY['published'::character varying, 'hidden'::character varying, 'archived'::character varying]::text[])),
   created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT reviews_pkey PRIMARY KEY (id),
-  CONSTRAINT reviews_booking_id_fkey FOREIGN KEY (booking_id) REFERENCES public.bookings(id)
+  CONSTRAINT reviews_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
 );
 CREATE TABLE public.saved_travelers (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -1686,11 +1867,88 @@ CREATE TABLE public.shop_orders (
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   booking_id uuid,
+  status character varying NOT NULL DEFAULT 'pending'::character varying,
+  payment_status character varying NOT NULL DEFAULT 'unpaid'::character varying,
   CONSTRAINT shop_orders_pkey PRIMARY KEY (id),
   CONSTRAINT shop_orders_booking_id_fkey FOREIGN KEY (booking_id) REFERENCES public.bookings(id),
   CONSTRAINT shop_orders_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id),
   CONSTRAINT shop_orders_cart_id_fkey FOREIGN KEY (cart_id) REFERENCES public.carts(id),
   CONSTRAINT shop_orders_shipping_method_id_fkey FOREIGN KEY (shipping_method_id) REFERENCES public.shipping_methods(id)
+);
+CREATE TABLE public.shop_partner_audit_logs (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  partner_id uuid NOT NULL,
+  actor_id uuid,
+  action character varying NOT NULL,
+  entity_type character varying NOT NULL,
+  entity_id uuid,
+  old_values jsonb,
+  new_values jsonb,
+  ip_address inet,
+  user_agent text,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT shop_partner_audit_logs_pkey PRIMARY KEY (id),
+  CONSTRAINT shop_partner_audit_logs_partner_id_fkey FOREIGN KEY (partner_id) REFERENCES public.shop_partners(id),
+  CONSTRAINT shop_partner_audit_logs_actor_id_fkey FOREIGN KEY (actor_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.shop_partner_members (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  partner_id uuid NOT NULL,
+  user_id uuid NOT NULL,
+  role character varying NOT NULL DEFAULT 'staff'::character varying CHECK (role::text = ANY (ARRAY['owner'::character varying::text, 'staff'::character varying::text])),
+  permissions jsonb DEFAULT '{"orders": true, "products": true, "analytics": false}'::jsonb,
+  invited_by uuid,
+  invited_at timestamp with time zone,
+  accepted_at timestamp with time zone,
+  status character varying NOT NULL DEFAULT 'active'::character varying CHECK (status::text = ANY (ARRAY['pending'::character varying::text, 'active'::character varying::text, 'removed'::character varying::text])),
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT shop_partner_members_pkey PRIMARY KEY (id),
+  CONSTRAINT shop_partner_members_partner_id_fkey FOREIGN KEY (partner_id) REFERENCES public.shop_partners(id),
+  CONSTRAINT shop_partner_members_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id),
+  CONSTRAINT shop_partner_members_invited_by_fkey FOREIGN KEY (invited_by) REFERENCES public.users(id)
+);
+CREATE TABLE public.shop_partners (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  slug character varying NOT NULL UNIQUE,
+  business_name character varying NOT NULL,
+  display_name character varying,
+  description text,
+  logo_url character varying,
+  cover_url character varying,
+  email character varying NOT NULL,
+  phone character varying,
+  website character varying,
+  business_type character varying DEFAULT 'individual'::character varying CHECK (business_type::text = ANY (ARRAY['individual'::character varying::text, 'business'::character varying::text, 'enterprise'::character varying::text])),
+  business_registration_number character varying,
+  tax_id character varying,
+  address_line1 character varying,
+  address_line2 character varying,
+  city character varying,
+  state_province character varying,
+  postal_code character varying,
+  country_code character varying DEFAULT 'VN'::character varying,
+  status character varying NOT NULL DEFAULT 'pending'::character varying CHECK (status::text = ANY (ARRAY['pending'::character varying::text, 'approved'::character varying::text, 'suspended'::character varying::text, 'banned'::character varying::text])),
+  verified_at timestamp with time zone,
+  verified_by uuid,
+  rejection_reason text,
+  brand_id uuid UNIQUE,
+  product_count integer DEFAULT 0 CHECK (product_count >= 0),
+  order_count integer DEFAULT 0 CHECK (order_count >= 0),
+  total_sales_cents bigint DEFAULT 0 CHECK (total_sales_cents >= 0),
+  rating_avg numeric DEFAULT 0 CHECK (rating_avg >= 0::numeric AND rating_avg <= 5::numeric),
+  rating_count integer DEFAULT 0 CHECK (rating_count >= 0),
+  follower_count integer DEFAULT 0 CHECK (follower_count >= 0),
+  payout_method character varying,
+  payout_details jsonb DEFAULT '{}'::jsonb,
+  commission_rate numeric DEFAULT 0.15 CHECK (commission_rate >= 0::numeric AND commission_rate <= 1::numeric),
+  metadata jsonb DEFAULT '{}'::jsonb,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  deleted_at timestamp with time zone,
+  CONSTRAINT shop_partners_pkey PRIMARY KEY (id),
+  CONSTRAINT shop_partners_verified_by_fkey FOREIGN KEY (verified_by) REFERENCES public.users(id),
+  CONSTRAINT shop_partners_brand_id_fkey FOREIGN KEY (brand_id) REFERENCES public.brands(id)
 );
 CREATE TABLE public.shop_products (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -1700,15 +1958,21 @@ CREATE TABLE public.shop_products (
   title character varying NOT NULL,
   description text,
   product_type character varying NOT NULL DEFAULT 'physical'::character varying,
-  status character varying NOT NULL DEFAULT 'draft'::character varying,
+  status character varying NOT NULL DEFAULT 'draft'::character varying CHECK (status::text = ANY (ARRAY['draft'::character varying::text, 'active'::character varying::text, 'archived'::character varying::text, 'flagged'::character varying::text])),
   rating_avg numeric DEFAULT 0,
   review_count integer DEFAULT 0,
   is_featured boolean DEFAULT false,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
+  partner_id uuid,
+  reviewed_by uuid,
+  reviewed_at timestamp with time zone,
+  review_notes text,
   CONSTRAINT shop_products_pkey PRIMARY KEY (id),
   CONSTRAINT shop_products_category_id_fkey FOREIGN KEY (category_id) REFERENCES public.categories(id),
-  CONSTRAINT shop_products_brand_id_fkey FOREIGN KEY (brand_id) REFERENCES public.brands(id)
+  CONSTRAINT shop_products_brand_id_fkey FOREIGN KEY (brand_id) REFERENCES public.brands(id),
+  CONSTRAINT shop_products_partner_id_fkey FOREIGN KEY (partner_id) REFERENCES public.shop_partners(id),
+  CONSTRAINT shop_products_reviewed_by_fkey FOREIGN KEY (reviewed_by) REFERENCES public.users(id)
 );
 CREATE TABLE public.shop_reviews (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -1782,13 +2046,65 @@ CREATE TABLE public.transport_bookings (
   CONSTRAINT transport_bookings_booking_id_fkey FOREIGN KEY (booking_id) REFERENCES public.bookings(id),
   CONSTRAINT transport_bookings_route_id_fkey FOREIGN KEY (route_id) REFERENCES public.transport_routes(id)
 );
+CREATE TABLE public.transport_drivers (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  provider_id uuid,
+  name text NOT NULL,
+  phone text,
+  email text,
+  license_number text,
+  license_expiry date,
+  status text DEFAULT 'available'::text CHECK (status = ANY (ARRAY['available'::text, 'on_trip'::text, 'off_duty'::text])),
+  rating numeric DEFAULT 5.0,
+  total_trips integer DEFAULT 0,
+  avatar_url text,
+  joined_date timestamp with time zone DEFAULT now(),
+  CONSTRAINT transport_drivers_pkey PRIMARY KEY (id),
+  CONSTRAINT transport_drivers_provider_id_fkey FOREIGN KEY (provider_id) REFERENCES public.transport_providers(id)
+);
+CREATE TABLE public.transport_notifications (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  provider_id uuid,
+  title text NOT NULL,
+  message text NOT NULL,
+  type text DEFAULT 'info'::text CHECK (type = ANY (ARRAY['info'::text, 'warning'::text, 'success'::text, 'error'::text])),
+  is_read boolean DEFAULT false,
+  created_at timestamp with time zone DEFAULT now(),
+  action_link text,
+  CONSTRAINT transport_notifications_pkey PRIMARY KEY (id),
+  CONSTRAINT transport_notifications_provider_id_fkey FOREIGN KEY (provider_id) REFERENCES public.transport_providers(id)
+);
 CREATE TABLE public.transport_providers (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   name text NOT NULL,
   logo_url text,
   rating numeric DEFAULT 0,
   created_at timestamp with time zone DEFAULT now(),
+  owner_id text,
+  contact_email text,
+  contact_phone text,
+  address text,
+  website text,
+  description text,
+  updated_at timestamp with time zone DEFAULT now(),
+  commission_rate numeric DEFAULT 0.10,
+  voucher_enabled boolean DEFAULT true,
   CONSTRAINT transport_providers_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.transport_reviews (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  user_id uuid,
+  booking_id uuid,
+  route_id uuid,
+  rating integer CHECK (rating >= 1 AND rating <= 5),
+  comment text,
+  response text,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT transport_reviews_pkey PRIMARY KEY (id),
+  CONSTRAINT transport_reviews_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
+  CONSTRAINT transport_reviews_booking_id_fkey FOREIGN KEY (booking_id) REFERENCES public.bookings(id),
+  CONSTRAINT transport_reviews_route_id_fkey FOREIGN KEY (route_id) REFERENCES public.transport_routes(id)
 );
 CREATE TABLE public.transport_routes (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -1805,9 +2121,27 @@ CREATE TABLE public.transport_routes (
   images ARRAY,
   created_at timestamp with time zone DEFAULT now(),
   booking_id uuid,
+  vehicle_id uuid,
+  currency text NOT NULL DEFAULT 'VND'::text,
+  total_capacity integer DEFAULT 0,
   CONSTRAINT transport_routes_pkey PRIMARY KEY (id),
   CONSTRAINT transport_routes_provider_id_fkey FOREIGN KEY (provider_id) REFERENCES public.transport_providers(id),
-  CONSTRAINT transport_routes_booking_id_fkey FOREIGN KEY (booking_id) REFERENCES public.bookings(id)
+  CONSTRAINT transport_routes_booking_id_fkey FOREIGN KEY (booking_id) REFERENCES public.bookings(id),
+  CONSTRAINT transport_routes_vehicle_id_fkey FOREIGN KEY (vehicle_id) REFERENCES public.transport_vehicles(id)
+);
+CREATE TABLE public.transport_vehicles (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  provider_id uuid,
+  type text CHECK (type = ANY (ARRAY['bus'::text, 'train'::text, 'airplane'::text, 'limousine'::text, 'private_car'::text])),
+  plate_number text,
+  model text,
+  capacity integer DEFAULT 0,
+  status text DEFAULT 'active'::text CHECK (status = ANY (ARRAY['active'::text, 'maintenance'::text, 'inactive'::text])),
+  amenities jsonb DEFAULT '{}'::jsonb,
+  images ARRAY DEFAULT '{}'::text[],
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT transport_vehicles_pkey PRIMARY KEY (id),
+  CONSTRAINT transport_vehicles_provider_id_fkey FOREIGN KEY (provider_id) REFERENCES public.transport_providers(id)
 );
 CREATE TABLE public.user_flight_preferences (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -1826,6 +2160,14 @@ CREATE TABLE public.user_flight_preferences (
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT user_flight_preferences_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.user_push_tokens (
+  user_id uuid NOT NULL,
+  token text NOT NULL,
+  platform text DEFAULT 'android'::text,
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT user_push_tokens_pkey PRIMARY KEY (user_id, token),
+  CONSTRAINT user_push_tokens_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
 );
 CREATE TABLE public.user_search_history (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -1882,6 +2224,9 @@ CREATE TABLE public.users (
   country text,
   phone_number text,
   total_orders_completed integer DEFAULT 0,
+  partner_type text CHECK (partner_type = ANY (ARRAY['hotel'::text, 'restaurant'::text, 'activity'::text, 'transport'::text, 'wellness'::text, 'beauty'::text, 'entertainment'::text])),
+  partner_status text DEFAULT 'pending'::text CHECK (partner_status = ANY (ARRAY['pending'::text, 'approved'::text, 'active'::text, 'suspended'::text, 'rejected'::text])),
+  partner_metadata jsonb DEFAULT '{}'::jsonb,
   CONSTRAINT users_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.variant_options (
@@ -1925,6 +2270,8 @@ CREATE TABLE public.vouchers (
   expires_at timestamp with time zone,
   is_active boolean DEFAULT true,
   created_at timestamp with time zone DEFAULT now(),
+  metadata jsonb DEFAULT '{}'::jsonb,
+  is_public boolean DEFAULT false,
   CONSTRAINT vouchers_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.wellness (

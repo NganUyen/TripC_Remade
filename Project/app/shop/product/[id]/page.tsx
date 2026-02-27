@@ -88,7 +88,7 @@ export default function ProductDetailsPage() {
         ],
     };
 
-    console.log('DEBUG: productData:', JSON.stringify(productData, null, 2));
+
 
     return (
         <main className="min-h-screen bg-[#fcfaf8] dark:bg-[#0a0a0a] pb-20">
