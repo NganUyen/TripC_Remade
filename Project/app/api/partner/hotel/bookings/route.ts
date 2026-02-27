@@ -3,6 +3,8 @@
  * GET /api/partner/hotel/bookings - List all bookings
  */
 
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server";
 import { getPartnerBookings } from "@/lib/hotel-partner/database";
 import {

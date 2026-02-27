@@ -3,6 +3,8 @@
  * GET /api/partner/flight/bookings - List all bookings
  */
 
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server";
 import { getPartnerBookings } from "@/lib/flight-partner/database";
 import {

@@ -3,6 +3,8 @@
  * GET /api/partner/hotel/reviews - List reviews
  */
 
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server";
 import { getPartnerReviews } from "@/lib/hotel-partner/database";
 import {

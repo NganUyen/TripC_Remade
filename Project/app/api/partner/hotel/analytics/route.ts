@@ -3,6 +3,8 @@
  * GET /api/partner/hotel/analytics?start_date=&end_date=&hotel_id= - Get detailed analytics
  */
 
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server";
 import { analyticsQuerySchema } from "@/lib/hotel-partner/validation";
 import { getPartnerAnalytics } from "@/lib/hotel-partner/database";

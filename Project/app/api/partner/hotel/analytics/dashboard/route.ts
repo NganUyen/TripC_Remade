@@ -3,6 +3,8 @@
  * GET /api/partner/hotel/analytics/dashboard - Get dashboard metrics
  */
 
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server";
 import { getDashboardMetrics } from "@/lib/hotel-partner/database";
 import { formatCurrency } from "@/lib/hotel-partner/calculations";

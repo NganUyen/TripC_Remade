@@ -3,6 +3,8 @@
  * GET /api/partner/flight/analytics/dashboard - Get dashboard metrics
  */
 
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server";
 import { getDashboardMetrics } from "@/lib/flight-partner/database";
 import { getDateRange } from "@/lib/flight-partner/calculations";
