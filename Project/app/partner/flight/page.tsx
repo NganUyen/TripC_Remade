@@ -1,12 +1,12 @@
 "use client";
 
 import { FlightPortal } from "@/components/partner/flight/FlightPortal";
-import { FlightPartnerGuard } from "@/components/partner/flight/shared/FlightPartnerGuard";
+import { PartnerAuthGuard } from "@/components/partner/PartnerAuthGuard";
 
 export default function FlightPortalPage() {
   return (
-    <FlightPartnerGuard requireApproved>
+    <PartnerAuthGuard portalName="Flight Portal">
       <FlightPortal />
-    </FlightPartnerGuard>
+    </PartnerAuthGuard>
   );
 }
