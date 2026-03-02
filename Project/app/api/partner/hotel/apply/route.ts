@@ -1,169 +1,135 @@
+import { NextRequest, NextResponse } from "next/server";
+import { reviewsClient } from "@/lib/reviews/supabaseClient";
+
 /**
  * POST /api/partner/hotel/apply
- * Creates a new hotel partner application with status = 'pending'.
- * Registers the Clerk user as the owner in partner_users.
+ * Creates hotel entity in the real `hotels` table + partner_profiles record.
+ * Real hotels table columns: id, slug, name, description, address(jsonb),
+ * star_rating, images, amenities, policies, contact(jsonb), metadata
+ * + new columns added by migration: owner_user_id, email, phone, website,
+ *   is_active, is_verified, room_count, property_type, display_name,
+ *   business_registration_number, tax_id, certificate_urls
  */
-
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
-import { createClient } from "@supabase/supabase-js";
-
-function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
-}
-
-export async function POST(req: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const userId = request.headers.get("x-user-id");
     if (!userId) {
       return NextResponse.json(
-        {
-          success: false,
-          error: { code: "NOT_AUTH", message: "Unauthorized" },
-        },
-        { status: 401 },
+        { success: false, error: { code: "NOT_AUTH", message: "Unauthorized" } },
+        { status: 401 }
       );
     }
 
-    const supabase = getSupabase();
-
-    // Check if already a hotel partner
-    const { data: existing } = await supabase
-      .from("partner_users")
-      .select("partner_id")
-      .eq("clerk_user_id", userId)
-      .eq("is_active", true)
+    // Check for existing application
+    const { data: existing } = await reviewsClient
+      .from("partner_profiles")
+      .select("id, status")
+      .eq("owner_user_id", userId)
+      .eq("partner_type", "hotel")
       .single();
 
     if (existing) {
       return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: "ALREADY_PARTNER",
-            message: "You already have a hotel partner account",
-          },
-        },
-        { status: 409 },
+        { success: false, error: { code: "ALREADY_APPLIED", message: `Already registered (status: ${existing.status})` } },
+        { status: 409 }
       );
     }
 
-    const body = await req.json();
+    const body = await request.json();
     const {
-      hotel_name,
-      display_name,
-      email,
-      phone,
-      website,
-      star_rating,
-      property_type,
-      room_count,
-      address_line1,
-      city,
-      country_code,
-      description,
-      business_registration_number,
-      tax_id,
-      certificate_urls,
+      hotel_name, display_name, email, phone, website,
+      star_rating, property_type, room_count,
+      address_line1, city, country_code, description,
+      business_registration_number, tax_id, certificate_urls
     } = body;
 
     if (!hotel_name?.trim() || !email?.trim()) {
       return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: "VALIDATION_ERROR",
-            message: "hotel_name and email are required",
-          },
-        },
-        { status: 400 },
+        { success: false, error: { code: "VALIDATION_ERROR", message: "hotel_name and email are required" } },
+        { status: 400 }
       );
     }
 
-    // Create hotel_partners row
-    const { data: partner, error: partnerErr } = await supabase
-      .from("hotel_partners")
+    // Generate a URL-safe slug
+    const slug = hotel_name.trim().toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '') + '-' + Date.now();
+
+    // 1. Insert into real `hotels` table using actual schema columns
+    const { data: hotel, error: hotelError } = await reviewsClient
+      .from("hotels")
       .insert({
         name: hotel_name.trim(),
-        code: display_name?.trim() || hotel_name.trim(),
+        slug,
+        description: description?.trim() || null,
+        address: address_line1 ? { line1: address_line1, city, country_code } : {},
+        star_rating: star_rating || 3,
+        images: [],
+        amenities: [],
+        policies: {},
+        contact: { email, phone: phone || null, website: website || null },
+        metadata: { property_type: property_type || 'Hotel' },
+        // New columns added by migration:
+        owner_user_id: userId,
         email: email.trim(),
         phone: phone?.trim() || null,
         website: website?.trim() || null,
-        description: description?.trim() || null,
-        star_rating: star_rating || null,
-        property_type: property_type || null,
-        room_count: room_count || null,
-        address: address_line1
-          ? { line1: address_line1, city, country_code }
-          : null,
-        business_registration_number:
-          business_registration_number?.trim() || null,
+        is_active: true,
+        is_verified: false,
+        room_count: room_count || 0,
+        property_type: property_type || 'Hotel',
+        display_name: display_name?.trim() || hotel_name.trim(),
+        business_registration_number: business_registration_number?.trim() || null,
         tax_id: tax_id?.trim() || null,
         certificate_urls: certificate_urls || [],
-        status: "pending",
-        is_active: false,
       })
-      .select("id, name, code, is_active, status, rejection_reason")
+      .select()
       .single();
 
-    if (partnerErr || !partner) {
-      console.error("Failed to create hotel partner:", partnerErr);
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: "DB_ERROR",
-            message: "Failed to create partner record",
-          },
-        },
-        { status: 500 },
-      );
+    if (hotelError) {
+      console.error("Hotel insert error:", hotelError);
+      throw new Error(hotelError.message);
     }
 
-    // Link the Clerk user as owner in partner_users
-    const { error: puErr } = await supabase.from("partner_users").insert({
-      partner_id: partner.id,
-      clerk_user_id: userId,
-      role: "owner",
-      is_active: true,
-    });
+    // 2. Create partner profile
+    const { data: profile, error: profileError } = await reviewsClient
+      .from("partner_profiles")
+      .insert({
+        owner_user_id: userId,
+        partner_type: "hotel",
+        status: "approved",
+        entity_id: hotel.id,
+        business_name: hotel_name.trim(),
+        business_email: email.trim(),
+        business_phone: phone?.trim() || null,
+        tax_id: tax_id?.trim() || null,
+        business_registration_number: business_registration_number?.trim() || null,
+        metadata: { property_type, star_rating, room_count, country_code }
+      })
+      .select()
+      .single();
 
-    if (puErr) {
-      console.error("Failed to create partner_users row:", puErr);
-      // Rollback partner creation
-      await supabase.from("hotel_partners").delete().eq("id", partner.id);
-      return NextResponse.json(
-        {
-          success: false,
-          error: { code: "DB_ERROR", message: "Failed to link user account" },
-        },
-        { status: 500 },
-      );
+    if (profileError) {
+      // Rollback hotel creation
+      await reviewsClient.from("hotels").delete().eq("id", hotel.id);
+      throw new Error(profileError.message);
     }
 
-    return NextResponse.json(
-      {
-        success: true,
-        data: {
-          id: partner.id,
-          name: partner.name,
-          code: partner.code,
-          is_active: partner.is_active,
-          status: partner.status,
-          rejection_reason: partner.rejection_reason ?? null,
-          role: "owner",
-        },
-      },
-      { status: 201 },
-    );
+    return NextResponse.json({
+      success: true,
+      data: {
+        id: hotel.id,
+        name: hotel.name,
+        is_active: hotel.is_active,
+        status: profile.status,
+        role: "owner",
+      }
+    }, { status: 201 });
   } catch (err: any) {
     console.error("Hotel partner apply error:", err);
     return NextResponse.json(
       { success: false, error: { code: "SERVER_ERROR", message: err.message } },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

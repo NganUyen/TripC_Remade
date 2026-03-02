@@ -1,9 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useUser } from "@clerk/nextjs";
 import { useFlightPartnerStore } from "@/store/useFlightPartnerStore";
 import FlightPortalLayout from "./FlightPortalLayout";
 import FlightDashboard from "./FlightDashboard";
+import { FlightRegistration } from "./FlightRegistration";
 
 // Flights
 import FlightList from "./flights/FlightList";
@@ -54,10 +56,30 @@ type Section =
 
 export function FlightPortal() {
   const [activeSection, setActiveSection] = useState<Section>("dashboard");
-  // Identity resolved by FlightPartnerGuard via useFlightPartnerStore
-  // Flights are queried by airline_code, not UUID
+  const { user } = useUser();
   const { partner } = useFlightPartnerStore();
   const pid = partner?.airline_code ?? "";
+  const [registered, setRegistered] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    fetch('/api/partner/flight/register', { headers: { 'x-user-id': user.id } })
+      .then(r => r.json())
+      .then(data => setRegistered(data.success === true))
+      .catch(() => setRegistered(false));
+  }, [user]);
+
+  if (registered === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="animate-spin rounded-full h-10 w-10 border-4 border-sky-500 border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (!registered) {
+    return <FlightRegistration onSuccess={() => setRegistered(true)} />;
+  }
 
   const renderContent = () => {
     switch (activeSection) {

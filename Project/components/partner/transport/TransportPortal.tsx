@@ -1,8 +1,10 @@
 "use client"
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { useUser } from '@clerk/nextjs'
 import { TransportPortalLayout } from './TransportPortalLayout'
 import { TransportDashboard } from './TransportDashboard'
+import { TransportRegistration } from './TransportRegistration'
 
 // Operations
 import { FleetManagement } from './operations/FleetManagement'
@@ -38,6 +40,28 @@ export type TransportSection =
 
 export function TransportPortal() {
     const [activeSection, setActiveSection] = useState<TransportSection>('dashboard')
+    const { user } = useUser()
+    const [registered, setRegistered] = useState<boolean | null>(null)
+
+    useEffect(() => {
+        if (!user) return;
+        fetch('/api/partner/transport/register', { headers: { 'x-user-id': user.id } })
+            .then(r => r.json())
+            .then(data => setRegistered(data.success === true))
+            .catch(() => setRegistered(false))
+    }, [user])
+
+    if (registered === null) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-500 border-t-transparent" />
+            </div>
+        )
+    }
+
+    if (!registered) {
+        return <TransportRegistration onSuccess={() => setRegistered(true)} />
+    }
 
     const renderContent = () => {
         switch (activeSection) {

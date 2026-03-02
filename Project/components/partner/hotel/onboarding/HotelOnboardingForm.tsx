@@ -181,11 +181,10 @@ export function HotelOnboardingForm() {
   const inputCls = (field: string) => `
         w-full px-4 py-3 rounded-xl border text-sm transition-colors
         bg-white/5 text-white placeholder:text-slate-500
-        ${
-          errors[field]
-            ? "border-red-500/50 focus:ring-red-500 focus:border-red-500"
-            : "border-white/10 focus:ring-blue-500 focus:border-blue-500"
-        }
+        ${errors[field]
+      ? "border-red-500/50 focus:ring-red-500 focus:border-red-500"
+      : "border-white/10 focus:ring-blue-500 focus:border-blue-500"
+    }
         focus:outline-none focus:ring-2
     `;
 

@@ -1,9 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useHotelPartnerStore } from "@/store/useHotelPartnerStore";
+import { useUser } from "@clerk/nextjs";
 import { HotelPortalLayout } from "./HotelPortalLayout";
 import { HotelDashboard } from "./HotelDashboard";
+import { HotelOnboardingForm } from "./onboarding/HotelOnboardingForm";
 
 // Properties
 import { HotelList } from "./properties/HotelList";
@@ -62,9 +64,36 @@ type Section =
 
 export function HotelPortal() {
   const [activeSection, setActiveSection] = useState<Section>("dashboard");
-  // Identity resolved by HotelPartnerGuard via useHotelPartnerStore
-  const { partner } = useHotelPartnerStore();
+  const { user } = useUser();
+  const { partner, isLoading, fetchPartner } = useHotelPartnerStore();
   const pid = partner?.id ?? "";
+  const [registered, setRegistered] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    // Check hotel registration via x-user-id header
+    fetch("/api/partner/hotel/me", { headers: { "x-user-id": user.id } })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) setRegistered(true);
+        else setRegistered(false);
+      })
+      .catch(() => setRegistered(false));
+  }, [user]);
+
+  // Show loading state while checking
+  if (registered === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-black">
+        <div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-500 border-t-transparent" />
+      </div>
+    );
+  }
+
+  // Not registered - show onboarding form
+  if (!registered) {
+    return <HotelOnboardingForm />;
+  }
 
   const renderContent = () => {
     switch (activeSection) {

@@ -1,7 +1,7 @@
-
 "use client"
 
 import { useEffect, useState } from 'react'
+import { useUser } from '@clerk/nextjs'
 import { Plus, Edit, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
@@ -13,16 +13,26 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { useRouter } from 'next/navigation'
+import { ActivityRegistration } from '@/components/partner/activities/ActivityRegistration'
 
 export default function PartnerActivitiesList() {
+    const { user } = useUser()
     const [activities, setActivities] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
-    const router = useRouter()
+    const [registered, setRegistered] = useState<boolean | null>(null)
 
     useEffect(() => {
-        fetchActivities()
-    }, [])
+        if (!user) return
+        // Check activity partner registration
+        fetch('/api/partner/activity/register', { headers: { 'x-user-id': user.id } })
+            .then(r => r.json())
+            .then(data => {
+                setRegistered(data.success === true)
+                if (data.success) fetchActivities()
+            })
+            .catch(() => setRegistered(false))
+            .finally(() => setLoading(false))
+    }, [user])
 
     async function fetchActivities() {
         try {
@@ -33,33 +43,36 @@ export default function PartnerActivitiesList() {
             }
         } catch (error) {
             console.error("Failed to fetch activities", error)
-        } finally {
-            setLoading(false)
         }
     }
 
     async function handleDelete(id: string, type: string) {
         if (!confirm('Are you sure you want to delete this listing?')) return
-
         const endpoint = type === 'event' ? `/api/events/${id}` :
             type === 'entertainment' ? `/api/entertainment/${id}` :
                 `/api/partner/activities/${id}`
-
         try {
-            const res = await fetch(endpoint, {
-                method: 'DELETE'
-            })
-            if (res.ok) {
-                setActivities(prev => prev.filter(a => a.id !== id))
-            } else {
-                alert('Failed to delete listing')
-            }
+            const res = await fetch(endpoint, { method: 'DELETE' })
+            if (res.ok) setActivities(prev => prev.filter(a => a.id !== id))
+            else alert('Failed to delete listing')
         } catch (error) {
             console.error("Delete failed", error)
         }
     }
 
-    if (loading) return <div>Loading listings...</div>
+    // Loading state
+    if (loading || registered === null) {
+        return (
+            <div className="min-h-[60vh] flex items-center justify-center">
+                <div className="animate-spin rounded-full h-10 w-10 border-4 border-orange-500 border-t-transparent" />
+            </div>
+        )
+    }
+
+    // Not registered - show registration form
+    if (!registered) {
+        return <ActivityRegistration onSuccess={() => { setRegistered(true); fetchActivities() }} />
+    }
 
     return (
         <div className="space-y-6">
@@ -68,20 +81,17 @@ export default function PartnerActivitiesList() {
                 <div className="flex gap-2">
                     <Link href="/partner/activities/new">
                         <Button className="bg-[#FF5E1F] text-white hover:bg-[#FF5E1F]/90">
-                            <Plus className="w-4 h-4 mr-2" />
-                            Activity
+                            <Plus className="w-4 h-4 mr-2" />Activity
                         </Button>
                     </Link>
                     <Link href="/partner/events/new">
                         <Button className="bg-purple-600 text-white hover:bg-purple-700">
-                            <Plus className="w-4 h-4 mr-2" />
-                            Event
+                            <Plus className="w-4 h-4 mr-2" />Event
                         </Button>
                     </Link>
                     <Link href="/partner/entertainment/new">
                         <Button className="bg-pink-600 text-white hover:bg-pink-700">
-                            <Plus className="w-4 h-4 mr-2" />
-                            Entertainment
+                            <Plus className="w-4 h-4 mr-2" />Entertainment
                         </Button>
                     </Link>
                 </div>
@@ -109,20 +119,7 @@ export default function PartnerActivitiesList() {
                                         <div className="flex gap-2">
                                             <Link href="/partner/activities/new">
                                                 <Button size="sm" className="bg-[#FF5E1F] text-white hover:bg-[#FF5E1F]/90">
-                                                    <Plus className="w-4 h-4 mr-2" />
-                                                    Activity
-                                                </Button>
-                                            </Link>
-                                            <Link href="/partner/events/new">
-                                                <Button size="sm" className="bg-purple-600 text-white hover:bg-purple-700">
-                                                    <Plus className="w-4 h-4 mr-2" />
-                                                    Event
-                                                </Button>
-                                            </Link>
-                                            <Link href="/partner/entertainment/new">
-                                                <Button size="sm" className="bg-pink-600 text-white hover:bg-pink-700">
-                                                    <Plus className="w-4 h-4 mr-2" />
-                                                    Entertainment
+                                                    <Plus className="w-4 h-4 mr-2" />Activity
                                                 </Button>
                                             </Link>
                                         </div>
@@ -158,11 +155,7 @@ export default function PartnerActivitiesList() {
                                                 <Edit className="w-4 h-4 text-slate-500" />
                                             </Button>
                                         </Link>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => handleDelete(item.id, item.type)}
-                                        >
+                                        <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id, item.type)}>
                                             <Trash2 className="w-4 h-4 text-red-500" />
                                         </Button>
                                     </TableCell>
