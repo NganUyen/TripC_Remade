@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useAuth } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import { Users, Search, Clock, Check, X } from "lucide-react";
 
@@ -13,48 +14,119 @@ interface Booking {
   status: "pending" | "checked-in" | "checked-out";
 }
 
-export function CheckInOut() {
+export function CheckInOut({ partnerId }: { partnerId: string }) {
+  const { getToken } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
-  const [bookings, setBookings] = useState<Booking[]>([
-    {
-      id: "1",
-      guestName: "Nguyễn Văn A",
-      roomNumber: "101",
-      checkInDate: "2025-02-10",
-      checkOutDate: "2025-02-12",
-      status: "pending",
-    },
-    {
-      id: "2",
-      guestName: "Trần Thị B",
-      roomNumber: "205",
-      checkInDate: "2025-02-09",
-      checkOutDate: "2025-02-11",
-      status: "checked-in",
-    },
-  ]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [hotelId, setHotelId] = useState<string | null>(null);
 
-  const handleCheckIn = (id: string) => {
+  useEffect(() => {
+    if (!partnerId) return;
+    (async () => {
+      try {
+        const token = await getToken();
+        const res = await fetch("/api/partner/hotel/hotels", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.data?.length > 0) {
+            setHotelId(data.data[0].id);
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+  }, [partnerId]);
+
+  useEffect(() => {
+    if (!hotelId) return;
+    (async () => {
+      try {
+        setLoading(true);
+        const token = await getToken();
+        const res = await fetch(
+          `/api/partner/hotel/bookings?hotel_id=${hotelId}&status=confirmed,checked_in`,
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success) {
+            setBookings(
+              (data.data || []).map((b: any) => ({
+                id: b.id,
+                guestName: b.guest_name ?? b.profiles?.full_name ?? "Khách",
+                roomNumber: b.room_number ?? b.hotel_rooms?.name ?? "-",
+                checkInDate: b.check_in_date ?? b.check_in ?? "",
+                checkOutDate: b.check_out_date ?? b.check_out ?? "",
+                status:
+                  b.status === "checked_in"
+                    ? "checked-in"
+                    : b.status === "checked_out"
+                      ? "checked-out"
+                      : "pending",
+              })),
+            );
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [hotelId]);
+
+  const updateBookingStatus = async (id: string, status: string) => {
+    // Optimistic
     setBookings((prev) =>
       prev.map((b) =>
-        b.id === id ? { ...b, status: "checked-in" as const } : b,
+        b.id === id
+          ? {
+              ...b,
+              status: status === "checked_in" ? "checked-in" : "checked-out",
+            }
+          : b,
       ),
     );
+    try {
+      const token = await getToken();
+      await fetch(`/api/partner/hotel/bookings/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status }),
+      });
+    } catch (e) {
+      console.error(e);
+    }
   };
 
-  const handleCheckOut = (id: string) => {
-    setBookings((prev) =>
-      prev.map((b) =>
-        b.id === id ? { ...b, status: "checked-out" as const } : b,
-      ),
-    );
-  };
+  const handleCheckIn = (id: string) => updateBookingStatus(id, "checked_in");
+  const handleCheckOut = (id: string) => updateBookingStatus(id, "checked_out");
 
   const filteredBookings = bookings.filter(
     (b) =>
       b.guestName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       b.roomNumber.includes(searchTerm),
   );
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        {[1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="h-28 bg-slate-200 dark:bg-slate-800 rounded-2xl animate-pulse"
+          />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

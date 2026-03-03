@@ -12,7 +12,7 @@ import {
   Calendar,
   User,
 } from "lucide-react";
-import { useSupabaseClient } from "@/lib/supabase";
+import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 
 interface Review {
   id: string;
@@ -23,16 +23,14 @@ interface Review {
   route_id: string;
   booking_id: string;
   response?: string;
-  transport_routes?:
-    | {
-        origin: string;
-        destination: string;
-      }[]
-    | { origin: string; destination: string };
+  transport_routes?: {
+    origin: string;
+    destination: string;
+  };
 }
 
 export function Reviews() {
-  const supabase = useSupabaseClient();
+  const { supabaseUser } = useCurrentUser();
   const [loading, setLoading] = useState(true);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [filterRating, setFilterRating] = useState<number | "all">("all");
@@ -41,82 +39,50 @@ export function Reviews() {
 
   useEffect(() => {
     fetchReviews();
-  }, []);
+  }, [supabaseUser]);
 
   const fetchReviews = async () => {
     try {
       setLoading(true);
+      if (!supabaseUser) return;
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
+      const response = await fetch("/api/partner/transport/reviews", {
+        headers: { "x-user-id": supabaseUser.id },
+      });
+      const result = await response.json();
 
-      // Get user's providers
-      const { data: providers } = await supabase
-        .from("transport_providers")
-        .select("id")
-        .eq("owner_id", user.id);
-
-      if (!providers || providers.length === 0) {
-        setLoading(false);
-        return;
-      }
-
-      const providerIds = providers.map((p) => p.id);
-
-      const { data, error } = await supabase
-        .from("transport_reviews")
-        .select(
-          `
-                    id,
-                    rating,
-                    comment,
-                    created_at,
-                    user_id,
-                    route_id,
-                    booking_id,
-                    response,
-                    transport_routes!inner (
-                        origin,
-                        destination,
-                        provider_id
-                    )
-                `,
-        )
-        .in("transport_routes.provider_id", providerIds)
-        .order("created_at", { ascending: false });
-
-      if (error) {
-        console.error("Error fetching reviews:", error);
-      } else {
-        setReviews((data as unknown as Review[]) || []);
-      }
-    } catch (error) {
-      console.error("Error:", error);
+      if (!result.success) throw new Error(result.error);
+      setReviews(result.data || []);
+    } catch (error: any) {
+      console.error("Error fetching reviews:", error);
     } finally {
       setLoading(false);
     }
   };
 
   const submitReply = async (reviewId: string) => {
-    if (!replyText.trim()) return;
+    if (!replyText.trim() || !supabaseUser) return;
 
     try {
-      const { error } = await supabase
-        .from("transport_reviews")
-        .update({ response: replyText })
-        .eq("id", reviewId);
+      const resp = await fetch("/api/partner/transport/reviews", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": supabaseUser.id
+        },
+        body: JSON.stringify({ id: reviewId, response: replyText }),
+      });
+      const result = await resp.json();
 
-      if (error) {
-        console.error("Error submitting reply:", error);
-      } else {
+      if (result.success) {
         fetchReviews();
         setReplyingTo(null);
         setReplyText("");
+      } else {
+        throw new Error(result.error);
       }
-    } catch (error) {
-      console.error("Error:", error);
+    } catch (error: any) {
+      console.error("Error submitting reply:", error);
     }
   };
 
@@ -146,8 +112,8 @@ export function Reviews() {
   const avgRating =
     reviews.length > 0
       ? (
-          reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
-        ).toFixed(1)
+        reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+      ).toFixed(1)
       : 0;
   const ratingDistribution = [5, 4, 3, 2, 1].map((rating) => ({
     rating,
@@ -155,10 +121,10 @@ export function Reviews() {
     percentage:
       reviews.length > 0
         ? (
-            (reviews.filter((r) => r.rating === rating).length /
-              reviews.length) *
-            100
-          ).toFixed(0)
+          (reviews.filter((r) => r.rating === rating).length /
+            reviews.length) *
+          100
+        ).toFixed(0)
         : 0,
   }));
 
@@ -255,11 +221,10 @@ export function Reviews() {
       <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl w-fit">
         <button
           onClick={() => setFilterRating("all")}
-          className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
-            filterRating === "all"
+          className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${filterRating === "all"
               ? "bg-white dark:bg-slate-700 text-primary shadow-sm"
               : "text-slate-500 dark:text-slate-400 hover:text-primary"
-          }`}
+            }`}
         >
           Tất cả
         </button>
@@ -267,11 +232,10 @@ export function Reviews() {
           <button
             key={rating}
             onClick={() => setFilterRating(rating)}
-            className={`px-5 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 ${
-              filterRating === rating
+            className={`px-5 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 ${filterRating === rating
                 ? "bg-white dark:bg-slate-700 text-primary shadow-sm"
                 : "text-slate-500 dark:text-slate-400 hover:text-primary"
-            }`}
+              }`}
           >
             {rating} <Star className="w-3.5 h-3.5 fill-current" />
           </button>

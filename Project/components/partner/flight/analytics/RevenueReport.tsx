@@ -1,16 +1,62 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useAuth } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import { LineChart, Download, TrendingUp, Calendar } from "lucide-react";
 
-export default function RevenueReport() {
+export default function RevenueReport({ partnerId }: { partnerId: string }) {
+  const { getToken } = useAuth();
   const [selectedPeriod, setSelectedPeriod] = useState("month");
+  const [dashData, setDashData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  const revenueData = {
+  useEffect(() => {
+    if (!partnerId) return;
+    (async () => {
+      try {
+        setLoading(true);
+        const token = await getToken();
+        const res = await fetch("/api/partner/flight/analytics/dashboard", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success) setDashData(data.data);
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [partnerId, selectedPeriod]);
+
+  const fallback = {
     week: { total: 58500000000, growth: 5.2, avgPerFlight: 169565217 },
     month: { total: 248500000000, growth: 12.5, avgPerFlight: 720289855 },
     year: { total: 2980000000000, growth: 18.3, avgPerFlight: 860919540 },
+  };
+
+  const revenueData = {
+    week: {
+      total: dashData?.total_revenue ?? fallback.week.total,
+      growth: dashData?.growth_rate ?? fallback.week.growth,
+      avgPerFlight:
+        dashData?.avg_revenue_per_flight ?? fallback.week.avgPerFlight,
+    },
+    month: {
+      total: dashData?.total_revenue ?? fallback.month.total,
+      growth: dashData?.growth_rate ?? fallback.month.growth,
+      avgPerFlight:
+        dashData?.avg_revenue_per_flight ?? fallback.month.avgPerFlight,
+    },
+    year: {
+      total: dashData?.total_revenue ?? fallback.year.total,
+      growth: dashData?.growth_rate ?? fallback.year.growth,
+      avgPerFlight:
+        dashData?.avg_revenue_per_flight ?? fallback.year.avgPerFlight,
+    },
   };
 
   const currentData = revenueData[selectedPeriod as keyof typeof revenueData];
@@ -21,6 +67,22 @@ export default function RevenueReport() {
     { category: "Vé Hạng nhất", amount: 18500000000, percentage: 7.5 },
     { category: "Dịch vụ bổ sung", amount: 5000000000, percentage: 2.5 },
   ];
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="h-10 w-48 bg-slate-200 dark:bg-slate-800 rounded-xl animate-pulse" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="h-36 bg-slate-200 dark:bg-slate-800 rounded-2xl animate-pulse"
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

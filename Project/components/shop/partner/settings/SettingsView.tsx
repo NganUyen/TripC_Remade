@@ -132,7 +132,7 @@ export function SettingsView() {
                     {/* Logo + Name */}
                     <div className="flex items-start gap-6 -mt-14 relative z-10">
                         <div className="flex-shrink-0">
-                            <div className="w-20 h-20 rounded-xl bg-white dark:bg-slate-800 border-4 border-white dark:border-slate-900 overflow-hidden shadow-sm">
+                            <div className="w-20 h-20 rounded-xl bg-white dark:bg-slate-800 border-4 border-white dark:border-slate-900 overflow-hidden shadow-sm relative">
                                 {formData.logo_url ? (
                                     <Image
                                         src={formData.logo_url}

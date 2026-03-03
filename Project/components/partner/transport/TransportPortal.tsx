@@ -18,6 +18,7 @@ import { SeatManagement } from './bookings/SeatManagement'
 // Analytics
 import { Performance } from './analytics/Performance'
 import { Revenue } from './analytics/Revenue'
+import { CommissionVoucher } from './analytics/CommissionVoucher'
 
 // Admin
 import { ProviderSettings } from './admin/ProviderSettings'
@@ -29,7 +30,7 @@ export type TransportSection =
     // Operations
     | 'fleet' | 'routes' | 'drivers' | 'schedule'
     // Bookings
-    | 'bookings' | 'pricing' | 'seats'
+    | 'bookings' | 'pricing' | 'seats' | 'commission'
     // Analytics
     | 'performance' | 'revenue'
     // Admin
@@ -42,7 +43,7 @@ export function TransportPortal() {
         switch (activeSection) {
             // Dashboard
             case 'dashboard':
-                return <TransportDashboard />
+                return <TransportDashboard onSectionChange={(section) => setActiveSection(section as TransportSection)} />
 
             // Operations
             case 'fleet':
@@ -61,6 +62,8 @@ export function TransportPortal() {
                 return <PricingManagement />
             case 'seats':
                 return <SeatManagement />
+            case 'commission':
+                return <CommissionVoucher />
 
             // Analytics
             case 'performance':

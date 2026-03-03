@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useAuth } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import { TrendingUp, Plane, Users, DollarSign, Calendar } from "lucide-react";
 
@@ -12,39 +13,55 @@ interface RouteMetrics {
   occupancy: number;
 }
 
-export default function RouteAnalytics() {
+export default function RouteAnalytics({ partnerId }: { partnerId: string }) {
+  const { getToken } = useAuth();
   const [selectedPeriod, setSelectedPeriod] = useState("month");
+  const [routeMetrics, setRouteMetrics] = useState<RouteMetrics[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const routeMetrics: RouteMetrics[] = [
-    {
-      route: "HAN - SGN",
-      flights: 120,
-      passengers: 18500,
-      revenue: 92500000000,
-      occupancy: 85,
-    },
-    {
-      route: "SGN - DAD",
-      flights: 90,
-      passengers: 12500,
-      revenue: 62500000000,
-      occupancy: 78,
-    },
-    {
-      route: "HAN - DAD",
-      flights: 75,
-      passengers: 10200,
-      revenue: 51000000000,
-      occupancy: 82,
-    },
-    {
-      route: "SGN - PQC",
-      flights: 60,
-      passengers: 8500,
-      revenue: 42500000000,
-      occupancy: 75,
-    },
-  ];
+  useEffect(() => {
+    if (!partnerId) return;
+    (async () => {
+      try {
+        setLoading(true);
+        const token = await getToken();
+        const res = await fetch("/api/partner/flight/routes", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success) {
+            setRouteMetrics(
+              (data.data || []).map((r: any) => ({
+                route: `${r.origin_code ?? r.origin} - ${r.destination_code ?? r.destination}`,
+                flights: r.total_flights ?? 0,
+                passengers: r.total_passengers ?? 0,
+                revenue: r.total_revenue ?? 0,
+                occupancy: r.avg_occupancy ?? 0,
+              })),
+            );
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [partnerId, selectedPeriod]);
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        {[1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="h-28 bg-slate-200 dark:bg-slate-800 rounded-2xl animate-pulse"
+          />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

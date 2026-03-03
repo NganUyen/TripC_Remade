@@ -19,6 +19,8 @@ import {
   Save,
 } from "lucide-react";
 import { useSupabaseClient } from "@/lib/supabase";
+import { toast } from "sonner";
+import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 
 interface TransportRoute {
   id: string;
@@ -63,6 +65,7 @@ interface TransportProvider {
 
 export function RouteManagement() {
   const supabase = useSupabaseClient();
+  const { supabaseUser, isLoading: isAuthLoading } = useCurrentUser();
   const [loading, setLoading] = useState(true);
   const [routes, setRoutes] = useState<TransportRoute[]>([]);
   const [providers, setProviders] = useState<TransportProvider[]>([]);
@@ -80,84 +83,75 @@ export function RouteManagement() {
     seats_available: 29,
   });
   const [saving, setSaving] = useState(false);
+  const [minDateTime, setMinDateTime] = useState("");
 
   useEffect(() => {
-    fetchRoutes();
+    updateMinDateTime();
+    const interval = setInterval(updateMinDateTime, 60000);
+    return () => clearInterval(interval);
   }, []);
+
+  const updateMinDateTime = () => {
+    const now = new Date();
+    const tzOffset = now.getTimezoneOffset() * 60000; // offset in milliseconds
+    const localISOTime = new Date(Date.now() - tzOffset).toISOString().slice(0, 16);
+    setMinDateTime(localISOTime);
+  };
+
+  useEffect(() => {
+    if (supabaseUser) {
+      fetchRoutes();
+    }
+  }, [supabaseUser]);
 
   const fetchRoutes = async () => {
     try {
       setLoading(true);
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      if (!supabaseUser) return;
 
-      if (!user) return;
+      // 1. Fetch providers
+      const providersResp = await fetch("/api/partner/transport/providers", {
+        headers: { "x-user-id": supabaseUser.id },
+      });
+      const providersResult = await providersResp.json();
+      if (!providersResult.success) throw new Error(providersResult.error);
 
-      // Fetch providers
-      const { data: providersData } = await supabase
-        .from("transport_providers")
-        .select("id, name, logo_url")
-        .eq("owner_id", user.id);
-
-      const myProviders =
-        (providersData as unknown as TransportProvider[]) || [];
+      const myProviders = (providersResult.data || []) as TransportProvider[];
       setProviders(myProviders);
 
       if (myProviders.length > 0) {
-        const providerIds = myProviders.map((p) => p.id);
+        const allVehicles: Vehicle[] = [];
+        const allRoutes: TransportRoute[] = [];
 
-        // Fetch vehicles
-        const { data: vehiclesData } = await supabase
-          .from("transport_vehicles")
-          .select("*")
-          .in("provider_id", providerIds)
-          .eq("status", "active");
+        for (const p of myProviders) {
+          // Fetch vehicles
+          const vResp = await fetch(`/api/partner/transport/vehicles?provider_id=${p.id}`, {
+            headers: { "x-user-id": supabaseUser.id },
+          });
+          const vResult = await vResp.json();
+          if (vResult.success && vResult.data) {
+            allVehicles.push(...vResult.data.filter((v: any) => v.status === "active"));
+          }
 
-        setVehicles((vehiclesData as unknown as Vehicle[]) || []);
-
-        // Fetch routes
-        const { data, error } = await supabase
-          .from("transport_routes")
-          .select(
-            `
-                        id,
-                        origin,
-                        destination,
-                        departure_time,
-                        arrival_time,
-                        price,
-                        currency,
-                        seats_available,
-                        type,
-                        vehicle_type,
-                        vehicle_details,
-                        provider_id,
-                        vehicle_id,
-                        transport_providers (
-                            name,
-                            logo_url
-                        ),
-                        transport_vehicles (
-                            plate_number,
-                            model
-                        )
-                    `,
-          )
-          .in("provider_id", providerIds)
-          .order("departure_time", { ascending: true });
-
-        if (error) {
-          console.error("Error fetching routes:", error);
-        } else {
-          setRoutes((data as unknown as TransportRoute[]) || []);
+          // Fetch routes
+          const rResp = await fetch(`/api/partner/transport/routes?provider_id=${p.id}`, {
+            headers: { "x-user-id": supabaseUser.id },
+          });
+          const rResult = await rResp.json();
+          if (rResult.success && rResult.data) {
+            allRoutes.push(...rResult.data);
+          }
         }
+
+        setVehicles(allVehicles);
+        setRoutes(allRoutes);
       } else {
         setVehicles([]);
         setRoutes([]);
       }
-    } catch (error) {
-      console.error("Error:", error);
+    } catch (error: any) {
+      console.error("Error fetching routes data:", error);
+      toast.error("Lỗi khi tải dữ liệu: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -165,52 +159,87 @@ export function RouteManagement() {
 
   const handleSave = async () => {
     try {
+      if (!supabaseUser) return;
+
       // Validate
       if (!formData.origin || !formData.destination) {
-        alert("Vui lòng nhập điểm đi và điểm đến");
+        toast.error("Vui lòng nhập điểm đi và điểm đến");
         return;
       }
 
       if (!formData.departure_time || !formData.arrival_time) {
-        alert("Vui lòng chọn thời gian khởi hành và kết thúc");
+        toast.error("Vui lòng chọn thời gian khởi hành và kết thúc");
         return;
       }
 
+      const now = new Date();
       const departure = new Date(formData.departure_time);
       const arrival = new Date(formData.arrival_time);
-      if (arrival <= departure) {
-        alert("Thời gian đến phải sau thời gian khởi hành");
+
+      if (departure < now) {
+        toast.error("Thời gian khởi hành phải từ thời điểm hiện tại trở đi");
         return;
       }
 
-      if (!formData.price || formData.price < 0) {
-        alert("Giá vé không hợp lệ");
+      if (arrival <= departure) {
+        toast.error("Thời gian đến phải sau thời gian khởi hành");
+        return;
+      }
+
+      if (formData.price === undefined || formData.price < 0) {
+        toast.error("Giá vé không hợp lệ");
         return;
       }
 
       setSaving(true);
 
-      const dataToSave = {
+      const dataToSave: any = {
         ...formData,
-        provider_id: formData.provider_id || providers[0]?.id,
+        id: editingRoute?.id,
+        provider_id: formData.provider_id || providers[0]?.id || null,
+        vehicle_id: formData.vehicle_id || null,
       };
 
-      // Clean up visual fields
-      delete (dataToSave as any).transport_providers;
-      delete (dataToSave as any).transport_vehicles;
-
-      if (editingRoute) {
-        const { error } = await supabase
-          .from("transport_routes")
-          .update(dataToSave)
-          .eq("id", editingRoute.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from("transport_routes")
-          .insert([dataToSave]);
-        if (error) throw error;
+      if (!dataToSave.provider_id) {
+        toast.error("Vui lòng thiết lập hồ sơ nhà cung cấp trong phần 'Cài đặt' trước khi tạo tuyến đường");
+        setSaving(false);
+        return;
       }
+
+      // Clean up visual and internal fields that shouldn't be in the DB
+      const UI_FIELDS = [
+        "transport_providers",
+        "transport_vehicles",
+        "created_at",
+        "updated_at",
+      ];
+      UI_FIELDS.forEach((field) => delete dataToSave[field]);
+
+      // Ensure UUID fields are not empty strings
+      if (dataToSave.provider_id === "") dataToSave.provider_id = null;
+      if (dataToSave.vehicle_id === "") dataToSave.vehicle_id = null;
+
+      // Ensure dates are valid ISO strings if present
+      if (dataToSave.departure_time) {
+        dataToSave.departure_time = new Date(dataToSave.departure_time).toISOString();
+      }
+      if (dataToSave.arrival_time) {
+        dataToSave.arrival_time = new Date(dataToSave.arrival_time).toISOString();
+      }
+
+      const response = await fetch("/api/partner/transport/routes", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": supabaseUser.id
+        },
+        body: JSON.stringify(dataToSave),
+      });
+
+      const result = await response.json();
+      if (!result.success) throw new Error(result.error);
+
+      toast.success(editingRoute ? "Cập nhật tuyến đường thành công" : "Đã tạo tuyến đường mới thành công");
 
       setShowModal(false);
       setEditingRoute(null);
@@ -223,30 +252,39 @@ export function RouteManagement() {
       fetchRoutes();
     } catch (error: any) {
       console.error("Error saving route:", error);
-      alert("Lỗi khi lưu tuyến đường: " + error.message);
+      toast.error(`Lỗi khi lưu: ${error.message || "Vui lòng kiểm tra console"}`);
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async (id: string) => {
+    if (!supabaseUser) return;
     if (!confirm("Bạn có chắc chắn muốn xóa tuyến đường này?")) return;
 
     try {
-      const { error } = await supabase
-        .from("transport_routes")
-        .delete()
-        .eq("id", id);
+      const response = await fetch(`/api/partner/transport/routes?id=${id}`, {
+        method: "DELETE",
+        headers: { "x-user-id": supabaseUser.id },
+      });
 
-      if (error) throw error;
+      const result = await response.json();
+      if (!result.success) throw new Error(result.error);
+
+      toast.success("Đã xóa tuyến đường");
       fetchRoutes();
     } catch (error: any) {
       console.error("Error deleting route:", error);
-      alert("Lỗi khi xóa tuyến đường: " + error.message);
+      toast.error("Lỗi khi xóa tuyến đường: " + error.message);
     }
   };
 
   const openEditModal = (route: TransportRoute) => {
+    // Sync check on edit as well
+    if (providers.length === 0) {
+      fetchRoutes();
+    }
+
     setEditingRoute(route);
     setFormData({
       ...route,
@@ -262,13 +300,21 @@ export function RouteManagement() {
   };
 
   const openAddModal = () => {
+    // Refresh providers if none exist (help sync with Settings)
+    if (providers.length === 0) {
+      fetchRoutes();
+    }
+
+    // If we have providers but no provider_id in formData, default to the first one
+    const defaultProviderId = formData.provider_id || providers[0]?.id;
+
     setEditingRoute(null);
     setFormData({
       currency: "VND",
       type: "bus",
       vehicle_type: "29 seats",
       seats_available: 29,
-      provider_id: providers[0]?.id,
+      provider_id: defaultProviderId,
     });
     setShowModal(true);
   };
@@ -602,7 +648,40 @@ export function RouteManagement() {
                 </button>
               </div>
 
+              {providers.length === 0 && (
+                <div className="p-4 mx-6 mt-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-600 dark:text-red-400 text-sm">
+                  <strong>Cảnh báo:</strong> Bạn chưa có hồ sơ nhà cung cấp vận chuyển. Vui lòng tạo hồ sơ trong phần <strong>Cài đặt</strong> trước khi thiết lập tuyến đường.
+                </div>
+              )}
+
               <div className="p-6 space-y-6 max-h-[75vh] overflow-y-auto custom-scrollbar">
+                {/* Provider Selection */}
+                <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
+                  <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                    Nhà cung cấp vận chuyển
+                  </label>
+                  {providers.length > 1 ? (
+                    <select
+                      value={formData.provider_id || ""}
+                      onChange={(e) => setFormData({ ...formData, provider_id: e.target.value })}
+                      className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none transition-all font-medium"
+                    >
+                      <option value="">-- Chọn nhà cung cấp --</option>
+                      {providers.map((p) => (
+                        <option key={p.id} value={p.id}>{p.name}</option>
+                      ))}
+                    </select>
+                  ) : providers.length === 1 ? (
+                    <div className="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 border-transparent rounded-xl font-bold text-slate-900 dark:text-white">
+                      {providers[0].name}
+                    </div>
+                  ) : (
+                    <div className="px-4 py-2.5 bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-900/30 rounded-xl font-bold text-red-500">
+                      Chưa có hồ sơ nhà cung cấp
+                    </div>
+                  )}
+                </div>
+
                 {/* Route Selection */}
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
@@ -617,7 +696,6 @@ export function RouteManagement() {
                           setFormData({ ...formData, origin: e.target.value })
                         }
                         className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                        placeholder="Ví dụ: Hà Nội"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -634,7 +712,6 @@ export function RouteManagement() {
                           })
                         }
                         className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                        placeholder="Ví dụ: Đà Nẵng"
                       />
                     </div>
                   </div>
@@ -673,13 +750,16 @@ export function RouteManagement() {
                       <input
                         type="datetime-local"
                         value={formData.departure_time || ""}
+                        min={minDateTime}
+                        onFocus={updateMinDateTime}
                         onChange={(e) =>
                           setFormData({
                             ...formData,
                             departure_time: e.target.value,
                           })
                         }
-                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                        className={`w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none transition-all ${formData.departure_time && formData.departure_time < minDateTime ? 'border-red-500 ring-2 ring-red-500/20' : ''
+                          }`}
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -689,32 +769,38 @@ export function RouteManagement() {
                       <input
                         type="datetime-local"
                         value={formData.arrival_time || ""}
+                        min={formData.departure_time || minDateTime}
+                        onFocus={updateMinDateTime}
                         onChange={(e) =>
                           setFormData({
                             ...formData,
                             arrival_time: e.target.value,
                           })
                         }
-                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                        className={`w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none transition-all ${formData.arrival_time && (formData.arrival_time < (formData.departure_time || minDateTime)) ? 'border-red-500 ring-2 ring-red-500/20' : ''
+                          }`}
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-3 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                        Giá vé
+                    <div className="space-y-1.5 flex-1">
+                      <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex justify-between">
+                        <span>Giá vé</span>
+                        <span className="text-primary font-bold">
+                          {formatCurrency(formData.price || 0, formData.currency)}
+                        </span>
                       </label>
                       <input
                         type="number"
-                        value={formData.price || 0}
+                        value={formData.price || ""}
                         onChange={(e) =>
                           setFormData({
                             ...formData,
-                            price: Number(e.target.value),
+                            price: e.target.value ? Number(e.target.value) : 0,
                           })
                         }
-                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none transition-all font-medium"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -783,7 +869,6 @@ export function RouteManagement() {
                           })
                         }
                         className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                        placeholder="VD: Xe giường nằm 40 chỗ"
                       />
                     </div>
                   </div>

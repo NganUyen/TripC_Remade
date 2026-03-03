@@ -6,6 +6,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useAuth } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import {
   Calendar as CalendarIcon,
@@ -39,6 +40,7 @@ export function RateCalendar({
   roomId,
   roomTitle,
 }: RateCalendarProps) {
+  const { getToken } = useAuth();
   const [rates, setRates] = useState<Rate[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -79,9 +81,10 @@ export function RateCalendar({
       url.searchParams.set("start_date", startDate);
       url.searchParams.set("end_date", endDate);
 
+      const token = await getToken();
       const response = await fetch(url, {
         headers: {
-          "x-partner-id": partnerId,
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -102,11 +105,12 @@ export function RateCalendar({
 
   async function saveRate(date: string) {
     try {
+      const token = await getToken();
       const response = await fetch("/api/partner/hotel/rates", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-partner-id": partnerId,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           room_id: roomId,
@@ -151,11 +155,12 @@ export function RateCalendar({
         .toISOString()
         .split("T")[0];
 
+      const bulkToken = await getToken();
       const response = await fetch("/api/partner/hotel/rates", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-partner-id": partnerId,
+          Authorization: `Bearer ${bulkToken}`,
         },
         body: JSON.stringify({
           room_id: roomId,

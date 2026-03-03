@@ -8,17 +8,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { createHotelSchema } from "@/lib/hotel-partner/validation";
 import { getPartnerHotels, createHotel } from "@/lib/hotel-partner/database";
 import { ZodError } from "zod";
-
-// Note: Authentication middleware should be added here
-// For now, we'll use a mock partner ID from headers
-function getPartnerId(req: NextRequest): string {
-  // TODO: Replace with actual authentication
-  const partnerId = req.headers.get("x-partner-id");
-  if (!partnerId) {
-    throw new Error("Partner ID not found");
-  }
-  return partnerId;
-}
+import {
+  resolveHotelPartnerId,
+  authErrorStatus,
+} from "@/lib/partner/clerkAuth";
 
 /**
  * GET /api/partner/hotel/hotels
@@ -26,7 +19,7 @@ function getPartnerId(req: NextRequest): string {
  */
 export async function GET(req: NextRequest) {
   try {
-    const partnerId = getPartnerId(req);
+    const partnerId = await resolveHotelPartnerId();
 
     const hotels = await getPartnerHotels(partnerId);
 
@@ -45,7 +38,7 @@ export async function GET(req: NextRequest) {
           message: error.message || "Failed to fetch hotels",
         },
       },
-      { status: 500 },
+      { status: error ? authErrorStatus(error) : 500 },
     );
   }
 }
@@ -56,7 +49,7 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   try {
-    const partnerId = getPartnerId(req);
+    const partnerId = await resolveHotelPartnerId();
     const body = await req.json();
 
     // Validate request body

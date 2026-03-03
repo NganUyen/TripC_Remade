@@ -18,6 +18,8 @@ import {
   MoreVertical,
 } from "lucide-react";
 import { useSupabaseClient } from "@/lib/supabase";
+import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
+import { toast } from "sonner";
 
 interface Booking {
   id: string;
@@ -67,73 +69,51 @@ export function BookingManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const { supabaseUser } = useCurrentUser();
+  const [providers, setProviders] = useState<{ id: string; name: string }[]>([]);
 
   useEffect(() => {
-    fetchBookings();
-  }, []);
+    if (supabaseUser) {
+      fetchBookings();
+    }
+  }, [supabaseUser]);
+
+  const refreshProviders = async () => {
+    if (!supabaseUser) return [];
+    try {
+      const resp = await fetch("/api/partner/transport/providers", {
+        headers: { "x-user-id": supabaseUser.id },
+      });
+      const result = await resp.json();
+      if (result.success) {
+        setProviders(result.data || []);
+        return result.data || [];
+      }
+    } catch (error) {
+      console.error("Error refreshing providers:", error);
+    }
+    return [];
+  };
 
   const fetchBookings = async () => {
     try {
       setLoading(true);
+      if (!supabaseUser) return;
 
-      // Try unified schema first (with category filter)
-      const { data, error } = await supabase
-        .from("bookings")
-        .select(
-          `
-                    id,
-                    booking_code,
-                    status,
-                    total_amount,
-                    created_at,
-                    held_at,
-                    expires_at,
-                    passenger_info,
-                    guest_details,
-                    metadata,
-                    title,
-                    location_summary
-                `,
-        )
-        .eq("category", "transport")
-        .order("created_at", { ascending: false });
+      const resp = await fetch("/api/partner/transport/bookings", {
+        headers: { "x-user-id": supabaseUser.id },
+      });
+      const result = await resp.json();
 
-      if (error) {
-        console.error("Error fetching bookings:", error);
-        // Try legacy schema with route_id foreign key
-        const { data: legacyData, error: legacyError } = await supabase
-          .from("bookings")
-          .select(
-            `
-                        id,
-                        booking_code,
-                        status,
-                        total_amount,
-                        created_at,
-                        held_at,
-                        expires_at,
-                        passenger_info,
-                        route_id,
-                        transport_routes!route_id (
-                            origin,
-                            destination,
-                            departure_time,
-                            arrival_time,
-                            vehicle_type,
-                            type
-                        )
-                    `,
-          )
-          .order("created_at", { ascending: false });
-
-        if (!legacyError) {
-          setBookings((legacyData as unknown as Booking[]) || []);
-        }
+      if (result.success) {
+        setBookings(result.data || []);
       } else {
-        setBookings((data as unknown as Booking[]) || []);
+        console.error("Error fetching bookings:", result.error);
+        toast.error("Không thể tải danh sách đặt chỗ");
       }
-    } catch (error) {
-      console.error("Error:", error);
+    } catch (error: any) {
+      console.error("Error fetching bookings:", error);
+      toast.error("Lỗi khi tải đơn đặt chỗ: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -157,21 +137,29 @@ export function BookingManagement() {
   };
 
   const getStatusBadge = (status: Booking["status"]) => {
-    const config = {
+    const config: Record<
+      string,
+      { bg: string; text: string; label: string }
+    > = {
       held: {
         bg: "bg-amber-100 dark:bg-amber-900/20",
         text: "text-amber-700 dark:text-amber-400",
-        label: "Đang giữ chỗ",
+        label: "Chờ thanh toán (Giữ chỗ)",
+      },
+      pending_payment: {
+        bg: "bg-amber-100 dark:bg-amber-900/20",
+        text: "text-amber-700 dark:text-amber-400",
+        label: "Chờ thanh toán (Giữ chỗ)",
       },
       confirmed: {
         bg: "bg-green-100 dark:bg-green-900/20",
         text: "text-green-700 dark:text-green-400",
-        label: "Đã xác nhận",
+        label: "Thanh toán (Đã đặt)",
       },
       completed: {
         bg: "bg-blue-100 dark:bg-blue-900/20",
         text: "text-blue-700 dark:text-blue-400",
-        label: "Hoàn thành",
+        label: "Thanh toán (Đã đặt)",
       },
       cancelled: {
         bg: "bg-red-100 dark:bg-red-900/20",

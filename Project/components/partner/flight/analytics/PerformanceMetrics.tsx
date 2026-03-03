@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useAuth } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import {
   Activity,
@@ -10,13 +11,44 @@ import {
   TrendingUp,
 } from "lucide-react";
 
-export default function PerformanceMetrics() {
+export default function PerformanceMetrics({
+  partnerId,
+}: {
+  partnerId: string;
+}) {
+  const { getToken } = useAuth();
   const [timeframe, setTimeframe] = useState("month");
+  const [dashData, setDashData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!partnerId) return;
+    (async () => {
+      try {
+        setLoading(true);
+        const token = await getToken();
+        const res = await fetch("/api/partner/flight/analytics/dashboard", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success) setDashData(data.data);
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [partnerId, timeframe]);
 
   const metrics = [
     {
       label: "Đúng giờ",
-      value: "92.5%",
+      value:
+        dashData?.ontime_rate != null
+          ? `${dashData.ontime_rate.toFixed(1)}%`
+          : "92.5%",
       change: "+2.3%",
       icon: CheckCircle,
       color: "green",
@@ -24,7 +56,10 @@ export default function PerformanceMetrics() {
     },
     {
       label: "Thời gian chờ TB",
-      value: "12 phút",
+      value:
+        dashData?.avg_delay_minutes != null
+          ? `${Math.round(dashData.avg_delay_minutes)} phút`
+          : "12 phút",
       change: "-3 phút",
       icon: Clock,
       color: "blue",
@@ -32,7 +67,10 @@ export default function PerformanceMetrics() {
     },
     {
       label: "Hành khách hài lòng",
-      value: "4.6/5",
+      value:
+        dashData?.avg_satisfaction != null
+          ? `${dashData.avg_satisfaction.toFixed(1)}/5`
+          : "4.6/5",
       change: "+0.2",
       icon: TrendingUp,
       color: "purple",
@@ -40,7 +78,10 @@ export default function PerformanceMetrics() {
     },
     {
       label: "Tỷ lệ hủy chuyến",
-      value: "1.2%",
+      value:
+        dashData?.cancellation_rate != null
+          ? `${dashData.cancellation_rate.toFixed(1)}%`
+          : "1.2%",
       change: "-0.5%",
       icon: AlertCircle,
       color: "orange",
@@ -78,6 +119,22 @@ export default function PerformanceMetrics() {
       satisfaction: 4.4,
     },
   ];
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="h-10 w-48 bg-slate-200 dark:bg-slate-800 rounded-xl animate-pulse" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div
+              key={i}
+              className="h-40 bg-slate-200 dark:bg-slate-800 rounded-2xl animate-pulse"
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

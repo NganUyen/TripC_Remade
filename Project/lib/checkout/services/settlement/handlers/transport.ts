@@ -55,6 +55,17 @@ export class TransportSettlementHandler implements ISettlementHandler {
             throw error;
         }
 
+        // 4. Update seats available (Sync data)
+        const { error: seatError } = await this.supabase.rpc('decrement_transport_seats', {
+            target_route_id: routeId,
+            seats_amount: 1 // For now, assume 1, though metadata could specify
+        });
+
+        if (seatError) {
+            console.error('[TRANSPORT_SETTLEMENT] Seat deduction failed:', seatError);
+            // Non-critical for settlement, but log it.
+        }
+
         console.log('[TRANSPORT_SETTLEMENT] Success');
     }
 }

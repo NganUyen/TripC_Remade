@@ -16,14 +16,10 @@ import {
   getRoom,
   getPartnerHotel,
 } from "@/lib/hotel-partner/database";
-
-function getPartnerId(req: NextRequest): string {
-  const partnerId = req.headers.get("x-partner-id");
-  if (!partnerId) {
-    throw new Error("Partner ID not found");
-  }
-  return partnerId;
-}
+import {
+  resolveHotelPartnerId,
+  authErrorStatus,
+} from "@/lib/partner/clerkAuth";
 
 /**
  * GET /api/partner/hotel/rates
@@ -31,7 +27,7 @@ function getPartnerId(req: NextRequest): string {
  */
 export async function GET(req: NextRequest) {
   try {
-    const partnerId = getPartnerId(req);
+    const partnerId = await resolveHotelPartnerId();
     const { searchParams } = new URL(req.url);
     const roomId = searchParams.get("room_id");
     const startDate = searchParams.get("start_date");
@@ -107,7 +103,7 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   try {
-    const partnerId = getPartnerId(req);
+    const partnerId = await resolveHotelPartnerId();
     const body = await req.json();
 
     // Check if it's a bulk update or single rate

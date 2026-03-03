@@ -1,21 +1,91 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { useAuth } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import { BedDouble, TrendingUp } from "lucide-react";
 
-export function OccupancyReport() {
-  const roomTypes = [
-    { name: "Deluxe Room", total: 20, occupied: 18, rate: 90 },
-    { name: "Suite Room", total: 10, occupied: 8, rate: 80 },
-    { name: "Family Room", total: 15, occupied: 12, rate: 80 },
-  ];
+export function OccupancyReport({ partnerId }: { partnerId: string }) {
+  const { getToken } = useAuth();
+  const [hotelId, setHotelId] = useState<string | null>(null);
+  const [roomTypes, setRoomTypes] = useState<
+    { name: string; total: number; occupied: number; rate: number }[]
+  >([]);
+  const [loading, setLoading] = useState(true);
 
-  const overallRate = (
-    (roomTypes.reduce((sum, r) => sum + r.occupied, 0) /
-      roomTypes.reduce((sum, r) => sum + r.total, 0)) *
-    100
-  ).toFixed(0);
+  useEffect(() => {
+    if (!partnerId) return;
+    (async () => {
+      try {
+        const token = await getToken();
+        const res = await fetch("/api/partner/hotel/hotels", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const d = await res.json();
+          if (d.success && d.data?.length > 0) setHotelId(d.data[0].id);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+  }, [partnerId]);
+
+  useEffect(() => {
+    if (!hotelId) return;
+    (async () => {
+      try {
+        setLoading(true);
+        const token = await getToken();
+        const res = await fetch(
+          `/api/partner/hotel/rooms?hotel_id=${hotelId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
+        if (res.ok) {
+          const d = await res.json();
+          if (d.success) {
+            setRoomTypes(
+              (d.data || []).map((r: any) => {
+                const total = r.total_rooms ?? r.quantity ?? 1;
+                const occupied = total - (r.available_rooms ?? 0);
+                return {
+                  name: r.name,
+                  total,
+                  occupied,
+                  rate: Math.round((occupied / total) * 100),
+                };
+              }),
+            );
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [hotelId]);
+
+  const totalOccupied = roomTypes.reduce((sum, r) => sum + r.occupied, 0);
+  const totalRooms = roomTypes.reduce((sum, r) => sum + r.total, 0);
+  const overallRate =
+    totalRooms > 0 ? ((totalOccupied / totalRooms) * 100).toFixed(0) : "0";
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <div className="h-32 bg-slate-200 dark:bg-slate-800 rounded-2xl animate-pulse" />
+        {[1, 2].map((i) => (
+          <div
+            key={i}
+            className="h-24 bg-slate-200 dark:bg-slate-800 rounded-2xl animate-pulse"
+          />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

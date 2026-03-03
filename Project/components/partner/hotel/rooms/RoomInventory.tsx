@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useAuth } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import {
   ClipboardList,
@@ -20,46 +21,112 @@ interface RoomInventory {
   blockedRooms: number;
 }
 
-export function RoomInventory() {
+export function RoomInventory({ partnerId }: { partnerId: string }) {
+  const { getToken } = useAuth();
   const [selectedDate, setSelectedDate] = useState(
     new Date().toISOString().split("T")[0],
   );
-  const [inventory, setInventory] = useState<RoomInventory[]>([
-    {
-      id: "1",
-      roomType: "Deluxe Room",
-      date: new Date().toISOString().split("T")[0],
-      totalRooms: 20,
-      availableRooms: 15,
-      blockedRooms: 2,
-    },
-    {
-      id: "2",
-      roomType: "Suite Room",
-      date: new Date().toISOString().split("T")[0],
-      totalRooms: 10,
-      availableRooms: 8,
-      blockedRooms: 0,
-    },
-  ]);
+  const [inventory, setInventory] = useState<RoomInventory[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [hotelId, setHotelId] = useState<string | null>(null);
 
-  const updateAvailability = (id: string, delta: number) => {
-    setInventory((prev) =>
-      prev.map((item) => {
-        if (item.id === id) {
-          const newAvailable = Math.max(
-            0,
-            Math.min(
-              item.totalRooms - item.blockedRooms,
-              item.availableRooms + delta,
-            ),
-          );
-          return { ...item, availableRooms: newAvailable };
+  // Fetch hotel for partner, then inventory
+  useEffect(() => {
+    if (!partnerId) return;
+    (async () => {
+      try {
+        const token = await getToken();
+        const res = await fetch("/api/partner/hotel/hotels", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.data?.length > 0) {
+            setHotelId(data.data[0].id);
+          }
         }
-        return item;
-      }),
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+  }, [partnerId]);
+
+  useEffect(() => {
+    if (!hotelId) return;
+    (async () => {
+      try {
+        setLoading(true);
+        const token = await getToken();
+        const res = await fetch(
+          `/api/partner/hotel/rooms?hotel_id=${hotelId}`,
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success) {
+            setInventory(
+              (data.data || []).map((r: any) => ({
+                id: r.id,
+                roomType: r.name,
+                date: selectedDate,
+                totalRooms: r.total_rooms ?? r.quantity ?? 0,
+                availableRooms: r.available_rooms ?? r.quantity ?? 0,
+                blockedRooms: r.blocked_rooms ?? 0,
+              })),
+            );
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [hotelId, selectedDate]);
+
+  const updateAvailability = async (id: string, delta: number) => {
+    const item = inventory.find((i) => i.id === id);
+    if (!item) return;
+    const newAvailable = Math.max(
+      0,
+      Math.min(
+        item.totalRooms - item.blockedRooms,
+        item.availableRooms + delta,
+      ),
     );
+    // Optimistic update
+    setInventory((prev) =>
+      prev.map((i) =>
+        i.id === id ? { ...i, availableRooms: newAvailable } : i,
+      ),
+    );
+    try {
+      const token = await getToken();
+      await fetch(`/api/partner/hotel/rooms/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ available_rooms: newAvailable }),
+      });
+    } catch (e) {
+      console.error(e);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        {[1, 2].map((i) => (
+          <div
+            key={i}
+            className="h-48 bg-slate-200 dark:bg-slate-800 rounded-2xl animate-pulse"
+          />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

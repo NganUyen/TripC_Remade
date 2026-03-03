@@ -9,6 +9,7 @@ import { motion } from 'framer-motion'
 import Link from 'next/link'
 import type { PartnerProduct } from '@/lib/shop/types'
 import Image from 'next/image'
+import { ConfirmModal } from '../shared/ConfirmModal'
 
 export function ProductList() {
     const router = useRouter()
@@ -27,6 +28,8 @@ export function ProductList() {
         archiveProduct,
         deleteProduct,
     } = usePartnerProductStore()
+
+    const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
 
     useEffect(() => {
         fetchProducts()
@@ -140,16 +143,29 @@ export function ProductList() {
                                 isSaving={isSaving}
                                 onPublish={() => publishProduct(product.id)}
                                 onArchive={() => archiveProduct(product.id)}
-                                onDelete={() => {
-                                    if (confirm('Are you sure you want to delete this product? This cannot be undone.')) {
-                                        deleteProduct(product.id)
-                                    }
-                                }}
+                                onDelete={() => setDeleteTargetId(product.id)}
                             />
                         ))}
                     </div>
                 </div>
             )}
+
+            {/* Delete Confirm Modal */}
+            <ConfirmModal
+                open={!!deleteTargetId}
+                title="Delete Product"
+                description="Are you sure you want to delete this product? This action cannot be undone."
+                confirmLabel="Delete"
+                variant="danger"
+                isLoading={isSaving}
+                onConfirm={async () => {
+                    if (deleteTargetId) {
+                        await deleteProduct(deleteTargetId)
+                        setDeleteTargetId(null)
+                    }
+                }}
+                onCancel={() => setDeleteTargetId(null)}
+            />
 
             {/* Pagination */}
             {totalPages > 1 && (

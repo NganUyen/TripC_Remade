@@ -1,8 +1,12 @@
+"use client"
+
 import { ReactNode } from 'react'
+import { PartnerAuthGuard } from '@/components/partner/PartnerAuthGuard'
 
 /**
- * Layout riêng cho Partner Portal
- * Ẩn Header và CategorySlider để có full-screen experience
+ * Layout for Partner Portal
+ * - Hides site header/footer for full-screen experience
+ * - Enforces authentication for all partner routes
  */
 export default function PartnerLayout({
     children,
@@ -11,7 +15,9 @@ export default function PartnerLayout({
 }) {
     return (
         <div className="min-h-screen">
-            {children}
+            <PartnerAuthGuard>
+                {children}
+            </PartnerAuthGuard>
         </div>
     )
 }

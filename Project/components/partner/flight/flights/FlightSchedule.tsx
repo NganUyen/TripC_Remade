@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useAuth } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import {
   Calendar,
@@ -20,39 +21,56 @@ interface FlightScheduleItem {
   status: "scheduled" | "departed" | "arrived" | "cancelled";
 }
 
-export default function FlightSchedule() {
+export default function FlightSchedule({ partnerId }: { partnerId: string }) {
+  const { getToken } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<"day" | "week">("day");
+  const [schedules, setSchedules] = useState<FlightScheduleItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const schedules: FlightScheduleItem[] = [
-    {
-      id: "1",
-      date: "2026-02-08",
-      flightNumber: "VN123",
-      route: "HAN - SGN",
-      departure: "06:00",
-      arrival: "08:15",
-      status: "scheduled",
-    },
-    {
-      id: "2",
-      date: "2026-02-08",
-      flightNumber: "VN456",
-      route: "SGN - DAD",
-      departure: "09:30",
-      arrival: "10:45",
-      status: "departed",
-    },
-    {
-      id: "3",
-      date: "2026-02-08",
-      flightNumber: "VN789",
-      route: "DAD - HAN",
-      departure: "14:00",
-      arrival: "15:30",
-      status: "scheduled",
-    },
-  ];
+  useEffect(() => {
+    if (!partnerId) return;
+    (async () => {
+      try {
+        setLoading(true);
+        const token = await getToken();
+        const dateStr = currentDate.toISOString().split("T")[0];
+        const res = await fetch(`/api/partner/flight/flights?date=${dateStr}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success) {
+            setSchedules(
+              (data.data || []).map((f: any) => ({
+                id: f.id,
+                date: f.departure_time?.split("T")[0] ?? dateStr,
+                flightNumber: f.flight_number,
+                route: `${f.origin_code ?? f.origin} - ${f.destination_code ?? f.destination}`,
+                departure: f.departure_time
+                  ? new Date(f.departure_time).toLocaleTimeString("vi-VN", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
+                  : "-",
+                arrival: f.arrival_time
+                  ? new Date(f.arrival_time).toLocaleTimeString("vi-VN", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
+                  : "-",
+                status: f.status ?? "scheduled",
+              })),
+            );
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [partnerId, currentDate]);
 
   const previousDay = () => {
     const newDate = new Date(currentDate);
@@ -80,6 +98,19 @@ export default function FlightSchedule() {
         return "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-400";
     }
   };
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        {[1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="h-20 bg-slate-200 dark:bg-slate-800 rounded-2xl animate-pulse"
+          />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

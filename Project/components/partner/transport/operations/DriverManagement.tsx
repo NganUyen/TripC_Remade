@@ -17,6 +17,8 @@ import {
   Clock,
 } from "lucide-react";
 import { useSupabaseClient } from "@/lib/supabase";
+import { toast } from "sonner";
+import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 
 interface Driver {
   id: string;
@@ -34,6 +36,7 @@ interface Driver {
 
 export function DriverManagement() {
   const supabase = useSupabaseClient();
+  const { supabaseUser, isLoading: isAuthLoading } = useCurrentUser();
   const [loading, setLoading] = useState(true);
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -60,68 +63,73 @@ export function DriverManagement() {
   });
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (supabaseUser) fetchData();
+  }, [supabaseUser]);
+
+  const refreshProviders = async () => {
+    if (!supabaseUser) return [];
+    try {
+      const resp = await fetch("/api/partner/transport/providers", {
+        headers: { "x-user-id": supabaseUser.id },
+      });
+      const result = await resp.json();
+      if (result.success) {
+        setProviders(result.data || []);
+        return result.data || [];
+      }
+    } catch (error) {
+      console.error("Error refreshing providers:", error);
+    }
+    return [];
+  };
 
   const fetchData = async () => {
     try {
       setLoading(true);
+      if (!supabaseUser) return;
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
-
-      // 1. Get Providers for current user
-      const { data: providersData, error: providerError } = await supabase
-        .from("transport_providers")
-        .select("id, name")
-        .eq("owner_id", user.id);
-
-      if (providerError) throw providerError;
-
-      const myProviders = providersData || [];
-      setProviders(myProviders);
-
+      const myProviders = await refreshProviders();
       if (myProviders.length === 0) {
         setDrivers([]);
         setLoading(false);
         return;
       }
 
-      const providerIds = myProviders.map((p) => p.id);
-      if (!formData.provider_id && myProviders.length > 0) {
+      // Set default form provider
+      if (!formData.provider_id) {
         setFormData((prev) => ({ ...prev, provider_id: myProviders[0].id }));
       }
 
-      // 2. Get Drivers
-      const { data: driversData, error: driversError } = await supabase
-        .from("transport_drivers")
-        .select("*")
-        .in("provider_id", providerIds)
-        .order("created_at", { ascending: false });
-
-      if (driversError) throw driversError;
-
-      if (driversData) {
-        setDrivers(
-          driversData.map((d: any) => ({
-            id: d.id,
-            name: d.name,
-            phone: d.phone,
-            email: d.email,
-            licenseNumber: d.license_number,
-            licenseExpiry: d.license_expiry,
-            status: d.status,
-            rating: d.rating,
-            totalTrips: d.total_trips,
-            joinedDate: d.joined_date,
-            provider_id: d.provider_id,
-          })),
-        );
+      // Fetch drivers from ALL providers
+      const allDrivers: any[] = [];
+      for (const p of myProviders) {
+        const driversResp = await fetch(`/api/partner/transport/drivers?provider_id=${p.id}`, {
+          headers: { "x-user-id": supabaseUser.id },
+        });
+        const driversResult = await driversResp.json();
+        if (driversResult.success && driversResult.data) {
+          allDrivers.push(...driversResult.data);
+        }
       }
-    } catch (error) {
+
+      setDrivers(
+        allDrivers.map((d: any) => ({
+          id: d.id,
+          name: d.name,
+          phone: d.phone,
+          email: d.email,
+          licenseNumber: d.license_number,
+          licenseExpiry: d.license_expiry,
+          status: d.status,
+          rating: d.rating,
+          totalTrips: d.total_trips,
+          joinedDate: d.joined_date,
+          provider_id: d.provider_id,
+        }))
+      );
+    } catch (error: any) {
       console.error("Error fetching data:", error);
+      toast.error("Lỗi khi tải dữ liệu: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -130,19 +138,34 @@ export function DriverManagement() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.provider_id) {
-      alert("Vui lòng chọn nhà cung cấp");
+      toast.error("Vui lòng chọn nhà cung cấp");
+      return;
+    }
+
+    if (!supabaseUser) {
+      toast.error("Bạn chưa đăng nhập");
       return;
     }
 
     // Basic validation
     if (!formData.name || !formData.phone || !formData.licenseNumber) {
-      alert("Vui lòng điền đầy đủ thông tin bắt buộc");
+      toast.error("Vui lòng điền đầy đủ thông tin bắt buộc");
+      return;
+    }
+
+    // Date validation
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const expiryDate = new Date(formData.licenseExpiry);
+    if (expiryDate < today) {
+      toast.error("Ngày hết hạn bằng lái phải từ ngày hiện tại trở đi");
       return;
     }
 
     try {
       setSaving(true);
-      const driverData = {
+      const driverDataToSave = {
+        id: editingDriver?.id, // Include if editing
         provider_id: formData.provider_id,
         name: formData.name,
         phone: formData.phone,
@@ -154,46 +177,50 @@ export function DriverManagement() {
         total_trips: formData.totalTrips,
       };
 
-      if (editingDriver) {
-        const { error } = await supabase
-          .from("transport_drivers")
-          .update(driverData)
-          .eq("id", editingDriver.id);
+      const response = await fetch("/api/partner/transport/drivers", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": supabaseUser.id
+        },
+        body: JSON.stringify(driverDataToSave),
+      });
 
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from("transport_drivers")
-          .insert([driverData]);
+      const result = await response.json();
+      if (!result.success) throw new Error(result.error);
 
-        if (error) throw error;
-      }
+      toast.success(editingDriver ? "Cập nhật thông tin tài xế thành công" : "Thêm tài xế mới thành công");
 
       setShowAddModal(false);
       setEditingDriver(null);
       resetForm();
       fetchData();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving driver:", error);
-      alert("Có lỗi xảy ra khi lưu thông tin tài xế");
+      toast.error("Có lỗi xảy ra khi lưu thông tin tài xế: " + error.message);
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async (id: string) => {
+    if (!supabaseUser) return;
     if (!confirm("Bạn có chắc chắn muốn xóa tài xế này?")) return;
 
     try {
-      const { error } = await supabase
-        .from("transport_drivers")
-        .delete()
-        .eq("id", id);
+      const response = await fetch(`/api/partner/transport/drivers?id=${id}`, {
+        method: "DELETE",
+        headers: { "x-user-id": supabaseUser.id },
+      });
 
-      if (error) throw error;
+      const result = await response.json();
+      if (!result.success) throw new Error(result.error);
+
+      toast.success("Đã xóa tài xế");
       fetchData();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error deleting driver:", error);
+      toast.error("Lỗi khi xóa tài xế: " + error.message);
     }
   };
 
@@ -287,9 +314,20 @@ export function DriverManagement() {
           </p>
         </div>
         <button
-          onClick={() => {
+          onClick={async () => {
             setEditingDriver(null);
-            resetForm();
+            const currentProviders = await refreshProviders();
+            setFormData({
+              name: "",
+              phone: "",
+              email: "",
+              licenseNumber: "",
+              licenseExpiry: "",
+              status: "available",
+              rating: 5.0,
+              totalTrips: 0,
+              provider_id: currentProviders.length > 0 ? currentProviders[0].id : "",
+            });
             setShowAddModal(true);
           }}
           className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl hover:bg-primary/90 transition-colors font-medium"
@@ -523,27 +561,27 @@ export function DriverManagement() {
               onSubmit={handleSubmit}
               className="p-6 space-y-6 max-h-[75vh] overflow-y-auto custom-scrollbar"
             >
-              {/* Provider Selection (only if multiple) */}
-              {providers.length > 1 && (
-                <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                    Nhà cung cấp
-                  </label>
-                  <select
-                    value={formData.provider_id}
-                    onChange={(e) =>
-                      setFormData({ ...formData, provider_id: e.target.value })
-                    }
-                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                  >
-                    {providers.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
+              {/* Provider Selection (Universal Sync UI) */}
+              <div className="space-y-1.5 p-4 bg-primary/5 rounded-2xl border border-primary/10">
+                <label className="text-sm font-bold text-primary flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                  Nhà cung cấp vận chuyển
+                </label>
+                <select
+                  value={formData.provider_id || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, provider_id: e.target.value })
+                  }
+                  className="w-full px-4 py-2 bg-white dark:bg-slate-900 border-2 border-primary/20 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-semibold"
+                >
+                  <option value="" disabled>--- Chọn nhà cung cấp ---</option>
+                  {providers.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
               <div className="space-y-4">
                 <div className="space-y-1.5">
@@ -558,7 +596,6 @@ export function DriverManagement() {
                       setFormData({ ...formData, name: e.target.value })
                     }
                     className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                    placeholder="Nhập họ tên tài xế"
                   />
                 </div>
 
@@ -575,7 +612,6 @@ export function DriverManagement() {
                         setFormData({ ...formData, phone: e.target.value })
                       }
                       className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                      placeholder="090..."
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -589,7 +625,6 @@ export function DriverManagement() {
                         setFormData({ ...formData, email: e.target.value })
                       }
                       className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                      placeholder="example@email.com"
                     />
                   </div>
                 </div>
@@ -610,7 +645,6 @@ export function DriverManagement() {
                         })
                       }
                       className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                      placeholder="GPLX..."
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -620,6 +654,7 @@ export function DriverManagement() {
                     <input
                       required
                       type="date"
+                      min={new Date().toISOString().split("T")[0]}
                       value={formData.licenseExpiry}
                       onChange={(e) =>
                         setFormData({
@@ -627,7 +662,9 @@ export function DriverManagement() {
                           licenseExpiry: e.target.value,
                         })
                       }
-                      className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                      className={`w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none transition-all ${formData.licenseExpiry && new Date(formData.licenseExpiry) < new Date(new Date().setHours(0, 0, 0, 0))
+                        ? "border-red-500 ring-2 ring-red-500/20" : ""
+                        }`}
                     />
                   </div>
                 </div>

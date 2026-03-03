@@ -8,16 +8,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { createFlightSchema } from "@/lib/flight-partner/validation";
 import { getPartnerFlights, createFlight } from "@/lib/flight-partner/database";
 import { ZodError } from "zod";
-
-// Note: Authentication middleware should be added here
-function getPartnerId(req: NextRequest): string {
-  // TODO: Replace with actual authentication
-  const partnerId = req.headers.get("x-partner-id");
-  if (!partnerId) {
-    throw new Error("Partner ID not found");
-  }
-  return partnerId;
-}
+import {
+  resolveFlightPartnerId,
+  authErrorStatus,
+} from "@/lib/partner/clerkAuth";
 
 /**
  * GET /api/partner/flight/flights
@@ -25,7 +19,7 @@ function getPartnerId(req: NextRequest): string {
  */
 export async function GET(req: NextRequest) {
   try {
-    const partnerId = getPartnerId(req);
+    const { airlineCode: partnerId } = await resolveFlightPartnerId();
 
     const flights = await getPartnerFlights(partnerId);
 
@@ -55,7 +49,7 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   try {
-    const partnerId = getPartnerId(req);
+    const { airlineCode: partnerId } = await resolveFlightPartnerId();
     const body = await req.json();
 
     // Validate input

@@ -5,7 +5,6 @@ import { usePartnerOrderStore } from '@/store/usePartnerOrderStore'
 import { EmptyState } from '../shared/EmptyState'
 import {
     ShoppingCart,
-    Search,
     Loader2,
     ArrowRight,
     Clock,
@@ -14,7 +13,6 @@ import {
     Truck,
     XCircle,
     CalendarDays,
-    Filter,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'

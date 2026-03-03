@@ -15,6 +15,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { useSupabaseClient } from "@/lib/supabase";
+import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 
 interface RoutePrice {
   id: string;
@@ -35,32 +36,47 @@ export function PricingManagement() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editPrice, setEditPrice] = useState<number>(0);
 
+  const { supabaseUser } = useCurrentUser();
+  const [providers, setProviders] = useState<{ id: string; name: string }[]>([]);
+
   useEffect(() => {
-    fetchPrices();
-  }, []);
+    if (supabaseUser) {
+      fetchPrices();
+    }
+  }, [supabaseUser]);
+
+  const refreshProviders = async () => {
+    if (!supabaseUser) return [];
+    try {
+      const resp = await fetch("/api/partner/transport/providers", {
+        headers: { "x-user-id": supabaseUser.id },
+      });
+      const result = await resp.json();
+      if (result.success) {
+        setProviders(result.data || []);
+        return result.data || [];
+      }
+    } catch (error) {
+      console.error("Error refreshing providers:", error);
+    }
+    return [];
+  };
 
   const fetchPrices = async () => {
     try {
       setLoading(true);
+      if (!supabaseUser) return;
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
+      // 1. Refresh providers
+      const myProviders = await refreshProviders();
 
-      // Get user's providers
-      const { data: providers } = await supabase
-        .from("transport_providers")
-        .select("id")
-        .eq("owner_id", user.id);
-
-      if (!providers || providers.length === 0) {
+      if (myProviders.length === 0) {
         setPrices([]);
         setLoading(false);
         return;
       }
 
-      const providerIds = providers.map((p) => p.id);
+      const providerIds = myProviders.map((p: any) => p.id);
 
       const { data, error } = await supabase
         .from("transport_routes")

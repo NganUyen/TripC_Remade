@@ -11,7 +11,7 @@ import {
   MapPin,
   Users,
 } from "lucide-react";
-import { useSupabaseClient } from "@/lib/supabase";
+import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 
 interface ScheduleEvent {
   id: string;
@@ -26,7 +26,7 @@ interface ScheduleEvent {
 }
 
 export function VehicleSchedule() {
-  const supabase = useSupabaseClient();
+  const { supabaseUser } = useCurrentUser();
   const [loading, setLoading] = useState(true);
   const [events, setEvents] = useState<ScheduleEvent[]>([]);
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -34,30 +34,26 @@ export function VehicleSchedule() {
 
   useEffect(() => {
     fetchSchedule();
-  }, [currentDate]);
+  }, [currentDate, supabaseUser]);
 
   const fetchSchedule = async () => {
     try {
       setLoading(true);
+      if (!supabaseUser) return;
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
+      // 1. Get user's providers
+      const providersResp = await fetch("/api/partner/transport/providers", {
+        headers: { "x-user-id": supabaseUser.id },
+      });
+      const providersResult = await providersResp.json();
+      if (!providersResult.success) throw new Error(providersResult.error);
 
-      // Get user's providers
-      const { data: providers } = await supabase
-        .from("transport_providers")
-        .select("id")
-        .eq("owner_id", user.id);
+      const myProviders = (providersResult.data || []) as any[];
 
-      if (!providers || providers.length === 0) {
+      if (myProviders.length === 0) {
         setEvents([]);
-        setLoading(false);
         return;
       }
-
-      const providerIds = providers.map((p) => p.id);
 
       // Get date range
       const startOfDay = new Date(currentDate);
@@ -66,40 +62,30 @@ export function VehicleSchedule() {
       const endOfDay = new Date(currentDate);
       endOfDay.setHours(23, 59, 59, 999);
 
-      const { data, error } = await supabase
-        .from("transport_routes")
-        .select(
-          `
-                    id,
-                    origin,
-                    destination,
-                    departure_time,
-                    arrival_time,
-                    vehicle_type,
-                    seats_available,
-                    type,
-                    transport_providers (
-                        name
-                    )
-                `,
-        )
-        .in("provider_id", providerIds)
-        .gte("departure_time", startOfDay.toISOString())
-        .lte("departure_time", endOfDay.toISOString())
-        .order("departure_time", { ascending: true });
+      const allEvents: ScheduleEvent[] = [];
 
-      if (error) {
-        console.error("Error fetching schedule:", error);
-      } else {
-        const formattedEvents =
-          data?.map((item) => ({
+      for (const p of myProviders) {
+        const resp = await fetch(
+          `/api/partner/transport/routes?provider_id=${p.id}&start_date=${startOfDay.toISOString()}&end_date=${endOfDay.toISOString()}`,
+          {
+            headers: { "x-user-id": supabaseUser.id },
+          }
+        );
+        const result = await resp.json();
+        if (result.success && result.data) {
+          const formatted = result.data.map((item: any) => ({
             ...item,
-            provider_name: (item.transport_providers as any)?.name,
-          })) || [];
-        setEvents(formattedEvents);
+            provider_name: item.transport_providers?.name,
+          }));
+          allEvents.push(...formatted);
+        }
       }
-    } catch (error) {
-      console.error("Error:", error);
+
+      setEvents(allEvents.sort((a, b) =>
+        new Date(a.departure_time).getTime() - new Date(b.departure_time).getTime()
+      ));
+    } catch (error: any) {
+      console.error("Error fetching schedule:", error);
     } finally {
       setLoading(false);
     }
@@ -190,21 +176,19 @@ export function VehicleSchedule() {
         <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700">
           <button
             onClick={() => setView("day")}
-            className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${
-              view === "day"
+            className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${view === "day"
                 ? "bg-white dark:bg-slate-900 text-primary shadow-sm ring-1 ring-slate-200 dark:ring-slate-700"
                 : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-            }`}
+              }`}
           >
             Ngày
           </button>
           <button
             onClick={() => setView("week")}
-            className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${
-              view === "week"
+            className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${view === "week"
                 ? "bg-white dark:bg-slate-900 text-primary shadow-sm ring-1 ring-slate-200 dark:ring-slate-700"
                 : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-            }`}
+              }`}
           >
             Tuần
           </button>

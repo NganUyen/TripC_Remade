@@ -13,7 +13,7 @@ import {
   PiggyBank,
   Calendar,
 } from "lucide-react";
-import { useSupabaseClient } from "@/lib/supabase";
+import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 
 interface RevenueData {
   totalRevenue: number;
@@ -24,7 +24,6 @@ interface RevenueData {
 }
 
 export function Revenue() {
-  const supabase = useSupabaseClient();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<RevenueData>({
     totalRevenue: 0,
@@ -35,114 +34,91 @@ export function Revenue() {
   });
   const [period, setPeriod] = useState<"week" | "month" | "year">("month");
 
+  const { supabaseUser } = useCurrentUser();
+  const [providers, setProviders] = useState<{ id: string; name: string }[]>([]);
+
   useEffect(() => {
-    fetchRevenueData();
-  }, [period]);
+    if (supabaseUser) {
+      fetchRevenueData();
+    }
+  }, [period, supabaseUser]);
+
+  const refreshProviders = async () => {
+    if (!supabaseUser) return [];
+    try {
+      const resp = await fetch("/api/partner/transport/providers", {
+        headers: { "x-user-id": supabaseUser.id },
+      });
+      const result = await resp.json();
+      if (result.success) {
+        setProviders(result.data || []);
+        return result.data || [];
+      }
+    } catch (error) {
+      console.error("Error refreshing providers:", error);
+    }
+    return [];
+  };
 
   const fetchRevenueData = async () => {
     try {
       setLoading(true);
+      if (!supabaseUser) return;
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
+      const myProviders = await refreshProviders();
+      if (myProviders.length === 0) { setLoading(false); return; }
+      const providerIds = myProviders.map((p: any) => p.id);
 
-      // Get user's providers
-      const { data: providers } = await supabase
-        .from("transport_providers")
-        .select("id")
-        .eq("owner_id", user.id);
+      // Fetch all bookings via secure API (bypasses RLS)
+      const bookingsResp = await fetch("/api/partner/transport/bookings", {
+        headers: { "x-user-id": supabaseUser.id },
+      });
+      const bookingsResult = await bookingsResp.json();
+      const allBookings: any[] = bookingsResult.success ? bookingsResult.data : [];
 
-      if (!providers || providers.length === 0) {
-        setLoading(false);
-        return;
-      }
+      const confirmedAll = allBookings.filter((b) =>
+        b.status === "confirmed" || b.status === "completed"
+      );
 
-      const providerIds = providers.map((p) => p.id);
-
-      // Get date range
+      // Period filter
       const now = new Date();
-      let startDate = new Date();
-      if (period === "week") {
-        startDate.setDate(now.getDate() - 7);
-      } else if (period === "month") {
-        startDate.setMonth(now.getMonth() - 1);
-      } else {
-        startDate.setFullYear(now.getFullYear() - 1);
-      }
+      const startDate = new Date();
+      if (period === "week") startDate.setDate(now.getDate() - 7);
+      else if (period === "month") startDate.setMonth(now.getMonth() - 1);
+      else startDate.setFullYear(now.getFullYear() - 1);
 
-      // Fetch all bookings for total revenue (restricted to provider)
-      const { data: allBookings } = await supabase
-        .from("bookings")
-        .select(
-          `
-                    total_amount,
-                    transport_routes!inner(provider_id)
-                `,
-        )
-        .in("status", ["confirmed", "completed"])
-        .in("transport_routes.provider_id", providerIds);
+      const periodBookings = confirmedAll.filter(
+        (b) => new Date(b.created_at) >= startDate
+      );
 
-      // Fetch period bookings (restricted to provider)
-      const { data: periodBookings, error } = await supabase
-        .from("bookings")
-        .select(
-          `
-                    total_amount,
-                    created_at,
-                    transport_routes!inner (
-                        type,
-                        provider_id
-                    )
-                `,
-        )
-        .in("status", ["confirmed", "completed"])
-        .in("transport_routes.provider_id", providerIds)
-        .gte("created_at", startDate.toISOString());
+      const totalRevenue = confirmedAll.reduce((sum, b) => sum + (b.total_amount || b.total_cents / 100 || 0), 0);
+      const periodRevenue = periodBookings.reduce((sum, b) => sum + (b.total_amount || b.total_cents / 100 || 0), 0);
+      const avgTicketPrice = periodBookings.length
+        ? Math.round(periodRevenue / periodBookings.length)
+        : 0;
 
-      if (error) {
-        console.error("Error fetching revenue:", error);
-      } else {
-        const totalRevenue =
-          allBookings?.reduce((sum, b) => sum + (b.total_amount || 0), 0) || 0;
-        const periodRevenue =
-          periodBookings?.reduce((sum, b) => sum + (b.total_amount || 0), 0) ||
-          0;
-        const avgTicketPrice = periodBookings?.length
-          ? Math.round(periodRevenue / periodBookings.length)
-          : 0;
+      // Group by day
+      const revenueByDayMap: Record<string, number> = {};
+      periodBookings.forEach((booking) => {
+        const date = new Date(booking.created_at).toLocaleDateString("vi-VN");
+        revenueByDayMap[date] = (revenueByDayMap[date] || 0) + (booking.total_amount || booking.total_cents / 100 || 0);
+      });
+      const revenueByDay = Object.entries(revenueByDayMap)
+        .map(([date, revenue]) => ({ date, revenue }))
+        .slice(-7);
 
-        // Group by day
-        const revenueByDayMap: Record<string, number> = {};
-        periodBookings?.forEach((booking) => {
-          const date = new Date(booking.created_at).toLocaleDateString("vi-VN");
-          revenueByDayMap[date] =
-            (revenueByDayMap[date] || 0) + (booking.total_amount || 0);
-        });
-        const revenueByDay = Object.entries(revenueByDayMap)
-          .map(([date, revenue]) => ({ date, revenue }))
-          .slice(-7);
+      // Group by vehicle type (from metadata)
+      const revenueByTypeMap: Record<string, number> = {};
+      periodBookings.forEach((booking) => {
+        const meta = booking.metadata?.metadata || booking.metadata || {};
+        const type = meta.vehicleType || meta.vehicle_type || meta.tripType || "other";
+        revenueByTypeMap[type] = (revenueByTypeMap[type] || 0) + (booking.total_amount || booking.total_cents / 100 || 0);
+      });
+      const revenueByType = Object.entries(revenueByTypeMap)
+        .map(([type, revenue]) => ({ type, revenue }))
+        .sort((a, b) => b.revenue - a.revenue);
 
-        // Group by type
-        const revenueByTypeMap: Record<string, number> = {};
-        periodBookings?.forEach((booking) => {
-          const type = (booking.transport_routes as any)?.type || "other";
-          revenueByTypeMap[type] =
-            (revenueByTypeMap[type] || 0) + (booking.total_amount || 0);
-        });
-        const revenueByType = Object.entries(revenueByTypeMap)
-          .map(([type, revenue]) => ({ type, revenue }))
-          .sort((a, b) => b.revenue - a.revenue);
-
-        setData({
-          totalRevenue,
-          periodRevenue,
-          avgTicketPrice,
-          revenueByDay,
-          revenueByType,
-        });
-      }
+      setData({ totalRevenue, periodRevenue, avgTicketPrice, revenueByDay, revenueByType });
     } catch (error) {
       console.error("Error:", error);
     } finally {
@@ -191,11 +167,10 @@ export function Revenue() {
             <button
               key={p}
               onClick={() => setPeriod(p)}
-              className={`px-6 py-2 text-xs font-black uppercase tracking-widest rounded-xl transition-all ${
-                period === p
-                  ? "bg-white dark:bg-slate-700 text-primary shadow-sm"
-                  : "text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-white/50 dark:hover:bg-slate-700/50"
-              }`}
+              className={`px-6 py-2 text-xs font-black uppercase tracking-widest rounded-xl transition-all ${period === p
+                ? "bg-white dark:bg-slate-700 text-primary shadow-sm"
+                : "text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-white/50 dark:hover:bg-slate-700/50"
+                }`}
             >
               {p === "week" ? "Tuần" : p === "month" ? "Tháng" : "Năm"}
             </button>
@@ -233,7 +208,7 @@ export function Revenue() {
                 </div>
                 <div className="flex items-center gap-1.5 text-xs font-black uppercase tracking-widest bg-emerald-500/20 text-emerald-400 px-3 py-1.5 rounded-full border border-emerald-500/30">
                   <ArrowUpRight className="w-4 h-4" />
-                  +15%
+                  +0%
                 </div>
               </div>
               <p className="text-slate-400 text-xs font-black uppercase tracking-widest mb-2">
@@ -261,7 +236,7 @@ export function Revenue() {
                 </div>
                 <div className="flex items-center gap-1.5 text-xs font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-600 px-3 py-1.5 rounded-full">
                   <TrendingUp className="w-4 h-4" />
-                  +12%
+                  +0%
                 </div>
               </div>
               <p className="text-slate-400 dark:text-slate-500 text-xs font-black uppercase tracking-widest mb-2">

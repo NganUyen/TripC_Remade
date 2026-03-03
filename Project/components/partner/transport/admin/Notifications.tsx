@@ -13,7 +13,7 @@ import {
   Settings,
   Trash2,
 } from "lucide-react";
-import { useSupabaseClient } from "@/lib/supabase";
+import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 
 interface Notification {
   id: string;
@@ -27,47 +27,28 @@ interface Notification {
 }
 
 export function Notifications() {
-  const supabase = useSupabaseClient();
+  const { supabaseUser } = useCurrentUser();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [filter, setFilter] = useState<"all" | "unread">("all");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchNotifications();
-  }, []);
+  }, [supabaseUser]);
 
   const fetchNotifications = async () => {
     try {
       setLoading(true);
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      if (!supabaseUser) return;
 
-      if (!user) return;
+      const response = await fetch("/api/partner/transport/notifications", {
+        headers: { "x-user-id": supabaseUser.id },
+      });
+      const result = await response.json();
 
-      // Get all user's providers
-      const { data: providers } = await supabase
-        .from("transport_providers")
-        .select("id")
-        .eq("owner_id", user.id);
-
-      if (!providers || providers.length === 0) {
-        setLoading(false);
-        return;
-      }
-
-      const providerIds = providers.map((p) => p.id);
-
-      const { data: notifs } = await supabase
-        .from("transport_notifications")
-        .select("*")
-        .in("provider_id", providerIds)
-        .order("created_at", { ascending: false });
-
-      if (notifs) {
-        setNotifications(notifs as unknown as Notification[]);
-      }
-    } catch (error) {
+      if (!result.success) throw new Error(result.error);
+      setNotifications(result.data || []);
+    } catch (error: any) {
       console.error("Error fetching notifications:", error);
     } finally {
       setLoading(false);
@@ -75,13 +56,19 @@ export function Notifications() {
   };
 
   const markAsRead = async (id: string) => {
+    if (!supabaseUser) return;
     try {
-      const { error } = await supabase
-        .from("transport_notifications")
-        .update({ is_read: true })
-        .eq("id", id);
+      const resp = await fetch("/api/partner/transport/notifications", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": supabaseUser.id
+        },
+        body: JSON.stringify({ id, is_read: true }),
+      });
+      const result = await resp.json();
 
-      if (!error) {
+      if (result.success) {
         setNotifications((prev) =>
           prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)),
         );
@@ -92,27 +79,22 @@ export function Notifications() {
   };
 
   const markAllAsRead = async () => {
+    if (!supabaseUser || notifications.length === 0) return;
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
+      // Find the first provider_id to mark all for that provider (matching current logic)
+      const providerId = notifications[0].provider_id;
 
-      const { data: providers } = await supabase
-        .from("transport_providers")
-        .select("id")
-        .eq("owner_id", user.id);
+      const resp = await fetch("/api/partner/transport/notifications", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": supabaseUser.id
+        },
+        body: JSON.stringify({ mark_all_id: providerId }),
+      });
+      const result = await resp.json();
 
-      if (!providers || providers.length === 0) return;
-      const providerIds = providers.map((p) => p.id);
-
-      const { error } = await supabase
-        .from("transport_notifications")
-        .update({ is_read: true })
-        .in("provider_id", providerIds)
-        .eq("is_read", false);
-
-      if (!error) {
+      if (result.success) {
         setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
       }
     } catch (error) {
@@ -121,17 +103,21 @@ export function Notifications() {
   };
 
   const deleteNotification = async (id: string) => {
+    if (!supabaseUser) return;
     try {
-      const { error } = await supabase
-        .from("transport_notifications")
-        .delete()
-        .eq("id", id);
+      const resp = await fetch(`/api/partner/transport/notifications?id=${id}`, {
+        method: "DELETE",
+        headers: { "x-user-id": supabaseUser.id },
+      });
+      const result = await resp.json();
 
-      if (!error) {
+      if (result.success) {
         setNotifications((prev) => prev.filter((n) => n.id !== id));
       }
-    } catch (error) {
-      console.error("Error deleting notification:", error);
+    } catch (error: any) {
+      console.error("Error fetching notifications:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -232,11 +218,10 @@ export function Notifications() {
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`px-6 py-2.5 text-xs font-black uppercase tracking-widest rounded-xl transition-all ${
-              filter === f
-                ? "bg-white dark:bg-slate-700 text-primary shadow-md scale-[1.02]"
-                : "text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-white/50 dark:hover:bg-slate-700/50"
-            }`}
+            className={`px-6 py-2.5 text-xs font-black uppercase tracking-widest rounded-xl transition-all ${filter === f
+              ? "bg-white dark:bg-slate-700 text-primary shadow-md scale-[1.02]"
+              : "text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-white/50 dark:hover:bg-slate-700/50"
+              }`}
           >
             {f === "all" ? "Tất cả" : `Chưa xem (${unreadCount})`}
           </button>

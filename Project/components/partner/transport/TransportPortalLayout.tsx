@@ -17,7 +17,8 @@ import {
     Star,
     Menu,
     X,
-    ArrowLeft
+    ArrowLeft,
+    BadgePercent,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
@@ -53,7 +54,8 @@ const navItems: NavItem[] = [
         children: [
             { id: 'bookings', label: 'Quản lý Đặt chỗ', icon: Ticket },
             { id: 'pricing', label: 'Quản lý Giá', icon: DollarSign },
-            { id: 'seats', label: 'Quản lý Ghế', icon: Armchair }
+            { id: 'seats', label: 'Quản lý Ghế', icon: Armchair },
+            { id: 'commission', label: 'Hoa hồng & Voucher', icon: BadgePercent },
         ]
     },
     {
