@@ -53,10 +53,10 @@ export function StatCard({
                 </div>
 
                 {change !== undefined && (
-                    <div className={`flex items-center gap-1 text-xs font-medium ${change >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                    <div className={`flex items-center gap-1 text-xs font-medium whitespace-nowrap ${change >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
                         <ChangeTrend className="w-3 h-3" />
                         <span>{Math.abs(change).toFixed(1)}%</span>
-                        <span className="text-slate-400 font-normal ml-1 hidden sm:inline">vs last period</span>
+                        <span className="text-slate-400 font-normal ml-1 hidden lg:inline">vs last period</span>
                     </div>
                 )}
             </div>

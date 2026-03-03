@@ -21,13 +21,7 @@ export default function ShopCheckoutPage() {
     // (Item in memory = came from product page, Hydration = page refresh)
     const isBuyNowReady = buyNowItem !== null || _hasHydrated;
 
-    console.log('[Checkout] Render state:', { 
-        mounted, 
-        _hasHydrated, 
-        isBuyNowMode, 
-        isBuyNowReady,
-        buyNowItem: buyNowItem ? 'exists' : 'null' 
-    });
+
 
     useEffect(() => {
         setMounted(true);
@@ -43,7 +37,7 @@ export default function ShopCheckoutPage() {
         if (isBuyNowMode) {
             // Only redirect if we're sure there's no item (hydration complete + no item)
             if (_hasHydrated && !buyNowItem) {
-                console.log('[Checkout] No buy-now item found after hydration, redirecting...');
+
                 hasRedirected.current = true;
                 router.push('/shop');
             }
@@ -60,7 +54,7 @@ export default function ShopCheckoutPage() {
     // For buy-now: wait for mount AND (item exists OR hydration complete)
     // For cart: wait for mount AND cart loading complete
     const isLoading = !mounted || (isBuyNowMode ? !isBuyNowReady : isCartLoading);
-    
+
     if (isLoading) {
         return <div className="p-10 text-center">Loading checkout...</div>;
     }
@@ -76,7 +70,7 @@ export default function ShopCheckoutPage() {
 
     if (isBuyNowMode && buyNowItem) {
         // Buy Now mode: Single item from buyNowStore
-        console.log('[Checkout] Building buy-now initialData with item:', buyNowItem);
+
         initialData = {
             items: [{
                 variantId: buyNowItem.variantId,

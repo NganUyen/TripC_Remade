@@ -21,6 +21,7 @@ import {
 import Link from 'next/link'
 import type { PartnerProduct, Variant, ProductImage, Category } from '@/lib/shop/types'
 import Image from 'next/image'
+import { ConfirmModal } from '../shared/ConfirmModal'
 
 // BUG-004 Fix: Category type for dropdown
 interface CategoryOption {
@@ -67,6 +68,10 @@ export function ProductForm({ productId }: ProductFormProps) {
     // Variant form
     const [showVariantForm, setShowVariantForm] = useState(false)
     const [variantForm, setVariantForm] = useState({ sku: '', title: '', price: '', compare_at_price: '', stock_on_hand: '' })
+
+    // Confirm modals
+    const [confirmDeleteProduct, setConfirmDeleteProduct] = useState(false)
+    const [confirmDeleteVariantId, setConfirmDeleteVariantId] = useState<string | null>(null)
 
     // BUG-004 Fix: Fetch categories on mount
     useEffect(() => {
@@ -457,17 +462,28 @@ export function ProductForm({ productId }: ProductFormProps) {
                             <h3 className="font-bold text-red-600 dark:text-red-400 mb-2">Danger Zone</h3>
                             <p className="text-sm text-slate-500 mb-4">Permanently delete this product and all its data.</p>
                             <button
-                                onClick={() => {
-                                    if (confirm('Delete this product? This cannot be undone.')) {
-                                        deleteProduct(productId!).then(ok => ok && router.push('/shop/partner/products'))
-                                    }
-                                }}
+                                onClick={() => setConfirmDeleteProduct(true)}
                                 disabled={isSaving}
                                 className="flex items-center gap-2 px-4 py-2 rounded-xl border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 text-sm font-medium hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors w-full justify-center"
                             >
                                 <Trash2 className="w-4 h-4" />
                                 Delete Product
                             </button>
+
+                            <ConfirmModal
+                                open={confirmDeleteProduct}
+                                title="Delete Product"
+                                description="Are you sure you want to permanently delete this product and all its data? This cannot be undone."
+                                confirmLabel="Delete Product"
+                                variant="danger"
+                                isLoading={isSaving}
+                                onConfirm={async () => {
+                                    const ok = await deleteProduct(productId!)
+                                    if (ok) router.push('/shop/partner/products')
+                                    setConfirmDeleteProduct(false)
+                                }}
+                                onCancel={() => setConfirmDeleteProduct(false)}
+                            />
                         </div>
                     )}
                 </div>
@@ -490,6 +506,7 @@ function VariantRow({
     isSaving: boolean
 }) {
     const [isEditing, setIsEditing] = useState(false)
+    const [confirmDeleteVariant, setConfirmDeleteVariant] = useState(false)
     const [editData, setEditData] = useState({
         price: variant.price.toString(),
         stock_on_hand: variant.stock_on_hand.toString(),
@@ -559,9 +576,7 @@ function VariantRow({
                         <Package className="w-3.5 h-3.5 text-slate-400" />
                     </button>
                     <button
-                        onClick={() => {
-                            if (confirm('Remove this variant?')) onDelete(productId, variant.id)
-                        }}
+                        onClick={() => setConfirmDeleteVariant(true)}
                         disabled={isSaving}
                         className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
                     >
@@ -569,6 +584,20 @@ function VariantRow({
                     </button>
                 </div>
             )}
+
+            <ConfirmModal
+                open={confirmDeleteVariant}
+                title="Remove Variant"
+                description={`Remove variant "${variant.title}"? This cannot be undone.`}
+                confirmLabel="Remove"
+                variant="danger"
+                isLoading={isSaving}
+                onConfirm={async () => {
+                    await onDelete(productId, variant.id)
+                    setConfirmDeleteVariant(false)
+                }}
+                onCancel={() => setConfirmDeleteVariant(false)}
+            />
         </div>
     )
 }
