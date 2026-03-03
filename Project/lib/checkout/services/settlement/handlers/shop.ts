@@ -51,7 +51,8 @@ export class ShopSettlementHandler implements ISettlementHandler {
                         product:shop_products (
                             id,
                             title,
-                            product_type
+                            product_type,
+                            partner_id
                         )
                     `)
                     .eq('id', item.variantId)
@@ -68,7 +69,7 @@ export class ShopSettlementHandler implements ISettlementHandler {
                     qty: item.quantity,
                     unit_price: item.price, // Price in cents from Buy Now
                     currency: 'USD',
-                    title_snapshot: item.name || variant.product?.title,
+                    title_snapshot: item.name || (variant.product as any)?.title,
                     image_url_snapshot: item.image || null,
                     variant: variant, // Include variant data for stock decrement
                 });
@@ -107,7 +108,8 @@ export class ShopSettlementHandler implements ISettlementHandler {
                             product:shop_products (
                                 id,
                                 title,
-                                product_type
+                                product_type,
+                                partner_id
                             )
                         )
                     `)
@@ -144,6 +146,12 @@ export class ShopSettlementHandler implements ISettlementHandler {
                 cart_id: cartId || null, // Null for Buy Now
                 booking_id: booking.id,
                 subtotal: Math.floor(Number(booking.total_amount)),
+                discount_total: 0,
+                shipping_total: 0,
+                grand_total: Math.floor(Number(booking.total_amount)),
+                currency: booking.currency || 'USD',
+                status: 'pending',
+                payment_status: 'paid', // Mark as paid since this is a settlement handler
                 shipping_address_snapshot: booking.guest_details?.address || {}, // Fallback
                 created_at: new Date().toISOString()
             })
@@ -160,9 +168,10 @@ export class ShopSettlementHandler implements ISettlementHandler {
         // 4. Create Order Items
         const orderItemsData = orderItems.map((item: any) => ({
             order_id: order.id,
-            product_id: item.variant?.product_id || item.variant?.product?.id,
+            partner_id: (item.variant?.product as any)?.partner_id || null,
+            product_id: item.variant?.product_id || (item.variant?.product as any)?.id,
             variant_id: item.variant_id,
-            title_snapshot: item.title_snapshot || item.variant?.product?.title || 'Unknown Product',
+            title_snapshot: item.title_snapshot || (item.variant?.product as any)?.title || 'Unknown Product',
             sku_snapshot: item.variant?.sku,
             image_url_snapshot: item.image_url_snapshot || null,
             qty: item.qty,

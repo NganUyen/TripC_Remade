@@ -18,6 +18,7 @@ import {
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
 import { EmptyState } from '../shared/EmptyState'
+import { ConfirmModal } from '../shared/ConfirmModal'
 import type { PartnerMember, PartnerMemberPermissions, PartnerMemberRole } from '@/lib/shop/types'
 
 interface TeamMemberWithUser extends PartnerMember {
@@ -32,6 +33,7 @@ export function TeamManagement() {
     const [isInviting, setIsInviting] = useState(false)
     const [showInviteForm, setShowInviteForm] = useState(false)
     const [actionMenuId, setActionMenuId] = useState<string | null>(null)
+    const [removeMemberId, setRemoveMemberId] = useState<string | null>(null)
 
     // Invite form state
     const [inviteEmail, setInviteEmail] = useState('')
@@ -125,8 +127,6 @@ export function TeamManagement() {
     }
 
     const handleRemoveMember = async (memberId: string) => {
-        if (!confirm('Are you sure you want to remove this team member?')) return
-
         try {
             const res = await fetch(`/api/shop/partners/team/${memberId}`, {
                 method: 'DELETE',
@@ -143,6 +143,7 @@ export function TeamManagement() {
             toast.error('Connection error')
         }
         setActionMenuId(null)
+        setRemoveMemberId(null)
     }
 
     const statusBadge = (status: string) => {
@@ -394,7 +395,10 @@ export function TeamManagement() {
                                                     ))}
                                                     <div className="border-t border-slate-100 dark:border-slate-700 my-1" />
                                                     <button
-                                                        onClick={() => handleRemoveMember(member.id)}
+                                                        onClick={() => {
+                                                            setRemoveMemberId(member.id)
+                                                            setActionMenuId(null)
+                                                        }}
                                                         className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10"
                                                     >
                                                         <Trash2 className="w-4 h-4" /> Remove
@@ -409,6 +413,19 @@ export function TeamManagement() {
                     </div>
                 </div>
             )}
+
+            {/* Remove Member Confirm Modal */}
+            <ConfirmModal
+                open={!!removeMemberId}
+                title="Remove Team Member"
+                description="Are you sure you want to remove this team member? They will lose access to the partner dashboard."
+                confirmLabel="Remove"
+                variant="danger"
+                onConfirm={() => {
+                    if (removeMemberId) handleRemoveMember(removeMemberId)
+                }}
+                onCancel={() => setRemoveMemberId(null)}
+            />
         </div>
     )
 }

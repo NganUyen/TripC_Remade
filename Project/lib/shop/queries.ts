@@ -334,7 +334,7 @@ export async function getVariantById(variantId: string): Promise<Variant | null>
         currency: v.currency || 'USD',
         stock_on_hand: v.stock_on_hand,
         is_active: v.is_active,
-        options: (options || []).map(o => ({ name: o.name, value: o.value }))
+        options: (options || []).map(o => ({ name: o.option_name, value: o.option_value }))
     } as Variant;
 }
 
@@ -940,7 +940,7 @@ function generateOrderNumber(): string {
 export async function createOrder(
     userId: string,
     sessionKey: string,
-    shippingAddressId: string,
+    shippingAddress: Record<string, any>,
     shippingMethodId: string
 ): Promise<Order> {
     const supabase = getSupabase();
@@ -959,12 +959,30 @@ export async function createOrder(
     }
 
     // 3. Validate stock for all items BEFORE creating order
+    // Also fetch product_id and partner_id for order_items
     const stockValidation = await Promise.all(
         cart.items.map(async (item) => {
             const variant = await getVariantById(item.variant_id);
+            let partnerId: string | null = null;
+            let productId: string | null = null;
+
+            if (variant) {
+                // Look up the product to get partner_id
+                const { data: product } = await supabase
+                    .from('shop_products')
+                    .select('id, partner_id')
+                    .eq('id', variant.product_id)
+                    .single();
+
+                productId = product?.id || null;
+                partnerId = product?.partner_id || null;
+            }
+
             return {
                 item,
                 variant,
+                productId,
+                partnerId,
                 hasStock: variant ? variant.stock_on_hand >= item.qty : false
             };
         })
@@ -978,21 +996,23 @@ export async function createOrder(
 
     const orderNumber = generateOrderNumber();
     const now = new Date().toISOString();
+    const subtotal = cart.subtotal.amount;
+    const discountTotal = cart.discount_total.amount;
+    const shippingTotal = shippingMethod.base_fee;
 
-    // 4. Create order
+    // 4. Create order — matches shop_orders schema
     const { data: order, error: orderError } = await supabase
         .from('shop_orders')
         .insert({
             order_number: orderNumber,
             user_id: userId,
+            cart_id: cart.id,
             status: 'pending',
-            payment_status: 'pending',
-            currency: cart.currency,
-            subtotal: cart.subtotal.amount,
-            discount_total: cart.discount_total.amount,
-            shipping_total: shippingMethod.base_fee,
-            grand_total: cart.subtotal.amount - cart.discount_total.amount + shippingMethod.base_fee,
-            shipping_address_id: shippingAddressId,
+            payment_status: 'unpaid',
+            subtotal: subtotal,
+            discount_total: discountTotal,
+            shipping_total: shippingTotal,
+            shipping_address_snapshot: shippingAddress,
             shipping_method_id: shippingMethodId,
             created_at: now,
             updated_at: now
@@ -1005,16 +1025,20 @@ export async function createOrder(
     }
 
     try {
-        // 5. Create order items in batch
-        const orderItems = cart.items.map(item => ({
+        // 5. Create order items in batch — includes line_total (NOT NULL) and partner_id
+        const orderItems = stockValidation.map(v => ({
             order_id: order.id,
-            variant_id: item.variant_id,
-            qty: item.qty,
-            unit_price: item.unit_price.amount,
-            currency: item.unit_price.currency,
-            title_snapshot: item.title_snapshot,
-            variant_snapshot: item.variant_snapshot
+            product_id: v.productId,
+            variant_id: v.item.variant_id,
+            partner_id: v.partnerId,
+            qty: v.item.qty,
+            unit_price: v.item.unit_price.amount,
+            line_total: v.item.unit_price.amount * v.item.qty,
+            currency: v.item.unit_price.currency,
+            title_snapshot: v.item.title_snapshot,
+            variant_snapshot: v.item.variant_snapshot
         }));
+
 
         const { error: itemsError } = await supabase
             .from('order_items')
@@ -1043,6 +1067,17 @@ export async function createOrder(
             .update({ status: 'converted', updated_at: now })
             .eq('id', cart.id);
 
+        // 8. Record initial status in order_status_history
+        await supabase.from('order_status_history').insert({
+            order_id: order.id,
+            old_status: null,
+            new_status: 'pending',
+            old_payment_status: null,
+            new_payment_status: 'unpaid',
+            changed_by_type: 'system',
+            notes: 'Order placed'
+        });
+
     } catch (error) {
         // If any step after order creation fails, mark order as failed
         await supabase
@@ -1058,18 +1093,18 @@ export async function createOrder(
         user_id: order.user_id,
         status: order.status,
         payment_status: order.payment_status,
-        currency: order.currency,
+        currency: 'USD',
         subtotal: money(order.subtotal),
         discount_total: money(order.discount_total),
         shipping_total: money(order.shipping_total),
-        grand_total: money(order.grand_total),
+        grand_total: money(subtotal - discountTotal + shippingTotal),
         items: cart.items,
-        shipping_address_id: order.shipping_address_id,
         shipping_method_id: order.shipping_method_id,
         created_at: order.created_at,
         updated_at: order.updated_at
     } as Order;
 }
+
 
 export async function getOrders(userId: string, params?: {
     limit?: number;
@@ -1102,12 +1137,11 @@ export async function getOrders(userId: string, params?: {
         user_id: o.user_id,
         status: o.status,
         payment_status: o.payment_status,
-        currency: o.currency,
+        currency: 'USD',
         subtotal: money(o.subtotal),
         discount_total: money(o.discount_total),
         shipping_total: money(o.shipping_total),
-        grand_total: money(o.grand_total),
-        shipping_address_id: o.shipping_address_id,
+        grand_total: money((o.subtotal || 0) - (o.discount_total || 0) + (o.shipping_total || 0)),
         shipping_method_id: o.shipping_method_id,
         created_at: o.created_at,
         updated_at: o.updated_at
@@ -1144,13 +1178,12 @@ export async function getOrderByNumber(userId: string, orderNumber: string): Pro
         user_id: o.user_id,
         status: o.status,
         payment_status: o.payment_status,
-        currency: o.currency,
+        currency: 'USD',
         subtotal: money(o.subtotal),
         discount_total: money(o.discount_total),
         shipping_total: money(o.shipping_total),
-        grand_total: money(o.grand_total),
+        grand_total: money((o.subtotal || 0) - (o.discount_total || 0) + (o.shipping_total || 0)),
         items,
-        shipping_address_id: o.shipping_address_id,
         shipping_method_id: o.shipping_method_id,
         created_at: o.created_at,
         updated_at: o.updated_at
@@ -1179,6 +1212,46 @@ export async function cancelOrder(userId: string, orderId: string): Promise<Orde
 
     if (error || !updated) throw new Error('Failed to cancel order');
 
+    // Restore stock for all order items
+    const { data: orderItems } = await supabase
+        .from('order_items')
+        .select('variant_id, qty')
+        .eq('order_id', orderId);
+
+    if (orderItems) {
+        for (const item of orderItems) {
+            if (item.variant_id) {
+                // Use Postgres increment to avoid race conditions
+                await supabase.rpc('increment_stock', {
+                    p_variant_id: item.variant_id,
+                    p_qty: item.qty
+                }).then(async (rpcResult) => {
+                    // Fallback if RPC doesn't exist: read-then-write
+                    if (rpcResult.error) {
+                        const variant = await getVariantById(item.variant_id);
+                        if (variant) {
+                            await supabase
+                                .from('product_variants')
+                                .update({ stock_on_hand: variant.stock_on_hand + item.qty })
+                                .eq('id', item.variant_id);
+                        }
+                    }
+                });
+            }
+        }
+    }
+
+    // Record status change in order_status_history
+    await supabase.from('order_status_history').insert({
+        order_id: orderId,
+        old_status: 'pending',
+        new_status: 'cancelled',
+        old_payment_status: order.payment_status,
+        new_payment_status: order.payment_status,
+        changed_by_type: 'user',
+        notes: 'Order cancelled by user'
+    });
+
     return {
         id: updated.id,
         order_number: updated.order_number,
@@ -1189,7 +1262,7 @@ export async function cancelOrder(userId: string, orderId: string): Promise<Orde
         subtotal: money(updated.subtotal),
         discount_total: money(updated.discount_total),
         shipping_total: money(updated.shipping_total),
-        grand_total: money(updated.grand_total),
+        grand_total: money(updated.subtotal - (updated.discount_total || 0) + (updated.shipping_total || 0)),
         created_at: updated.created_at,
         updated_at: updated.updated_at
     } as Order;
@@ -1402,40 +1475,27 @@ export async function createReview(data: {
 export async function getOrderHistory(userId: string, orderId: string): Promise<any[]> {
     const supabase = getSupabase();
 
+    // Verify the order belongs to this user
     const { data: order } = await supabase
         .from('shop_orders')
-        .select('*')
+        .select('id')
         .eq('id', orderId)
         .eq('user_id', userId)
         .single();
 
     if (!order) return [];
 
-    const history = [
-        {
-            id: `hist-created-${order.id.slice(0, 8)}`,
-            old_status: null,
-            new_status: 'pending',
-            old_payment_status: null,
-            new_payment_status: order.payment_status,
-            changed_by_type: 'system',
-            notes: 'Order placed',
-            created_at: order.created_at
-        }
-    ];
+    // Read from the real order_status_history table
+    const { data: history, error } = await supabase
+        .from('order_status_history')
+        .select('*')
+        .eq('order_id', orderId)
+        .order('created_at', { ascending: false });
 
-    if (order.status === 'cancelled') {
-        history.push({
-            id: `hist-cancel-${order.id.slice(0, 8)}`,
-            old_status: 'pending',
-            new_status: 'cancelled',
-            old_payment_status: order.payment_status,
-            new_payment_status: order.payment_status,
-            changed_by_type: 'user',
-            notes: 'Order cancelled by user',
-            created_at: order.updated_at
-        });
+    if (error) {
+        console.error('getOrderHistory error:', error);
+        return [];
     }
 
-    return history.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    return history || [];
 }

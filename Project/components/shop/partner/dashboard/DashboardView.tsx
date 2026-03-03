@@ -15,7 +15,6 @@ import {
     ArrowRight,
     Star,
     Store,
-    Globe,
     Mail,
     Loader2,
     Settings,
@@ -27,13 +26,11 @@ import dynamic from 'next/dynamic'
 import Image from 'next/image'
 
 const ProfitChart = dynamic(() => import('./charts/ProfitChart').then(mod => mod.ProfitChart), { ssr: false })
-const ProductStatusChart = dynamic(() => import('./charts/ProductStatusChart').then(mod => mod.ProductStatusChart), { ssr: false })
-const OrderStatusChart = dynamic(() => import('./charts/OrderStatusChart').then(mod => mod.OrderStatusChart), { ssr: false })
 
 export function DashboardView() {
     const { partner, dashboardStats, fetchDashboardStats } = usePartnerStore()
-    const { products, total: productTotal, fetchProducts, isLoading: productsLoading } = usePartnerProductStore()
-    const { orders, total: orderTotal, fetchOrders, isLoading: ordersLoading } = usePartnerOrderStore()
+    const { products, fetchProducts, isLoading: productsLoading } = usePartnerProductStore()
+    const { orders, fetchOrders, isLoading: ordersLoading } = usePartnerOrderStore()
     const [period, setPeriod] = useState('7d')
     const [isLoadingStats, setIsLoadingStats] = useState(true)
 
@@ -285,15 +282,16 @@ export function DashboardView() {
     )
 }
 
+const STATUS_COLORS: Record<string, string> = {
+    pending: 'bg-amber-50 text-amber-700 border-amber-100',
+    confirmed: 'bg-cyan-50 text-cyan-700 border-cyan-100',
+    processing: 'bg-indigo-50 text-indigo-700 border-indigo-100',
+    shipped: 'bg-purple-50 text-purple-700 border-purple-100',
+    delivered: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+    cancelled: 'bg-slate-50 text-slate-600 border-slate-100',
+}
+
 function RecentOrderRow({ order }: { order: PartnerOrder }) {
-    const statusColors: Record<string, string> = {
-        pending: 'bg-amber-50 text-amber-700 border-amber-100',
-        confirmed: 'bg-cyan-50 text-cyan-700 border-cyan-100',
-        processing: 'bg-indigo-50 text-indigo-700 border-indigo-100',
-        shipped: 'bg-purple-50 text-purple-700 border-purple-100',
-        delivered: 'bg-emerald-50 text-emerald-700 border-emerald-100',
-        cancelled: 'bg-slate-50 text-slate-600 border-slate-100',
-    }
 
     return (
         <Link href={`/shop/partner/orders/${order.id}`} className="flex items-center gap-4 p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
@@ -303,7 +301,7 @@ function RecentOrderRow({ order }: { order: PartnerOrder }) {
             <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-0.5">
                     <span className="text-sm font-semibold text-slate-900 dark:text-white">#{order.order_number}</span>
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border ${statusColors[order.status] || 'bg-slate-50 text-slate-600 border-slate-100'}`}>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border ${STATUS_COLORS[order.status] || 'bg-slate-50 text-slate-600 border-slate-100'}`}>
                         {order.status}
                     </span>
                 </div>
